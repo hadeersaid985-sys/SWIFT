@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" fill="none">
+  <defs>
+    <!-- Main Gradient for SM Mark (Royal Blue to Cyan) -->
+    <linearGradient id="smMainGrad" x1="80" y1="120" x2="380" y2="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#1e58b8" />
+      <stop offset="30%" stopColor="#2563eb" />
+      <stop offset="65%" stopColor="#0284c7" />
+      <stop offset="100%" stopColor="#38bdf8" />
+    </linearGradient>
+
+    <!-- Gradient for Cyan Figure -->
+    <linearGradient id="cyanFigureGrad" x1="160" y1="260" x2="220" y2="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0284c7" />
+      <stop offset="100%" stopColor="#38bdf8" />
+    </linearGradient>
+
+    <!-- Gradient for Letter I Figure in Typography -->
+    <linearGradient id="letterIGrad" x1="170" y1="365" x2="200" y2="435" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0284c7" />
+      <stop offset="60%" stopColor="#1d4ed8" />
+      <stop offset="100%" stopColor="#1e40af" />
+    </linearGradient>
+
+    <!-- Gradient for SWIFT Text -->
+    <linearGradient id="swiftTextGrad" x1="100" y1="380" x2="250" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0284c7" />
+      <stop offset="100%" stopColor="#2563eb" />
+    </linearGradient>
+
+    <!-- Gradient for MYND Text -->
+    <linearGradient id="myndTextGrad" x1="250" y1="380" x2="400" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#1e40af" />
+      <stop offset="100%" stopColor="#0369a1" />
+    </linearGradient>
+  </defs>
+
+  <!-- ==================== THE SM MONOGRAM MARK ==================== -->
+  <g id="SM-Mark">
+    <!-- Main Interconnected SM Ribbon Body -->
+    <path
+      d="M 235 152
+         C 235 130, 205 110, 168 110
+         C 125 110, 95 138, 95 180
+         C 95 224, 128 252, 172 252
+         C 192 252, 212 245, 224 235
+         C 232 228, 238 240, 230 252
+         C 216 272, 190 288, 160 288
+         C 152 288, 142 285, 138 278
+         C 134 270, 142 264, 150 264
+         C 162 264, 172 256, 172 244
+         C 172 232, 160 224, 144 224
+         C 118 224, 88 198, 88 158
+         C 88 118, 124 82, 175 82
+         C 215 82, 245 102, 260 128
+         L 295 188
+         L 325 138
+         C 335 120, 348 108, 362 108
+         L 375 108
+         C 378 116, 375 128, 365 142
+         L 348 168
+         L 348 290
+         L 295 290
+         L 295 198
+         L 262 255
+         C 255 268, 245 268, 238 255
+         L 208 202
+         C 198 214, 182 220, 168 220
+         C 152 220, 142 212, 142 198
+         C 142 182, 155 174, 172 174
+         L 220 174
+         C 230 174, 235 165, 235 152 Z"
+      fill="url(#smMainGrad)"
+    />
+
+    <!-- Precise SM Outer Flow Contour matching PROFILE1.png -->
+    <!-- S upper loop, bridge, M valley, and M right vertical pillar -->
+    <path
+      d="M 125 155
+         C 125 136, 142 120, 168 120
+         L 215 120
+         C 232 120, 244 130, 252 142
+         L 298 220
+         L 332 165
+         L 332 290
+         L 370 290
+         L 370 148
+         C 370 128, 358 112, 340 108
+         C 328 105, 318 110, 310 122
+         L 282 172
+         L 255 125
+         C 245 108, 226 96, 198 94
+         L 165 94
+         C 118 94, 82 124, 82 170
+         C 82 215, 114 246, 158 246
+         C 178 246, 196 238, 208 226
+         C 214 220, 218 226, 214 234
+         C 202 256, 178 280, 142 284
+         C 125 286, 134 266, 148 266
+         C 160 266, 168 256, 168 244
+         C 168 232, 156 224, 142 224
+         C 115 224, 88 198, 88 165
+         C 88 138, 104 155, 125 155 Z"
+      fill="url(#smMainGrad)"
+    />
+
+    <!-- Solid Right Leg Pillar of M -->
+    <path
+      d="M 334 140
+         L 370 140
+         L 370 290
+         L 334 290 Z"
+      fill="#0284c7"
+    />
+
+    <!-- Three Feather / Claw Cuts on the top-right peak of M -->
+    <path
+      d="M 348 108
+         L 358 98
+         C 362 102, 364 108, 360 114
+         L 352 118 Z"
+      fill="#ffffff"
+    />
+    <path
+      d="M 356 116
+         L 366 106
+         C 370 110, 372 116, 368 122
+         L 360 126 Z"
+      fill="#ffffff"
+    />
+    <path
+      d="M 364 126
+         L 373 118
+         C 376 122, 376 128, 372 133
+         L 366 136 Z"
+      fill="#ffffff"
+    />
+
+    <!-- Stylized Person / Dot Figure under S curve -->
+    <circle cx="150" cy="272" r="9" fill="url(#cyanFigureGrad)" />
+    <path
+      d="M 148 285
+         C 138 285, 130 294, 130 306
+         C 130 314, 136 320, 144 320
+         C 156 320, 164 308, 164 296
+         C 164 288, 156 285, 148 285 Z"
+      fill="url(#cyanFigureGrad)"
+    />
+  </g>
+
+  <!-- ==================== THE SWIFTMYND WORDMARK ==================== -->
+  <g id="SWIFTMYND-Typography" font-family="'Cairo', 'Segoe UI', system-ui, sans-serif" font-weight="900" font-size="52" letter-spacing="-1">
+    <!-- SW in Cyan/Sky Gradient -->
+    <text x="75" y="420" fill="url(#swiftTextGrad)">SW</text>
+
+    <!-- The Stylized 'I' as the Person Icon -->
+    <g id="Letter-I-Person">
+      <!-- Head Dot -->
+      <circle cx="192" cy="380" r="7.5" fill="#0284c7" />
+      <!-- Body -->
+      <path
+        d="M 191 392
+           C 183 392, 178 398, 178 406
+           C 178 416, 185 422, 192 422
+           C 200 422, 205 414, 205 404
+           C 205 396, 198 392, 191 392 Z"
+        fill="url(#letterIGrad)"
+      />
+    </g>
+
+    <!-- FT in Blue -->
+    <text x="212" y="420" fill="#2563eb">FT</text>
+
+    <!-- MYND in Royal / Sapphire Blue -->
+    <text x="268" y="420" fill="url(#myndTextGrad)">MYND</text>
+  </g>
+</svg>

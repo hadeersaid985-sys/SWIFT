@@ -1,0 +1,8 @@
+{
+  "name": "سويفت مايند - swiftmynd | نظام المهام وإدارة الفريق",
+  "description": "منظومة سويفت مايند لإدارة وتتبع مهام الفريق، تسجيل وحساب أوقات العمل بالدقائق والساعات، بورد الأيام وأعضاء الفريق، والمهام السرية للمدير.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

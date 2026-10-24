@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="smFaviconGrad" x1="20" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#1e58b8" />
+      <stop offset="45%" stopColor="#2563eb" />
+      <stop offset="80%" stopColor="#0284c7" />
+      <stop offset="100%" stopColor="#38bdf8" />
+    </linearGradient>
+    <linearGradient id="cyanFaviconGrad" x1="0" y1="0" x2="30" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0284c7" />
+      <stop offset="100%" stopColor="#38bdf8" />
+    </linearGradient>
+  </defs>
+
+  <!-- SM Ribbon Interconnected Mark -->
+  <path
+    d="M 55 70
+       C 55 52, 72 40, 95 40
+       L 115 40
+       C 128 40, 138 48, 145 60
+       L 172 120
+       L 172 165
+       L 145 165
+       L 145 95
+       L 125 135
+       L 105 95
+       L 80 145
+       C 70 160, 50 160, 40 148
+       C 30 135, 30 115, 45 105
+       L 85 105
+       C 92 105, 95 98, 90 92
+       C 85 86, 75 86, 65 86
+       L 55 86
+       C 52 86, 50 80, 50 70 Z"
+    fill="url(#smFaviconGrad)"
+  />
+
+  <!-- Three white cuts on top right peak of M -->
+  <path d="M 152 48 L 162 42 C 165 44, 166 48, 164 52 L 155 56 Z" fill="#ffffff" />
+  <path d="M 158 55 L 168 50 C 170 53, 171 56, 168 60 L 160 63 Z" fill="#ffffff" />
+  <path d="M 163 64 L 173 60 C 174 63, 173 66, 170 69 L 164 71 Z" fill="#ffffff" />
+
+  <!-- Person Accent -->
+  <circle cx="68" cy="168" r="7" fill="url(#cyanFaviconGrad)" />
+  <path d="M 68 178 C 60 178, 55 185, 55 192 L 80 192 C 80 185, 75 178, 68 178 Z" fill="url(#cyanFaviconGrad)" />
+</svg>
