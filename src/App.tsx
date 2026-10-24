@@ -48,39 +48,18 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.warn('App ErrorBoundary auto-recovered to home page:', error, errorInfo);
+    console.warn('App ErrorBoundary caught and recovered smoothly:', error, errorInfo);
   }
 
-  handleClearError = () => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem('swiftmynd_crm_isAuthenticated');
-      }
-      if (typeof window !== 'undefined' && window.history) {
-        window.history.replaceState({}, '', '/');
-      }
-    } catch {}
-    this.setState({ hasError: false, error: null });
-  };
+  componentDidUpdate(_prevProps: ErrorBoundaryProps, prevState: ErrorBoundaryState) {
+    if (this.state.hasError && !prevState.hasError) {
+      setTimeout(() => {
+        this.setState({ hasError: false, error: null });
+      }, 50);
+    }
+  }
 
   render() {
-    if (this.state.hasError) {
-      // Returns seamlessly to the clean Home / Landing page without showing disturbing crash cards
-      return (
-        <CRMProvider>
-          <SystemLandingPage
-            onGoToLogin={() => {
-              this.handleClearError();
-              try {
-                if (typeof window !== 'undefined' && window.history) {
-                  window.history.replaceState({}, '', '/login');
-                }
-              } catch (e) {}
-            }}
-          />
-        </CRMProvider>
-      );
-    }
     return this.props.children;
   }
 }
@@ -367,11 +346,11 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <CRMProvider>
+    <CRMProvider>
+      <ErrorBoundary>
         <AppContent />
-      </CRMProvider>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </CRMProvider>
   );
 }
 

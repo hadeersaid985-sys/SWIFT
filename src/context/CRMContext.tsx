@@ -346,6 +346,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return CURRENT_USER;
   });
 
+  const setSafeCurrentUser = (user: TeamMember) => {
+    const validUser = ensureValidUser(user);
+    setCurrentUser(validUser);
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(validUser));
+  };
+
   const [activeTab, setActiveTab] = useState<string>(() => {
     try {
       if (currentUser && currentUser.accessLevel !== 'admin' && currentUser.id !== 'user-1') {
@@ -1154,6 +1160,16 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isOverdue: false,
         isToday: false,
         daysRemaining: 0
+      };
+    }
+
+    if (!dueDate) {
+      return {
+        label: 'بدون موعد',
+        badgeClass: 'bg-slate-100 text-slate-600 border-slate-200',
+        isOverdue: false,
+        isToday: false,
+        daysRemaining: 999
       };
     }
 
@@ -2102,7 +2118,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <CRMContext.Provider
       value={{
         currentUser,
-        setCurrentUser,
+        setCurrentUser: setSafeCurrentUser,
         isAuthenticated,
         setIsAuthenticated,
         loginUser,

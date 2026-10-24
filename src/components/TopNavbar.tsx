@@ -80,7 +80,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
     logoutUser
   } = useCRM();
 
-  const isManagerUser = currentUser.accessLevel === 'admin' || currentUser.accessLevel === 'manager' || currentUser.id === 'user-1';
+  const isManagerUser = Boolean(
+    currentUser &&
+      (currentUser.accessLevel === 'admin' ||
+        currentUser.accessLevel === 'manager' ||
+        currentUser.id === 'user-1')
+  );
 
   const [topSearch, setTopSearch] = useState('');
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -1104,7 +1109,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                         setShowUserMenu(false);
                       }}
                       className={`w-full text-right px-2 py-1.5 rounded-lg hover:bg-slate-50 flex items-center justify-between text-xs cursor-pointer ${
-                        m.id === currentUser.id ? 'font-bold text-blue-600 bg-blue-50/50' : 'text-slate-700'
+                        currentUser && m.id === currentUser.id ? 'font-bold text-blue-600 bg-blue-50/50' : 'text-slate-700'
                       }`}
                     >
                       <span className="truncate">{m.name}</span>

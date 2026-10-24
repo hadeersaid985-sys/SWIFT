@@ -49,33 +49,31 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
 
     if (targetUser) {
       setSuccessMsg(`أهلاً بك، ${targetUser.name}! جاري الدخول للمنظومة...`);
-      setTimeout(() => {
+      try {
+        loginUser(targetUser);
+      } catch (err) {
+        console.error('loginUser error', err);
+      }
+
+      if (typeof window !== 'undefined' && window.history) {
         try {
-          loginUser(targetUser);
+          window.history.replaceState({}, '', '/');
         } catch (err) {
-          console.error('loginUser error', err);
+          console.warn('History replaceState error', err);
         }
+      }
 
-        if (typeof window !== 'undefined' && window.history) {
-          try {
-            window.history.replaceState({}, '', '/');
-          } catch (err) {
-            console.warn('History replaceState error', err);
-          }
-        }
+      if (onSuccessLogin) {
+        try {
+          onSuccessLogin();
+        } catch (e) {}
+      }
 
-        if (onSuccessLogin) {
-          try {
-            onSuccessLogin();
-          } catch (e) {}
-        }
-
-        if (targetUser.accessLevel !== 'admin') {
-          try {
-            triggerDailyDigest(targetUser);
-          } catch (e) {}
-        }
-      }, 250);
+      if (targetUser.accessLevel !== 'admin') {
+        try {
+          triggerDailyDigest(targetUser);
+        } catch (e) {}
+      }
     } else {
       setIsSubmitting(false);
       setErrorMsg('اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من صحة البيانات والمحاولة مجدداً.');
