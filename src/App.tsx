@@ -95,8 +95,11 @@ const checkIsLoginUrl = () => {
       path === '/login' ||
       path === '/login/' ||
       path.startsWith('/login') ||
+      path.includes('/login') ||
       hash === '#/login' ||
       hash === '#login' ||
+      hash.includes('login') ||
+      search.includes('login') ||
       search.includes('login=true')
     );
   } catch {
@@ -121,16 +124,14 @@ const AppContent: React.FC = () => {
   } = useCRM();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoginPage, setIsLoginPage] = useState(checkIsLoginUrl);
-  const [showLoginView, setShowLoginView] = useState(false);
+  const [showLoginView, setShowLoginView] = useState(checkIsLoginUrl);
 
   // Listen to browser navigation (/login URL)
   useEffect(() => {
     const handleUrlChange = () => {
       const isLogin = checkIsLoginUrl();
       setIsLoginPage(isLogin);
-      if (isLogin) {
-        setShowLoginView(true);
-      }
+      setShowLoginView(isLogin);
     };
     window.addEventListener('popstate', handleUrlChange);
     window.addEventListener('hashchange', handleUrlChange);
