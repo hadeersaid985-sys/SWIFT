@@ -1010,6 +1010,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
+                    try {
+                      if (typeof window !== 'undefined' && window.history) {
+                        window.history.replaceState({}, '', '/');
+                      }
+                    } catch (e) {}
                     if (onLogout) {
                       onLogout();
                     } else {
@@ -1019,7 +1024,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                   className="w-full mt-2 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <LogOut className="w-3.5 h-3.5 text-slate-500" />
-                  <span>تسجيل الخروج</span>
+                  <span>تسجيل الخروج والعودة للرئيسية</span>
                 </button>
               </div>
 

@@ -371,13 +371,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logoutUser = () => {
     setIsAuthenticated(false);
+    setCurrentUser(CURRENT_USER);
+    setActiveTab('home');
     setIsDailyDigestOpen(false);
     setIsAdminPinModalOpen(false);
     setIsBrandModalOpen(false);
     setIsResetModalOpen(false);
     setOpenQuickModal(null);
-    safeStorage.removeItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
-    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'false');
+    try {
+      safeStorage.removeItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'false');
+    } catch {}
   };
 
   const orgId = 'org943269125';

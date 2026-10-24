@@ -41,7 +41,8 @@ import {
   Timer,
   Lock,
   Settings,
-  Camera
+  Camera,
+  LogOut
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
@@ -61,7 +62,8 @@ export const Sidebar: React.FC = () => {
     impersonateUser,
     returnToAdmin,
     team,
-    setIsAdminPinModalOpen
+    setIsAdminPinModalOpen,
+    logoutUser
   } = useCRM();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -842,6 +844,28 @@ export const Sidebar: React.FC = () => {
               </button>
             </div>
           )}
+
+          {/* زر تسجيل الخروج والعودة للرئيسية مباشرة */}
+          <div className="pt-2 border-t border-slate-800/80">
+            <button
+              onClick={() => {
+                try {
+                  if (typeof window !== 'undefined' && window.history) {
+                    window.history.replaceState({}, '', '/');
+                  }
+                } catch (e) {}
+                logoutUser();
+              }}
+              className="w-full text-right flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-rose-300 hover:text-white hover:bg-rose-950/60 transition-colors cursor-pointer border border-rose-900/30"
+              title="تسجيل الخروج والعودة للرئيسية مباشرة"
+            >
+              <div className="flex items-center gap-2">
+                <LogOut className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                {!isCollapsed && <span>تسجيل الخروج</span>}
+              </div>
+              {!isCollapsed && <span className="text-[10px] text-rose-400/80">الرئيسية</span>}
+            </button>
+          </div>
         </div>
         </>
       )}

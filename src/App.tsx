@@ -26,7 +26,7 @@ import { BrandSettingsModal } from './components/modals/BrandSettingsModal';
 import { AdminPinModal } from './components/modals/AdminPinModal';
 import { DailyDigestModal } from './components/digest/DailyDigestModal';
 import { SwiftMyndLogo } from './components/common/SwiftMyndLogo';
-import { ShieldAlert, ArrowLeft, UserCheck, KeyRound, LogIn, BellRing, Sparkles } from 'lucide-react';
+import { ShieldAlert, ArrowLeft, UserCheck, KeyRound, LogIn, LogOut, BellRing, Sparkles } from 'lucide-react';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -48,48 +48,37 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('App ErrorBoundary caught an error:', error, errorInfo);
+    console.warn('App ErrorBoundary auto-recovered to home page:', error, errorInfo);
   }
+
+  handleClearError = () => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('swiftmynd_crm_isAuthenticated');
+      }
+      if (typeof window !== 'undefined' && window.history) {
+        window.history.replaceState({}, '', '/');
+      }
+    } catch {}
+    this.setState({ hasError: false, error: null });
+  };
 
   render() {
     if (this.state.hasError) {
+      // Returns seamlessly to the clean Home / Landing page without showing disturbing crash cards
       return (
-        <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-6 text-center select-none">
-          <div className="bg-slate-800/95 border border-slate-700/80 p-8 rounded-3xl max-w-md w-full shadow-2xl space-y-4">
-            <div className="w-14 h-14 bg-rose-500/20 text-rose-400 rounded-2xl mx-auto flex items-center justify-center">
-              <ShieldAlert className="w-8 h-8" />
-            </div>
-            <h2 className="text-xl font-black text-white">حدث خطأ غير متوقع</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              تم حماية المنظومة ومنع تعطل الشاشة. يمكنك العودة للنظام مباشرة بالضغط على الزر أدناه:
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center pt-2">
-              <button
-                onClick={() => {
-                  try {
-                    if (typeof window !== 'undefined' && window.localStorage) {
-                      window.localStorage.removeItem('swiftmynd_crm_isAuthenticated');
-                    }
-                  } catch {}
-                  this.setState({ hasError: false, error: null });
-                  window.location.href = '/login';
-                }}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer"
-              >
-                شاشة تسجيل الدخول
-              </button>
-              <button
-                onClick={() => {
-                  this.setState({ hasError: false, error: null });
-                  window.location.href = '/';
-                }}
-                className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer"
-              >
-                الرئيسية
-              </button>
-            </div>
-          </div>
-        </div>
+        <CRMProvider>
+          <SystemLandingPage
+            onGoToLogin={() => {
+              this.handleClearError();
+              try {
+                if (typeof window !== 'undefined' && window.history) {
+                  window.history.replaceState({}, '', '/login');
+                }
+              } catch (e) {}
+            }}
+          />
+        </CRMProvider>
       );
     }
     return this.props.children;
@@ -152,13 +141,14 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
-    setShowLoginView(true);
-    setIsLoginPage(true);
+    // Return directly to the main landing/home page (https://tazkoraio.com / /)
+    setShowLoginView(false);
+    setIsLoginPage(false);
     if (typeof window !== 'undefined' && window.history) {
       try {
-        window.history.pushState({}, '', '/login');
+        window.history.replaceState({}, '', '/');
       } catch (e) {
-        console.error('History pushState error', e);
+        console.warn('History replaceState error', e);
       }
     }
     logoutUser();
@@ -174,7 +164,7 @@ const AppContent: React.FC = () => {
             setShowLoginView(false);
             if (typeof window !== 'undefined' && window.history) {
               try {
-                window.history.pushState({}, '', '/');
+                window.history.replaceState({}, '', '/');
               } catch (e) {}
             }
           }}
@@ -183,7 +173,7 @@ const AppContent: React.FC = () => {
             setShowLoginView(false);
             if (typeof window !== 'undefined' && window.history) {
               try {
-                window.history.pushState({}, '', '/');
+                window.history.replaceState({}, '', '/');
               } catch (e) {}
             }
           }}
@@ -198,7 +188,7 @@ const AppContent: React.FC = () => {
           setIsLoginPage(true);
           if (typeof window !== 'undefined' && window.history) {
             try {
-              window.history.pushState({}, '', '/login');
+              window.history.replaceState({}, '', '/login');
             } catch (e) {}
           }
         }}
@@ -336,9 +326,9 @@ const AppContent: React.FC = () => {
             <button
               onClick={handleLogout}
               className="text-slate-500 hover:text-rose-700 font-bold flex items-center gap-1 cursor-pointer transition-colors"
-              title="تسجيل الخروج والعودة لشاشة الدخول"
+              title="تسجيل الخروج والعودة للرئيسية مباشرة"
             >
-              <LogIn className="w-3 h-3" />
+              <LogOut className="w-3 h-3" />
               <span>تسجيل الخروج</span>
             </button>
             <span className="text-slate-300">|</span>

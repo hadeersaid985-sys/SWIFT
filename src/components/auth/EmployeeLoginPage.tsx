@@ -58,9 +58,9 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
 
         if (typeof window !== 'undefined' && window.history) {
           try {
-            window.history.pushState({}, '', '/');
+            window.history.replaceState({}, '', '/');
           } catch (err) {
-            console.error('History pushState error', err);
+            console.warn('History replaceState error', err);
           }
         }
 
