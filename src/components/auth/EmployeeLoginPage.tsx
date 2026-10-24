@@ -48,23 +48,22 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
 
     if (targetUser) {
       setSuccessMsg(`أهلاً بك، ${targetUser.name}! جاري الدخول للمنظومة...`);
-      loginUser(targetUser);
-
       setTimeout(() => {
-        // Trigger Daily Digest if employee
-        if (targetUser.accessLevel !== 'admin') {
-          triggerDailyDigest(targetUser);
-        }
-
-        // Update URL to /
         if (typeof window !== 'undefined' && window.history) {
-          window.history.pushState({}, '', '/');
+          try {
+            window.history.pushState({}, '', '/');
+          } catch (err) {
+            console.error('History pushState error', err);
+          }
         }
-
         if (onSuccessLogin) {
           onSuccessLogin();
         }
-      }, 600);
+        loginUser(targetUser);
+        if (targetUser.accessLevel !== 'admin') {
+          triggerDailyDigest(targetUser);
+        }
+      }, 350);
     } else {
       setIsSubmitting(false);
       setErrorMsg('اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من صحة البيانات والمحاولة مجدداً.');

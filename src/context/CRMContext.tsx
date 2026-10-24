@@ -247,6 +247,7 @@ const LOCAL_STORAGE_PREFIX = 'swiftmynd_crm_';
 export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
+      if (typeof window === 'undefined' || !window.localStorage) return false;
       const savedAuth = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
       return savedAuth === 'true';
     } catch {
@@ -256,19 +257,44 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [currentUser, setCurrentUser] = useState<TeamMember>(() => {
     try {
+      if (typeof window === 'undefined' || !window.localStorage) return CURRENT_USER;
       const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}user`);
-      return saved ? JSON.parse(saved) : CURRENT_USER;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && parsed.id && parsed.name) {
+          return parsed;
+        }
+      }
+      return CURRENT_USER;
     } catch {
       return CURRENT_USER;
     }
   });
 
-  const loginUser = (user: TeamMember) => {
-    setCurrentUser(user);
-    setIsAuthenticated(true);
+  const [activeTab, setActiveTab] = useState<string>(() => {
     try {
-      localStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(user));
-      localStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'true');
+      if (currentUser && currentUser.accessLevel !== 'admin' && currentUser.id !== 'user-1') {
+        return 'tasks';
+      }
+      return 'reports';
+    } catch {
+      return 'tasks';
+    }
+  });
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [openQuickModal, setOpenQuickModal] = useState<null | 'task' | 'lead' | 'deal' | 'mail' | 'meeting' | 'member'>(null);
+
+  const loginUser = (user: TeamMember) => {
+    const validUser = user && user.id ? user : CURRENT_USER;
+    setCurrentUser(validUser);
+    setIsAuthenticated(true);
+    const isUserAdmin = validUser.accessLevel === 'admin' || validUser.accessLevel === 'manager' || validUser.id === 'user-1';
+    setActiveTab(isUserAdmin ? 'reports' : 'tasks');
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(validUser));
+        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'true');
+      }
     } catch (e) {
       console.error('Failed to save auth to localStorage', e);
     }
@@ -276,9 +302,16 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logoutUser = () => {
     setIsAuthenticated(false);
+    setIsDailyDigestOpen(false);
+    setIsAdminPinModalOpen(false);
+    setIsBrandModalOpen(false);
+    setIsResetModalOpen(false);
+    setOpenQuickModal(null);
     try {
-      localStorage.removeItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
-      localStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'false');
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
+        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'false');
+      }
     } catch (e) {
       console.error('Failed to clear auth from localStorage', e);
     }
@@ -286,10 +319,6 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const orgId = 'org943269125';
   const orgName = 'swiftmynd';
-
-  const [activeTab, setActiveTab] = useState<string>('reports');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [openQuickModal, setOpenQuickModal] = useState<null | 'task' | 'lead' | 'deal' | 'mail' | 'meeting' | 'member'>(null);
 
   const [reports, setReports] = useState<ReportItem[]>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}reports`);
@@ -377,10 +406,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   // Role check: Is current user Admin or Manager?
-  const isManager =
-    currentUser.accessLevel === 'admin' ||
-    currentUser.accessLevel === 'manager' ||
-    currentUser.id === 'user-1';
+  const isManager = Boolean(
+    currentUser &&
+      (currentUser.accessLevel === 'admin' ||
+        currentUser.accessLevel === 'manager' ||
+        currentUser.id === 'user-1')
+  );
 
   // Marketing Boards & Planner (للمدير العام والأدمن)
   const [marketingBoards, setMarketingBoards] = useState<MarketingBoard[]>(() => {

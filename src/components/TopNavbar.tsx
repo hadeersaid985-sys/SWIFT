@@ -41,9 +41,10 @@ import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 
 interface TopNavbarProps {
   onOpenLoginModal?: () => void;
+  onLogout?: () => void;
 }
 
-export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal }) => {
+export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout }) => {
   const {
     activeTab,
     setActiveTab,
@@ -894,7 +895,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal }) => {
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
-                    logoutUser();
+                    if (onLogout) {
+                      onLogout();
+                    } else {
+                      logoutUser();
+                    }
                   }}
                   className="w-full mt-2 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                 >

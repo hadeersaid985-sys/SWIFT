@@ -32,7 +32,7 @@ export const DailyDigestModal: React.FC = () => {
     setActiveTab
   } = useCRM();
 
-  const isManager = currentUser.accessLevel === 'admin' || currentUser.id === 'user-1';
+  const isManager = Boolean(currentUser && (currentUser.accessLevel === 'admin' || currentUser.id === 'user-1'));
 
   // Active filter within the digest
   const [activeTabFilter, setActiveTabFilter] = useState<'all' | 'overdue' | 'today'>('all');
@@ -45,10 +45,11 @@ export const DailyDigestModal: React.FC = () => {
   // Strict user task isolation:
   // Non-managers only see tasks assigned to them or where they are mentioned (@)
   const isUserMentioned = (t: Task) => {
+    if (!currentUser) return false;
     if (t.mentionedUserIds && t.mentionedUserIds.includes(currentUser.id)) return true;
-    if (t.comments && t.comments.some(c => c.content?.includes(`@${currentUser.name}`) || c.content?.includes(`@${currentUser.username}`))) return true;
-    if (t.description && (t.description.includes(`@${currentUser.name}`) || t.description.includes(`@${currentUser.username}`))) return true;
-    if (t.title && (t.title.includes(`@${currentUser.name}`) || t.title.includes(`@${currentUser.username}`))) return true;
+    if (t.comments && t.comments.some(c => (currentUser.name && c.content?.includes(`@${currentUser.name}`)) || (currentUser.username && c.content?.includes(`@${currentUser.username}`)))) return true;
+    if (t.description && ((currentUser.name && t.description.includes(`@${currentUser.name}`)) || (currentUser.username && t.description.includes(`@${currentUser.username}`)))) return true;
+    if (t.title && ((currentUser.name && t.title.includes(`@${currentUser.name}`)) || (currentUser.username && t.title.includes(`@${currentUser.username}`)))) return true;
     return false;
   };
 

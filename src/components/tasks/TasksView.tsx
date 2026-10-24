@@ -232,10 +232,11 @@ export const TasksView: React.FC = () => {
 
   // Helper: check if a user is mentioned in a task (mentions or comments or description)
   const isUserMentionedInTask = (task: Task, user: TeamMember) => {
+    if (!user) return false;
     if (task.mentionedUserIds && task.mentionedUserIds.includes(user.id)) return true;
-    if (task.comments && task.comments.some(c => c.content?.includes(`@${user.name}`) || c.content?.includes(`@${user.username}`))) return true;
-    if (task.description && (task.description.includes(`@${user.name}`) || task.description.includes(`@${user.username}`))) return true;
-    if (task.title && (task.title.includes(`@${user.name}`) || task.title.includes(`@${user.username}`))) return true;
+    if (task.comments && task.comments.some(c => (user.name && c.content?.includes(`@${user.name}`)) || (user.username && c.content?.includes(`@${user.username}`)))) return true;
+    if (task.description && ((user.name && task.description.includes(`@${user.name}`)) || (user.username && task.description.includes(`@${user.username}`)))) return true;
+    if (task.title && ((user.name && task.title.includes(`@${user.name}`)) || (user.username && task.title.includes(`@${user.username}`)))) return true;
     return false;
   };
 

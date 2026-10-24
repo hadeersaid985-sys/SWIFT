@@ -28,19 +28,77 @@ import { DailyDigestModal } from './components/digest/DailyDigestModal';
 import { SwiftMyndLogo } from './components/common/SwiftMyndLogo';
 import { ShieldAlert, ArrowLeft, UserCheck, KeyRound, LogIn, BellRing, Sparkles } from 'lucide-react';
 
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('App ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-6 text-center select-none">
+          <div className="bg-slate-800/95 border border-slate-700/80 p-8 rounded-3xl max-w-md w-full shadow-2xl space-y-4">
+            <div className="w-14 h-14 bg-rose-500/20 text-rose-400 rounded-2xl mx-auto flex items-center justify-center">
+              <ShieldAlert className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-black text-white">حدث خطأ غير متوقع</h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              تم حماية المنظومة ومنع تعطل الشاشة. يمكنك العودة للنظام مباشرة بالضغط على الزر أدناه:
+            </p>
+            <div className="flex gap-2 justify-center pt-2">
+              <button
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.href = '/';
+                }}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer"
+              >
+                العودة للرئيسية والتشغيل السريع
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const checkIsLoginUrl = () => {
   if (typeof window === 'undefined') return false;
-  const path = window.location.pathname.toLowerCase();
-  const hash = window.location.hash.toLowerCase();
-  const search = window.location.search.toLowerCase();
-  return (
-    path === '/login' ||
-    path === '/login/' ||
-    path.startsWith('/login') ||
-    hash === '#/login' ||
-    hash === '#login' ||
-    search.includes('login=true')
-  );
+  try {
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    const search = window.location.search.toLowerCase();
+    return (
+      path === '/login' ||
+      path === '/login/' ||
+      path.startsWith('/login') ||
+      hash === '#/login' ||
+      hash === '#login' ||
+      search.includes('login=true')
+    );
+  } catch {
+    return false;
+  }
 };
 
 const AppContent: React.FC = () => {
@@ -79,9 +137,20 @@ const AppContent: React.FC = () => {
     };
   }, []);
 
-  // حماية السيستم وخصوصية البيانات: إذا لم يكن المستخدم مسجل الدخول:
-  // إذا كان على مسار /login أو ضغط على زر تسجيل الدخول، تفتح شاشة الدخول
-  // وإلا تعرض الصفحة الرئيسية التعريفية بالمنظومة مع زر تسجيل الدخول
+  const handleLogout = () => {
+    setShowLoginView(true);
+    setIsLoginPage(true);
+    if (typeof window !== 'undefined' && window.history) {
+      try {
+        window.history.pushState({}, '', '/login');
+      } catch (e) {
+        console.error('History pushState error', e);
+      }
+    }
+    logoutUser();
+  };
+
+  // حماية السيستم وخصوصية البيانات: إذا لم يكن المستخدم مسجل الدخول
   if (!isAuthenticated) {
     if (isLoginPage || showLoginView) {
       return (
@@ -89,12 +158,19 @@ const AppContent: React.FC = () => {
           onSuccessLogin={() => {
             setIsLoginPage(false);
             setShowLoginView(false);
+            if (typeof window !== 'undefined' && window.history) {
+              try {
+                window.history.pushState({}, '', '/');
+              } catch (e) {}
+            }
           }}
           onBackToLanding={() => {
             setIsLoginPage(false);
             setShowLoginView(false);
             if (typeof window !== 'undefined' && window.history) {
-              window.history.pushState({}, '', '/');
+              try {
+                window.history.pushState({}, '', '/');
+              } catch (e) {}
             }
           }}
         />
@@ -105,8 +181,11 @@ const AppContent: React.FC = () => {
       <SystemLandingPage
         onGoToLogin={() => {
           setShowLoginView(true);
+          setIsLoginPage(true);
           if (typeof window !== 'undefined' && window.history) {
-            window.history.pushState({}, '', '/login');
+            try {
+              window.history.pushState({}, '', '/login');
+            } catch (e) {}
           }
         }}
       />
@@ -116,19 +195,30 @@ const AppContent: React.FC = () => {
   // Sync custom favicon dynamically
   useEffect(() => {
     if (brandConfig?.customFaviconUrl) {
-      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      link.href = brandConfig.customFaviconUrl;
+      try {
+        let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.head.appendChild(link);
+        }
+        link.href = brandConfig.customFaviconUrl;
+      } catch (e) {}
     }
   }, [brandConfig?.customFaviconUrl]);
 
-  // Security & Role check: Non-admin employees ONLY see their allowed personal tabs (tasks, work queue, meetings, calls, mail)
+  // Security & Role check: Non-admin employees ONLY see their allowed personal tabs
+  const allowedEmployeeTabs = ['tasks', 'work_queue', 'meetings', 'calls', 'mail'];
+  
+  // Compute safe effective tab immediately to prevent blank content on role switch
+  const effectiveTab = React.useMemo(() => {
+    if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
+      return 'tasks';
+    }
+    return activeTab || (isManager ? 'reports' : 'tasks');
+  }, [isManager, activeTab]);
+
   useEffect(() => {
-    const allowedEmployeeTabs = ['tasks', 'work_queue', 'meetings', 'calls', 'mail'];
     if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
       setActiveTab('tasks');
     }
@@ -143,7 +233,7 @@ const AppContent: React.FC = () => {
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
 
         {/* 4-Day Renewal Alert Proactive Notification Banner for Admin */}
-        {isManager && renewalsDueSoonCount > 0 && activeTab !== 'renewals' && (
+        {isManager && renewalsDueSoonCount > 0 && effectiveTab !== 'renewals' && (
           <div className="bg-gradient-to-r from-rose-600 via-amber-600 to-rose-700 text-white px-4 py-2 flex items-center justify-between text-xs font-bold shadow-md shrink-0 z-40 animate-in slide-in-from-top">
             <div className="flex items-center gap-2.5">
               <span className="p-1 bg-white/20 rounded-md animate-pulse">
@@ -164,48 +254,55 @@ const AppContent: React.FC = () => {
         )}
 
         {/* Top Navbar */}
-        <TopNavbar onOpenLoginModal={() => setIsLoginModalOpen(true)} />
+        <TopNavbar onOpenLoginModal={() => setIsLoginModalOpen(true)} onLogout={handleLogout} />
 
         {/* Content Body */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-5">
           {/* Employee only sees tasks, work queue, meetings, calls, mail */}
           {!isManager ? (
             <>
-              {activeTab === 'tasks' && <TasksView />}
-              {activeTab === 'work_queue' && <WorkQueueView />}
-              {activeTab === 'meetings' && <MeetingsView />}
-              {activeTab === 'calls' && <MeetingsView />}
-              {activeTab === 'mail' && <MailView />}
+              {effectiveTab === 'work_queue' && <WorkQueueView />}
+              {effectiveTab === 'meetings' && <MeetingsView />}
+              {effectiveTab === 'calls' && <MeetingsView />}
+              {effectiveTab === 'mail' && <MailView />}
+              {(effectiveTab === 'tasks' || !['work_queue', 'meetings', 'calls', 'mail'].includes(effectiveTab)) && (
+                <TasksView />
+              )}
             </>
           ) : (
             <>
-              {activeTab === 'marketing' && <MarketingBoardView />}
-              {activeTab === 'renewals' && <ClientRenewalsView />}
-              {activeTab === 'host_migration' && <HostMigrationView />}
-              {activeTab === 'work_queue' && <WorkQueueView />}
-              {activeTab === 'reports' && <ReportsListView />}
-              {activeTab === 'tasks' && <TasksView />}
-              {activeTab === 'team' && <TeamView />}
-              {activeTab === 'mail' && <MailView />}
-              {activeTab === 'home' && <HomeDashboard />}
-              {activeTab === 'analytics' && <AnalyticsView />}
-              {activeTab === 'deals' && <DealsView />}
-              {activeTab === 'leads' && <LeadsView />}
-              {activeTab === 'meetings' && <MeetingsView />}
-              {activeTab === 'calls' && <MeetingsView />}
-              {activeTab === 'projects' && <ProjectsView />}
-              {activeTab === 'inventory' && <ProjectsView />}
-              {activeTab === 'support' && <ProjectsView />}
-              {activeTab === 'integrations' && <ProjectsView />}
-              {activeTab === 'system_settings' && <SystemSettingsView />}
+              {effectiveTab === 'marketing' && <MarketingBoardView />}
+              {effectiveTab === 'renewals' && <ClientRenewalsView />}
+              {effectiveTab === 'host_migration' && <HostMigrationView />}
+              {effectiveTab === 'work_queue' && <WorkQueueView />}
+              {effectiveTab === 'reports' && <ReportsListView />}
+              {effectiveTab === 'tasks' && <TasksView />}
+              {effectiveTab === 'team' && <TeamView />}
+              {effectiveTab === 'mail' && <MailView />}
+              {effectiveTab === 'home' && <HomeDashboard />}
+              {effectiveTab === 'analytics' && <AnalyticsView />}
+              {effectiveTab === 'deals' && <DealsView />}
+              {effectiveTab === 'leads' && <LeadsView />}
+              {effectiveTab === 'meetings' && <MeetingsView />}
+              {effectiveTab === 'calls' && <MeetingsView />}
+              {effectiveTab === 'projects' && <ProjectsView />}
+              {effectiveTab === 'inventory' && <ProjectsView />}
+              {effectiveTab === 'support' && <ProjectsView />}
+              {effectiveTab === 'integrations' && <ProjectsView />}
+              {effectiveTab === 'system_settings' && <SystemSettingsView />}
 
               {/* Sub-views from Sales menu */}
-              {activeTab === 'contacts' && <LeadsView />}
-              {activeTab === 'accounts' && <LeadsView />}
-              {activeTab === 'forecasts' && <AnalyticsView />}
-              {activeTab === 'documents' && <ReportsListView />}
-              {activeTab === 'campaigns' && <ReportsListView />}
-              {activeTab === 'mcp' && <AnalyticsView />}
+              {effectiveTab === 'contacts' && <LeadsView />}
+              {effectiveTab === 'accounts' && <LeadsView />}
+              {effectiveTab === 'forecasts' && <AnalyticsView />}
+              {effectiveTab === 'documents' && <ReportsListView />}
+              {effectiveTab === 'campaigns' && <ReportsListView />}
+              {effectiveTab === 'mcp' && <AnalyticsView />}
+
+              {/* Fallback for unlisted manager tabs */}
+              {!['marketing', 'renewals', 'host_migration', 'work_queue', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
+                <ReportsListView />
+              )}
             </>
           )}
         </main>
@@ -218,27 +315,18 @@ const AppContent: React.FC = () => {
             <span>|</span>
             <span>مساحة فريق CRM ({orgId})</span>
             <span>|</span>
-            <span>المستخدم المسجل: <strong className="text-slate-700">{currentUser.name}</strong> ({currentUser.username})</span>
+            <span>المستخدم المسجل: <strong className="text-slate-700">{currentUser?.name || 'مستخدم'}</strong> ({currentUser?.username || ''})</span>
           </div>
 
           <div className="flex items-center gap-3">
-            {isManager ? (
-              <button
-                onClick={() => setIsLoginModalOpen(true)}
-                className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <LogIn className="w-3 h-3" />
-                <span>تبديل الحساب / تسجيل الدخول</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => logoutUser()}
-                className="text-slate-500 hover:text-slate-800 font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <LogIn className="w-3 h-3" />
-                <span>تسجيل الخروج</span>
-              </button>
-            )}
+            <button
+              onClick={handleLogout}
+              className="text-slate-500 hover:text-rose-700 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              title="تسجيل الخروج والعودة لشاشة الدخول"
+            >
+              <LogIn className="w-3 h-3" />
+              <span>تسجيل الخروج</span>
+            </button>
             <span className="text-slate-300">|</span>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -274,8 +362,11 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <CRMProvider>
-      <AppContent />
-    </CRMProvider>
+    <ErrorBoundary>
+      <CRMProvider>
+        <AppContent />
+      </CRMProvider>
+    </ErrorBoundary>
   );
 }
+
