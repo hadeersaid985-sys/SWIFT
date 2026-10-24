@@ -34,7 +34,10 @@ import {
   Megaphone,
   Clock,
   Sun,
-  Copy
+  Copy,
+  Camera,
+  Image as ImageIcon,
+  Palette
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
@@ -69,6 +72,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
     clearUserAddedData,
     setIsResetModalOpen,
     setIsBrandModalOpen,
+    resetBrandConfig,
     setIsAdminPinModalOpen,
     setIsDailyDigestOpen,
     digestOverdueCount,
@@ -84,6 +88,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   const [showDeleteMenu, setShowDeleteMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showSearchPopover, setShowSearchPopover] = useState(false);
 
   // Top action confirmation modal
@@ -100,6 +105,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   const deleteRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -114,6 +120,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
       if (deleteRef.current && !deleteRef.current.contains(e.target as Node)) setShowDeleteMenu(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifMenu(false);
       if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUserMenu(false);
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setShowSettingsMenu(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -169,8 +176,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
 
   return (
     <header className="h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 select-none shadow-2xs">
-      {/* Right Side: Swift Logo & Page Title */}
-      <div className="flex items-center gap-3">
+      {/* Right Side: Swift Logo & Quick Logo Edit & Page Title */}
+      <div className="flex items-center gap-2 sm:gap-3">
         <SwiftMyndLogo
           variant="horizontal"
           size="sm"
@@ -178,6 +185,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           showSubtitle={false}
           onClick={() => setActiveTab('home')}
         />
+        <button
+          onClick={() => setIsBrandModalOpen(true)}
+          className="flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+          title="تغيير اللوجو واسم النظام مباشرة من الواجهة الرئيسية"
+        >
+          <Camera className="w-3 h-3" />
+          <span className="hidden sm:inline">تغيير اللوجو</span>
+        </button>
         <span className="text-slate-300 hidden sm:inline">|</span>
         <h1 className="text-base font-bold text-slate-800 tracking-tight hidden sm:block">
           {getTabTitle(activeTab)}
@@ -783,40 +798,140 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           <Store className="w-4 h-4" />
         </button>
 
-        {/* Settings Icon (Admin only) */}
-        {isManagerUser && (
-          <button
-            onClick={() => setActiveTab('team')}
-            className="text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer hidden sm:block"
-            title="الإعدادات وإدارة الحسابات"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-        )}
+        {/* Prominent Direct Change Logo Button */}
+        <button
+          onClick={() => setIsBrandModalOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
+          title="تغيير اللوجو والشعار وهوية المنظومة فوراً"
+        >
+          <ImageIcon className="w-3.5 h-3.5" />
+          <span>تغيير اللوجو 🖼️</span>
+        </button>
 
-        {/* Reset / Clear Data Button (Admin only) */}
-        {isManagerUser && (
+        {/* Settings Menu Dropdown (Accessible directly from main interface) */}
+        <div className="relative" ref={settingsRef}>
           <button
-            onClick={() => setIsResetModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-slate-700 hover:text-rose-700 bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
-            title="مسح الداتا وإعادة ضبط المنظومة (Reset)"
+            onClick={() => {
+              setShowSettingsMenu(!showSettingsMenu);
+              setShowAddMenu(false);
+              setShowEditMenu(false);
+              setShowDeleteMenu(false);
+              setShowNotifMenu(false);
+              setShowUserMenu(false);
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              activeTab === 'system_settings' || showSettingsMenu
+                ? 'bg-blue-50 text-blue-700 border-blue-300 ring-2 ring-blue-100'
+                : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-slate-200'
+            }`}
+            title="الإعدادات الشاملة للمنظومة وتغيير اللوجو"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
-            <span className="hidden sm:inline">مسح الداتا / Reset</span>
+            <Settings className="w-3.5 h-3.5 text-slate-600" />
+            <span className="hidden sm:inline">الإعدادات</span>
+            <ChevronDown className="w-3 h-3 opacity-70" />
           </button>
-        )}
 
-        {/* Admin Brand / Logo Customization Button */}
-        {isManagerUser && (
-          <button
-            onClick={() => setIsBrandModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
-            title="تعديل لوجو سويفت واسم المنظومة (صلاحية الأدمن)"
-          >
-            <Sliders className="w-3.5 h-3.5 text-blue-600" />
-            <span className="hidden md:inline">تعديل اللوجو والاسم</span>
-          </button>
-        )}
+          {showSettingsMenu && (
+            <div className="absolute left-0 top-10 w-72 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 py-1.5 z-50 text-xs animate-in fade-in">
+              <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+                <span className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4 text-blue-600" />
+                  <span>إعدادات السيستم وتغيير اللوجو</span>
+                </span>
+                <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded font-bold font-mono">
+                  Settings
+                </span>
+              </div>
+
+              {/* 1. Fast Logo Customizer Modal */}
+              <button
+                onClick={() => {
+                  setIsBrandModalOpen(true);
+                  setShowSettingsMenu(false);
+                }}
+                className="w-full text-right px-3.5 py-2.5 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700 cursor-pointer border-b border-slate-50"
+              >
+                <div className="p-2 bg-blue-100 text-blue-700 rounded-xl">
+                  <ImageIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-blue-900 text-xs flex items-center gap-1">
+                    <span>تغيير اللوجو والشعار فوراً</span>
+                    <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded font-bold">سريع ⚡</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400">رفع صورة من جهازك، أو رابط، أو ضبط الارتفاع</div>
+                </div>
+              </button>
+
+              {/* 2. Full System Settings View */}
+              <button
+                onClick={() => {
+                  setActiveTab('system_settings');
+                  setShowSettingsMenu(false);
+                }}
+                className="w-full text-right px-3.5 py-2.5 hover:bg-indigo-50 flex items-center gap-2.5 text-slate-700 cursor-pointer border-b border-slate-50"
+              >
+                <div className="p-2 bg-indigo-100 text-indigo-700 rounded-xl">
+                  <Sliders className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-indigo-950 text-xs">صفحة إعدادات الهوية واللوجو الشاملة</div>
+                  <div className="text-[10px] text-slate-400">اللوجو، أيقونة المتصفح Favicon، الألوان، والمعاينة الحية</div>
+                </div>
+              </button>
+
+              {/* 3. Team Management */}
+              <button
+                onClick={() => {
+                  setActiveTab('team');
+                  setShowSettingsMenu(false);
+                }}
+                className="w-full text-right px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 cursor-pointer"
+              >
+                <Users className="w-4 h-4 text-slate-500" />
+                <div>
+                  <div className="font-bold text-slate-800">إدارة حسابات فريق العمل والموظفين</div>
+                  <div className="text-[10px] text-slate-400">الصلاحيات، كلمات المرور، وإضافة موظف جديد</div>
+                </div>
+              </button>
+
+              {/* 4. Reset to Default Swift Logo */}
+              <button
+                onClick={() => {
+                  if (window.confirm('هل تريد استعادة شعار سويفت الأصلي الافتراضي؟')) {
+                    resetBrandConfig();
+                    showToast('تمت استعادة شعار سويفت الافتراضي بنجاح ✨');
+                  }
+                  setShowSettingsMenu(false);
+                }}
+                className="w-full text-right px-3.5 py-2 hover:bg-amber-50 flex items-center gap-2.5 text-slate-700 cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4 text-amber-600" />
+                <div>
+                  <div className="font-bold text-slate-800">استعادة شعار سويفت الأصلي</div>
+                  <div className="text-[10px] text-slate-400">إلغاء اللوجو المخصص والرجوع للأيقونة الأصلية</div>
+                </div>
+              </button>
+
+              {/* 5. Reset Data */}
+              <div className="border-t border-slate-100 pt-1 mt-1">
+                <button
+                  onClick={() => {
+                    setIsResetModalOpen(true);
+                    setShowSettingsMenu(false);
+                  }}
+                  className="w-full text-right px-3.5 py-2 hover:bg-rose-50 flex items-center gap-2.5 text-rose-700 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-600" />
+                  <div>
+                    <div className="font-bold">مسح الداتا وإعادة الضبط (Reset)</div>
+                    <div className="text-[10px] text-rose-400">تفريغ السجلات وإعادة السيستم للبداية</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Role Switcher Pill: Only shown for Admin to test employee view */}
         {isManagerUser && (

@@ -63,15 +63,29 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             <p className="text-xs text-slate-400 leading-relaxed">
               تم حماية المنظومة ومنع تعطل الشاشة. يمكنك العودة للنظام مباشرة بالضغط على الزر أدناه:
             </p>
-            <div className="flex gap-2 justify-center pt-2">
+            <div className="flex flex-wrap gap-2 justify-center pt-2">
+              <button
+                onClick={() => {
+                  try {
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                      window.localStorage.removeItem('swiftmynd_crm_isAuthenticated');
+                    }
+                  } catch {}
+                  this.setState({ hasError: false, error: null });
+                  window.location.href = '/login';
+                }}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer"
+              >
+                شاشة تسجيل الدخول
+              </button>
               <button
                 onClick={() => {
                   this.setState({ hasError: false, error: null });
                   window.location.href = '/';
                 }}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer"
+                className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer"
               >
-                العودة للرئيسية والتشغيل السريع
+                الرئيسية
               </button>
             </div>
           </div>

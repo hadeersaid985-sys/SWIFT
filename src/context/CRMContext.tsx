@@ -244,11 +244,89 @@ const CRMContext = createContext<CRMContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_PREFIX = 'swiftmynd_crm_';
 
+export const safeStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch {
+      // In private browsing or cross-origin iframe
+    }
+    return null;
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch {
+      // Ignore quota or security errors
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch {}
+  },
+  clear: (): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.clear();
+      }
+    } catch {}
+  }
+};
+
+export const safeSessionStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        return window.sessionStorage.getItem(key);
+      }
+    } catch {}
+    return null;
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.setItem(key, value);
+      }
+    } catch {}
+  }
+};
+
+export const ensureValidUser = (u: any): TeamMember => {
+  if (!u || typeof u !== 'object') return CURRENT_USER;
+  return {
+    ...CURRENT_USER,
+    ...u,
+    id: u.id || CURRENT_USER.id,
+    name: u.name || CURRENT_USER.name,
+    username: u.username || CURRENT_USER.username,
+    accessLevel: u.accessLevel || CURRENT_USER.accessLevel,
+    role: u.role || CURRENT_USER.role,
+    avatar: u.avatar || CURRENT_USER.avatar
+  };
+};
+
+export const ensureValidBrandConfig = (b: any): BrandConfig => {
+  if (!b || typeof b !== 'object') return DEFAULT_BRAND_CONFIG;
+  return {
+    ...DEFAULT_BRAND_CONFIG,
+    ...b,
+    brandName: b.brandName || DEFAULT_BRAND_CONFIG.brandName,
+    brandSubtitle: b.brandSubtitle || DEFAULT_BRAND_CONFIG.brandSubtitle,
+    brandBadge: b.brandBadge || DEFAULT_BRAND_CONFIG.brandBadge
+  };
+};
+
 export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
-      if (typeof window === 'undefined' || !window.localStorage) return false;
-      const savedAuth = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
+      const savedAuth = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
       return savedAuth === 'true';
     } catch {
       return false;
@@ -257,18 +335,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [currentUser, setCurrentUser] = useState<TeamMember>(() => {
     try {
-      if (typeof window === 'undefined' || !window.localStorage) return CURRENT_USER;
-      const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}user`);
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}user`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object' && parsed.id && parsed.name) {
-          return parsed;
+        if (parsed && typeof parsed === 'object' && parsed.id) {
+          return ensureValidUser(parsed);
         }
       }
-      return CURRENT_USER;
-    } catch {
-      return CURRENT_USER;
-    }
+    } catch {}
+    return CURRENT_USER;
   });
 
   const [activeTab, setActiveTab] = useState<string>(() => {
@@ -285,19 +360,13 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [openQuickModal, setOpenQuickModal] = useState<null | 'task' | 'lead' | 'deal' | 'mail' | 'meeting' | 'member'>(null);
 
   const loginUser = (user: TeamMember) => {
-    const validUser = user && user.id ? user : CURRENT_USER;
+    const validUser = ensureValidUser(user);
     setCurrentUser(validUser);
     setIsAuthenticated(true);
     const isUserAdmin = validUser.accessLevel === 'admin' || validUser.accessLevel === 'manager' || validUser.id === 'user-1';
     setActiveTab(isUserAdmin ? 'reports' : 'tasks');
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(validUser));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'true');
-      }
-    } catch (e) {
-      console.error('Failed to save auth to localStorage', e);
-    }
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(validUser));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'true');
   };
 
   const logoutUser = () => {
@@ -307,102 +376,140 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsBrandModalOpen(false);
     setIsResetModalOpen(false);
     setOpenQuickModal(null);
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.removeItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'false');
-      }
-    } catch (e) {
-      console.error('Failed to clear auth from localStorage', e);
-    }
+    safeStorage.removeItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'false');
   };
 
   const orgId = 'org943269125';
   const orgName = 'swiftmynd';
 
   const [reports, setReports] = useState<ReportItem[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}reports`);
-    return saved ? JSON.parse(saved) : INITIAL_REPORTS;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}reports`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_REPORTS;
   });
 
   // Load state from localStorage or fallback
   const [tasks, setTasks] = useState<Task[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}tasks`);
-    if (!saved) return INITIAL_TASKS;
     try {
-      const parsed: Task[] = JSON.parse(saved);
-      // Ensure initial sample comments with mentions, title mentions, and private tasks are available
-      let result = parsed.map(t => {
-        const initT = INITIAL_TASKS.find(x => x.id === t.id);
-        const updated = { ...t };
-        if (initT && !t.title.includes('@') && initT.title.includes('@')) {
-          updated.title = initT.title;
-        }
-        if (initT && initT.isPrivate !== undefined) {
-          updated.isPrivate = initT.isPrivate;
-        }
-        if (!t.comments || t.comments.length === 0) {
-          if (initT && initT.comments && initT.comments.length > 0) {
-            updated.comments = initT.comments;
-          }
-        }
-        return updated;
-      });
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}tasks`);
+      if (saved) {
+        const parsed: Task[] = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          let result = parsed.map(t => {
+            const initT = INITIAL_TASKS.find(x => x.id === t.id);
+            const updated = { ...t };
+            if (initT && !t.title?.includes('@') && initT.title?.includes('@')) {
+              updated.title = initT.title;
+            }
+            if (initT && initT.isPrivate !== undefined) {
+              updated.isPrivate = initT.isPrivate;
+            }
+            if (!t.comments || t.comments.length === 0) {
+              if (initT && initT.comments && initT.comments.length > 0) {
+                updated.comments = initT.comments;
+              }
+            }
+            return updated;
+          });
 
-      if (!result.some(t => t.id === 'task-mgr-private-1')) {
-        const privTask = INITIAL_TASKS.find(t => t.id === 'task-mgr-private-1');
-        if (privTask) result = [privTask, ...result];
+          if (!result.some(t => t.id === 'task-mgr-private-1')) {
+            const privTask = INITIAL_TASKS.find(t => t.id === 'task-mgr-private-1');
+            if (privTask) result = [privTask, ...result];
+          }
+          return result;
+        }
       }
-      return result;
-    } catch {
-      return INITIAL_TASKS;
-    }
+    } catch {}
+    return INITIAL_TASKS;
   });
 
   const [team, setTeam] = useState<TeamMember[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}team`);
-    return saved ? JSON.parse(saved) : INITIAL_TEAM;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}team`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_TEAM;
   });
 
   const [emails, setEmails] = useState<EmailMessage[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}emails`);
-    return saved ? JSON.parse(saved) : INITIAL_EMAILS;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}emails`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_EMAILS;
   });
 
   const [leads, setLeads] = useState<Lead[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}leads`);
-    return saved ? JSON.parse(saved) : INITIAL_LEADS;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}leads`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_LEADS;
   });
 
   const [deals, setDeals] = useState<Deal[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}deals`);
-    return saved ? JSON.parse(saved) : INITIAL_DEALS;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deals`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_DEALS;
   });
 
   const [meetings, setMeetings] = useState<Meeting[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}meetings`);
-    return saved ? JSON.parse(saved) : INITIAL_MEETINGS;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}meetings`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_MEETINGS;
   });
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}notifications`);
-    if (!saved) return INITIAL_NOTIFICATIONS;
     try {
-      const parsed: AppNotification[] = JSON.parse(saved);
-      // Ensure mention notifications exist
-      const hasMentionNotif = parsed.some(n => n.type === 'task_mention');
-      if (!hasMentionNotif) {
-        return [...INITIAL_NOTIFICATIONS.filter(n => n.type === 'task_mention'), ...parsed];
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}notifications`);
+      if (saved) {
+        const parsed: AppNotification[] = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const hasMentionNotif = parsed.some(n => n.type === 'task_mention');
+          if (!hasMentionNotif) {
+            return [...INITIAL_NOTIFICATIONS.filter(n => n.type === 'task_mention'), ...parsed];
+          }
+          return parsed;
+        }
       }
-      return parsed;
-    } catch {
-      return INITIAL_NOTIFICATIONS;
-    }
+    } catch {}
+    return INITIAL_NOTIFICATIONS;
   });
 
   const [activities, setActivities] = useState<ActivityItem[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}activities`);
-    return saved ? JSON.parse(saved) : INITIAL_ACTIVITIES;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}activities`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_ACTIVITIES;
   });
 
   // Role check: Is current user Admin or Manager?
@@ -415,72 +522,79 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Marketing Boards & Planner (للمدير العام والأدمن)
   const [marketingBoards, setMarketingBoards] = useState<MarketingBoard[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`);
-    if (!saved) return INITIAL_MARKETING_BOARDS;
     try {
-      const parsed: MarketingBoard[] = JSON.parse(saved);
-      // Ensure the overview board has 'list-system-proposals' and 'list-black-friday' if not present
-      const overviewBoard = parsed.find(b => b.id === 'board-marketing-overview');
-      if (overviewBoard) {
-        const initialOverview = INITIAL_MARKETING_BOARDS.find(b => b.id === 'board-marketing-overview');
-        if (initialOverview) {
-          initialOverview.lists.forEach(initList => {
-            if (!overviewBoard.lists.some(l => l.id === initList.id || l.title === initList.title)) {
-              overviewBoard.lists.push(initList);
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`);
+      if (saved) {
+        const parsed: MarketingBoard[] = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const overviewBoard = parsed.find(b => b.id === 'board-marketing-overview');
+          if (overviewBoard) {
+            const initialOverview = INITIAL_MARKETING_BOARDS.find(b => b.id === 'board-marketing-overview');
+            if (initialOverview) {
+              initialOverview.lists.forEach(initList => {
+                if (!overviewBoard.lists.some(l => l.id === initList.id || l.title === initList.title)) {
+                  overviewBoard.lists.push(initList);
+                }
+              });
             }
-          });
+          }
+          return parsed;
         }
       }
-      return parsed;
-    } catch {
-      return INITIAL_MARKETING_BOARDS;
-    }
+    } catch {}
+    return INITIAL_MARKETING_BOARDS;
   });
 
   const [activeMarketingBoardId, setActiveMarketingBoardId] = useState<string>('board-marketing-overview');
 
   // Client Renewals Tracker & 4-Day Notification (مواعيد تجديد اشتراكات العملاء)
   const [clientRenewals, setClientRenewals] = useState<ClientRenewal[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}client_renewals`);
-    if (saved) {
-      try {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}client_renewals`);
+      if (saved) {
         const parsed: ClientRenewal[] = JSON.parse(saved);
-        return parsed.map(p => {
-          const initMatch = INITIAL_CLIENT_RENEWALS.find(i => i.id === p.id);
-          if (initMatch && !p.sheetUrl) {
-            return {
-              ...p,
-              sheetUrl: initMatch.sheetUrl,
-              sheetTitle: initMatch.sheetTitle,
-              contractNumber: p.contractNumber || initMatch.contractNumber
-            };
-          }
-          return p;
-        });
-      } catch {
-        return INITIAL_CLIENT_RENEWALS;
+        if (Array.isArray(parsed)) {
+          return parsed.map(p => {
+            const initMatch = INITIAL_CLIENT_RENEWALS.find(i => i.id === p.id);
+            if (initMatch && !p.sheetUrl) {
+              return {
+                ...p,
+                sheetUrl: initMatch.sheetUrl,
+                sheetTitle: initMatch.sheetTitle,
+                contractNumber: p.contractNumber || initMatch.contractNumber
+              };
+            }
+            return p;
+          });
+        }
       }
-    }
+    } catch {}
     return INITIAL_CLIENT_RENEWALS;
   });
 
-  // Sync to localStorage
+  // Sync to safeStorage
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`, JSON.stringify(marketingBoards));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`, JSON.stringify(marketingBoards));
   }, [marketingBoards]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(clientRenewals));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(clientRenewals));
   }, [clientRenewals]);
 
   // Meeting Recordings (تسجيلات ميتنج العملاء المهمين)
   const [meetingRecordings, setMeetingRecordings] = useState<MeetingRecording[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}meeting_recordings`);
-    return saved ? JSON.parse(saved) : INITIAL_MEETING_RECORDINGS;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}meeting_recordings`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_MEETING_RECORDINGS;
   });
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}meeting_recordings`, JSON.stringify(meetingRecordings));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meeting_recordings`, JSON.stringify(meetingRecordings));
   }, [meetingRecordings]);
 
   const addMeetingRecording = (recData: Omit<MeetingRecording, 'id' | 'createdAt'>) => {
@@ -499,12 +613,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Marketing Video Scripts & Ideas Bank (اسكربتات الفيديو وبنك أفكار الماركيتنج)
   const [marketingScripts, setMarketingScripts] = useState<MarketingVideoScript[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}marketing_scripts`);
-    return saved ? JSON.parse(saved) : INITIAL_MARKETING_SCRIPTS;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}marketing_scripts`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_MARKETING_SCRIPTS;
   });
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_scripts`, JSON.stringify(marketingScripts));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_scripts`, JSON.stringify(marketingScripts));
   }, [marketingScripts]);
 
   const addMarketingScript = (scriptData: Omit<MarketingVideoScript, 'id' | 'createdAt'>) => {
@@ -527,12 +647,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Coaching Alerts & Offers (تنبيهات الكوتشن والعروض لإرسالها للعملاء)
   const [coachingOffers, setCoachingOffers] = useState<CoachingAlertOffer[]>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}coaching_offers`);
-    return saved ? JSON.parse(saved) : INITIAL_COACHING_OFFERS;
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}coaching_offers`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_COACHING_OFFERS;
   });
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}coaching_offers`, JSON.stringify(coachingOffers));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}coaching_offers`, JSON.stringify(coachingOffers));
   }, [coachingOffers]);
 
   const sendCoachingOffer = (id: string) => {
@@ -940,52 +1066,65 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // فلترة ظهور العملاء والليدز: كله بيظهر للادمن، بينما الموظف يرى فقط الموكلين له
-  const visibleClients = (currentUser.accessLevel === 'admin' || currentUser.id === 'user-1')
+  const isUserAdminOrRoot = Boolean(
+    currentUser &&
+      (currentUser.accessLevel === 'admin' ||
+        currentUser.accessLevel === 'manager' ||
+        currentUser.id === 'user-1')
+  );
+
+  const visibleClients = isUserAdminOrRoot
     ? clientRenewals
     : clientRenewals.filter(c =>
-        c.assignedTeamMemberIds?.includes(currentUser.id) ||
-        c.managedBy === currentUser.name ||
-        c.managedBy === currentUser.id
+        Boolean(
+          currentUser &&
+            (c.assignedTeamMemberIds?.includes(currentUser.id) ||
+              c.managedBy === currentUser.name ||
+              c.managedBy === currentUser.id)
+        )
       );
 
-  const visibleLeads = (currentUser.accessLevel === 'admin' || currentUser.id === 'user-1')
+  const visibleLeads = isUserAdminOrRoot
     ? leads
     : leads.filter(l =>
-        l.assignedToId === currentUser.id ||
-        l.assignedTeamMemberIds?.includes(currentUser.id)
+        Boolean(
+          currentUser &&
+            (l.assignedToId === currentUser.id ||
+              l.assignedTeamMemberIds?.includes(currentUser.id))
+        )
       );
 
-  // Sync to localStorage
+  // Sync to safeStorage
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(tasks));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(tasks));
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(team));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(team));
   }, [team]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}emails`, JSON.stringify(emails));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}emails`, JSON.stringify(emails));
   }, [emails]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(leads));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(leads));
   }, [leads]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}deals`, JSON.stringify(deals));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deals`, JSON.stringify(deals));
   }, [deals]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(meetings));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(meetings));
   }, [meetings]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}notifications`, JSON.stringify(notifications));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}notifications`, JSON.stringify(notifications));
   }, [notifications]);
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}activities`, JSON.stringify(activities));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}activities`, JSON.stringify(activities));
   }, [activities]);
 
   // Helper activity logger
@@ -1480,7 +1619,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const adminUserId = 'user-1';
-  const isImpersonating = currentUser.id !== adminUserId;
+  const isImpersonating = Boolean(currentUser && currentUser.id !== adminUserId);
 
   const impersonateUser = (memberId: string) => {
     const target = team.find(m => m.id === memberId);
@@ -1695,7 +1834,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   useEffect(() => {
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}reports`, JSON.stringify(reports));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}reports`, JSON.stringify(reports));
   }, [reports]);
 
   const addReport = (reportData: Omit<ReportItem, 'id'>) => {
@@ -1731,20 +1870,21 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
   const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
   const [brandConfig, setBrandConfig] = useState<BrandConfig>(() => {
-    const saved = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}brand`);
-    if (saved) {
-      try {
-        return { ...DEFAULT_BRAND_CONFIG, ...JSON.parse(saved) };
-      } catch (e) {
-        console.error('Failed to parse brand config', e);
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}brand`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return ensureValidBrandConfig(parsed);
+        }
       }
-    }
+    } catch {}
     return DEFAULT_BRAND_CONFIG;
   });
 
   const validateAdminPin = (pin: string): boolean => {
-    const clean = pin.trim();
-    const correct = (brandConfig.adminPin || '8899').trim();
+    const clean = (pin || '').trim();
+    const correct = (brandConfig?.adminPin || '8899').trim();
     return clean === correct || clean === '8899' || clean === 'admin';
   };
 
@@ -1760,19 +1900,24 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Daily Digest State & Logic (التنبيهات والموجز اليومي للموظف)
   const [isDailyDigestOpen, setIsDailyDigestOpen] = useState(false);
 
-  const isMemberMentioned = (t: Task, member: TeamMember) => {
+  const isMemberMentioned = (t: Task, member?: TeamMember | null) => {
+    if (!t || !member || !member.id) return false;
     if (t.mentionedUserIds && t.mentionedUserIds.includes(member.id)) return true;
-    if (t.comments && t.comments.some(c => c.content?.includes(`@${member.name}`) || c.content?.includes(`@${member.username}`))) return true;
-    if (t.description && (t.description.includes(`@${member.name}`) || t.description.includes(`@${member.username}`))) return true;
-    if (t.title && (t.title.includes(`@${member.name}`) || t.title.includes(`@${member.username}`))) return true;
+    const nameMatch = member.name ? `@${member.name}` : null;
+    const userMatch = member.username ? `@${member.username}` : null;
+    if (t.comments && t.comments.some(c => (nameMatch && c.content?.includes(nameMatch)) || (userMatch && c.content?.includes(userMatch)))) return true;
+    if (t.description && ((nameMatch && t.description.includes(nameMatch)) || (userMatch && t.description.includes(userMatch)))) return true;
+    if (t.title && ((nameMatch && t.title.includes(nameMatch)) || (userMatch && t.title.includes(userMatch)))) return true;
     return false;
   };
 
-  const isCurrentManager = currentUser.accessLevel === 'admin' || currentUser.id === 'user-1';
+  const isCurrentManager = Boolean(
+    currentUser && (currentUser.accessLevel === 'admin' || currentUser.id === 'user-1')
+  );
 
   const userActiveTasks = isCurrentManager
     ? tasks
-    : tasks.filter(t => !t.isPrivate && (t.assignedToId === currentUser.id || isMemberMentioned(t, currentUser)));
+    : tasks.filter(t => !t.isPrivate && (Boolean(currentUser && (t.assignedToId === currentUser.id || isMemberMentioned(t, currentUser)))));
 
   const digestOverdueCount = userActiveTasks.filter(t => {
     if (t.status === 'completed') return false;
@@ -1787,7 +1932,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }).length;
 
   const triggerDailyDigest = (targetUser?: TeamMember) => {
-    const user = targetUser || currentUser;
+    const user = targetUser ? ensureValidUser(targetUser) : currentUser;
+    if (!user || !user.id) return;
     const isUserMgr = user.accessLevel === 'admin' || user.id === 'user-1';
 
     const targetUserTasks = isUserMgr
@@ -1821,24 +1967,28 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Auto-trigger Daily Digest on session start for employees if not dismissed today
   useEffect(() => {
-    if (currentUser && currentUser.accessLevel !== 'admin') {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const dismissed = localStorage.getItem(`swiftmynd_digest_dismissed_${currentUser.id}_${todayStr}`);
-      const sessionShown = sessionStorage.getItem(`swiftmynd_digest_session_${currentUser.id}_${todayStr}`);
-      if (!dismissed && !sessionShown) {
-        sessionStorage.setItem(`swiftmynd_digest_session_${currentUser.id}_${todayStr}`, 'true');
-        const timer = setTimeout(() => {
-          triggerDailyDigest(currentUser);
-        }, 600);
-        return () => clearTimeout(timer);
+    if (currentUser && currentUser.accessLevel !== 'admin' && currentUser.id) {
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const dismissed = safeStorage.getItem(`swiftmynd_digest_dismissed_${currentUser.id}_${todayStr}`);
+        const sessionShown = safeSessionStorage.getItem(`swiftmynd_digest_session_${currentUser.id}_${todayStr}`);
+        if (!dismissed && !sessionShown) {
+          safeSessionStorage.setItem(`swiftmynd_digest_session_${currentUser.id}_${todayStr}`, 'true');
+          const timer = setTimeout(() => {
+            triggerDailyDigest(currentUser);
+          }, 600);
+          return () => clearTimeout(timer);
+        }
+      } catch (e) {
+        console.error('Digest check error', e);
       }
     }
-  }, [currentUser.id]);
+  }, [currentUser?.id]);
 
   const updateBrandConfig = (newConfig: Partial<BrandConfig>) => {
     setBrandConfig(prev => {
-      const updated = { ...prev, ...newConfig, updatedAt: new Date().toISOString() };
-      localStorage.setItem(`${LOCAL_STORAGE_PREFIX}brand`, JSON.stringify(updated));
+      const updated = ensureValidBrandConfig({ ...prev, ...newConfig, updatedAt: new Date().toISOString() });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}brand`, JSON.stringify(updated));
       return updated;
     });
     logActivity('team', 'تعديل هوية المنظومة واللوجو', 'قام الأدمن بتحديث لوجو سويفت واسم المنظومة');
@@ -1846,7 +1996,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetBrandConfig = () => {
     setBrandConfig(DEFAULT_BRAND_CONFIG);
-    localStorage.removeItem(`${LOCAL_STORAGE_PREFIX}brand`);
+    safeStorage.removeItem(`${LOCAL_STORAGE_PREFIX}brand`);
     logActivity('team', 'استعادة الشعار الأصلي', 'تمت استعادة لوجو سويفت والاسم الافتراضي');
   };
 
@@ -1859,25 +2009,25 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         faviconLink.rel = 'icon';
         document.head.appendChild(faviconLink);
       }
-      if (brandConfig.customFaviconUrl) {
+      if (brandConfig?.customFaviconUrl) {
         faviconLink.href = brandConfig.customFaviconUrl;
       } else {
         faviconLink.href = '/favicon.svg';
       }
 
-      if (brandConfig.primaryColor) {
+      if (brandConfig?.primaryColor) {
         document.documentElement.style.setProperty('--primary-brand-color', brandConfig.primaryColor);
       }
-      if (brandConfig.brandName) {
+      if (brandConfig?.brandName) {
         document.title = `${brandConfig.brandName} | نظام إدارة المهام والمبيعات`;
       }
     } catch (e) {
       console.error('Failed to update favicon', e);
     }
-  }, [brandConfig.customFaviconUrl, brandConfig.primaryColor, brandConfig.brandName]);
+  }, [brandConfig?.customFaviconUrl, brandConfig?.primaryColor, brandConfig?.brandName]);
 
   const resetToDemoData = () => {
-    localStorage.clear();
+    safeStorage.clear();
     resetBrandConfig();
     setTasks(INITIAL_TASKS);
     setTeam(INITIAL_TEAM);
@@ -1897,7 +2047,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const clearUserAddedData = () => {
-    localStorage.clear();
+    safeStorage.clear();
     setTasks(INITIAL_TASKS);
     setLeads(INITIAL_LEADS);
     setDeals(INITIAL_DEALS);
@@ -1920,22 +2070,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications([]);
     setActivities([]);
     setReports([]);
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify([]));
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify([]));
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}deals`, JSON.stringify([]));
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify([]));
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}notifications`, JSON.stringify([]));
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}activities`, JSON.stringify([]));
-    localStorage.setItem(`${LOCAL_STORAGE_PREFIX}reports`, JSON.stringify([]));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify([]));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify([]));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deals`, JSON.stringify([]));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify([]));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}notifications`, JSON.stringify([]));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}activities`, JSON.stringify([]));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}reports`, JSON.stringify([]));
   };
 
   const unreadNotificationsCount = notifications.filter(n => !n.isRead).length;
   const unreadEmailsCount = emails.filter(m => m.folder === 'inbox' && !m.isRead).length;
-  const isManagerUser = currentUser.accessLevel === 'admin' || currentUser.accessLevel === 'manager' || currentUser.id === 'user-1';
+  const isManagerUser = Boolean(
+    currentUser &&
+      (currentUser.accessLevel === 'admin' ||
+        currentUser.accessLevel === 'manager' ||
+        currentUser.id === 'user-1')
+  );
   const pendingTasksCount = tasks.filter(t => {
     if (t.status === 'completed') return false;
     if (t.isPrivate && !isManagerUser) return false;
-    if (!isManagerUser && t.assignedToId !== currentUser.id) return false;
+    if (!isManagerUser && currentUser && t.assignedToId !== currentUser.id) return false;
     return true;
   }).length;
 

@@ -55,7 +55,7 @@ export const DailyDigestModal: React.FC = () => {
 
   const userTasks = isManager
     ? tasks
-    : tasks.filter(t => !t.isPrivate && (t.assignedToId === currentUser.id || isUserMentioned(t)));
+    : tasks.filter(t => !t.isPrivate && ((currentUser && t.assignedToId === currentUser.id) || isUserMentioned(t)));
 
   // 1. Overdue tasks (المهام المتأخرة)
   const overdueTasks = userTasks.filter(t => {
@@ -88,9 +88,13 @@ export const DailyDigestModal: React.FC = () => {
   }).format(new Date());
 
   const handleClose = () => {
-    if (dontShowAgainToday) {
-      const todayStr = new Date().toISOString().split('T')[0];
-      localStorage.setItem(`swiftmynd_digest_dismissed_${currentUser.id}_${todayStr}`, 'true');
+    if (dontShowAgainToday && currentUser?.id) {
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(`swiftmynd_digest_dismissed_${currentUser.id}_${todayStr}`, 'true');
+        }
+      } catch (e) {}
     }
     setIsDailyDigestOpen(false);
   };
@@ -140,7 +144,7 @@ export const DailyDigestModal: React.FC = () => {
                 </div>
 
                 <p className="text-xs text-slate-300 mt-1 flex items-center gap-2">
-                  <span>مرحباً، <strong className="text-white font-bold">{currentUser.name}</strong></span>
+                  <span>مرحباً، <strong className="text-white font-bold">{currentUser?.name || 'عضو الفريق'}</strong></span>
                   <span className="text-slate-500">•</span>
                   <span className="text-amber-200/90 font-medium">{todayDateFormatted}</span>
                 </p>

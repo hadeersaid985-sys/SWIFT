@@ -163,9 +163,10 @@ export const SwiftMyndLogo: React.FC<SwiftMyndLogoProps> = ({
 
   // Render the brand wordmark strictly in LTR so English text NEVER gets reversed in RTL
   const renderBrandWordmark = () => {
+    const rawBrand = (activeBrandConfig?.brandName || 'SWIFTMYND').trim();
     const isDefaultSwiftName =
-      activeBrandConfig.brandName.trim().toUpperCase() === 'SWIFTMYND' ||
-      activeBrandConfig.brandName.trim().toUpperCase() === 'SWIFT';
+      rawBrand.toUpperCase() === 'SWIFTMYND' ||
+      rawBrand.toUpperCase() === 'SWIFT';
 
     if (isDefaultSwiftName) {
       return (
@@ -184,7 +185,7 @@ export const SwiftMyndLogo: React.FC<SwiftMyndLogoProps> = ({
           {/* FT in blue */}
           <span className="text-[#2563eb] font-black tracking-tight">FT</span>
           {/* MYND in royal blue */}
-          {activeBrandConfig.brandName.trim().toUpperCase() === 'SWIFTMYND' && (
+          {rawBrand.toUpperCase() === 'SWIFTMYND' && (
             <span className={isDark ? 'text-white font-black ml-0.5' : 'text-[#1e3a8a] font-black ml-0.5'}>
               MYND
             </span>
@@ -199,7 +200,7 @@ export const SwiftMyndLogo: React.FC<SwiftMyndLogoProps> = ({
         className={`font-black tracking-tight ${isDark ? 'text-white' : 'text-[#172033]'}`}
         dir="auto"
       >
-        {activeBrandConfig.brandName}
+        {rawBrand}
       </span>
     );
   };
@@ -311,15 +312,16 @@ export const SwiftMyndLogo: React.FC<SwiftMyndLogoProps> = ({
             </span>
           )}
 
-          {/* Admin Quick Edit Pencil on Hover */}
+          {/* Admin Quick Edit Button on Hover */}
           {allowAdminEdit && isManager && setIsBrandModalOpen && !brandConfigOverride && (
             <button
               type="button"
               onClick={handleAdminEditClick}
-              className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-blue-500 hover:bg-blue-50/50 rounded-md transition-opacity cursor-pointer shrink-0"
+              className="opacity-0 group-hover:opacity-100 px-1.5 py-0.5 text-blue-500 bg-blue-50/90 hover:bg-blue-100 rounded-md transition-all cursor-pointer shrink-0 text-[10px] font-bold flex items-center gap-0.5 border border-blue-200 shadow-2xs"
               title="تعديل الشعار والاسم (صلاحية الأدمن)"
             >
-              <Edit3 className="w-3 h-3" />
+              <Edit3 className="w-2.5 h-2.5" />
+              <span>تعديل</span>
             </button>
           )}
         </div>

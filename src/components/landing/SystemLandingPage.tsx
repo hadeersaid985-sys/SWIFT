@@ -336,7 +336,7 @@ export const SystemLandingPage: React.FC<SystemLandingPageProps> = ({ onGoToLogi
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <SwiftMyndLogo variant="icon" size="sm" isDark={true} />
-            <span className="font-bold text-slate-400">{brandConfig.brandName || 'SWIFTMYND'}</span>
+            <span className="font-bold text-slate-400">{brandConfig?.brandName || 'SWIFTMYND'}</span>
             <span>- كافة الحقوق محفوظة © {new Date().getFullYear()}</span>
           </div>
 

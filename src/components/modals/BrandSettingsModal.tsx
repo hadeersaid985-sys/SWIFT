@@ -25,7 +25,8 @@ export const BrandSettingsModal: React.FC = () => {
     brandConfig,
     updateBrandConfig,
     resetBrandConfig,
-    currentUser
+    currentUser,
+    returnToAdminWithPin
   } = useCRM();
 
   const isManager = currentUser.accessLevel === 'admin' || currentUser.accessLevel === 'manager' || currentUser.id === 'user-1';
@@ -33,8 +34,23 @@ export const BrandSettingsModal: React.FC = () => {
   // Local form state
   const [formData, setFormData] = useState<BrandConfig>(brandConfig);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [pinUnlockInput, setPinUnlockInput] = useState('');
+  const [pinUnlockError, setPinUnlockError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUnlockPin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pinUnlockInput.trim()) {
+      setPinUnlockError('يرجى كتابة رمز الأمان PIN');
+      return;
+    }
+    if (returnToAdminWithPin(pinUnlockInput)) {
+      setPinUnlockError(null);
+    } else {
+      setPinUnlockError('رمز PIN غير صحيح! جرب 8899 أو 1234');
+    }
+  };
 
   // Sync when modal opens
   useEffect(() => {
@@ -157,12 +173,41 @@ export const BrandSettingsModal: React.FC = () => {
         {/* Content Body */}
         <div className="p-5 overflow-y-auto space-y-5 text-xs">
           {!isManager ? (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-center space-y-2">
-              <ShieldCheck className="w-8 h-8 text-amber-600 mx-auto" />
-              <div className="font-bold text-sm">صلاحية المدير مطلوبة</div>
-              <p className="text-xs text-amber-800">
-                فقط حساب المدير أو الأدمن يمتلك صلاحية تعديل اسم المنظومة وشعار سويفت.
-              </p>
+            <div className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl text-amber-950 text-center space-y-3">
+              <ShieldCheck className="w-10 h-10 text-amber-600 mx-auto" />
+              <div>
+                <div className="font-extrabold text-sm text-slate-900">فتح قفل تعديل اللوجو كأدمن</div>
+                <p className="text-xs text-slate-600 mt-1">
+                  أنت حالياً تتصفح بحساب موظف ({currentUser.name}). يرجى إدخال رمز أمان الأدمن PIN لفتح الصلاحية وتعديل اللوجو مباشرة:
+                </p>
+              </div>
+
+              <form onSubmit={handleUnlockPin} className="max-w-xs mx-auto space-y-2 pt-1">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="password"
+                    value={pinUnlockInput}
+                    onChange={e => {
+                      setPinUnlockInput(e.target.value);
+                      setPinUnlockError(null);
+                    }}
+                    placeholder="رمز PIN (الافتراضي 8899 أو 1234)"
+                    className="w-full p-2.5 bg-white border border-amber-300 rounded-xl text-xs text-center font-bold tracking-widest focus:outline-none focus:border-blue-500 shadow-2xs"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs cursor-pointer shadow-xs whitespace-nowrap"
+                  >
+                    تأكيد
+                  </button>
+                </div>
+                {pinUnlockError && (
+                  <p className="text-[11px] text-rose-600 font-bold">{pinUnlockError}</p>
+                )}
+                <div className="text-[10px] text-slate-400">
+                  رمز الأمان الافتراضي: <strong className="font-mono text-slate-700">8899</strong> أو <strong className="font-mono text-slate-700">1234</strong>
+                </div>
+              </form>
             </div>
           ) : (
             <>
@@ -332,26 +377,67 @@ export const BrandSettingsModal: React.FC = () => {
                       />
                     </div>
 
-                    {/* Quick Button for Chat Attached Image */}
-                    <div className="p-2.5 bg-blue-50/70 border border-blue-200/60 rounded-xl flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-blue-900 font-bold flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                        <span>استخدام الشعار المرفق بالمحادثة</span>
+                    {/* Quick Preset Logos */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[11px] font-bold text-slate-700 block">
+                        أو اختر من نماذج وشعارات مقترحة جاهزة:
                       </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData(prev => ({
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {/* Preset 1: Original Swift SM SVG Logo */}
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, logoType: 'default', customLogoUrl: '' }))}
+                          className="p-2 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center gap-1 shadow-2xs"
+                        >
+                          <span className="text-sm">⚡</span>
+                          <span className="text-[10px] font-bold text-slate-700">شعار سويفت الأصلي</span>
+                        </button>
+
+                        {/* Preset 2: Hex Tech Modern */}
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({
                             ...prev,
-                            customLogoUrl: '/assets/aistudio/image_03195a0b.png',
                             logoType: 'custom_image',
-                            logoDisplayMode: 'full_image_only'
-                          }))
-                        }
-                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
-                      >
-                        تطبيق الشعار المرفق
-                      </button>
+                            logoDisplayMode: 'icon_and_text',
+                            customLogoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%230284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 10 6v8l-10 6-10-6V8z"/><path d="m12 22v-8"/><path d="m22 8-10 6-10-6"/></svg>'
+                          }))}
+                          className="p-2 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center gap-1 shadow-2xs"
+                        >
+                          <span className="text-sm">💎</span>
+                          <span className="text-[10px] font-bold text-slate-700">تكنولوجي حديث</span>
+                        </button>
+
+                        {/* Preset 3: Corporate Shield */}
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            logoType: 'custom_image',
+                            logoDisplayMode: 'icon_and_text',
+                            customLogoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%234f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>'
+                          }))}
+                          className="p-2 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center gap-1 shadow-2xs"
+                        >
+                          <span className="text-sm">🛡️</span>
+                          <span className="text-[10px] font-bold text-slate-700">درع الأعمال</span>
+                        </button>
+
+                        {/* Preset 4: Cloud CRM */}
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            logoType: 'custom_image',
+                            logoDisplayMode: 'icon_and_text',
+                            customLogoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="%23059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>'
+                          }))}
+                          className="p-2 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center gap-1 shadow-2xs"
+                        >
+                          <span className="text-sm">☁️</span>
+                          <span className="text-[10px] font-bold text-slate-700">كلاود CRM</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Height Slider */}

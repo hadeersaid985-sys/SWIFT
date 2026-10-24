@@ -40,7 +40,8 @@ import {
   AtSign,
   Timer,
   Lock,
-  Settings
+  Settings,
+  Camera
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
@@ -101,24 +102,43 @@ export const Sidebar: React.FC = () => {
         isCollapsed ? 'w-16' : 'w-64'
       }`}
     >
-      {/* Sidebar Header: Brand & Collapse Toggle */}
+      {/* Sidebar Header: Brand & Collapse Toggle & Logo Change */}
       <div className="h-14 border-b border-slate-800 flex items-center justify-between px-3 text-white">
         {!isCollapsed ? (
-          <SwiftMyndLogo
-            variant="full"
-            size="md"
-            isDark={true}
-            onClick={() => setActiveTab(isManager ? 'home' : 'tasks')}
-            className="overflow-hidden"
-          />
+          <div className="flex items-center gap-2 min-w-0">
+            <SwiftMyndLogo
+              variant="full"
+              size="md"
+              isDark={true}
+              onClick={() => setActiveTab(isManager ? 'home' : 'tasks')}
+              className="overflow-hidden"
+            />
+            <button
+              onClick={() => setIsBrandModalOpen(true)}
+              className="flex items-center gap-1 px-1.5 py-1 rounded-md bg-slate-800/90 hover:bg-blue-600 text-blue-300 hover:text-white border border-slate-700 hover:border-blue-500 transition-all cursor-pointer shrink-0 text-[10px] font-bold shadow-2xs"
+              title="تغيير اللوجو والشعار مباشرة من الواجهة الرئيسية"
+            >
+              <Camera className="w-3 h-3 text-blue-400" />
+              <span>تغيير</span>
+            </button>
+          </div>
         ) : (
-          <SwiftMyndLogo
-            variant="icon"
-            size="sm"
-            isDark={true}
-            onClick={() => setIsCollapsed(false)}
-            className="mx-auto"
-          />
+          <div className="flex flex-col items-center gap-1 mx-auto">
+            <SwiftMyndLogo
+              variant="icon"
+              size="sm"
+              isDark={true}
+              onClick={() => setIsCollapsed(false)}
+              className="mx-auto"
+            />
+            <button
+              onClick={() => setIsBrandModalOpen(true)}
+              className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              title="تغيير اللوجو"
+            >
+              <Camera className="w-3 h-3" />
+            </button>
+          </div>
         )}
 
         <button
@@ -357,6 +377,27 @@ export const Sidebar: React.FC = () => {
             >
               <Home className="w-4 h-4 shrink-0" />
               {!isCollapsed && <span>الرئيسية</span>}
+            </button>
+
+            {/* إعدادات السيستم وتغيير اللوجو (مباشرة في الواجهة الرئيسية) */}
+            <button
+              onClick={() => setActiveTab('system_settings')}
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer border ${
+                activeTab === 'system_settings'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold shadow-md border-blue-400 ring-1 ring-blue-300/40'
+                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-blue-500/20'
+              }`}
+              title="إعدادات المنظومة: تغيير اللوجو، الاسم، الألوان، وأيقونة Favicon"
+            >
+              <div className="flex items-center gap-2.5">
+                <Sliders className="w-4 h-4 shrink-0 text-blue-400" />
+                {!isCollapsed && <span className="font-bold">إعدادات السيستم واللوجو</span>}
+              </div>
+              {!isCollapsed && (
+                <span className="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-400/30 px-1.5 py-0.2 rounded font-bold">
+                  تغيير اللوجو 🖼️
+                </span>
+              )}
             </button>
 
             {/* Item 2: ماركيتنج الأدمن (Marketing Suite: Board + Planner + Tasks + Inbox) */}

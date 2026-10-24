@@ -34,21 +34,28 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
     setSuccessMsg('');
     setIsSubmitting(true);
 
-    const cleanUser = usernameInput.trim().toLowerCase();
-    const cleanPass = passwordInput.trim();
+    const cleanUser = (usernameInput || '').trim().toLowerCase();
+    const cleanPass = (passwordInput || '').trim();
 
     const targetUser = team.find(
       m =>
-        (m.username.toLowerCase() === cleanUser ||
-          m.email.toLowerCase() === cleanUser ||
+        m &&
+        (((m.username && m.username.toLowerCase() === cleanUser) ||
+          (m.email && m.email.toLowerCase() === cleanUser) ||
           (cleanUser === 'admin' && (m.accessLevel === 'admin' || m.id === 'user-1'))) &&
-        (m.password === cleanPass ||
-          (m.accessLevel === 'admin' && (cleanPass === 'Admin@Swift2026' || cleanPass === 'admin' || cleanPass === '8899')))
+          (m.password === cleanPass ||
+            (m.accessLevel === 'admin' && (cleanPass === 'Admin@Swift2026' || cleanPass === 'admin' || cleanPass === '8899'))))
     );
 
     if (targetUser) {
       setSuccessMsg(`أهلاً بك، ${targetUser.name}! جاري الدخول للمنظومة...`);
       setTimeout(() => {
+        try {
+          loginUser(targetUser);
+        } catch (err) {
+          console.error('loginUser error', err);
+        }
+
         if (typeof window !== 'undefined' && window.history) {
           try {
             window.history.pushState({}, '', '/');
@@ -56,14 +63,19 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
             console.error('History pushState error', err);
           }
         }
+
         if (onSuccessLogin) {
-          onSuccessLogin();
+          try {
+            onSuccessLogin();
+          } catch (e) {}
         }
-        loginUser(targetUser);
+
         if (targetUser.accessLevel !== 'admin') {
-          triggerDailyDigest(targetUser);
+          try {
+            triggerDailyDigest(targetUser);
+          } catch (e) {}
         }
-      }, 350);
+      }, 250);
     } else {
       setIsSubmitting(false);
       setErrorMsg('اسم المستخدم أو كلمة المرور غير صحيحة. يرجى التحقق من صحة البيانات والمحاولة مجدداً.');
@@ -192,7 +204,7 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
 
       {/* Footer */}
       <footer className="max-w-5xl w-full mx-auto text-center py-3 text-[11px] text-slate-500 flex items-center justify-between border-t border-slate-800/60">
-        <span>© {new Date().getFullYear()} {brandConfig.brandName || 'SWIFTMYND'} - كافة الحقوق محفوظة</span>
+        <span>© {new Date().getFullYear()} {brandConfig?.brandName || 'SWIFTMYND'} - كافة الحقوق محفوظة</span>
         <span className="font-mono text-slate-400">بوابة الدخول الآمنة</span>
       </footer>
     </div>
