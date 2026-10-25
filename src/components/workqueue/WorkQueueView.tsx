@@ -487,7 +487,7 @@ export const WorkQueueView: React.FC = () => {
   const dealsBadgeCount = deals.length;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col min-h-[calc(100vh-120px)] text-xs select-none">
+    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col min-h-[calc(100vh-120px)] text-xs">
       {/* Top Banner / Breadcrumb */}
       <div className="p-3.5 bg-slate-50/70 border-b border-slate-200/90 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">

@@ -157,7 +157,7 @@ export const LeadsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in select-none">
+    <div className="space-y-6 pb-12 animate-in fade-in">
       {/* Success Notification Alert */}
       {handoffSuccessNotice && (
         <div className="bg-emerald-600 text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between gap-3 animate-in slide-in-from-top-2">

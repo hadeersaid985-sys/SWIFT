@@ -456,7 +456,7 @@ export const MarketingBoardView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 pb-12 animate-in fade-in select-none">
+    <div className="space-y-4 pb-12 animate-in fade-in">
       {/* Top Header & Rule Banner (اي حاجة في الموقع فييها اضافة او حذف او تعديل من فوق) */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">

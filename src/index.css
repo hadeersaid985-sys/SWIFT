@@ -3,13 +3,32 @@
 @layer base {
   * {
     border-color: var(--color-slate-200, #e2e8f0);
+    user-select: text;
+    -webkit-user-select: text;
   }
   
   body {
     font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     direction: rtl;
     text-align: right;
+    user-select: text;
+    -webkit-user-select: text;
   }
+
+  button, input[type="button"], input[type="submit"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+::selection {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+::-moz-selection {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
 }
 
 /* Custom slick enterprise scrollbar */

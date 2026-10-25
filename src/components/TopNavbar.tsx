@@ -188,7 +188,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   };
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 select-none shadow-2xs">
+    <header className="h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 shadow-2xs">
       {/* Right Side: Swift Logo & Quick Logo Edit & Page Title */}
       <div className="flex items-center gap-2 sm:gap-3">
         <SwiftMyndLogo

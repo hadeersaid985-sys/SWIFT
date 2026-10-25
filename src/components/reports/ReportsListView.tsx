@@ -298,7 +298,7 @@ export const ReportsListView: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden text-xs relative select-none">
+    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden text-xs relative">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2 rounded-xl shadow-xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-top-2">

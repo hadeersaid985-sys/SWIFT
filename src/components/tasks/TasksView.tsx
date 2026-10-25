@@ -1377,7 +1377,7 @@ export const TasksView: React.FC = () => {
                         return (
                           <div
                             key={task.id}
-                            className={`p-3 rounded-xl border transition-all text-xs space-y-2 select-none shadow-2xs hover:shadow-md ${
+                            className={`p-3 rounded-xl border transition-all text-xs space-y-2 select-text shadow-2xs hover:shadow-md ${
                               isDone
                                 ? 'bg-emerald-50/50 border-emerald-200/90'
                                 : task.isTimerRunning
@@ -1779,7 +1779,7 @@ export const TasksView: React.FC = () => {
                           return (
                             <div
                               key={task.id}
-                              className={`p-3 rounded-xl border transition-all text-xs space-y-2 select-none shadow-2xs hover:shadow-md ${
+                              className={`p-3 rounded-xl border transition-all text-xs space-y-2 select-text shadow-2xs hover:shadow-md ${
                                 isDone
                                   ? 'bg-emerald-50/50 border-emerald-200/90'
                                   : task.isTimerRunning

@@ -368,7 +368,7 @@ export const ClientRenewalsView: React.FC = () => {
     .reduce((sum, r) => sum + r.amount, 0);
 
   return (
-    <div className="space-y-4 pb-12 animate-in fade-in select-none text-xs">
+    <div className="space-y-4 pb-12 animate-in fade-in select-text text-xs">
       {/* 4-DAY URGENT RENEWAL ALERT BANNER (طلب المستخدم: "يقدم لي قبلها بـ 4 أيام تنبيه في عملاء هتجدد") */}
       {totalDueSoon.length > 0 && (
         <div className="bg-gradient-to-r from-amber-500 via-rose-500 to-amber-600 text-white p-4 rounded-2xl shadow-md border border-amber-400 flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in slide-in-from-top">
@@ -935,10 +935,23 @@ export const ClientRenewalsView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleOpenEdit(client)}
-                        className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl border border-slate-200 cursor-pointer"
-                        title="تعديل بيانات العميل"
+                        className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-xl border border-slate-200 cursor-pointer transition-colors shadow-2xs"
+                        title="تعديل بيانات العميل والشيت"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirmModal({
+                          id: client.id,
+                          isBulk: false,
+                          title: `حذف ملف واشتراك العميل (${client.clientName}) بالكامل؟`
+                        })}
+                        className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 rounded-xl border border-rose-200 cursor-pointer transition-colors shadow-2xs"
+                        title="حذف العميل نهائياً"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -2531,17 +2544,35 @@ export const ClientRenewalsView: React.FC = () => {
 
             {/* Modal Bottom Actions */}
             <div className="flex items-center justify-between pt-3 border-t border-slate-100 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  handleOpenEdit(currentDossierClient);
-                  setSelectedClientForDossier(null);
-                }}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>تعديل بيانات العميل الأساسية</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleOpenEdit(currentDossierClient);
+                    setSelectedClientForDossier(null);
+                  }}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>تعديل بيانات العميل الأساسية</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteConfirmModal({
+                      id: currentDossierClient.id,
+                      isBulk: false,
+                      title: `حذف ملف واشتراك العميل (${currentDossierClient.clientName}) بالكامل؟`
+                    });
+                    setSelectedClientForDossier(null);
+                  }}
+                  className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1.5 border border-rose-200"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <span>حذف العميل</span>
+                </button>
+              </div>
 
               <button
                 type="button"
