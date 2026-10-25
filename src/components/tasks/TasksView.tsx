@@ -47,18 +47,22 @@ import {
   ArrowDown,
   FileSpreadsheet
 } from 'lucide-react';
-import { useCRM } from '../../context/CRMContext';
+import { useCRM, isTaskAssignedToUser } from '../../context/CRMContext';
 import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember } from '../../types/crm';
 import { exportTasksToExcel } from '../../utils/excelExport';
 
 export const TasksView: React.FC = () => {
   const {
     tasks,
+    deletedTasks,
     team,
     currentUser,
     addTask,
     updateTask,
     deleteTask,
+    restoreTaskFromTrash,
+    emptyTasksTrash,
+    permanentlyDeleteTask,
     toggleSubTask,
     changeTaskStatus,
     moveTaskToMember,
@@ -72,6 +76,9 @@ export const TasksView: React.FC = () => {
     setOpenQuickModal,
     setIsResetModalOpen
   } = useCRM();
+
+  // Tasks Trash Modal state
+  const [isTasksTrashModalOpen, setIsTasksTrashModalOpen] = useState(false);
 
   // Role Detection: Is current user Manager / Admin?
   const isManager =
@@ -249,7 +256,7 @@ export const TasksView: React.FC = () => {
     ? tasks
     : tasks.filter(task => {
         if (task.isPrivate) return false;
-        const isAssigned = task.assignedToId === currentUser.id;
+        const isAssigned = isTaskAssignedToUser(task, currentUser);
         const isMentioned = isUserMentionedInTask(task, currentUser);
         return isAssigned || isMentioned;
       });
@@ -263,7 +270,7 @@ export const TasksView: React.FC = () => {
 
     if (!isManager) {
       // Employee-specific quick filters:
-      const isAssigned = task.assignedToId === currentUser.id;
+      const isAssigned = isTaskAssignedToUser(task, currentUser);
       const isMentioned = isUserMentionedInTask(task, currentUser);
 
       if (filterStatus === 'assigned_only' && !isAssigned) return false;
@@ -319,7 +326,7 @@ export const TasksView: React.FC = () => {
 
   // Calculate tasks with mentions count for visible tasks
   const tasksWithMentionsCount = userBaseTasks.filter(t => isUserMentionedInTask(t, currentUser)).length;
-  const assignedToMeCount = userBaseTasks.filter(t => t.assignedToId === currentUser.id).length;
+  const assignedToMeCount = userBaseTasks.filter(t => isTaskAssignedToUser(t, currentUser)).length;
 
   // Selected task for detailed modal
   const selectedTask = tasks.find(t => t.id === selectedTaskId) || null;
@@ -925,6 +932,21 @@ export const TasksView: React.FC = () => {
             <Calendar className="w-3.5 h-3.5" />
             <span>التقويم</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setIsTasksTrashModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 shadow-2xs"
+            title="سلة مهملات المهام (تفريغ واستعادة)"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+            <span>سلة مهملات المهام</span>
+            {deletedTasks.length > 0 && (
+              <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded-full font-black">
+                {deletedTasks.length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Search & Member Filter (Only shown to Manager) */}
@@ -1329,7 +1351,7 @@ export const TasksView: React.FC = () => {
               ? (filterMember === 'all' ? team : team.filter(m => m.id === filterMember))
               : team.filter(m => m.id === currentUser.id)
             ).map(member => {
-              const memberTasks = filteredTasks.filter(t => t.assignedToId === member.id);
+              const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member));
               const completedCount = memberTasks.filter(t => t.status === 'completed').length;
               const isCurrentMemberOpen = quickAddColumn === member.id;
 
@@ -1385,6 +1407,11 @@ export const TasksView: React.FC = () => {
                       memberTasks.map(task => {
                         const isDone = task.status === 'completed';
                         const deadline = getDeadlineStatus(task.dueDate, task.dueTime, task.status);
+                        const isAllTeamTask =
+                          task.assignedToId === 'all' ||
+                          task.assignedToId === 'team' ||
+                          task.assignedToId === 'all_members' ||
+                          task.assignedToId === 'all_accounts';
 
                         return (
                           <div
@@ -1424,6 +1451,11 @@ export const TasksView: React.FC = () => {
                                   </div>
 
                                   <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                    {isAllTeamTask && (
+                                      <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                                        <span>🌟 مهمة لجميع الفريق</span>
+                                      </span>
+                                    )}
                                     {task.isPrivate && (
                                       <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
                                         <Lock className="w-2.5 h-2.5 text-amber-700" />
@@ -3490,6 +3522,156 @@ export const TasksView: React.FC = () => {
               </div>
             </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Tasks Trash Modal (سلة مهملات المهام - استعادة وتفريغ بالكامل) */}
+      {isTasksTrashModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[85vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 bg-rose-100 text-rose-700 rounded-xl flex items-center justify-center font-bold">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                    <span>سلة مهملات المهام</span>
+                    <span className="text-xs bg-rose-100 text-rose-800 font-black px-2 py-0.5 rounded-full">
+                      {deletedTasks.length} مهمة
+                    </span>
+                  </h3>
+                  <p className="text-slate-500 text-xs">
+                    استعادة المهام المحذوفة أو تفريغ سلة المهملات نهائياً
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {deletedTasks.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `هل أنت متأكد من تفريغ سلة المهملات بالكامل وحذف جميع المهام (${deletedTasks.length}) نهائياً؟\nلن يمكن التراجع عن هذا الإجراء.`
+                        )
+                      ) {
+                        emptyTasksTrash();
+                        showToast('تم تفريغ سلة المهملات بالكامل وحذف جميع المهام نهائياً 🗑️');
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="تفريغ سلة المهملات بالكامل"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>تفريغ السلة بالكامل</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsTasksTrashModalOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: List of deleted tasks */}
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+              {deletedTasks.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 space-y-2">
+                  <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto">
+                    <Trash2 className="w-6 h-6" />
+                  </div>
+                  <div className="font-bold text-xs">سلة مهملات المهام فارغة تماماً ✨</div>
+                  <p className="text-[11px] text-slate-400">
+                    أي مهمة يتم حذفها ستظهر هنا ويمكنك استعادتها بضغطة زر واحدة.
+                  </p>
+                </div>
+              ) : (
+                deletedTasks.map(task => {
+                  const assignee =
+                    task.assignedToId === 'all' || task.assignedToId === 'team'
+                      ? 'جميع أعضاء الفريق 🌟'
+                      : team.find(m => m.id === task.assignedToId)?.name || 'غير محدد';
+
+                  return (
+                    <div
+                      key={task.id}
+                      className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+                    >
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="font-extrabold text-slate-900 text-xs truncate">
+                          {task.title}
+                        </div>
+                        {task.description && (
+                          <div className="text-[11px] text-slate-500 line-clamp-1">
+                            {task.description}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 font-medium">
+                          <span>المسؤول: <strong className="text-slate-800">{assignee}</strong></span>
+                          <span>•</span>
+                          <span>تاريخ الاستحقاق: <strong className="text-slate-800 font-mono">{task.dueDate || 'غير محدد'}</strong></span>
+                          <span>•</span>
+                          <span className="text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                            أولوية: {task.priority === 'urgent' ? 'حرجة' : task.priority === 'high' ? 'عالية' : 'متوسطة'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            restoreTaskFromTrash(task.id);
+                            showToast(`تمت استعادة المهمة "${task.title}" بنجاح! 📋`);
+                          }}
+                          className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                          title="استعادة المهمة لجدول العمل"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>استعادة المهمة</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm('هل تريد حذف هذه المهمة نهائياً من سلة المهملات؟')) {
+                              permanentlyDeleteTask(task.id);
+                              showToast('تم الحذف النهائي للمهمة');
+                            }
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                          title="حذف نهائي"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0">
+              <span className="text-[11px] text-slate-500 font-medium">
+                {deletedTasks.length > 0 ? `إجمالي المهام في السلة: ${deletedTasks.length}` : 'لا توجد مهام محذوفة'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsTasksTrashModalOpen(false)}
+                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 cursor-pointer"
+              >
+                إغلاق
+              </button>
+            </div>
           </div>
         </div>
       )}

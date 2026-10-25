@@ -16,7 +16,7 @@ import {
   PhoneCall,
   ChevronLeft
 } from 'lucide-react';
-import { useCRM } from '../../context/CRMContext';
+import { useCRM, isTaskAssignedToUser } from '../../context/CRMContext';
 import { SwiftMyndLogo } from '../common/SwiftMyndLogo';
 import { TopPerformerLeaderboard } from './TopPerformerLeaderboard';
 
@@ -55,7 +55,7 @@ export const HomeDashboard: React.FC = () => {
     .filter(d => d.stage === 'مغلقة ناجحة')
     .reduce((sum, d) => sum + d.value, 0);
 
-  const visibleTasks = isManager ? tasks : tasks.filter(t => t.assignedToId === currentUser.id);
+  const visibleTasks = isManager ? tasks : tasks.filter(t => !t.isPrivate && isTaskAssignedToUser(t, currentUser));
   const pendingTasks = visibleTasks.filter(t => t.status !== 'completed');
   const todayTasks = visibleTasks.filter(t => {
     const status = getDeadlineStatus(t.dueDate, t.dueTime, t.status);

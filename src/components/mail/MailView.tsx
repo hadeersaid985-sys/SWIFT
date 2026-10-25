@@ -15,7 +15,8 @@ import {
   ArrowRight,
   ExternalLink,
   Users,
-  AlertCircle
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { EmailMessage } from '../../types/crm';
@@ -29,6 +30,9 @@ export const MailView: React.FC = () => {
     markEmailAsRead,
     toggleStarEmail,
     deleteEmail,
+    emptyTrash,
+    restoreEmailFromTrash,
+    permanentlyDeleteEmail,
     setOpenQuickModal
   } = useCRM();
 
@@ -317,11 +321,41 @@ export const MailView: React.FC = () => {
             </div>
           </div>
 
+          {/* Trash Header Action Bar */}
+          {activeFolder === 'trash' && (
+            <div className="p-3 bg-rose-50 border-b border-rose-200 flex items-center justify-between gap-2 animate-in fade-in">
+              <div className="flex items-center gap-1.5 text-rose-800 text-xs font-extrabold">
+                <Trash2 className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>سلة المهملات ({filteredEmails.length} رسالة)</span>
+              </div>
+              {filteredEmails.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `هل أنت متأكد من تفريغ سلة المهملات بالكامل وحذف جميع الرسائل (${filteredEmails.length}) نهائياً؟\nلن يمكن التراجع عن هذا الإجراء.`
+                      )
+                    ) {
+                      emptyTrash();
+                      setSelectedEmailId(null);
+                    }
+                  }}
+                  className="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-black shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="تفريغ سلة المهملات بالكامل"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>تفريغ السلة بالكامل</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {/* List of Messages */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
             {filteredEmails.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs">
-                لا توجد رسائل في هذا المجلد
+                {activeFolder === 'trash' ? 'سلة المهملات فارغة تماماً 🗑️' : 'لا توجد رسائل في هذا المجلد'}
               </div>
             ) : (
               filteredEmails.map(email => {
@@ -350,22 +384,53 @@ export const MailView: React.FC = () => {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            toggleStarEmail(email.id);
-                          }}
-                          className="text-slate-300 hover:text-amber-400 cursor-pointer"
-                        >
-                          <Star
-                            className={`w-3.5 h-3.5 ${
-                              email.isStarred ? 'text-amber-400 fill-amber-400' : ''
-                            }`}
-                          />
-                        </button>
-                        <span className="text-[10px] text-slate-400 font-medium">{email.time}</span>
-                      </div>
+                      {email.folder === 'trash' ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              restoreEmailFromTrash(email.id);
+                            }}
+                            className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                            title="استعادة للبريد الوارد"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>استعادة</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (window.confirm('هل تريد حذف هذه الرسالة نهائياً؟')) {
+                                permanentlyDeleteEmail(email.id);
+                                if (selectedEmail?.id === email.id) setSelectedEmailId(null);
+                              }
+                            }}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md cursor-pointer transition-colors"
+                            title="حذف نهائي"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              toggleStarEmail(email.id);
+                            }}
+                            className="text-slate-300 hover:text-amber-400 cursor-pointer"
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 ${
+                                email.isStarred ? 'text-amber-400 fill-amber-400' : ''
+                              }`}
+                            />
+                          </button>
+                          <span className="text-[10px] text-slate-400 font-medium">{email.time}</span>
+                        </div>
+                      )}
                     </div>
 
                     <h4 className={`text-xs truncate ${!email.isRead ? 'font-bold text-slate-900' : 'text-slate-800'}`}>
@@ -418,28 +483,60 @@ export const MailView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    onClick={() => toggleStarEmail(selectedEmail.id)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-slate-50 cursor-pointer"
-                    title="تمييز بنجمة"
-                  >
-                    <Star
-                      className={`w-4 h-4 ${
-                        selectedEmail.isStarred ? 'text-amber-400 fill-amber-400' : ''
-                      }`}
-                    />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm('هل تريد نقل هذه الرسالة لسلة المهملات؟')) {
-                        deleteEmail(selectedEmail.id);
-                      }
-                    }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-50 cursor-pointer"
-                    title="حذف الرسالة"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {selectedEmail.folder === 'trash' ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          restoreEmailFromTrash(selectedEmail.id);
+                        }}
+                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                        title="استعادة للبريد الوارد"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>استعادة للوارد</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('هل تريد حذف هذه الرسالة نهائياً؟ لن يمكن التراجع.')) {
+                            permanentlyDeleteEmail(selectedEmail.id);
+                            setSelectedEmailId(null);
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                        title="حذف نهائي للرسالة"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>حذف نهائي</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => toggleStarEmail(selectedEmail.id)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-slate-50 cursor-pointer"
+                        title="تمييز بنجمة"
+                      >
+                        <Star
+                          className={`w-4 h-4 ${
+                            selectedEmail.isStarred ? 'text-amber-400 fill-amber-400' : ''
+                          }`}
+                        />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('هل تريد نقل هذه الرسالة لسلة المهملات؟')) {
+                            deleteEmail(selectedEmail.id);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-50 cursor-pointer"
+                        title="نقل لسلة المهملات"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 

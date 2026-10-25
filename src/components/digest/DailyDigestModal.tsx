@@ -16,7 +16,7 @@ import {
   ListTodo,
   CheckCheck
 } from 'lucide-react';
-import { useCRM } from '../../context/CRMContext';
+import { useCRM, isTaskAssignedToUser } from '../../context/CRMContext';
 import { Task } from '../../types/crm';
 
 export const DailyDigestModal: React.FC = () => {
@@ -55,7 +55,7 @@ export const DailyDigestModal: React.FC = () => {
 
   const userTasks = isManager
     ? tasks
-    : tasks.filter(t => !t.isPrivate && ((currentUser && t.assignedToId === currentUser.id) || isUserMentioned(t)));
+    : tasks.filter(t => !t.isPrivate && ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentioned(t)));
 
   // 1. Overdue tasks (المهام المتأخرة)
   const overdueTasks = userTasks.filter(t => {

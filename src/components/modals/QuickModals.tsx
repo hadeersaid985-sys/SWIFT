@@ -492,15 +492,33 @@ export const QuickModals: React.FC = () => {
                   <label className="block font-bold text-slate-700 mb-1">المسؤول عن التنفيذ</label>
                   <select
                     value={taskAssignee}
-                    onChange={e => setTaskAssignee(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-white cursor-pointer font-medium"
+                    onChange={e => {
+                      const val = e.target.value;
+                      setTaskAssignee(val);
+                      if (val !== currentUser.id) {
+                        setTaskIsPrivate(false);
+                      }
+                    }}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-white cursor-pointer font-bold text-xs"
                   >
+                    <option value="all">🌟 جميع أعضاء الفريق (مهمة مشتركة لكل الحسابات)</option>
                     {team.map(m => (
                       <option key={m.id} value={m.id}>
-                        {m.name} ({m.role})
+                        {m.name} ({m.role}) {m.id === currentUser.id ? '— أنت (المدير)' : ''}
                       </option>
                     ))}
                   </select>
+
+                  <div className="mt-1.5 p-2 bg-blue-50/80 border border-blue-200 rounded-lg text-[10px] text-blue-900 flex items-center gap-1.5 font-bold">
+                    <Users className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>
+                      {taskAssignee === 'all'
+                        ? '🌟 ستظهر هذه المهمة في حسابات جميع أفراد الفريق وتتزامن فوراً مع إشعار لكل موظف.'
+                        : taskAssignee === currentUser.id
+                        ? 'ستضاف المهمة لجدولك الشخصي ومتاحة لمتابعة العمل.'
+                        : `✅ ستظهر هذه المهمة فوراً في حساب (${team.find(m => m.id === taskAssignee)?.name || 'الموظف'}) عند تسجيل دخوله.`}
+                    </span>
+                  </div>
                 </div>
 
                 <div>

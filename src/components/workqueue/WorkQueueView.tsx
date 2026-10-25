@@ -29,7 +29,7 @@ import {
   FolderClock,
   ArrowUpRight
 } from 'lucide-react';
-import { useCRM } from '../../context/CRMContext';
+import { useCRM, isTaskAssignedToUser } from '../../context/CRMContext';
 import { Task, Lead, Deal, Meeting } from '../../types/crm';
 
 // Work Queue Item interface that unifies activities for the queue view
@@ -187,7 +187,7 @@ export const WorkQueueView: React.FC = () => {
     return tasks
       .filter(t => {
         if (t.status === 'completed' && activeQueue !== 'completed') return false;
-        if (!isManager && t.assignedToId !== currentUser.id) return false;
+        if (!isManager && !isTaskAssignedToUser(t, currentUser)) return false;
         if (t.isPrivate && !isManager) return false;
         return true;
       })

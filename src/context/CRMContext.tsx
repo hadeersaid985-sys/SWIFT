@@ -77,11 +77,15 @@ interface CRMContextType {
 
   // Tasks & Time Tracking
   tasks: Task[];
+  deletedTasks: Task[];
   addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   deleteTasks: (ids: string[]) => void;
   clearCompletedTasks: () => void;
+  restoreTaskFromTrash: (taskId: string) => void;
+  emptyTasksTrash: () => void;
+  permanentlyDeleteTask: (taskId: string) => void;
   toggleSubTask: (taskId: string, subtaskId: string) => void;
   changeTaskStatus: (taskId: string, status: TaskStatus) => void;
   moveTaskToMember: (taskId: string, targetMemberId: string) => void;
@@ -113,6 +117,9 @@ interface CRMContextType {
   markEmailAsRead: (id: string, isRead?: boolean) => void;
   toggleStarEmail: (id: string) => void;
   deleteEmail: (id: string) => void;
+  emptyTrash: () => void;
+  restoreEmailFromTrash: (id: string) => void;
+  permanentlyDeleteEmail: (id: string) => void;
 
   // Leads
   leads: Lead[];
@@ -356,6 +363,28 @@ export const ensureValidBrandConfig = (b: any): BrandConfig => {
   };
 };
 
+export const isTaskAssignedToUser = (task: Task, user: TeamMember): boolean => {
+  if (!user || !task) return false;
+  const aid = (task.assignedToId || '').trim().toLowerCase();
+  // Support tasks assigned to all accounts / all team members
+  if (
+    aid === 'all' ||
+    aid === 'team' ||
+    aid === 'all_members' ||
+    aid === 'all_accounts' ||
+    aid === 'everyone' ||
+    aid === 'الجميع' ||
+    aid === 'فريق العمل'
+  ) {
+    return true;
+  }
+  if (aid === (user.id || '').toLowerCase()) return true;
+  if (user.username && aid === user.username.toLowerCase()) return true;
+  if (user.employeeCode && aid === user.employeeCode.toLowerCase()) return true;
+  if (user.name && aid === user.name.toLowerCase()) return true;
+  return false;
+};
+
 export const matchUserCredentials = (
   member: TeamMember,
   inputUsername: string,
@@ -535,6 +564,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } catch {}
     return INITIAL_TASKS;
+  });
+
+  const [deletedTasks, setDeletedTasks] = useState<Task[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_tasks`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
   });
 
   const [team, setTeam] = useState<TeamMember[]>(() => {
@@ -771,6 +811,10 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(clientRenewals));
   }, [clientRenewals]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_tasks`, JSON.stringify(deletedTasks));
+  }, [deletedTasks]);
 
   // Meeting Recordings (تسجيلات ميتنج العملاء المهمين)
   const [meetingRecordings, setMeetingRecordings] = useState<MeetingRecording[]>(() => {
@@ -1725,21 +1769,49 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteTask = (id: string) => {
     const t = tasks.find(x => x.id === id);
-    setTasks(prev => prev.filter(task => task.id !== id));
     if (t) {
-      logActivity('task', 'تم حذف المهمة', t.title);
+      setDeletedTasks(prev => [{ ...t, completedAt: t.completedAt || new Date().toISOString() }, ...prev]);
+      setTasks(prev => prev.filter(task => task.id !== id));
+      logActivity('task', 'تم نقل المهمة لسلة المهملات', t.title);
     }
   };
 
   const deleteTasks = (ids: string[]) => {
-    setTasks(prev => prev.filter(task => !ids.includes(task.id)));
-    logActivity('task', 'حذف مهام متعددة', `تم حذف ${ids.length} مهمة بنجاح`);
+    const toDelete = tasks.filter(t => ids.includes(t.id));
+    if (toDelete.length > 0) {
+      setDeletedTasks(prev => [...toDelete, ...prev]);
+      setTasks(prev => prev.filter(task => !ids.includes(task.id)));
+      logActivity('task', 'نقل مهام لسلة المهملات', `تم نقل ${ids.length} مهمة لسلة المهملات`);
+    }
   };
 
   const clearCompletedTasks = () => {
-    const completedCount = tasks.filter(t => t.status === 'completed').length;
-    setTasks(prev => prev.filter(task => task.status !== 'completed'));
-    logActivity('task', 'تفريغ وحذف المهام المكتملة', `تم حذف ${completedCount} مهمة مكتملة`);
+    const completedList = tasks.filter(t => t.status === 'completed');
+    if (completedList.length > 0) {
+      setDeletedTasks(prev => [...completedList, ...prev]);
+      setTasks(prev => prev.filter(task => task.status !== 'completed'));
+      logActivity('task', 'تفريغ ونقل المهام المكتملة لسلة المهملات', `تم نقل ${completedList.length} مهمة مكتملة لسلة المهملات`);
+    }
+  };
+
+  const restoreTaskFromTrash = (taskId: string) => {
+    const t = deletedTasks.find(x => x.id === taskId);
+    if (t) {
+      setTasks(prev => [t, ...prev]);
+      setDeletedTasks(prev => prev.filter(x => x.id !== taskId));
+      logActivity('task', 'استعادة مهمة من سلة المهملات', t.title);
+    }
+  };
+
+  const emptyTasksTrash = () => {
+    const count = deletedTasks.length;
+    setDeletedTasks([]);
+    logActivity('task', 'تفريغ سلة مهملات المهام بالكامل', `تم حذف ${count} مهمة نهائياً من سلة المهملات`);
+  };
+
+  const permanentlyDeleteTask = (taskId: string) => {
+    setDeletedTasks(prev => prev.filter(x => x.id !== taskId));
+    logActivity('task', 'حذف نهائي للمهمة', 'تم حذف المهمة نهائياً من سلة المهملات');
   };
 
   const toggleSubTask = (taskId: string, subtaskId: string) => {
@@ -2131,6 +2203,23 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteEmail = (id: string) => {
     setEmails(prev => prev.map(m => (m.id === id ? { ...m, folder: 'trash' } : m)));
+    logActivity('email', 'نقل رسالة لسلة المهملات', 'تم نقل الرسالة لسلة المهملات');
+  };
+
+  const emptyTrash = () => {
+    const count = emails.filter(m => m.folder === 'trash').length;
+    setEmails(prev => prev.filter(m => m.folder !== 'trash'));
+    logActivity('email', 'تفريغ سلة المهملات بالكامل', `تم حذف ${count} رسالة نهائياً من سلة المهملات`);
+  };
+
+  const restoreEmailFromTrash = (id: string) => {
+    setEmails(prev => prev.map(m => (m.id === id ? { ...m, folder: 'inbox' } : m)));
+    logActivity('email', 'استعادة رسالة من سلة المهملات', 'تمت استعادة الرسالة إلى البريد الوارد');
+  };
+
+  const permanentlyDeleteEmail = (id: string) => {
+    setEmails(prev => prev.filter(m => m.id !== id));
+    logActivity('email', 'حذف نهائي للرسالة', 'تم الحذف النهائي للرسالة');
   };
 
   // Leads Actions
@@ -2310,6 +2399,114 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return DEFAULT_BRAND_CONFIG;
   });
 
+  // Synchronize state with server /api/data for multi-user / multi-device access
+  useEffect(() => {
+    let isMounted = true;
+    const fetchInitialData = async () => {
+      try {
+        const res = await fetch('/api/data');
+        if (res.ok) {
+          const serverData = await res.json();
+          if (!isMounted || !serverData || typeof serverData !== 'object') return;
+
+          if (Array.isArray(serverData.tasks) && serverData.tasks.length > 0) {
+            setTasks(prev => {
+              const serverIds = new Set(serverData.tasks.map((t: Task) => t.id));
+              const localOnly = prev.filter(t => !serverIds.has(t.id));
+              return [...serverData.tasks, ...localOnly];
+            });
+          }
+          if (Array.isArray(serverData.deletedTasks)) {
+            setDeletedTasks(serverData.deletedTasks);
+          }
+          if (Array.isArray(serverData.team) && serverData.team.length > 0) {
+            setTeam(prev => {
+              const serverMemberIds = new Set(serverData.team.map((m: TeamMember) => m.id));
+              const localOnly = prev.filter(m => !serverMemberIds.has(m.id));
+              return [...serverData.team, ...localOnly];
+            });
+          }
+          if (Array.isArray(serverData.emails) && serverData.emails.length > 0) {
+            setEmails(serverData.emails);
+          }
+          if (serverData.brandConfig && typeof serverData.brandConfig === 'object') {
+            setBrandConfig(ensureValidBrandConfig(serverData.brandConfig));
+          }
+        }
+      } catch (err) {
+        // Standalone/fallback mode
+      }
+    };
+
+    fetchInitialData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Debounced auto-save to server store whenever tasks or core state change
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        await fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tasks,
+            deletedTasks,
+            team,
+            emails,
+            leads,
+            deals,
+            meetings,
+            brandConfig,
+            reports,
+            activities,
+            notifications
+          })
+        });
+      } catch (e) {}
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications]);
+
+  // Background polling every 4 seconds to sync tasks created by other accounts/devices
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/data');
+        if (res.ok) {
+          const serverData = await res.json();
+          if (serverData && Array.isArray(serverData.tasks)) {
+            setTasks(prev => {
+              if (JSON.stringify(prev) !== JSON.stringify(serverData.tasks)) {
+                return serverData.tasks;
+              }
+              return prev;
+            });
+          }
+          if (serverData && Array.isArray(serverData.deletedTasks)) {
+            setDeletedTasks(prev => {
+              if (JSON.stringify(prev) !== JSON.stringify(serverData.deletedTasks)) {
+                return serverData.deletedTasks;
+              }
+              return prev;
+            });
+          }
+          if (serverData && Array.isArray(serverData.emails)) {
+            setEmails(prev => {
+              if (JSON.stringify(prev) !== JSON.stringify(serverData.emails)) {
+                return serverData.emails;
+              }
+              return prev;
+            });
+          }
+        }
+      } catch {}
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   const validateAdminPin = (pin: string): boolean => {
     const clean = (pin || '').trim();
     const correct = (brandConfig?.adminPin || '8899').trim();
@@ -2367,7 +2564,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const targetUserTasks = isUserMgr
       ? tasks
-      : tasks.filter(t => !t.isPrivate && (t.assignedToId === user.id || isMemberMentioned(t, user)));
+      : tasks.filter(t => !t.isPrivate && (isTaskAssignedToUser(t, user) || isMemberMentioned(t, user)));
 
     const overdueCount = targetUserTasks.filter(t => t.status !== 'completed' && getDeadlineStatus(t.dueDate, t.dueTime, t.status).isOverdue).length;
     const todayCount = targetUserTasks.filter(t => t.status !== 'completed' && getDeadlineStatus(t.dueDate, t.dueTime, t.status).isToday).length;
@@ -2681,11 +2878,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openQuickModal,
         setOpenQuickModal,
         tasks,
+        deletedTasks,
         addTask,
         updateTask,
         deleteTask,
         deleteTasks,
         clearCompletedTasks,
+        restoreTaskFromTrash,
+        emptyTasksTrash,
+        permanentlyDeleteTask,
         toggleSubTask,
         changeTaskStatus,
         moveTaskToMember,
@@ -2713,6 +2914,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markEmailAsRead,
         toggleStarEmail,
         deleteEmail,
+        emptyTrash,
+        restoreEmailFromTrash,
+        permanentlyDeleteEmail,
         leads,
         addLead,
         addLeadsBulk,

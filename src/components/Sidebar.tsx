@@ -45,7 +45,7 @@ import {
   LogOut,
   FolderGit2
 } from 'lucide-react';
-import { useCRM } from '../context/CRMContext';
+import { useCRM, isTaskAssignedToUser } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 
 export const Sidebar: React.FC = () => {
@@ -89,7 +89,7 @@ export const Sidebar: React.FC = () => {
   // Visible tasks for the current user in sidebar
   const userVisibleTasks = isManager
     ? tasks
-    : tasks.filter(t => !t.isPrivate && ((currentUser && t.assignedToId === currentUser.id) || isUserMentionedInTask(t)));
+    : tasks.filter(t => !t.isPrivate && ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentionedInTask(t)));
 
   // Check overdue tasks for current user
   const overdueCount = userVisibleTasks.filter(t => {
