@@ -28,7 +28,8 @@ import {
   Info,
   HelpCircle,
   FolderDown,
-  FileCheck
+  FileCheck,
+  FolderGit2
 } from 'lucide-react';
 import { useCRM, DEFAULT_BRAND_CONFIG } from '../../context/CRMContext';
 import { SwiftMyndLogo } from '../common/SwiftMyndLogo';
@@ -47,7 +48,8 @@ export const SystemSettingsView: React.FC = () => {
     deals,
     clientRenewals,
     exportSystemBackup,
-    importSystemBackup
+    importSystemBackup,
+    setIsGitHubModalOpen
   } = useCRM();
 
   const [activeTab, setActiveTab] = useState<'logo_favicon' | 'colors' | 'general' | 'preview' | 'backup'>('logo_favicon');
@@ -1003,6 +1005,35 @@ export const SystemSettingsView: React.FC = () => {
               <div className="text-2xl font-black text-amber-600 mt-1">{deals.length + leads.length}</div>
               <div className="text-[10px] text-slate-500 mt-0.5 font-medium">{deals.length} صفقة + {leads.length} ليد مسجل</div>
             </div>
+          </div>
+
+          {/* Featured: Direct GitHub Sync Card */}
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-700/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 flex items-center justify-center shrink-0">
+                <FolderGit2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-black text-sm text-white">تصدير واستيراد أحدث نسخة عبر GitHub (حفظ الداتا من المسح)</h4>
+                  <span className="text-[10px] bg-cyan-400/20 text-cyan-300 border border-cyan-400/30 px-2 py-0.5 rounded-full font-bold font-mono">
+                    hadeersaid985-sys/SWIFT
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
+                  تتيح لكِ هذه الميزة حفظ نسخة طبق الأصل من كافة بياناتك (الموظفين الـ 9، التاسكات، الصفقات، الإعدادات) مباشرة في مستودع GitHub الخاص بكِ، واستعادتها في ثوانٍ حتى لا تُمسح أي داتا أبداً بعد أي Deploy أو تحديث على الموقع.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsGitHubModalOpen(true)}
+              className="px-5 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black rounded-xl text-xs shadow-lg transition-all cursor-pointer shrink-0 flex items-center gap-2 hover:scale-[1.02]"
+            >
+              <FolderGit2 className="w-4 h-4 text-slate-950" />
+              <span>فتح نافذة مزامنة GitHub 🚀</span>
+            </button>
           </div>
 
           {/* Action Boxes: Export vs Import */}

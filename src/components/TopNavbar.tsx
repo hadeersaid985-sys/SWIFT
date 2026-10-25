@@ -37,7 +37,9 @@ import {
   Copy,
   Camera,
   Image as ImageIcon,
-  Palette
+  Palette,
+  FolderGit2,
+  UserCheck
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
@@ -75,6 +77,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
     resetBrandConfig,
     setIsAdminPinModalOpen,
     setIsDailyDigestOpen,
+    setIsGitHubModalOpen,
     digestOverdueCount,
     digestTodayCount,
     logoutUser
@@ -177,6 +180,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
       case 'payroll':
       case 'salaries':
         return 'المرتبات والحضور والأرباح (خاص بالإدارة) 🔒';
+      case 'profile':
+        return 'الملف الشخصي وإعدادات الحساب 👤';
       default:
         return 'swiftmynd CRM';
     }
@@ -921,6 +926,26 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                 </div>
               </button>
 
+              {/* GitHub Sync */}
+              <div className="border-t border-slate-100 pt-1 mt-1">
+                <button
+                  onClick={() => {
+                    setIsGitHubModalOpen(true);
+                    setShowSettingsMenu(false);
+                  }}
+                  className="w-full text-right px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2.5 text-slate-800 cursor-pointer"
+                >
+                  <FolderGit2 className="w-4 h-4 text-cyan-600" />
+                  <div>
+                    <div className="font-bold flex items-center gap-1.5">
+                      <span>تصدير واستيراد GitHub</span>
+                      <span className="text-[9px] bg-cyan-100 text-cyan-800 px-1 py-0.2 rounded font-bold">حفظ الداتا</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">حفظ واسترجاع أحدث نسخة من المستودع لعدم فقدان البيانات</div>
+                  </div>
+                </button>
+              </div>
+
               {/* 5. Reset Data */}
               <div className="border-t border-slate-100 pt-1 mt-1">
                 <button
@@ -989,16 +1014,30 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                 <div className="text-[11px] text-blue-600 font-bold mt-0.5">{currentUser.role}</div>
                 <div className="text-[10px] text-slate-500">{currentUser.department}</div>
 
+                {/* زر الملف الشخصي وتعديل الحساب (الاسم، الصورة، الباسورد) */}
                 <button
                   onClick={() => {
-                    setActiveTab('team');
+                    setActiveTab('profile');
                     setShowUserMenu(false);
                   }}
-                  className="w-full mt-2 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                  title="تغيير صورتك أو صور أعضاء الفريق"
+                  className="w-full mt-2 py-2 px-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+                  title="تعديل اسمك، صورتك الشخصية، كلمة المرور وبياناتك"
                 >
-                  <Camera className="w-3.5 h-3.5 text-blue-600" />
-                  <span>تغيير صورة الحساب والأفاتار 📷</span>
+                  <UserCheck className="w-4 h-4 text-white" />
+                  <span>الملف الشخصي (الاسم، الصورة، الباسورد) 👤</span>
+                </button>
+
+                {/* زر المزامنة والتصدير والاستيراد من GitHub */}
+                <button
+                  onClick={() => {
+                    setIsGitHubModalOpen(true);
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full mt-1.5 py-1.5 px-2 bg-slate-900 hover:bg-black text-cyan-300 border border-cyan-500/30 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+                  title="تصدير واستيراد أحدث نسخة عبر GitHub لحماية البيانات من المسح"
+                >
+                  <FolderGit2 className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>تصدير واستيراد GitHub (حفظ الداتا) 🛡️</span>
                 </button>
 
                 <div className="mt-2 pt-2 border-t border-slate-200/60 font-mono text-[10px] space-y-1">

@@ -244,9 +244,15 @@ interface CRMContextType {
   digestOverdueCount: number;
   digestTodayCount: number;
 
-  // النسخ الاحتياطي وتصدير واستيراد البيانات (Backup & Export/Import)
+  // الملف الشخصي وتحديث بيانات المستخدم الحالي
+  updateCurrentProfile: (updates: Partial<TeamMember>) => void;
+
+  // النسخ الاحتياطي وتصدير واستيراد البيانات (Backup & Export/Import & GitHub)
   exportSystemBackup: () => string;
+  getSystemBackupJson: () => string;
   importSystemBackup: (jsonData: string) => { success: boolean; message: string };
+  isGitHubModalOpen: boolean;
+  setIsGitHubModalOpen: (open: boolean) => void;
 }
 
 export const DEFAULT_BRAND_CONFIG: BrandConfig = {
@@ -2294,6 +2300,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Daily Digest State & Logic (التنبيهات والموجز اليومي للموظف)
   const [isDailyDigestOpen, setIsDailyDigestOpen] = useState(false);
+  const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
 
   const isMemberMentioned = (t: Task, member?: TeamMember | null) => {
     if (!t || !member || !member.id) return false;
@@ -2474,7 +2481,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}reports`, JSON.stringify([]));
   };
 
-  const exportSystemBackup = () => {
+  const updateCurrentProfile = (updates: Partial<TeamMember>) => {
+    if (!currentUser?.id) return;
+    updateTeamMember(currentUser.id, updates);
+    logActivity(
+      'team',
+      'تحديث الملف الشخصي',
+      `قام المستخدم (${updates.name || currentUser.name}) بتحديث بيانات حسابه (الاسم / الصورة / كلمة المرور)`
+    );
+  };
+
+  const getSystemBackupJson = () => {
     const backupData = {
       version: '1.0',
       system: 'SWIFTMYND / tazkoraio',
@@ -2498,7 +2515,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       companyExpenses,
       monthlyPayrolls
     };
-    const jsonStr = JSON.stringify(backupData, null, 2);
+    return JSON.stringify(backupData, null, 2);
+  };
+
+  const exportSystemBackup = () => {
+    const jsonStr = getSystemBackupJson();
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
       try {
         const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -2760,7 +2781,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         digestOverdueCount,
         digestTodayCount,
         exportSystemBackup,
-        importSystemBackup
+        getSystemBackupJson,
+        importSystemBackup,
+        isGitHubModalOpen,
+        setIsGitHubModalOpen,
+        updateCurrentProfile
       }}
     >
       {children}

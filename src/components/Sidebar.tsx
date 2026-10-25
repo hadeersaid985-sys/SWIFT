@@ -42,7 +42,8 @@ import {
   Lock,
   Settings,
   Camera,
-  LogOut
+  LogOut,
+  FolderGit2
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
@@ -63,6 +64,7 @@ export const Sidebar: React.FC = () => {
     returnToAdmin,
     team,
     setIsAdminPinModalOpen,
+    setIsGitHubModalOpen,
     logoutUser
   } = useCRM();
 
@@ -363,6 +365,38 @@ export const Sidebar: React.FC = () => {
                 </span>
               )}
             </button>
+
+            {/* الملف الشخصي وتعديل الحساب (الاسم، الصورة، الباسورد) */}
+            <div className="pt-2 border-t border-slate-800/80">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-xl transition-all cursor-pointer border ${
+                  activeTab === 'profile'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-md border-blue-400 ring-1 ring-blue-300/40'
+                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-white border-slate-700/60'
+                }`}
+                title="الملف الشخصي: تعديل الاسم، صورة البروفايل، وكلمة المرور"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-5 h-5 rounded-full object-cover border border-cyan-400 shrink-0"
+                  />
+                  {!isCollapsed && (
+                    <div className="truncate">
+                      <div className="font-extrabold truncate text-xs text-white">{currentUser.name}</div>
+                      <div className="text-[10px] text-cyan-300 truncate font-semibold">تعديل البروفايل والباسورد ⚙️</div>
+                    </div>
+                  )}
+                </div>
+                {!isCollapsed && (
+                  <span className="text-[9px] bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 px-1.5 py-0.5 rounded font-bold shrink-0">
+                    تعديل
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         ) : (
           /* ================= IF ADMIN: SHOW EVERYTHING (الادمن عنده كل حاجة) ================= */
@@ -862,6 +896,40 @@ export const Sidebar: React.FC = () => {
                   {!isCollapsed && <span>تعديل اللوجو والشعار سريعاً</span>}
                 </div>
                 {!isCollapsed && <span className="text-[10px] text-slate-500">نافذة ⚙️</span>}
+              </button>
+
+              {/* زر تصدير واستيراد أحدث نسخة من GitHub */}
+              <button
+                onClick={() => setIsGitHubModalOpen(true)}
+                className="w-full text-right flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] bg-slate-900/90 hover:bg-slate-800 text-cyan-300 hover:text-white transition-colors cursor-pointer border border-cyan-500/20"
+                title="تصدير واستيراد أحدث نسخة عبر GitHub لحماية البيانات من المسح"
+              >
+                <div className="flex items-center gap-2">
+                  <FolderGit2 className="w-3.5 h-3.5 text-cyan-400" />
+                  {!isCollapsed && <span>تصدير واستيراد GitHub</span>}
+                </div>
+                {!isCollapsed && <span className="text-[9px] bg-cyan-500/20 text-cyan-300 px-1 rounded font-bold">حفظ الداتا</span>}
+              </button>
+
+              {/* زر الملف الشخصي للمدير */}
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`w-full text-right flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] transition-colors cursor-pointer border ${
+                  activeTab === 'profile'
+                    ? 'bg-blue-600 text-white font-bold border-blue-400'
+                    : 'bg-slate-900/40 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-800'
+                }`}
+                title="الملف الشخصي: تعديل الاسم، صورة البروفايل، وكلمة المرور"
+              >
+                <div className="flex items-center gap-2">
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-4 h-4 rounded-full object-cover border border-cyan-400"
+                  />
+                  {!isCollapsed && <span>الملف الشخصي والباسورد</span>}
+                </div>
+                {!isCollapsed && <span className="text-[10px] text-slate-500">👤</span>}
               </button>
             </div>
           )}
