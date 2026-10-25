@@ -202,12 +202,18 @@ const AppContent: React.FC = () => {
     if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
       return 'tasks';
     }
+    if (isManager && activeTab === 'work_queue') {
+      return 'reports';
+    }
     return activeTab || (isManager ? 'reports' : 'tasks');
   }, [isManager, activeTab]);
 
   useEffect(() => {
     if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
       setActiveTab('tasks');
+    }
+    if (isManager && activeTab === 'work_queue') {
+      setActiveTab('reports');
     }
   }, [isManager, activeTab, setActiveTab]);
 
@@ -264,7 +270,6 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'marketing' && <MarketingBoardView />}
               {effectiveTab === 'renewals' && <ClientRenewalsView />}
               {effectiveTab === 'host_migration' && <HostMigrationView />}
-              {effectiveTab === 'work_queue' && <WorkQueueView />}
               {effectiveTab === 'reports' && <ReportsListView />}
               {effectiveTab === 'tasks' && <TasksView />}
               {effectiveTab === 'team' && <TeamView />}
@@ -291,7 +296,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'mcp' && <AnalyticsView />}
 
               {/* Fallback for unlisted manager tabs */}
-              {!['profile', 'marketing', 'renewals', 'host_migration', 'work_queue', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
+              {!['profile', 'marketing', 'renewals', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
                 <ReportsListView />
               )}
             </>

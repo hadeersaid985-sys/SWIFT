@@ -270,19 +270,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                     <div className="text-[10px] text-slate-400">تاسك بمؤقت وتتبع ومنشنات</div>
                   </div>
                 </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('work_queue');
-                    setShowAddMenu(false);
-                  }}
-                  className="w-full text-right px-3 py-2 hover:bg-blue-50/60 flex items-center gap-2 text-slate-700 cursor-pointer"
-                >
-                  <FolderClock className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <div className="font-bold">عنصر لقائمة انتظار العمل</div>
-                    <div className="text-[10px] text-slate-400">طابور مهام ومكالمات الانتظار</div>
-                  </div>
-                </button>
+
                 <button
                   onClick={() => {
                     setActiveTab('reports');
@@ -504,19 +492,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                     <div className="text-[10px] text-slate-400">لوحات كانبان وجداول المهام</div>
                   </div>
                 </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('work_queue');
-                    setShowEditMenu(false);
-                  }}
-                  className="w-full text-right px-3 py-2 hover:bg-indigo-50/70 flex items-center gap-2 text-slate-800 cursor-pointer"
-                >
-                  <FolderClock className="w-4 h-4 text-amber-600" />
-                  <div>
-                    <div className="font-bold">تعديل عناصر قائمة انتظار العمل</div>
-                    <div className="text-[10px] text-slate-400">ترتيب الأولويات وحالات الإنجاز</div>
-                  </div>
-                </button>
+
                 {isManagerUser && (
                   <>
                     <button

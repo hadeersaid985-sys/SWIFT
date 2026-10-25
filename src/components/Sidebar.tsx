@@ -505,26 +505,6 @@ export const Sidebar: React.FC = () => {
               )}
             </button>
 
-            {/* Item 4: قائمة انتظار العمل (Work Queue) */}
-            <button
-              onClick={() => setActiveTab('work_queue')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer relative ${
-                activeTab === 'work_queue'
-                  ? 'bg-blue-600 text-white font-bold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="قائمة انتظار العمل"
-            >
-              <div className="flex items-center gap-2.5">
-                <FolderClock className={`w-4 h-4 shrink-0 ${activeTab === 'work_queue' ? 'text-amber-300' : 'text-amber-400'}`} />
-                {!isCollapsed && <span>قائمة انتظار العمل</span>}
-              </div>
-              {!isCollapsed && (
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.2 rounded font-bold font-mono">
-                  6
-                </span>
-              )}
-            </button>
 
             {/* Item 5: التقارير */}
             <button
