@@ -14,7 +14,7 @@ import {
   Copy,
   Check
 } from 'lucide-react';
-import { useCRM } from '../../context/CRMContext';
+import { useCRM, matchUserCredentials } from '../../context/CRMContext';
 import { TeamMember } from '../../types/crm';
 import { SwiftMyndLogo } from '../common/SwiftMyndLogo';
 
@@ -42,17 +42,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
     setErrorMsg('');
     setSuccessMsg('');
 
-    const cleanUser = usernameInput.trim().toLowerCase();
-    const cleanPass = passwordInput.trim();
-
-    const targetUser = team.find(
-      m =>
-        (m.username.toLowerCase() === cleanUser ||
-          m.email.toLowerCase() === cleanUser ||
-          (cleanUser === 'admin' && (m.accessLevel === 'admin' || m.id === 'user-1'))) &&
-        (m.password === cleanPass ||
-          (m.accessLevel === 'admin' && (cleanPass === 'Admin@Swift2026' || cleanPass === 'admin' || cleanPass === '8899')))
-    );
+    const targetUser = team.find(m => matchUserCredentials(m, usernameInput, passwordInput));
 
     if (targetUser) {
       loginUser(targetUser);

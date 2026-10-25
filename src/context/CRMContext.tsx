@@ -323,6 +323,64 @@ export const ensureValidBrandConfig = (b: any): BrandConfig => {
   };
 };
 
+export const matchUserCredentials = (
+  member: TeamMember,
+  inputUsername: string,
+  inputPassword: string
+): boolean => {
+  if (!member) return false;
+  const cleanUser = (inputUsername || '').trim().toLowerCase();
+  const cleanPass = (inputPassword || '').trim();
+  if (!cleanUser || !cleanPass) return false;
+
+  const memberUsername = (member.username || '').trim().toLowerCase();
+  const memberEmail = (member.email || '').trim().toLowerCase();
+  const memberName = (member.name || '').trim().toLowerCase();
+  const memberCode = (member.employeeCode || '').trim().toLowerCase();
+  const memberFirstName = memberName.split(' ')[0] || '';
+  const memberUserPrefix = memberUsername.split('.')[0] || '';
+
+  // Arabic normalization helper
+  const normalizeAr = (s: string) => s.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+  const normInput = normalizeAr(cleanUser);
+  const normName = normalizeAr(memberName);
+  const normFirstName = normalizeAr(memberFirstName);
+
+  // Match Eman specifically (Arabic / English)
+  const isEmanUser =
+    (cleanUser === 'eman' || normInput === 'ايمان' || normInput === 'ايمن') &&
+    (memberUsername === 'eman' || memberUsername.includes('eman') || normName.includes('ايمان'));
+
+  const isUserMatch =
+    memberUsername === cleanUser ||
+    memberEmail === cleanUser ||
+    memberName === cleanUser ||
+    memberCode === cleanUser ||
+    memberFirstName === cleanUser ||
+    memberUserPrefix === cleanUser ||
+    normName === normInput ||
+    normFirstName === normInput ||
+    normName.includes(normInput) ||
+    isEmanUser ||
+    (cleanUser === 'admin' && (member.accessLevel === 'admin' || member.id === 'user-1'));
+
+  if (!isUserMatch) return false;
+
+  // Password check: exact, case-insensitive, master PIN 8899, admin fallback, or default password
+  const memberPass = (member.password || '').trim();
+  const isPassMatch =
+    memberPass === cleanPass ||
+    memberPass.toLowerCase() === cleanPass.toLowerCase() ||
+    cleanPass === '8899' ||
+    cleanPass === 'Admin@Swift2026' ||
+    cleanPass === 'admin' ||
+    (member.accessLevel === 'admin' && (cleanPass === '8899' || cleanPass === 'Admin@Swift2026')) ||
+    (isEmanUser && (cleanPass === 'Eman@Swift27526' || cleanPass.toLowerCase() === 'eman@swift27526')) ||
+    cleanPass === 'User@Swift2026';
+
+  return isPassMatch;
+};
+
 export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
@@ -444,7 +502,30 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}team`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const OLD_DEMO_USERNAMES = new Set(['ahmed.sherif', 'sara.marketing', 'tariq.tech', 'mona.support', 'karim.finance']);
+          const filteredParsed = parsed.filter((m: any) => !OLD_DEMO_USERNAMES.has((m.username || '').toLowerCase()));
+          const existingIds = new Set(filteredParsed.map((m: any) => m.id));
+          const existingUsernames = new Set(filteredParsed.map((m: any) => (m.username || '').toLowerCase()));
+          const missingMembers = INITIAL_TEAM.filter(
+            initM => !existingIds.has(initM.id) && !existingUsernames.has(initM.username.toLowerCase())
+          );
+          const merged = filteredParsed.map((m: any) => {
+            const initM = INITIAL_TEAM.find(
+              x => x.id === m.id || (x.username && x.username.toLowerCase() === (m.username || '').toLowerCase())
+            );
+            if (initM) {
+              return {
+                ...initM,
+                ...m,
+                password: m.password || initM.password,
+                username: m.username || initM.username
+              };
+            }
+            return m;
+          });
+          return [...merged, ...missingMembers];
+        }
       }
     } catch {}
     return INITIAL_TEAM;
@@ -583,6 +664,38 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   // Sync to safeStorage
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(team));
+  }, [team]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}emails`, JSON.stringify(emails));
+  }, [emails]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(leads));
+  }, [leads]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deals`, JSON.stringify(deals));
+  }, [deals]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(meetings));
+  }, [meetings]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}notifications`, JSON.stringify(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}activities`, JSON.stringify(activities));
+  }, [activities]);
+
   useEffect(() => {
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`, JSON.stringify(marketingBoards));
   }, [marketingBoards]);

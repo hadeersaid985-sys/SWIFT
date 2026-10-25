@@ -10,7 +10,7 @@ import {
   ArrowRight,
   Lock
 } from 'lucide-react';
-import { useCRM } from '../../context/CRMContext';
+import { useCRM, matchUserCredentials } from '../../context/CRMContext';
 import { SwiftMyndLogo } from '../common/SwiftMyndLogo';
 
 interface EmployeeLoginPageProps {
@@ -34,18 +34,7 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
     setSuccessMsg('');
     setIsSubmitting(true);
 
-    const cleanUser = (usernameInput || '').trim().toLowerCase();
-    const cleanPass = (passwordInput || '').trim();
-
-    const targetUser = team.find(
-      m =>
-        m &&
-        (((m.username && m.username.toLowerCase() === cleanUser) ||
-          (m.email && m.email.toLowerCase() === cleanUser) ||
-          (cleanUser === 'admin' && (m.accessLevel === 'admin' || m.id === 'user-1'))) &&
-          (m.password === cleanPass ||
-            (m.accessLevel === 'admin' && (cleanPass === 'Admin@Swift2026' || cleanPass === 'admin' || cleanPass === '8899'))))
-    );
+    const targetUser = team.find(m => matchUserCredentials(m, usernameInput, passwordInput));
 
     if (targetUser) {
       setSuccessMsg(`أهلاً بك، ${targetUser.name}! جاري الدخول للمنظومة...`);
