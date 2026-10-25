@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "system": "SWIFTMYND / tazkoraio",
-  "exportedAt": "2026-10-25T13:16:04.045Z",
+  "exportedAt": "2026-10-25T14:34:45.518Z",
   "brandConfig": {
     "brandName": "SWIFTMYND",
     "brandSubtitle": "منظومة إدارة المهام وتتبع الإنتاجية",
@@ -236,6 +236,188 @@
     }
   ],
   "tasks": [
+    {
+      "title": "التاسكات بضفها من المدير الي الموظف مش بيظهر خالص علشان جهاز تاني عايزه التاسكات تظهر  والمنشن بعملها منشن علي الحساب بتعاعها مش بتظهر علي الجهاز بتاعتها  خالص المنشن ولا التاسكات",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-1",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-25",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792938874231",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "رفع 3 مقالات الدرب",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-25",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792938244638",
+      "mentionedUserIds": [],
+      "comments": [
+        {
+          "id": "comment-1792938753743",
+          "taskId": "task-1792938244638",
+          "authorId": "user-1",
+          "authorName": "هدير سعيد",
+          "authorAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+          "content": "@Eman_Ashraf",
+          "createdAt": "٠٥:٣٢ م اليوم",
+          "mentionedUserIds": [
+            "user-eman"
+          ]
+        }
+      ],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "id": "task-mgr-private-1",
+      "title": "🔒 مراجعة الحسابات وتوزيع مكافآت الربع السنوي (سري للمدير)",
+      "description": "مراجعة أرباح صفقات Q3 واعتماد كشوف مكافآت الإنجاز لأعضاء الفريق والتحويلات المالية الحساسة.",
+      "assignedToId": "user-1",
+      "priority": "urgent",
+      "status": "in_progress",
+      "startDate": "2026-10-24",
+      "dueDate": "2026-10-28",
+      "dueTime": "14:00",
+      "category": "إداري",
+      "estimatedHours": 5,
+      "totalLoggedMinutes": 120,
+      "isTimerRunning": false,
+      "isPrivate": true,
+      "subtasks": [
+        {
+          "id": "sub-p1",
+          "title": "تدقيق أرباح صفقات المبيعات المغلقة",
+          "completed": true
+        },
+        {
+          "id": "sub-p2",
+          "title": "مراجعة نسب عمولات كريم وأحمد",
+          "completed": true
+        },
+        {
+          "id": "sub-p3",
+          "title": "اعتماد التحويل المالي من الحساب البنكي الرئيسي",
+          "completed": false
+        }
+      ],
+      "timeLogs": [],
+      "createdAt": "2026-10-24"
+    },
+    {
+      "title": "باك لينك ساوث كوست",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-29",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934640413",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25",
+      "completedAt": "2026-10-25"
+    },
+    {
+      "title": "باك لينك جودلن وابديت للمحتوي",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-28",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934620837",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "رفع gx المقالات + باك لينك",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-11-25",
+      "dueDate": "2026-10-27",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934453877",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "باك لينك موقع باورتك",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-25",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934402381",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "رفع 3 مقالات الدرب",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-25",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934381326",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
     {
       "id": "task-102",
       "title": "مكالمة متابعة العرض مع بنك الرياض بالتنسيق مع @طارق_القحطاني",
@@ -1143,6 +1325,96 @@
   "reports": [],
   "activities": [
     {
+      "id": "act-1792938874231",
+      "type": "task",
+      "title": "تم إنشاء مهمة جديدة وتحديد موعد التسليم",
+      "description": "التاسكات بضفها من المدير الي الموظف مش بيظهر خالص علشان جهاز تاني عايزه التاسكات تظهر  والمنشن بعملها منشن علي الحساب بتعاعها مش بتظهر علي الجهاز بتاعتها  خالص المنشن ولا التاسكات",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1792938753744",
+      "type": "task",
+      "title": "منشن في مهمة",
+      "description": "هدير سعيد أضاف تعليقاً ومنشن في: رفع 3 مقالات الدرب",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1792938244638",
+      "type": "task",
+      "title": "تم إنشاء مهمة جديدة وتحديد موعد التسليم",
+      "description": "رفع 3 مقالات الدرب",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1792938224392",
+      "type": "task",
+      "title": "تم إنجاز المهمة بنجاح 🎉",
+      "description": "باك لينك ساوث كوست",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1792934725141",
+      "type": "team",
+      "title": "الدخول بحساب عضو من الفريق",
+      "description": "قام المدير بالدخول بحساب: Eman Ashraf (Eman)",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1792934640413",
+      "type": "task",
+      "title": "تم إنشاء مهمة جديدة وتحديد موعد التسليم",
+      "description": "باك لينك ساوث كوست",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1792934620837",
+      "type": "task",
+      "title": "تم إنشاء مهمة جديدة وتحديد موعد التسليم",
+      "description": "باك لينك جودلن وابديت للمحتوي",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1792934453877",
+      "type": "task",
+      "title": "تم إنشاء مهمة جديدة وتحديد موعد التسليم",
+      "description": "رفع gx المقالات + باك لينك",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1792934402381",
+      "type": "task",
+      "title": "تم إنشاء مهمة جديدة وتحديد موعد التسليم",
+      "description": "باك لينك موقع باورتك",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1792934381326",
+      "type": "task",
+      "title": "تم إنشاء مهمة جديدة وتحديد موعد التسليم",
+      "description": "رفع 3 مقالات الدرب",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
       "id": "act-1792932096528",
       "type": "team",
       "title": "تعديل هوية المنظومة واللوجو",
@@ -1231,99 +1503,85 @@
       "timestamp": "الآن",
       "userName": "هدير سعيد",
       "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "مراجعة تقرير أداء إعلانات جوجل لحملة الرياض (متأخرة)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "إرسال جدول تسليم المراحل والدفعات لشركة أفق السحاب",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "متابعة موافقة العرض الفني والمالي مع شركة بوابة الأعمال (متأخرة)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "إعداد ومطابقة الإقرارات الضريبية والفواتير الإلكترونية",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "مكالمة ترحيب واستبيان رضا عملاء باقة Pro الجدد",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "إرسال عرض السعر النهائي والتعاقد مع @هدير_سعيد لشركة إعمار المستقبل",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930702452",
-      "type": "task",
-      "title": "تم حذف تقرير",
-      "description": "تقرير مسار صفقات المبيعات وإيرادات الربع السنوي",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930702452",
-      "type": "task",
-      "title": "تم حذف تقرير",
-      "description": "تقرير إنتاجية المهام ومواعيد الاستحقاق (Deadlines)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930702452",
-      "type": "task",
-      "title": "تم حذف تقرير",
-      "description": "تسجيلات الوصول للحسابات",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930702452",
-      "type": "task",
-      "title": "تم حذف تقرير",
-      "description": "تسجيلات الوصول للعملاء المحتملين",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
     }
   ],
   "notifications": [
+    {
+      "id": "notif-mention-1792938753744-mwbp",
+      "title": "🔔 منشن لك من هدير سعيد في مهمة: رفع 3 مقالات الدرب",
+      "message": "\"@Eman_Ashraf\" - المكتوب بواسطة: هدير سعيد",
+      "timestamp": "الآن",
+      "type": "task_mention",
+      "isRead": false,
+      "linkTab": "tasks",
+      "taskId": "task-1792938244638",
+      "senderName": "هدير سعيد",
+      "senderAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      "mentionedUserId": "user-eman"
+    },
+    {
+      "id": "notif-assign-1792938244638-user-eman",
+      "title": "تم تكليفك بمهمة جديدة: رفع 3 مقالات الدرب",
+      "message": "موعد التسليم النهائي: 2026-10-25 الساعة 18:00 | الأولوية: عالية 🟡",
+      "timestamp": "الآن",
+      "type": "task_deadline",
+      "isRead": false,
+      "linkTab": "tasks"
+    },
+    {
+      "id": "notif-daily-digest-user-eman-2026-10-25",
+      "title": "📋 موجز المهام اليومي (Daily Digest) - Eman Ashraf",
+      "message": "لديك 2 مهام مجدولة لليوم، و 0 مهام متأخرة تحتاج لتدخلك.",
+      "timestamp": "الآن",
+      "type": "daily_digest",
+      "isRead": false,
+      "linkTab": "tasks"
+    },
+    {
+      "id": "notif-assign-1792934640413-user-eman",
+      "title": "تم تكليفك بمهمة جديدة: باك لينك ساوث كوست",
+      "message": "موعد التسليم النهائي: 2026-10-29 الساعة 18:00 | الأولوية: عالية 🟡",
+      "timestamp": "الآن",
+      "type": "task_deadline",
+      "isRead": false,
+      "linkTab": "tasks"
+    },
+    {
+      "id": "notif-assign-1792934620838-user-eman",
+      "title": "تم تكليفك بمهمة جديدة: باك لينك جودلن وابديت للمحتوي",
+      "message": "موعد التسليم النهائي: 2026-10-28 الساعة 18:00 | الأولوية: عالية 🟡",
+      "timestamp": "الآن",
+      "type": "task_deadline",
+      "isRead": false,
+      "linkTab": "tasks"
+    },
+    {
+      "id": "notif-assign-1792934453877-user-eman",
+      "title": "تم تكليفك بمهمة جديدة: رفع gx المقالات + باك لينك",
+      "message": "موعد التسليم النهائي: 2026-11-25 الساعة 18:00 | الأولوية: عالية 🟡",
+      "timestamp": "الآن",
+      "type": "task_deadline",
+      "isRead": false,
+      "linkTab": "tasks"
+    },
+    {
+      "id": "notif-assign-1792934402381-user-eman",
+      "title": "تم تكليفك بمهمة جديدة: باك لينك موقع باورتك",
+      "message": "موعد التسليم النهائي: 2026-11-25 الساعة 18:00 | الأولوية: عالية 🟡",
+      "timestamp": "الآن",
+      "type": "task_deadline",
+      "isRead": false,
+      "linkTab": "tasks"
+    },
+    {
+      "id": "notif-assign-1792934381326-user-eman",
+      "title": "تم تكليفك بمهمة جديدة: رفع 3 مقالات الدرب",
+      "message": "موعد التسليم النهائي: 2026-10-25 الساعة 18:00 | الأولوية: عالية 🟡",
+      "timestamp": "الآن",
+      "type": "task_deadline",
+      "isRead": false,
+      "linkTab": "tasks"
+    },
     {
       "id": "notif-mention-1",
       "title": "🔔 منشن لك من أحمد الشريف في مهمة: إرسال عرض السعر النهائي والتعاقد",
