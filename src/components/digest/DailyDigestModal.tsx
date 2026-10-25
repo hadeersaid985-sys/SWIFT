@@ -226,7 +226,7 @@ export const DailyDigestModal: React.FC = () => {
               <div className="flex items-center justify-between text-amber-300 text-[11px] font-bold">
                 <span className="flex items-center gap-1">
                   <Flame className="w-3.5 h-3.5 text-amber-400" />
-                  <span>إجمالي بؤرة اليوم</span>
+                  <span>إجمالي تاسكات اليوم</span>
                 </span>
                 <span className="text-[10px] bg-amber-400/20 text-amber-300 px-1 rounded font-mono">التركيز</span>
               </div>
