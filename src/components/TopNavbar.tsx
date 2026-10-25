@@ -43,6 +43,8 @@ import {
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
+import { QuickAttendanceWidget } from './attendance/QuickAttendanceWidget';
+import { WeeklyExecutiveModal } from './reports/WeeklyExecutiveModal';
 
 interface TopNavbarProps {
   onOpenLoginModal?: () => void;
@@ -98,6 +100,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showSearchPopover, setShowSearchPopover] = useState(false);
+  const [showWeeklyModal, setShowWeeklyModal] = useState(false);
 
   // Top action confirmation modal
   const [confirmModal, setConfirmModal] = useState<{
@@ -179,7 +182,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         return 'MCP الذكاء الاصطناعي';
       case 'payroll':
       case 'salaries':
-        return 'المرتبات والحضور والأرباح (خاص بالإدارة) 🔒';
+        return '';
       case 'profile':
         return 'الملف الشخصي وإعدادات الحساب 👤';
       default:
@@ -190,7 +193,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   return (
     <header className="h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 shadow-2xs">
       {/* Right Side: Swift Logo & Quick Logo Edit & Page Title */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <SwiftMyndLogo
           variant="horizontal"
           size="sm"
@@ -206,10 +209,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           <Camera className="w-3 h-3" />
           <span className="hidden sm:inline">تغيير اللوجو</span>
         </button>
-        <span className="text-slate-300 hidden sm:inline">|</span>
-        <h1 className="text-base font-bold text-slate-800 tracking-tight hidden sm:block">
-          {getTabTitle(activeTab)}
-        </h1>
+        {getTabTitle(activeTab) ? (
+          <>
+            <span className="text-slate-300 hidden md:inline">|</span>
+            <h1 className="text-sm font-bold text-slate-800 tracking-tight hidden md:block truncate max-w-xs whitespace-nowrap">
+              {getTabTitle(activeTab)}
+            </h1>
+          </>
+        ) : null}
       </div>
 
       {/* Left Side: Tools & Actions (Search pill, +, Zia, Bell, Calendar, Settings, User) */}
@@ -966,6 +973,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           )}
         </div>
 
+        {/* Quick Check-in / Check-out Widget */}
+        <QuickAttendanceWidget />
+
         {/* Role Switcher Pill: Only shown for Admin to test employee view */}
         {isManagerUser && (
           <button
@@ -1064,6 +1074,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                 >
                   <Sun className="w-3.5 h-3.5 text-amber-600" />
                   <span>موجز المهام اليومي (Daily Digest)</span>
+                </button>
+
+                {/* زر تقرير الإنجاز الأسبوعي الشامل للمدير */}
+                <button
+                  onClick={() => {
+                    setShowWeeklyModal(true);
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full mt-1.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200/80 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>تقرير الإنجاز الأسبوعي الشامل 📊</span>
                 </button>
 
                 <button
@@ -1234,6 +1256,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           <span>{toastMsg}</span>
         </div>
       )}
+
+      {/* Weekly Executive Summary Modal */}
+      <WeeklyExecutiveModal
+        isOpen={showWeeklyModal}
+        onClose={() => setShowWeeklyModal(false)}
+      />
     </header>
   );
 };

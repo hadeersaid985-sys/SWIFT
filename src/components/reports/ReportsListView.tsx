@@ -27,6 +27,7 @@ import {
 import * as XLSX from 'xlsx';
 import { useCRM } from '../../context/CRMContext';
 import { ReportItem } from '../../types/crm';
+import { WeeklyExecutiveModal } from './WeeklyExecutiveModal';
 
 export const ReportsListView: React.FC = () => {
   const { reports, addReport, deleteReport, currentUser } = useCRM();
@@ -38,6 +39,7 @@ export const ReportsListView: React.FC = () => {
   const [starredReports, setStarredReports] = useState<string[]>(['rep-1', 'rep-8']);
   const [activeReportModal, setActiveReportModal] = useState<ReportItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showWeeklyModal, setShowWeeklyModal] = useState<boolean>(false);
 
   // File Upload State
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -330,6 +332,15 @@ export const ReportsListView: React.FC = () => {
 
         {/* Action Buttons: رفع تقرير PDF / شيت + تصدير */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setShowWeeklyModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer text-xs"
+            title="فتح تقرير الإنجاز الأسبوعي الشامل للمدير مع خيارات نسخ واتساب والطباعة PDF"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>📊 تقرير الإنجاز الأسبوعي</span>
+          </button>
+
           <button
             onClick={() => {
               setUploadMode('file');
@@ -1003,6 +1014,11 @@ export const ReportsListView: React.FC = () => {
             </div>
           </form>
         </div>
+      )}
+
+      {/* Weekly Executive Report Modal */}
+      {showWeeklyModal && (
+        <WeeklyExecutiveModal onClose={() => setShowWeeklyModal(false)} />
       )}
     </div>
   );

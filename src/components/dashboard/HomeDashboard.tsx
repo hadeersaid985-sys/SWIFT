@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { SwiftMyndLogo } from '../common/SwiftMyndLogo';
+import { TopPerformerLeaderboard } from './TopPerformerLeaderboard';
 
 export const HomeDashboard: React.FC = () => {
   const {
@@ -232,6 +233,9 @@ export const HomeDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Gamification & Top Performer Leaderboard */}
+      <TopPerformerLeaderboard />
 
       {/* Main Grid: Priority Tasks & Pipeline Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

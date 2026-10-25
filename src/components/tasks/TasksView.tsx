@@ -44,10 +44,12 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember } from '../../types/crm';
+import { exportTasksToExcel } from '../../utils/excelExport';
 
 export const TasksView: React.FC = () => {
   const {
@@ -758,6 +760,16 @@ export const TasksView: React.FC = () => {
               )}
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => exportTasksToExcel(tasks, team)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-2xs hover:scale-102"
+            title="تصدير كشف المهام والمسؤولين وتتبع الساعات لإكسيل (.xlsx)"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-white" />
+            <span>تصدير إكسيل (Excel) 📗</span>
+          </button>
 
           <button
             onClick={() => setOpenQuickModal('task')}

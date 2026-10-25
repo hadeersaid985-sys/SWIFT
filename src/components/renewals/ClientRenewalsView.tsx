@@ -44,6 +44,9 @@ import {
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { ClientRenewal, RenewalStatus, ClientFileDocument } from '../../types/crm';
+import { WhatsAppRenewalModal } from './WhatsAppRenewalModal';
+import { ClientInvoiceModal } from './ClientInvoiceModal';
+import { exportClientsToExcel } from '../../utils/excelExport';
 
 export const ClientRenewalsView: React.FC = () => {
   const {
@@ -101,6 +104,8 @@ export const ClientRenewalsView: React.FC = () => {
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingRenewal, setEditingRenewal] = useState<ClientRenewal | null>(null);
+  const [whatsAppModalClient, setWhatsAppModalClient] = useState<ClientRenewal | null>(null);
+  const [invoiceModalClient, setInvoiceModalClient] = useState<ClientRenewal | null>(null);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
     id?: string;
     isBulk?: boolean;
@@ -682,15 +687,27 @@ export const ClientRenewalsView: React.FC = () => {
                 </button>
               </div>
 
-              <div className="relative w-full sm:w-72">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="بحث باسم العميل، الشركة، الخدمة، أو الشيت..."
-                  className="w-full bg-slate-50 pr-8 pl-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:bg-white focus:outline-none focus:border-emerald-500 font-bold"
-                />
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5" />
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => exportClientsToExcel(activeClientsPool)}
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs hover:scale-102 shrink-0"
+                  title="تصدير كشف العملاء وشيتات المتابعة بصيغة ملف إكسيل (.xlsx)"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-white" />
+                  <span>تصدير إكسيل (Excel) 📗</span>
+                </button>
+
+                <div className="relative w-full sm:w-64">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="بحث باسم العميل، الشركة، الخدمة، أو الشيت..."
+                    className="w-full bg-slate-50 pr-8 pl-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:bg-white focus:outline-none focus:border-emerald-500 font-bold"
+                  />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5" />
+                </div>
               </div>
             </div>
           </div>
@@ -828,16 +845,15 @@ export const ClientRenewalsView: React.FC = () => {
 
                       {/* Contact Bar: WhatsApp + Call + Email */}
                       <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-                        <a
-                          href={getWhatsAppLink(client)}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          onClick={() => setWhatsAppModalClient(client)}
                           className="flex-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[11px] font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                          title="مراسلة سريعة عبر الواتساب"
+                          title="مراسلة وتذكير ذكي بقوالب التجديد الجاهزة عبر الواتساب"
                         >
                           <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>واتساب</span>
-                        </a>
+                          <span>واتساب (قوالب)</span>
+                        </button>
 
                         <a
                           href={`tel:${client.phone}`}
@@ -922,20 +938,30 @@ export const ClientRenewalsView: React.FC = () => {
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleOpenDossier(client)}
-                        className="flex-1 py-1.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+                        className="flex-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
                       >
                         <Folder className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>فتح فولدر وملف العميل 📁</span>
+                        <span>الملف والفولدر 📁</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setInvoiceModalClient(client)}
+                        className="py-1.5 px-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs shrink-0"
+                        title="إنشاء وطباعة فاتورة وسند اشتراك PDF رسمي"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-amber-600" />
+                        <span>فاتورة PDF</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleOpenEdit(client)}
-                        className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-xl border border-slate-200 cursor-pointer transition-colors shadow-2xs"
+                        className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-xl border border-slate-200 cursor-pointer transition-colors shadow-2xs shrink-0"
                         title="تعديل بيانات العميل والشيت"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -948,7 +974,7 @@ export const ClientRenewalsView: React.FC = () => {
                           isBulk: false,
                           title: `حذف ملف واشتراك العميل (${client.clientName}) بالكامل؟`
                         })}
-                        className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 rounded-xl border border-rose-200 cursor-pointer transition-colors shadow-2xs"
+                        className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 rounded-xl border border-rose-200 cursor-pointer transition-colors shadow-2xs shrink-0"
                         title="حذف العميل نهائياً"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1025,16 +1051,28 @@ export const ClientRenewalsView: React.FC = () => {
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-64">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="بحث باسم العميل أو الشركة أو الخدمة..."
-            className="w-full bg-slate-50 pr-8 pl-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:bg-white focus:outline-none focus:border-blue-500"
-          />
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5" />
+        {/* Actions & Search */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => exportClientsToExcel(activeClientsPool)}
+            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs hover:scale-102 shrink-0"
+            title="تصدير كشف العملاء ومواعيد التجديد لإكسيل (.xlsx)"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-white" />
+            <span>تصدير إكسيل (Excel) 📗</span>
+          </button>
+
+          <div className="relative w-full sm:w-64">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="بحث باسم العميل أو الشركة أو الخدمة..."
+              className="w-full bg-slate-50 pr-8 pl-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:bg-white focus:outline-none focus:border-blue-500 font-bold"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5" />
+          </div>
         </div>
       </div>
 
@@ -1202,17 +1240,16 @@ export const ClientRenewalsView: React.FC = () => {
                       {/* Quick Contact: WhatsApp / Phone */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          {/* 1-Click WhatsApp Button */}
-                          <a
-                            href={getWhatsAppLink(ren)}
-                            target="_blank"
-                            rel="noreferrer"
+                          {/* 1-Click WhatsApp Button (قوالب التجديد الذكية) */}
+                          <button
+                            type="button"
+                            onClick={() => setWhatsAppModalClient(ren)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-2xs transition-all cursor-pointer"
-                            title="إرسال تذكير التجديد الفوري عبر الواتساب"
+                            title="إرسال تذكير التجديد الفوري عبر قوالب الواتساب الذكية"
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
                             <span>واتساب التجديد</span>
-                          </a>
+                          </button>
 
                           {/* Direct Call */}
                           <a
@@ -1250,6 +1287,16 @@ export const ClientRenewalsView: React.FC = () => {
                           >
                             <Folder className="w-3.5 h-3.5 text-blue-600" />
                             <span>ملف العميل</span>
+                          </button>
+
+                          {/* زر فاتورة وسند PDF */}
+                          <button
+                            type="button"
+                            onClick={() => setInvoiceModalClient(ren)}
+                            className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg border border-amber-200 cursor-pointer transition-colors shadow-2xs"
+                            title="إنشاء وطباعة فاتورة وسند اشتراك PDF رسمي"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-amber-600" />
                           </button>
 
                           <button
@@ -2655,6 +2702,21 @@ export const ClientRenewalsView: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ================= MODALS: WHATSAPP TEMPLATES & INVOICE PDF ================= */}
+      {whatsAppModalClient && (
+        <WhatsAppRenewalModal
+          client={whatsAppModalClient}
+          onClose={() => setWhatsAppModalClient(null)}
+        />
+      )}
+
+      {invoiceModalClient && (
+        <ClientInvoiceModal
+          client={invoiceModalClient}
+          onClose={() => setInvoiceModalClient(null)}
+        />
       )}
 
       {/* ================= TOAST NOTIFICATION BANNER ================= */}
