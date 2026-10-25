@@ -174,6 +174,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         return 'عمليات التكامل';
       case 'mcp':
         return 'MCP الذكاء الاصطناعي';
+      case 'payroll':
+      case 'salaries':
+        return 'المرتبات والحضور والأرباح (خاص بالإدارة) 🔒';
       default:
         return 'swiftmynd CRM';
     }

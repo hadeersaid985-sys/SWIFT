@@ -405,3 +405,56 @@ export interface SystemMigrationConfig {
   nginxConfigSample: string;
   envConfigSample: string;
 }
+
+// Attendance & Absence Tracker (نظام الحضور والغياب والتأخيرات)
+export type AttendanceStatus = 'present' | 'late' | 'absent' | 'leave';
+
+export interface AttendanceRecord {
+  id: string;
+  memberId: string;
+  memberName: string;
+  date: string; // YYYY-MM-DD
+  status: AttendanceStatus;
+  checkInTime?: string; // e.g. "09:00"
+  checkOutTime?: string; // e.g. "17:00"
+  lateMinutes?: number; // e.g. 45
+  isExcused?: boolean; // معفي من الخصم
+  notes?: string;
+  createdAt?: string;
+}
+
+// Monthly Payroll & Net Salaries Sheet (كشف مسير الرواتب وصافي المستحقات)
+export interface MonthlyPayrollRecord {
+  id: string;
+  memberId: string;
+  memberName: string;
+  month: string; // YYYY-MM
+  baseSalary: number;
+  salaryCurrency: string;
+  allowances: number;
+  bonus: number;
+  attendedDays: number;
+  absentDays: number;
+  lateMinutes: number;
+  absenceDeduction: number;
+  delayDeduction: number;
+  otherDeductions: number;
+  totalDeductions: number;
+  netPayable: number;
+  paymentStatus: 'pending' | 'paid';
+  paidAt?: string;
+  paymentMethod?: string;
+  notes?: string;
+}
+
+// Company Operating Expense for Profit calculation (المصروفات التشغيلية لحساب صافي الأرباح)
+export interface CompanyExpense {
+  id: string;
+  title: string;
+  amount: number;
+  currency: string;
+  category: 'تسويق وإعلانات' | 'سيرفرات وأدوات تقنية' | 'إيجار ومقر' | 'استشارات وقانونية' | 'أخرى';
+  date: string;
+  notes?: string;
+}
+

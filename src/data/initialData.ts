@@ -12,7 +12,9 @@ import {
   ClientRenewal,
   MeetingRecording,
   MarketingVideoScript,
-  CoachingAlertOffer
+  CoachingAlertOffer,
+  AttendanceRecord,
+  CompanyExpense
 } from '../types/crm';
 
 // Current logged in user is usually the primary operator
@@ -51,20 +53,26 @@ export const INITIAL_TEAM: TeamMember[] = [
   CURRENT_USER,
   {
     id: 'user-amira',
-    employeeCode: 'SM-107',
+    employeeCode: 'SM-110',
     name: 'Amira',
     role: 'account manager',
     department: 'التطوير والتقنية',
     email: 'Amira@swiftmynd.com',
     phone: '+201280075626',
     whatsappNumber: '+201280075626',
-    username: 'Amira',
-    password: 'Sw!ftbKMPddC@CL',
+    username: 'Amira2',
+    password: 'Sw!ftC4gc4i#D6T',
     accessLevel: 'member',
     isAccountActive: true,
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     status: 'online',
-    joinedDate: '2023-03-01'
+    joinedDate: '2023-03-01',
+    salary: 7500,
+    salaryCurrency: 'ر.س',
+    allowances: 800,
+    contractType: 'دوام كامل',
+    workingHours: '8 ساعات يومياً',
+    bankIban: 'SA98200000088231940120'
   },
   {
     id: 'user-aya',
@@ -81,7 +89,13 @@ export const INITIAL_TEAM: TeamMember[] = [
     isAccountActive: true,
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
     status: 'online',
-    joinedDate: '2023-04-15'
+    joinedDate: '2023-04-15',
+    salary: 7000,
+    salaryCurrency: 'ر.س',
+    allowances: 600,
+    contractType: 'دوام كامل',
+    workingHours: '8 ساعات يومياً',
+    bankIban: 'SA45200000047281940121'
   },
   {
     id: 'user-eman',
@@ -98,7 +112,13 @@ export const INITIAL_TEAM: TeamMember[] = [
     isAccountActive: true,
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
     status: 'online',
-    joinedDate: '2023-06-01'
+    joinedDate: '2023-06-01',
+    salary: 8200,
+    salaryCurrency: 'ر.س',
+    allowances: 1000,
+    contractType: 'دوام كامل',
+    workingHours: '8 ساعات يومياً',
+    bankIban: 'SA12200000091827461922'
   },
   {
     id: 'user-maibel',
@@ -115,7 +135,13 @@ export const INITIAL_TEAM: TeamMember[] = [
     isAccountActive: true,
     avatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150&auto=format&fit=crop&q=80',
     status: 'online',
-    joinedDate: '2023-07-10'
+    joinedDate: '2023-07-10',
+    salary: 8000,
+    salaryCurrency: 'ر.س',
+    allowances: 1200,
+    contractType: 'دوام كامل',
+    workingHours: '8 ساعات يومياً',
+    bankIban: 'SA77200000031827461923'
   },
   {
     id: 'user-mariam',
@@ -132,7 +158,13 @@ export const INITIAL_TEAM: TeamMember[] = [
     isAccountActive: true,
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
     status: 'online',
-    joinedDate: '2023-09-01'
+    joinedDate: '2023-09-01',
+    salary: 7800,
+    salaryCurrency: 'ر.س',
+    allowances: 900,
+    contractType: 'دوام كامل',
+    workingHours: '8 ساعات يومياً',
+    bankIban: 'SA63200000081827461924'
   },
   {
     id: 'user-yomna',
@@ -149,7 +181,13 @@ export const INITIAL_TEAM: TeamMember[] = [
     isAccountActive: true,
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     status: 'online',
-    joinedDate: '2023-10-15'
+    joinedDate: '2023-10-15',
+    salary: 8000,
+    salaryCurrency: 'ر.س',
+    allowances: 800,
+    contractType: 'دوام كامل',
+    workingHours: '8 ساعات يومياً',
+    bankIban: 'SA91200000021827461925'
   },
   {
     id: 'user-islam',
@@ -166,7 +204,13 @@ export const INITIAL_TEAM: TeamMember[] = [
     isAccountActive: true,
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     status: 'online',
-    joinedDate: '2023-11-01'
+    joinedDate: '2023-11-01',
+    salary: 7500,
+    salaryCurrency: 'ر.س',
+    allowances: 700,
+    contractType: 'دوام كامل',
+    workingHours: '8 ساعات يومياً',
+    bankIban: 'SA84200000011827461926'
   },
   {
     id: 'user-roaa',
@@ -183,7 +227,13 @@ export const INITIAL_TEAM: TeamMember[] = [
     isAccountActive: true,
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
     status: 'online',
-    joinedDate: '2024-01-10'
+    joinedDate: '2024-01-10',
+    salary: 6800,
+    salaryCurrency: 'ر.س',
+    allowances: 500,
+    contractType: 'دوام كامل',
+    workingHours: '8 ساعات يومياً',
+    bankIban: 'SA39200000091827461927'
   }
 ];
 
@@ -1736,6 +1786,137 @@ export const INITIAL_COACHING_OFFERS: CoachingAlertOffer[] = [
     createdAt: '2026-10-19'
   }
 ];
+
+// Initial Attendance Records (سجلات الحضور والغياب والتأخيرات الافتراضية)
+export const INITIAL_ATTENDANCE: AttendanceRecord[] = [
+  {
+    id: 'att-1',
+    memberId: 'user-1',
+    memberName: 'هدير سعيد',
+    date: '2026-10-25',
+    status: 'present',
+    checkInTime: '08:45',
+    checkOutTime: '17:15',
+    notes: 'حضور مبكر ومنتظم'
+  },
+  {
+    id: 'att-2',
+    memberId: 'user-amira',
+    memberName: 'Amira',
+    date: '2026-10-25',
+    status: 'present',
+    checkInTime: '09:00',
+    checkOutTime: '17:00'
+  },
+  {
+    id: 'att-3',
+    memberId: 'user-aya',
+    memberName: 'Aya Gaber',
+    date: '2026-10-25',
+    status: 'present',
+    checkInTime: '09:05',
+    checkOutTime: '17:00'
+  },
+  {
+    id: 'att-4',
+    memberId: 'user-eman',
+    memberName: 'Eman Ashraf',
+    date: '2026-10-25',
+    status: 'late',
+    checkInTime: '09:45',
+    checkOutTime: '17:30',
+    lateMinutes: 45,
+    notes: 'تأخير في المواصلات - تم الاستئذان المسبق',
+    isExcused: true
+  },
+  {
+    id: 'att-5',
+    memberId: 'user-maibel',
+    memberName: 'Maibel Emad',
+    date: '2026-10-25',
+    status: 'present',
+    checkInTime: '08:55',
+    checkOutTime: '17:00'
+  },
+  {
+    id: 'att-6',
+    memberId: 'user-mariam',
+    memberName: 'Mariam Islam',
+    date: '2026-10-25',
+    status: 'absent',
+    notes: 'غياب بدون إذن مسبق'
+  },
+  {
+    id: 'att-7',
+    memberId: 'user-yomna',
+    memberName: 'Yomna',
+    date: '2026-10-25',
+    status: 'present',
+    checkInTime: '09:00',
+    checkOutTime: '17:00'
+  },
+  {
+    id: 'att-8',
+    memberId: 'user-islam',
+    memberName: 'Islam',
+    date: '2026-10-25',
+    status: 'late',
+    checkInTime: '09:35',
+    checkOutTime: '17:00',
+    lateMinutes: 35,
+    notes: 'تأخير 35 دقيقة'
+  },
+  {
+    id: 'att-9',
+    memberId: 'user-roaa',
+    memberName: 'roaa_hetemy',
+    date: '2026-10-25',
+    status: 'present',
+    checkInTime: '09:00',
+    checkOutTime: '17:00'
+  }
+];
+
+// Initial Company Operating Expenses (المصروفات التشغيلية للشركة لحساب صافي الربح والمكسب)
+export const INITIAL_EXPENSES: CompanyExpense[] = [
+  {
+    id: 'exp-1',
+    title: 'حملات إعلانات جوجل أدز وتيك توك الترويجية',
+    amount: 4500,
+    currency: 'ر.س',
+    category: 'تسويق وإعلانات',
+    date: '2026-10-05',
+    notes: 'حملة استقطاب عملاء جدد لخدمات GEO'
+  },
+  {
+    id: 'exp-2',
+    title: 'سيرفرات سحابية، استضافة، وتراخيص OpenAI & Anthropic API',
+    amount: 1850,
+    currency: 'ر.س',
+    category: 'سيرفرات وأدوات تقنية',
+    date: '2026-10-10',
+    notes: 'تجديد شهري للبنية التحتية'
+  },
+  {
+    id: 'exp-3',
+    title: 'إيجار المقر ومصروفات الضيافة وإنترنت الألياف الضوئية',
+    amount: 3200,
+    currency: 'ر.س',
+    category: 'إيجار ومقر',
+    date: '2026-10-01',
+    notes: 'مصاريف المقر الإداري'
+  },
+  {
+    id: 'exp-4',
+    title: 'اشتراكات برمجيات المحاسبة وتراخيص Google Workspace',
+    amount: 750,
+    currency: 'ر.س',
+    category: 'سيرفرات وأدوات تقنية',
+    date: '2026-10-15',
+    notes: 'تراخيص إيميلات الفريق'
+  }
+];
+
 
 
 

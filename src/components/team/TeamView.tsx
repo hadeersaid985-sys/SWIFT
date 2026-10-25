@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { TeamMember, AccessLevel } from '../../types/crm';
+import { PayrollAttendanceView } from '../payroll/PayrollAttendanceView';
 
 const PRESET_AVATARS = [
   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
@@ -954,8 +955,11 @@ export const TeamView: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 3: SALARIES & EMPLOYEE TENURE (سيستم الموظفين ومرتباتهم وبدايتهم في الشركة - للأدمن فقط) */}
+      {/* VIEW 3: SALARIES, ATTENDANCE & PROFIT (سيستم الرواتب والحضور والغياب والمكسب الشامل - للأدمن فقط) */}
       {activeSubTab === 'salaries' && isManager && (
+        <PayrollAttendanceView />
+      )}
+      {false && activeSubTab === 'salaries' && isManager && (
         <div className="space-y-4 animate-in fade-in">
           {/* Payroll KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

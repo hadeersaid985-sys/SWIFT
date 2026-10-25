@@ -8,7 +8,8 @@ import {
   Briefcase,
   Calendar,
   BarChart3,
-  FolderKanban
+  FolderKanban,
+  DollarSign
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 
@@ -20,7 +21,8 @@ export const NavigationTabs: React.FC = () => {
     unreadEmailsCount,
     team,
     leads,
-    deals
+    deals,
+    isManager
   } = useCRM();
 
   const tabs = [
@@ -30,6 +32,17 @@ export const NavigationTabs: React.FC = () => {
       icon: LayoutDashboard,
       badge: null
     },
+    ...(isManager
+      ? [
+          {
+            id: 'payroll',
+            label: 'المرتبات والحضور والأرباح 💰',
+            icon: DollarSign,
+            badge: 'للإدارة 🔒',
+            badgeColor: 'bg-emerald-100 text-emerald-800'
+          }
+        ]
+      : []),
     {
       id: 'tasks',
       label: 'المهام ومواعيدها',

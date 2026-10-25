@@ -534,6 +534,27 @@ export const Sidebar: React.FC = () => {
               {!isCollapsed && <span>فريق العمل (الموظفين)</span>}
             </button>
 
+            {/* Item: المرتبات والحضور والأرباح (خاص بالإدارة والأدمن فقط) */}
+            <button
+              onClick={() => setActiveTab('payroll')}
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer border ${
+                activeTab === 'payroll' || activeTab === 'salaries'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold shadow-md border-emerald-400 ring-1 ring-emerald-300/40'
+                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-emerald-500/20'
+              }`}
+              title="نظام رواتب الموظفين، الحضور والغياب، التأخيرات، ومكسب الشركة (خاص بالأدمن)"
+            >
+              <div className="flex items-center gap-2.5">
+                <DollarSign className="w-4 h-4 shrink-0 text-emerald-400" />
+                {!isCollapsed && <span className="font-bold">المرتبات والحضور والأرباح</span>}
+              </div>
+              {!isCollapsed && (
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.2 rounded font-bold">
+                  أدمن 🔒
+                </span>
+              )}
+            </button>
+
             {/* Item 8: MCP */}
             <button
               onClick={() => setActiveTab('mcp')}

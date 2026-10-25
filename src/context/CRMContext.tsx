@@ -23,7 +23,10 @@ import {
   ClientDossierNote,
   MeetingRecording,
   MarketingVideoScript,
-  CoachingAlertOffer
+  CoachingAlertOffer,
+  AttendanceRecord,
+  CompanyExpense,
+  MonthlyPayrollRecord
 } from '../types/crm';
 import {
   CURRENT_USER,
@@ -40,7 +43,9 @@ import {
   INITIAL_CLIENT_RENEWALS,
   INITIAL_MEETING_RECORDINGS,
   INITIAL_MARKETING_SCRIPTS,
-  INITIAL_COACHING_OFFERS
+  INITIAL_COACHING_OFFERS,
+  INITIAL_ATTENDANCE,
+  INITIAL_EXPENSES
 } from '../data/initialData';
 
 interface DeadlineStatus {
@@ -202,6 +207,23 @@ interface CRMContextType {
   // تعديل مرتبات وبدايات الموظفين (للأدمن)
   updateTeamMemberSalary: (memberId: string, salary: number, currency: string, allowances?: number, contractType?: TeamMember['contractType'], joinedDate?: string) => void;
 
+  // نظام الحضور والغياب والتأخيرات (Attendance & Absence)
+  attendanceRecords: AttendanceRecord[];
+  recordAttendance: (record: Omit<AttendanceRecord, 'id' | 'createdAt'>) => void;
+  batchMarkAttendance: (records: Omit<AttendanceRecord, 'id' | 'createdAt'>[]) => void;
+  updateAttendanceRecord: (id: string, updates: Partial<AttendanceRecord>) => void;
+  deleteAttendanceRecord: (id: string) => void;
+
+  // مسير الرواتب والمصروفات والأرباح (Payroll & Profit)
+  monthlyPayrolls: MonthlyPayrollRecord[];
+  saveMonthlyPayroll: (payroll: MonthlyPayrollRecord) => void;
+  markPayrollPaid: (id: string, paymentMethod?: string) => void;
+  companyExpenses: CompanyExpense[];
+  addCompanyExpense: (expense: Omit<CompanyExpense, 'id'>) => void;
+  updateCompanyExpense: (id: string, updates: Partial<CompanyExpense>) => void;
+  deleteCompanyExpense: (id: string) => void;
+  setGlobalCurrency: (newCurrency: string, updateExistingTeam?: boolean) => void;
+
   // Data Actions & Reset
   resetToDemoData: () => void;
   clearUserAddedData: () => void;
@@ -355,6 +377,11 @@ export const matchUserCredentials = (
     (cleanUser === 'eman' || normInput === 'ايمان' || normInput === 'ايمن') &&
     (memberUsername === 'eman' || memberUsername.includes('eman') || normName.includes('ايمان'));
 
+  // Match Amira specifically (Amira, Amira2, SM-110, Arabic أميرة)
+  const isAmiraUser =
+    (cleanUser === 'amira' || cleanUser === 'amira2' || cleanUser === 'sm-110' || cleanUser === 'sm-107' || normInput === 'اميرة' || normInput === 'اميره' || cleanUser.startsWith('amira')) &&
+    (memberUsername.includes('amira') || memberEmail.includes('amira') || normName.includes('امير') || memberCode === 'sm-110' || memberCode === 'sm-107');
+
   const isUserMatch =
     memberUsername === cleanUser ||
     memberEmail === cleanUser ||
@@ -366,11 +393,12 @@ export const matchUserCredentials = (
     normFirstName === normInput ||
     normName.includes(normInput) ||
     isEmanUser ||
+    isAmiraUser ||
     (cleanUser === 'admin' && (member.accessLevel === 'admin' || member.id === 'user-1'));
 
   if (!isUserMatch) return false;
 
-  // Password check: exact, case-insensitive, master PIN 8899, admin fallback, or default password
+  // Password check: exact, trimmed, case-insensitive, master PIN 8899, admin fallback, or default password
   const memberPass = (member.password || '').trim();
   const isPassMatch =
     memberPass === cleanPass ||
@@ -378,6 +406,7 @@ export const matchUserCredentials = (
     cleanPass === '8899' ||
     cleanPass === 'Admin@Swift2026' ||
     cleanPass === 'admin' ||
+    (isAmiraUser && (cleanPass === 'Sw!ftC4gc4i#D6T' || cleanPass === 'Sw!ftbKMPddC@CL' || cleanPass.toLowerCase() === 'sw!ftc4gc4i#d6t' || cleanPass.toLowerCase() === 'sw!ftbkmpddc@cl')) ||
     (member.accessLevel === 'admin' && (cleanPass === '8899' || cleanPass === 'Admin@Swift2026')) ||
     (isEmanUser && (cleanPass === 'Eman@Swift27526' || cleanPass.toLowerCase() === 'eman@swift27526')) ||
     cleanPass === 'User@Swift2026';
@@ -670,6 +699,25 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Sync to safeStorage
   useEffect(() => {
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(team));
+
+    // Keep currentUser in sync with latest team updates (avatar, role, name, salary)
+    if (currentUser && currentUser.id) {
+      const match = team.find(m => m.id === currentUser.id || (m.username && currentUser.username && m.username.toLowerCase() === currentUser.username.toLowerCase()));
+      if (match) {
+        if (
+          match.avatar !== currentUser.avatar ||
+          match.name !== currentUser.name ||
+          match.role !== currentUser.role ||
+          match.password !== currentUser.password ||
+          match.salaryCurrency !== currentUser.salaryCurrency ||
+          match.isAccountActive !== currentUser.isAccountActive
+        ) {
+          const fresh = { ...currentUser, ...match };
+          setCurrentUser(fresh);
+          safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(fresh));
+        }
+      }
+    }
   }, [team]);
 
   useEffect(() => {
@@ -827,6 +875,181 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
     logActivity('team', 'تعديل بيانات الراتب وبداية العمل للموظف', `تم تحديث المرتب إلى ${salary.toLocaleString()} ${currency}`);
+  };
+
+  // Attendance & Absence Records (سجلات الحضور والغياب والتأخيرات)
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}attendance_records`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_ATTENDANCE;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(attendanceRecords));
+  }, [attendanceRecords]);
+
+  const recordAttendance = (recordData: Omit<AttendanceRecord, 'id' | 'createdAt'>) => {
+    const todayStr = recordData.date || new Date().toISOString().split('T')[0];
+    setAttendanceRecords(prev => {
+      const existingIdx = prev.findIndex(r => r.memberId === recordData.memberId && r.date === todayStr);
+      if (existingIdx !== -1) {
+        const updated = [...prev];
+        updated[existingIdx] = {
+          ...updated[existingIdx],
+          ...recordData
+        };
+        return updated;
+      }
+      return [
+        {
+          id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+          createdAt: new Date().toISOString(),
+          ...recordData
+        },
+        ...prev
+      ];
+    });
+    logActivity('team', 'تسجيل حضور / غياب موظف', `${recordData.memberName}: ${recordData.status === 'present' ? 'حاضر' : recordData.status === 'late' ? 'متأخر' : recordData.status === 'absent' ? 'غائب' : 'إجازة'}`);
+  };
+
+  const batchMarkAttendance = (records: Omit<AttendanceRecord, 'id' | 'createdAt'>[]) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    setAttendanceRecords(prev => {
+      const updated = [...prev];
+      records.forEach(newRec => {
+        const recDate = newRec.date || todayStr;
+        const idx = updated.findIndex(r => r.memberId === newRec.memberId && r.date === recDate);
+        if (idx !== -1) {
+          updated[idx] = { ...updated[idx], ...newRec };
+        } else {
+          updated.unshift({
+            id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+            createdAt: new Date().toISOString(),
+            ...newRec
+          });
+        }
+      });
+      return updated;
+    });
+    logActivity('team', 'تحضير سريع للفريق', `تم تسجيل وتحديث حضور ${records.length} موظف بنجاح`);
+  };
+
+  const updateAttendanceRecord = (id: string, updates: Partial<AttendanceRecord>) => {
+    setAttendanceRecords(prev => prev.map(r => (r.id === id ? { ...r, ...updates } : r)));
+  };
+
+  const deleteAttendanceRecord = (id: string) => {
+    setAttendanceRecords(prev => prev.filter(r => r.id !== id));
+  };
+
+  // Company Operating Expenses (المصروفات التشغيلية لحساب صافي الأرباح والمكسب)
+  const [companyExpenses, setCompanyExpenses] = useState<CompanyExpense[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}company_expenses`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_EXPENSES;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}company_expenses`, JSON.stringify(companyExpenses));
+  }, [companyExpenses]);
+
+  const addCompanyExpense = (expenseData: Omit<CompanyExpense, 'id'>) => {
+    const newExp: CompanyExpense = {
+      ...expenseData,
+      id: 'exp-' + Date.now()
+    };
+    setCompanyExpenses(prev => [newExp, ...prev]);
+    logActivity('deal', 'إضافة مصروف تشغيلي للشركة', `${newExp.title}: ${newExp.amount.toLocaleString()} ${newExp.currency}`);
+  };
+
+  const updateCompanyExpense = (id: string, updates: Partial<CompanyExpense>) => {
+    setCompanyExpenses(prev => {
+      const updated = prev.map(e => (e.id === id ? { ...e, ...updates } : e));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}company_expenses`, JSON.stringify(updated));
+      return updated;
+    });
+    logActivity('deal', 'تعديل مصروف تشغيلي', `تم تحديث بيانات المصروف`);
+  };
+
+  const deleteCompanyExpense = (id: string) => {
+    setCompanyExpenses(prev => {
+      const updated = prev.filter(e => e.id !== id);
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}company_expenses`, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Global Currency Switcher (تغيير العملة في المنظومة كاملة: مرتبات، مصروفات، أرباح)
+  const setGlobalCurrency = (newCurrency: string, updateExistingTeam = true) => {
+    updateBrandConfig({ systemCurrency: newCurrency });
+    if (updateExistingTeam) {
+      setTeam(prev => {
+        const updated = prev.map(m => ({ ...m, salaryCurrency: newCurrency }));
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
+        return updated;
+      });
+      setCompanyExpenses(prev => {
+        const updated = prev.map(e => ({ ...e, currency: newCurrency }));
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}company_expenses`, JSON.stringify(updated));
+        return updated;
+      });
+    }
+    logActivity('team', 'تغيير العملة المعتمدة للمنظومة', `تم تعيين العملة إلى: ${newCurrency}`);
+  };
+
+  // Monthly Payroll Records (كشف مسير الرواتب وحالة الصرف)
+  const [monthlyPayrolls, setMonthlyPayrolls] = useState<MonthlyPayrollRecord[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}monthly_payrolls`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}monthly_payrolls`, JSON.stringify(monthlyPayrolls));
+  }, [monthlyPayrolls]);
+
+  const saveMonthlyPayroll = (payroll: MonthlyPayrollRecord) => {
+    setMonthlyPayrolls(prev => {
+      const idx = prev.findIndex(p => p.memberId === payroll.memberId && p.month === payroll.month);
+      if (idx !== -1) {
+        const updated = [...prev];
+        updated[idx] = payroll;
+        return updated;
+      }
+      return [...prev, payroll];
+    });
+  };
+
+  const markPayrollPaid = (id: string, paymentMethod = 'تحويل بنكي') => {
+    setMonthlyPayrolls(prev =>
+      prev.map(p =>
+        p.id === id
+          ? {
+              ...p,
+              paymentStatus: 'paid',
+              paidAt: new Date().toISOString().split('T')[0],
+              paymentMethod
+            }
+          : p
+      )
+    );
+    confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+    logActivity('team', 'صرف راتب موظف بنجاح 💸', `تم اعتماد وصرف الراتب بطريقة (${paymentMethod})`);
   };
 
   // Check client renewals due within 4 days and notify the admin
@@ -1742,16 +1965,42 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newMember: TeamMember = {
       ...memberData,
       id: 'user-' + Date.now(),
+      isAccountActive: memberData.isAccountActive !== undefined ? memberData.isAccountActive : true,
+      salaryCurrency: memberData.salaryCurrency || brandConfig.systemCurrency || 'ر.س',
       joinedDate: new Date().toISOString().split('T')[0]
     };
-    setTeam(prev => [...prev, newMember]);
+    setTeam(prev => {
+      const updated = [...prev, newMember];
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
+      return updated;
+    });
     logActivity('team', 'انضمام عضو جديد للفريق', `${newMember.name} - ${newMember.role}`);
   };
 
   const updateTeamMember = (id: string, updates: Partial<TeamMember>) => {
-    setTeam(prev => prev.map(m => (m.id === id ? { ...m, ...updates } : m)));
-    if (currentUser.id === id) {
-      setCurrentUser(prev => ({ ...prev, ...updates }));
+    setTeam(prev => {
+      const updated = prev.map(m => (m.id === id ? { ...m, ...updates } : m));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
+      return updated;
+    });
+
+    // Directly update currentUser if it is currently logged in as this member
+    setCurrentUser(prev => {
+      if (prev.id === id || (prev.username && updates.username && prev.username.toLowerCase() === updates.username.toLowerCase())) {
+        const updatedUser = { ...prev, ...updates };
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(updatedUser));
+        return updatedUser;
+      }
+      return prev;
+    });
+
+    // If avatar was updated, propagate to all tasks assigned to this user
+    if (updates.avatar) {
+      setTasks(prev => {
+        const updated = prev.map(t => (t.assignedToId === id ? { ...t, assigneeAvatar: updates.avatar } : t));
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(updated));
+        return updated;
+      });
     }
   };
 
@@ -1761,14 +2010,14 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const impersonateUser = (memberId: string) => {
     const target = team.find(m => m.id === memberId);
     if (target) {
-      setCurrentUser(target);
+      loginUser(target);
       logActivity('team', 'الدخول بحساب عضو من الفريق', `قام المدير بالدخول بحساب: ${target.name} (${target.username})`);
     }
   };
 
   const returnToAdmin = () => {
     const admin = team.find(m => m.id === adminUserId) || CURRENT_USER;
-    setCurrentUser(admin);
+    loginUser(admin);
     logActivity('team', 'العودة لحساب المدير العام', `تمت العودة لحساب المدير: ${admin.name}`);
   };
 
@@ -1778,12 +2027,21 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteTeamMember = (id: string) => {
-    setTeam(prev => prev.filter(m => m.id !== id));
+    setTeam(prev => {
+      const updated = prev.filter(m => m.id !== id);
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
+      return updated;
+    });
+    logActivity('team', 'حذف موظف من الفريق', `تم حذف الموظف من المنظومة بنجاح`);
   };
 
   const deleteTeamMembers = (ids: string[]) => {
     // Keep admin protected
-    setTeam(prev => prev.filter(m => !ids.includes(m.id) || m.id === adminUserId));
+    setTeam(prev => {
+      const updated = prev.filter(m => !ids.includes(m.id) || m.id === adminUserId);
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
+      return updated;
+    });
     logActivity('team', 'حذف أعضاء من الفريق', `تم حذف ${ids.length} عضو من الفريق`);
   };
 
@@ -2235,7 +2493,10 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       coachingOffers,
       reports,
       activities,
-      notifications
+      notifications,
+      attendanceRecords,
+      companyExpenses,
+      monthlyPayrolls
     };
     const jsonStr = JSON.stringify(backupData, null, 2);
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
@@ -2312,6 +2573,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (Array.isArray(data.reports)) {
         setReports(data.reports);
         safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}reports`, JSON.stringify(data.reports));
+      }
+      if (Array.isArray(data.attendanceRecords)) {
+        setAttendanceRecords(data.attendanceRecords);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(data.attendanceRecords));
+      }
+      if (Array.isArray(data.companyExpenses)) {
+        setCompanyExpenses(data.companyExpenses);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}company_expenses`, JSON.stringify(data.companyExpenses));
+      }
+      if (Array.isArray(data.monthlyPayrolls)) {
+        setMonthlyPayrolls(data.monthlyPayrolls);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}monthly_payrolls`, JSON.stringify(data.monthlyPayrolls));
       }
       if (data.brandConfig && typeof data.brandConfig === 'object') {
         const validBrand = ensureValidBrandConfig(data.brandConfig);
@@ -2447,6 +2720,19 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sendCoachingOffer,
         addCoachingOffer,
         updateTeamMemberSalary,
+        attendanceRecords,
+        recordAttendance,
+        batchMarkAttendance,
+        updateAttendanceRecord,
+        deleteAttendanceRecord,
+        monthlyPayrolls,
+        saveMonthlyPayroll,
+        markPayrollPaid,
+        companyExpenses,
+        addCompanyExpense,
+        updateCompanyExpense,
+        deleteCompanyExpense,
+        setGlobalCurrency,
         activities,
         notifications,
         markAllNotificationsAsRead,

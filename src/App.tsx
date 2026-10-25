@@ -17,6 +17,7 @@ import { MarketingBoardView } from './components/marketing/MarketingBoardView';
 import { ClientRenewalsView } from './components/renewals/ClientRenewalsView';
 import { HostMigrationView } from './components/host/HostMigrationView';
 import { SystemSettingsView } from './components/settings/SystemSettingsView';
+import { PayrollAttendanceView } from './components/payroll/PayrollAttendanceView';
 import { QuickModals } from './components/modals/QuickModals';
 import { LoginModal } from './components/auth/LoginModal';
 import { EmployeeLoginPage } from './components/auth/EmployeeLoginPage';
@@ -274,6 +275,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'support' && <ProjectsView />}
               {effectiveTab === 'integrations' && <ProjectsView />}
               {effectiveTab === 'system_settings' && <SystemSettingsView />}
+              {(effectiveTab === 'payroll' || effectiveTab === 'salaries') && <PayrollAttendanceView />}
 
               {/* Sub-views from Sales menu */}
               {effectiveTab === 'contacts' && <LeadsView />}
