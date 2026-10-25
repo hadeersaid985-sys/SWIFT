@@ -268,7 +268,7 @@ export const DEFAULT_BRAND_CONFIG: BrandConfig = {
   secondaryColor: '#1e3a8a',
   accentColor: '#f59e0b',
   sidebarTheme: 'dark',
-  systemCurrency: 'ر.س',
+  systemCurrency: 'ج.م',
   adminPin: '8899'
 };
 
@@ -351,7 +351,8 @@ export const ensureValidBrandConfig = (b: any): BrandConfig => {
     ...b,
     brandName: b.brandName || DEFAULT_BRAND_CONFIG.brandName,
     brandSubtitle: b.brandSubtitle || DEFAULT_BRAND_CONFIG.brandSubtitle,
-    brandBadge: b.brandBadge || DEFAULT_BRAND_CONFIG.brandBadge
+    brandBadge: b.brandBadge || DEFAULT_BRAND_CONFIG.brandBadge,
+    systemCurrency: (!b.systemCurrency || b.systemCurrency === 'ر.س') ? 'ج.م' : b.systemCurrency
   };
 };
 
@@ -553,15 +554,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const initM = INITIAL_TEAM.find(
               x => x.id === m.id || (x.username && x.username.toLowerCase() === (m.username || '').toLowerCase())
             );
+            const salCurr = (m.salaryCurrency === 'ر.س' || !m.salaryCurrency) ? 'ج.م' : m.salaryCurrency;
             if (initM) {
               return {
                 ...initM,
                 ...m,
+                salaryCurrency: salCurr,
                 password: m.password || initM.password,
                 username: m.username || initM.username
               };
             }
-            return m;
+            return { ...m, salaryCurrency: salCurr };
           });
           return [...merged, ...missingMembers];
         }
@@ -597,7 +600,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deals`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.map((d: Deal) => ({
+            ...d,
+            currency: (d.currency === 'ر.س' || !d.currency) ? 'ج.م' : d.currency
+          }));
+        }
       }
     } catch {}
     return INITIAL_DEALS;
@@ -686,15 +694,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (Array.isArray(parsed)) {
           return parsed.map(p => {
             const initMatch = INITIAL_CLIENT_RENEWALS.find(i => i.id === p.id);
+            const curr = (p.currency === 'ر.س' || !p.currency) ? 'ج.م' : p.currency;
             if (initMatch && !p.sheetUrl) {
               return {
                 ...p,
+                currency: curr,
                 sheetUrl: initMatch.sheetUrl,
                 sheetTitle: initMatch.sheetTitle,
                 contractNumber: p.contractNumber || initMatch.contractNumber
               };
             }
-            return p;
+            return { ...p, currency: curr };
           });
         }
       }
@@ -995,7 +1005,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  // Global Currency Switcher (تغيير العملة في المنظومة كاملة: مرتبات، مصروفات، أرباح)
+  // Global Currency Switcher (تغيير العملة في المنظومة كاملة: مرتبات، مصروفات، أرباح، اشتراكات، صفقات)
   const setGlobalCurrency = (newCurrency: string, updateExistingTeam = true) => {
     updateBrandConfig({ systemCurrency: newCurrency });
     if (updateExistingTeam) {
@@ -1009,9 +1019,26 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}company_expenses`, JSON.stringify(updated));
         return updated;
       });
+      setClientRenewals(prev => {
+        const updated = prev.map(r => ({ ...r, currency: newCurrency }));
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(updated));
+        return updated;
+      });
+      setDeals(prev => {
+        const updated = prev.map(d => ({ ...d, currency: newCurrency }));
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deals`, JSON.stringify(updated));
+        return updated;
+      });
     }
     logActivity('team', 'تغيير العملة المعتمدة للمنظومة', `تم تعيين العملة إلى: ${newCurrency}`);
   };
+
+  // Auto-migrate to EGP (ج.م) on load if set to SAR (ر.س)
+  useEffect(() => {
+    if (brandConfig.systemCurrency === 'ر.س' || !brandConfig.systemCurrency) {
+      setGlobalCurrency('ج.م', true);
+    }
+  }, []);
 
   // Monthly Payroll Records (كشف مسير الرواتب وحالة الصرف)
   const [monthlyPayrolls, setMonthlyPayrolls] = useState<MonthlyPayrollRecord[]>(() => {
@@ -1341,7 +1368,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       serviceName: data.serviceName,
       planCycle: data.planCycle,
       amount: data.amount,
-      currency: data.currency || 'ر.س',
+      currency: data.currency || brandConfig.systemCurrency || 'ج.م',
       renewalDate: renewalDateStr,
       status: 'active',
       firstSubscribedAt: `${todayStr} 10:00`,
@@ -2148,7 +2175,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       contactEmail: lead.email,
       contactPhone: lead.phone,
       value: dealValue || lead.estimatedValue || 100000,
-      currency: 'ر.س',
+      currency: brandConfig.systemCurrency || 'ج.م',
       stage: 'مؤهل',
       probability: 50,
       expectedCloseDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
@@ -2160,7 +2187,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDeals(prev => [newDeal, ...prev]);
     setLeads(prev => prev.map(l => (l.id === leadId ? { ...l, status: 'مؤهل' } : l)));
 
-    logActivity('deal', 'تم تحويل عميل محتمل إلى صفقة بيعية', `${lead.company} بقيمة ${newDeal.value.toLocaleString()} ر.س`);
+    logActivity('deal', 'تم تحويل عميل محتمل إلى صفقة بيعية', `${lead.company} بقيمة ${newDeal.value.toLocaleString()} ${brandConfig.systemCurrency || 'ج.م'}`);
     setActiveTab('deals');
   };
 

@@ -86,7 +86,7 @@ export const PayrollAttendanceView: React.FC = () => {
   }>({
     title: '',
     amount: 1000,
-    currency: brandConfig?.systemCurrency || 'ر.س',
+    currency: brandConfig?.systemCurrency || 'ج.م',
     category: 'تسويق وإعلانات',
     date: new Date().toISOString().split('T')[0],
     notes: ''
@@ -110,7 +110,7 @@ export const PayrollAttendanceView: React.FC = () => {
   const [editingMemberSalary, setEditingMemberSalary] = useState<TeamMember | null>(null);
   const [salaryForm, setSalaryForm] = useState({
     salary: 0,
-    salaryCurrency: brandConfig?.systemCurrency || 'ر.س',
+    salaryCurrency: brandConfig?.systemCurrency || 'ج.م',
     allowances: 0,
     contractType: 'دوام كامل' as TeamMember['contractType'],
     workingHours: '8 ساعات يومياً',
@@ -272,7 +272,7 @@ export const PayrollAttendanceView: React.FC = () => {
     setNewExpense({
       title: '',
       amount: 1000,
-      currency: 'ر.س',
+      currency: brandConfig?.systemCurrency || 'ج.م',
       category: 'تسويق وإعلانات',
       date: new Date().toISOString().split('T')[0],
       notes: ''
@@ -363,7 +363,7 @@ export const PayrollAttendanceView: React.FC = () => {
     setEditingMemberSalary(member);
     setSalaryForm({
       salary: member.salary || 7000,
-      salaryCurrency: member.salaryCurrency || brandConfig?.systemCurrency || 'ر.س',
+      salaryCurrency: member.salaryCurrency || brandConfig?.systemCurrency || 'ج.م',
       allowances: member.allowances || 0,
       contractType: member.contractType || 'دوام كامل',
       workingHours: member.workingHours || '8 ساعات يومياً',
@@ -400,7 +400,7 @@ export const PayrollAttendanceView: React.FC = () => {
       memberName: team.find(m => m.id === memberId)?.name || '',
       month: selectedMonth,
       baseSalary: 0,
-      salaryCurrency: brandConfig?.systemCurrency || 'ر.س',
+      salaryCurrency: brandConfig?.systemCurrency || 'ج.م',
       allowances: 0,
       bonus: 0,
       attendedDays: 0,
@@ -427,7 +427,7 @@ export const PayrollAttendanceView: React.FC = () => {
       memberName: member.name,
       month: selectedMonth,
       baseSalary: baseSal,
-      salaryCurrency: member.salaryCurrency || 'ر.س',
+      salaryCurrency: member.salaryCurrency || brandConfig?.systemCurrency || 'ج.م',
       allowances: allowances,
       bonus: 0,
       attendedDays: stats.presentCount,
@@ -461,7 +461,7 @@ export const PayrollAttendanceView: React.FC = () => {
     const baseSal = m.salary || 7000;
     const allowances = m.allowances || 0;
     const net = baseSal + allowances - stats.totalDeductions;
-    const currency = m.salaryCurrency || 'ر.س';
+    const currency = m.salaryCurrency || brandConfig?.systemCurrency || 'ج.م';
 
     const copyPayslipToWhatsApp = () => {
       const text = `📋 قسيمة الراتب الرسمية - شركة سويفت مايند
@@ -645,7 +645,7 @@ export const PayrollAttendanceView: React.FC = () => {
     );
   };
 
-  const activeCurrency = brandConfig?.systemCurrency || 'ر.س';
+  const activeCurrency = brandConfig?.systemCurrency || 'ج.م';
 
   return (
     <div className="space-y-5 animate-in fade-in pb-12">
@@ -731,8 +731,8 @@ export const PayrollAttendanceView: React.FC = () => {
 
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
-            { code: 'ر.س', label: 'ريال سعودي (SAR)' },
             { code: 'ج.م', label: 'جنيه مصري (EGP)' },
+            { code: 'ر.س', label: 'ريال سعودي (SAR)' },
             { code: '$', label: 'دولار أمريكي (USD)' },
             { code: 'د.إ', label: 'درهم إماراتي (AED)' },
             { code: '€', label: 'يورو (EUR)' },
@@ -912,28 +912,28 @@ export const PayrollAttendanceView: React.FC = () => {
                 <div className="flex items-center justify-between text-xs font-bold">
                   <span className="text-slate-700">توزيع التدفق المالي:</span>
                   <span className="text-emerald-700 font-mono">
-                    صافي الربح: {netCompanyProfit.toLocaleString()} ر.س ({profitMarginPercent}%)
+                    صافي الربح: {netCompanyProfit.toLocaleString()} {activeCurrency} ({profitMarginPercent}%)
                   </span>
                 </div>
                 <div className="h-6 w-full bg-slate-100 rounded-xl overflow-hidden flex shadow-inner">
                   <div
                     style={{ width: `${Math.min(100, Math.round((totalNetPayroll / (totalCompanyRevenue || 1)) * 100))}%` }}
                     className="bg-blue-600 h-full flex items-center justify-center text-[10px] font-bold text-white transition-all"
-                    title={`الرواتب: ${totalNetPayroll.toLocaleString()} ر.س`}
+                    title={`الرواتب: ${totalNetPayroll.toLocaleString()} ${activeCurrency}`}
                   >
                     الرواتب ({Math.round((totalNetPayroll / (totalCompanyRevenue || 1)) * 100)}%)
                   </div>
                   <div
                     style={{ width: `${Math.min(100, Math.round((totalOperatingExpenses / (totalCompanyRevenue || 1)) * 100))}%` }}
                     className="bg-amber-500 h-full flex items-center justify-center text-[10px] font-bold text-white transition-all"
-                    title={`المصروفات: ${totalOperatingExpenses.toLocaleString()} ر.س`}
+                    title={`المصروفات: ${totalOperatingExpenses.toLocaleString()} ${activeCurrency}`}
                   >
                     تشغيل ({Math.round((totalOperatingExpenses / (totalCompanyRevenue || 1)) * 100)}%)
                   </div>
                   <div
                     style={{ width: `${Math.max(0, profitMarginPercent)}%` }}
                     className="bg-emerald-500 h-full flex items-center justify-center text-[10px] font-bold text-white transition-all"
-                    title={`الربح الصافي: ${netCompanyProfit.toLocaleString()} ر.س`}
+                    title={`الربح الصافي: ${netCompanyProfit.toLocaleString()} ${activeCurrency}`}
                   >
                     صافي المكسب ({profitMarginPercent}%)
                   </div>
@@ -1495,7 +1495,7 @@ export const PayrollAttendanceView: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">الراتب الأساسي (ر.س):</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">الراتب الأساسي ({activeCurrency}):</label>
                 <input
                   type="number"
                   step="100"
@@ -1506,7 +1506,7 @@ export const PayrollAttendanceView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">البدلات الإضافية (ر.س):</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">البدلات الإضافية ({activeCurrency}):</label>
                 <input
                   type="number"
                   step="50"
@@ -1624,8 +1624,8 @@ export const PayrollAttendanceView: React.FC = () => {
                     onChange={e => setNewExpense({ ...newExpense, currency: e.target.value })}
                     className="w-full p-2 border border-slate-200 rounded-lg"
                   >
-                    <option value="ر.س">ر.س (سعودي)</option>
                     <option value="ج.م">ج.م (مصري)</option>
+                    <option value="ر.س">ر.س (سعودي)</option>
                     <option value="د.ك">د.ك (كويتي)</option>
                     <option value="$">$ (دولار)</option>
                   </select>
@@ -1713,8 +1713,8 @@ export const PayrollAttendanceView: React.FC = () => {
                     onChange={e => setSalaryForm({ ...salaryForm, salaryCurrency: e.target.value })}
                     className="w-full p-2 border border-slate-200 rounded-lg font-bold"
                   >
-                    <option value="ر.س">ر.س (سعودي)</option>
                     <option value="ج.م">ج.م (مصري)</option>
+                    <option value="ر.س">ر.س (سعودي)</option>
                     <option value="$">$ (دولار)</option>
                     <option value="د.إ">د.إ (إماراتي)</option>
                     <option value="€">€ (يورو)</option>
@@ -1851,8 +1851,8 @@ export const PayrollAttendanceView: React.FC = () => {
                     onChange={e => setEditingExpense({ ...editingExpense, currency: e.target.value })}
                     className="w-full p-2 border border-slate-200 rounded-lg font-bold"
                   >
-                    <option value="ر.س">ر.س (سعودي)</option>
                     <option value="ج.م">ج.م (مصري)</option>
+                    <option value="ر.س">ر.س (سعودي)</option>
                     <option value="$">$ (دولار)</option>
                     <option value="د.إ">د.إ (إماراتي)</option>
                     <option value="€">€ (يورو)</option>

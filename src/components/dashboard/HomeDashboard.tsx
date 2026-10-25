@@ -34,8 +34,11 @@ export const HomeDashboard: React.FC = () => {
     toggleSubTask,
     changeTaskStatus,
     setActiveTab,
-    setOpenQuickModal
+    setOpenQuickModal,
+    brandConfig
   } = useCRM();
+
+  const currency = brandConfig?.systemCurrency || 'ج.م';
 
   // Role Check
   const isManager =
@@ -170,11 +173,11 @@ export const HomeDashboard: React.FC = () => {
             <span className="text-2xl sm:text-3xl font-black text-slate-900">
               {totalPipelineValue.toLocaleString()}
             </span>
-            <span className="text-xs font-bold text-slate-500">ر.س</span>
+            <span className="text-xs font-bold text-slate-500">{currency}</span>
           </div>
           <div className="mt-3 flex items-center justify-between text-xs pt-3 border-t border-slate-100">
             <span className="text-emerald-600 font-bold">
-              ربح: {wonDealsValue.toLocaleString()} ر.س
+              ربح: {wonDealsValue.toLocaleString()} {currency}
             </span>
             <span className="text-blue-600 flex items-center gap-0.5 group-hover:translate-x-[-3px] transition-transform">
               الـ Pipeline <ChevronLeft className="w-3 h-3" />
@@ -418,7 +421,7 @@ export const HomeDashboard: React.FC = () => {
                     <div className="text-[11px] font-bold text-slate-500">{stageName}</div>
                     <div className="text-xl font-black text-slate-900 mt-1">{stageDeals.length}</div>
                     <div className="text-xs font-bold text-emerald-600 mt-1">
-                      {totalVal.toLocaleString()} ر.س
+                      {totalVal.toLocaleString()} {currency}
                     </div>
                   </div>
                 );

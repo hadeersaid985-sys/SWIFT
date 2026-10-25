@@ -80,8 +80,8 @@ export const WeeklyExecutiveModal: React.FC<WeeklyExecutiveModalProps> = ({ isOp
 👑 موظف الأسبوع المتصدر: ${topMember?.member.name || '-'} (${topMember?.completedCount || 0} مهمة مكتملة • ${topMember?.loggedHours || 0} ساعة عمل)
 
 💼 متابعة اشتراكات العملاء والتجديدات:
-• إجمالي قيمة الاشتراكات: ${totalRenewalsAmount.toLocaleString()} ر.س
-• اشتراكات مستحقة المتابعة والتجديد: ${dueSoonRenewals.length} عملاء (بقيمة ${dueSoonAmount.toLocaleString()} ر.س)
+• إجمالي قيمة الاشتراكات: ${totalRenewalsAmount.toLocaleString()} ${brandConfig?.systemCurrency || 'ج.م'}
+• اشتراكات مستحقة المتابعة والتجديد: ${dueSoonRenewals.length} عملاء (بقيمة ${dueSoonAmount.toLocaleString()} ${brandConfig?.systemCurrency || 'ج.م'})
 
 تقبلوا وافر التحية والتقدير،
 إدارة المنظومة 🚀`;

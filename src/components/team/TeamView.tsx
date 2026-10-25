@@ -69,8 +69,11 @@ export const TeamView: React.FC = () => {
     addTeamMember,
     setIsBrandModalOpen,
     updateTeamMemberSalary,
-    exportSystemBackup
+    exportSystemBackup,
+    brandConfig
   } = useCRM();
+
+  const currency = brandConfig?.systemCurrency || 'ج.م';
 
   // Role check: Is current user Manager / Admin?
   const isManager =
@@ -980,7 +983,7 @@ export const TeamView: React.FC = () => {
                 <CreditCard className="w-4 h-4 text-amber-500" />
               </div>
               <div className="text-2xl font-black mt-2 font-mono text-slate-900">
-                {team.reduce((acc, m) => acc + (m.allowances || 0), 0).toLocaleString()} ر.س
+                {team.reduce((acc, m) => acc + (m.allowances || 0), 0).toLocaleString()} {currency}
               </div>
               <div className="text-[10px] text-slate-500 mt-1">بدلات إشراف، انتقال، وعمولات صفقات</div>
             </div>
@@ -991,7 +994,7 @@ export const TeamView: React.FC = () => {
                 <Briefcase className="w-4 h-4 text-blue-500" />
               </div>
               <div className="text-2xl font-black mt-2 font-mono text-blue-600">
-                {team.reduce((acc, m) => acc + (m.salary || 0) + (m.allowances || 0), 0).toLocaleString()} ر.س
+                {team.reduce((acc, m) => acc + (m.salary || 0) + (m.allowances || 0), 0).toLocaleString()} {currency}
               </div>
               <div className="text-[10px] text-slate-500 mt-1">الراتب الأساسي + البدلات الشهرية</div>
             </div>
@@ -1052,7 +1055,7 @@ export const TeamView: React.FC = () => {
                     const baseSal = member.salary || 0;
                     const allow = member.allowances || 0;
                     const totalSal = baseSal + allow;
-                    const curr = member.salaryCurrency || 'ر.س';
+                    const curr = member.salaryCurrency || currency;
 
                     // Calculate tenure
                     let tenureText = 'غير محدد';
@@ -1151,7 +1154,7 @@ export const TeamView: React.FC = () => {
                               setEditingSalaryMember(member);
                               setSalaryForm({
                                 salary: member.salary || 10000,
-                                salaryCurrency: member.salaryCurrency || 'ر.س',
+                                salaryCurrency: member.salaryCurrency || currency,
                                 allowances: member.allowances || 0,
                                 contractType: member.contractType || 'دوام كامل',
                                 joinedDate: member.joinedDate || '2023-01-15'
@@ -1232,10 +1235,10 @@ export const TeamView: React.FC = () => {
                     onChange={e => setSalaryForm({ ...salaryForm, salaryCurrency: e.target.value })}
                     className="px-3 py-2 border border-slate-300 rounded-lg font-bold bg-slate-50 focus:outline-none cursor-pointer"
                   >
+                    <option value="ج.م">ج.م (مصري)</option>
                     <option value="ر.س">ر.س (سعودي)</option>
                     <option value="د.ك">د.ك (كويتي)</option>
                     <option value="د.إ">د.إ (إماراتي)</option>
-                    <option value="ج.م">ج.م (مصري)</option>
                     <option value="$">$ (دولار)</option>
                   </select>
                 </div>

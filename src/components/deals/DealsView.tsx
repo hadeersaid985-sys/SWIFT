@@ -24,9 +24,11 @@ export const DealsView: React.FC = () => {
     team,
     updateDealStage,
     deleteDeal,
-    setOpenQuickModal
+    setOpenQuickModal,
+    brandConfig
   } = useCRM();
 
+  const currency = brandConfig?.systemCurrency || 'ج.م';
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
   const stages: { id: DealStage; label: string; color: string; border: string; bg: string }[] = [
@@ -77,7 +79,7 @@ export const DealsView: React.FC = () => {
           <div>
             <span className="text-slate-400 font-semibold">إجمالي قيمة الصفقات الجارية:</span>
             <div className="text-2xl font-black text-slate-900 mt-1">
-              {totalPipelineValue.toLocaleString()} ر.س
+              {totalPipelineValue.toLocaleString()} {currency}
             </div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -89,7 +91,7 @@ export const DealsView: React.FC = () => {
           <div>
             <span className="text-slate-400 font-semibold">الصفقات المغلقة والرابحة:</span>
             <div className="text-2xl font-black text-emerald-600 mt-1">
-              {wonValue.toLocaleString()} ر.س
+              {wonValue.toLocaleString()} {currency}
             </div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -130,7 +132,7 @@ export const DealsView: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-[11px] font-bold text-slate-600 mt-1">
-                  {stageValue.toLocaleString()} ر.س
+                  {stageValue.toLocaleString()} {currency}
                 </div>
               </div>
 

@@ -845,14 +845,14 @@ export const SystemSettingsView: React.FC = () => {
             <div>
               <label className="block font-bold text-slate-700 mb-1">العملة الافتراضية للسيستم (Default Currency):</label>
               <select
-                value={formData.systemCurrency || 'ر.س'}
+                value={formData.systemCurrency || 'ج.م'}
                 onChange={e => setFormData({ ...formData, systemCurrency: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-blue-500 cursor-pointer"
               >
+                <option value="ج.م">جنيه مصري (ج.م - EGP) 🇪🇬</option>
                 <option value="ر.س">ريال سعودي (ر.س - SAR)</option>
                 <option value="د.ك">دينار كويتي (د.ك - KWD)</option>
                 <option value="$">دولار أمريكي ($ - USD)</option>
-                <option value="ج.م">جنيه مصري (ج.م - EGP)</option>
                 <option value="د.إ">درهم إماراتي (د.إ - AED)</option>
               </select>
             </div>
@@ -918,7 +918,7 @@ export const SystemSettingsView: React.FC = () => {
 
               <div className="flex items-center gap-2 text-xs">
                 <span className="bg-white/20 px-2 py-0.5 rounded-full font-bold">
-                  {formData.systemCurrency || 'ر.س'}
+                  {formData.systemCurrency || 'ج.م'}
                 </span>
                 <span className="font-bold">{currentUser.name}</span>
               </div>
