@@ -221,6 +221,10 @@ interface CRMContextType {
   triggerDailyDigest: (targetUser?: TeamMember) => void;
   digestOverdueCount: number;
   digestTodayCount: number;
+
+  // النسخ الاحتياطي وتصدير واستيراد البيانات (Backup & Export/Import)
+  exportSystemBackup: () => string;
+  importSystemBackup: (jsonData: string) => { success: boolean; message: string };
 }
 
 export const DEFAULT_BRAND_CONFIG: BrandConfig = {
@@ -2212,6 +2216,117 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}reports`, JSON.stringify([]));
   };
 
+  const exportSystemBackup = () => {
+    const backupData = {
+      version: '1.0',
+      system: 'SWIFTMYND / tazkoraio',
+      exportedAt: new Date().toISOString(),
+      brandConfig,
+      team,
+      tasks,
+      leads,
+      deals,
+      meetings,
+      emails,
+      clientRenewals,
+      marketingBoards,
+      meetingRecordings,
+      marketingScripts,
+      coachingOffers,
+      reports,
+      activities,
+      notifications
+    };
+    const jsonStr = JSON.stringify(backupData, null, 2);
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      try {
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const dateStr = new Date().toISOString().split('T')[0];
+        a.download = `tazkora-crm-backup-${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.warn('Backup download error', e);
+      }
+    }
+    logActivity('team', 'تصدير نسخة احتياطية كاملة للمنظومة', `تم تصدير وحفظ نسخة احتياطية لكافة الحسابات والبيانات`);
+    return jsonStr;
+  };
+
+  const importSystemBackup = (jsonData: string): { success: boolean; message: string } => {
+    try {
+      const data = JSON.parse(jsonData);
+      if (!data || typeof data !== 'object') {
+        return { success: false, message: 'ملف النسخة الاحتياطية غير صالح أو تالف.' };
+      }
+
+      if (Array.isArray(data.team) && data.team.length > 0) {
+        setTeam(data.team);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(data.team));
+      }
+      if (Array.isArray(data.tasks)) {
+        setTasks(data.tasks);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(data.tasks));
+      }
+      if (Array.isArray(data.leads)) {
+        setLeads(data.leads);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(data.leads));
+      }
+      if (Array.isArray(data.deals)) {
+        setDeals(data.deals);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deals`, JSON.stringify(data.deals));
+      }
+      if (Array.isArray(data.meetings)) {
+        setMeetings(data.meetings);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(data.meetings));
+      }
+      if (Array.isArray(data.emails)) {
+        setEmails(data.emails);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}emails`, JSON.stringify(data.emails));
+      }
+      if (Array.isArray(data.clientRenewals)) {
+        setClientRenewals(data.clientRenewals);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(data.clientRenewals));
+      }
+      if (Array.isArray(data.marketingBoards)) {
+        setMarketingBoards(data.marketingBoards);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`, JSON.stringify(data.marketingBoards));
+      }
+      if (Array.isArray(data.meetingRecordings)) {
+        setMeetingRecordings(data.meetingRecordings);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meeting_recordings`, JSON.stringify(data.meetingRecordings));
+      }
+      if (Array.isArray(data.marketingScripts)) {
+        setMarketingScripts(data.marketingScripts);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_scripts`, JSON.stringify(data.marketingScripts));
+      }
+      if (Array.isArray(data.coachingOffers)) {
+        setCoachingOffers(data.coachingOffers);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}coaching_offers`, JSON.stringify(data.coachingOffers));
+      }
+      if (Array.isArray(data.reports)) {
+        setReports(data.reports);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}reports`, JSON.stringify(data.reports));
+      }
+      if (data.brandConfig && typeof data.brandConfig === 'object') {
+        const validBrand = ensureValidBrandConfig(data.brandConfig);
+        setBrandConfig(validBrand);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}brand`, JSON.stringify(validBrand));
+      }
+
+      logActivity('team', 'استيراد واستعادة نسخة احتياطية', 'تمت استعادة كافة البيانات والحسابات بنجاح من ملف الباك اب');
+      return { success: true, message: 'تم استيراد واستعادة كافة بيانات المنظومة وفريق العمل بنجاح!' };
+    } catch (e: any) {
+      console.error('Import backup failed', e);
+      return { success: false, message: 'حدث خطأ أثناء قراءة ملف النسخة الاحتياطية: ' + (e?.message || '') };
+    }
+  };
+
   const unreadNotificationsCount = notifications.filter(n => !n.isRead).length;
   const unreadEmailsCount = emails.filter(m => m.folder === 'inbox' && !m.isRead).length;
   const isManagerUser = Boolean(
@@ -2357,7 +2472,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsDailyDigestOpen,
         triggerDailyDigest,
         digestOverdueCount,
-        digestTodayCount
+        digestTodayCount,
+        exportSystemBackup,
+        importSystemBackup
       }}
     >
       {children}

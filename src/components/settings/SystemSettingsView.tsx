@@ -20,7 +20,15 @@ import {
   Smartphone,
   ExternalLink,
   Save,
-  AlertCircle
+  AlertCircle,
+  Database,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  FileJson,
+  Info,
+  HelpCircle,
+  FolderDown,
+  FileCheck
 } from 'lucide-react';
 import { useCRM, DEFAULT_BRAND_CONFIG } from '../../context/CRMContext';
 import { SwiftMyndLogo } from '../common/SwiftMyndLogo';
@@ -32,16 +40,46 @@ export const SystemSettingsView: React.FC = () => {
     updateBrandConfig,
     resetBrandConfig,
     currentUser,
-    isManager
+    isManager,
+    team,
+    tasks,
+    leads,
+    deals,
+    clientRenewals,
+    exportSystemBackup,
+    importSystemBackup
   } = useCRM();
 
-  const [activeTab, setActiveTab] = useState<'logo_favicon' | 'colors' | 'general' | 'preview'>('logo_favicon');
+  const [activeTab, setActiveTab] = useState<'logo_favicon' | 'colors' | 'general' | 'preview' | 'backup'>('logo_favicon');
   const [formData, setFormData] = useState<BrandConfig>(brandConfig);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [logoUrlInput, setLogoUrlInput] = useState('');
   const [faviconUrlInput, setFaviconUrlInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
+  const backupInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportBackupFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = event => {
+      const content = event.target?.result as string;
+      if (content) {
+        const res = importSystemBackup(content);
+        if (res.success) {
+          setImportStatus({ type: 'success', message: res.message });
+        } else {
+          setImportStatus({ type: 'error', message: res.message });
+        }
+        setTimeout(() => setImportStatus({ type: null, message: '' }), 6000);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   // Synchronize state with context
   useEffect(() => {
@@ -236,6 +274,18 @@ export const SystemSettingsView: React.FC = () => {
         >
           <Eye className="w-4 h-4" />
           <span>معاينة حية للمتصفح والسايدبار 👁️</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('backup')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+            activeTab === 'backup'
+              ? 'bg-amber-600 text-white shadow-2xs'
+              : 'text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200'
+          }`}
+        >
+          <Database className="w-4 h-4 text-amber-600" />
+          <span>النسخ الاحتياطي وتصدير/استيراد البيانات 💾</span>
         </button>
       </div>
 
@@ -891,6 +941,188 @@ export const SystemSettingsView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* TAB 5: BACKUP & DATA EXPORT / IMPORT */}
+      {activeTab === 'backup' && (
+        <div className="space-y-6">
+          {/* Status Alert if Import Done */}
+          {importStatus.type && (
+            <div
+              className={`p-4 rounded-2xl border flex items-center gap-3 animate-in slide-in-from-top ${
+                importStatus.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                  : 'bg-rose-50 border-rose-300 text-rose-800'
+              }`}
+            >
+              {importStatus.type === 'success' ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+              )}
+              <span className="font-bold text-xs">{importStatus.message}</span>
+            </div>
+          )}
+
+          {/* Top Banner Notice */}
+          <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-300 p-5 rounded-2xl flex items-start gap-3.5">
+            <span className="p-2.5 rounded-xl bg-amber-500 text-white shrink-0 shadow-xs">
+              <Database className="w-6 h-6" />
+            </span>
+            <div className="text-xs">
+              <h3 className="font-extrabold text-amber-950 text-sm">
+                مركز النسخ الاحتياطي وتصدير واستيراد بيانات السيستم (Backup & Data Safety)
+              </h3>
+              <p className="text-amber-800 mt-1 leading-relaxed">
+                هنا يمكنك تنزيل نسخة احتياطية كاملة (Full Backup JSON) تضم كافة موظفي الفريق، أرقامهم، باسورداتهم، مهامهم، صفقاتهم، وتجديدات العقود. كما يمكنك استيراد النسخة في أي وقت بنقرة واحدة لضمان عدم مسح أو فقدان أي داتا حتى لو قمتِ بإعادة نشر السيستم على الدومين (<strong>tazkoraio.com</strong>).
+              </p>
+            </div>
+          </div>
+
+          {/* Overview of Stored Data Ready for Export */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs">
+              <div className="text-slate-400 font-bold text-[11px]">فريق العمل والحسابات</div>
+              <div className="text-2xl font-black text-blue-600 mt-1">{team.length}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5 font-medium">موظف باليوزرات والباسوردات والأرقام</div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs">
+              <div className="text-slate-400 font-bold text-[11px]">المهام وسجلات الوقت</div>
+              <div className="text-2xl font-black text-indigo-600 mt-1">{tasks.length}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5 font-medium">مهمة عمل مع المؤقتات وسجل الفترات</div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs">
+              <div className="text-slate-400 font-bold text-[11px]">العملاء وتجديدات الاشتراكات</div>
+              <div className="text-2xl font-black text-emerald-600 mt-1">{clientRenewals.length}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5 font-medium">عقد اشتراك وملفات وملاحظات العملاء</div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs">
+              <div className="text-slate-400 font-bold text-[11px]">الصفقات والعملاء المحتملين</div>
+              <div className="text-2xl font-black text-amber-600 mt-1">{deals.length + leads.length}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5 font-medium">{deals.length} صفقة + {leads.length} ليد مسجل</div>
+            </div>
+          </div>
+
+          {/* Action Boxes: Export vs Import */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Box 1: Export Full Backup */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-6 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <ArrowDownToLine className="w-6 h-6" />
+                </div>
+                <h4 className="font-extrabold text-slate-900 text-sm">
+                  1. تصدير نسخة احتياطية كاملة (Export Backup)
+                </h4>
+                <p className="text-slate-600 text-xs leading-relaxed">
+                  يقوم بتنزيل ملف <strong>.JSON</strong> آمن يحتوي على كافة بيانات النظام بالكامل (الحسابات، الباسوردات، أرقام الواتساب، المهام، الصفقات، وهوية اللوجو). يمكنك الاحتفاظ بهذا الملف على جهازك قبل عمل أي تحديثات.
+                </p>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>جاهز للتنزيل المباشر فوراً</span>
+                  </div>
+                  <div>اسم الملف التلقائي: <code className="font-mono text-blue-600">tazkora-crm-backup-[التاريخ].json</code></div>
+                </div>
+              </div>
+
+              <div className="pt-6">
+                <button
+                  type="button"
+                  onClick={() => exportSystemBackup()}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.01]"
+                >
+                  <ArrowDownToLine className="w-4 h-4" />
+                  <span>تنزيل وتصدير النسخة الاحتياطية الآن (JSON)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Box 2: Import & Restore Backup */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-6 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <ArrowUpFromLine className="w-6 h-6" />
+                </div>
+                <h4 className="font-extrabold text-slate-900 text-sm">
+                  2. استيراد واسترجاع النسخة الاحتياطية (Import & Restore)
+                </h4>
+                <p className="text-slate-600 text-xs leading-relaxed">
+                  إذا قمتِ بإعادة نشر السيستم أو الدخول من جهاز جديد، يمكنك رفع ملف النسخة الاحتياطية الذي قمتِ بتنزيله سابقاً لاستعادة جميع الموظفين والتاسكات فوراً دون الحاجة لإعادة كتابة أي شيء!
+                </p>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                    <FileCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>يدعم أي ملف JSON تم تصديره من المنظومة</span>
+                  </div>
+                  <div>يقوم بمطابقة وتحديث البيانات فورياً دون حذف موظفيك الـ 9 الأساسيين.</div>
+                </div>
+              </div>
+
+              <div className="pt-6">
+                <input
+                  type="file"
+                  ref={backupInputRef}
+                  onChange={handleImportBackupFile}
+                  accept=".json,application/json"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => backupInputRef.current?.click()}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.01]"
+                >
+                  <ArrowUpFromLine className="w-4 h-4" />
+                  <span>اختيار ملف الباك اب واستعادته فوراً (Restore)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Guide Section: How to Update on Domain without Losing Data */}
+          <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-lg border border-slate-800 space-y-4">
+            <div className="flex items-center gap-2 text-amber-400 font-extrabold text-sm">
+              <HelpCircle className="w-5 h-5 text-amber-400" />
+              <span>دليل الاستخدام: كيف تُجرين التعديلات وتحدثين السيستم على الدومين بدون مسح البيانات؟</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-300">
+              <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 space-y-2">
+                <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs">
+                  1
+                </div>
+                <h5 className="font-extrabold text-white text-xs">الموظفون الـ 9 محفوظون في قلب الكود</h5>
+                <p className="text-slate-400 leading-relaxed text-[11px]">
+                  قمتُ بتثبيت موظفيك الـ 9 (هدير، أميرة، آية، إيمان، مايبل، مريم، يمنى، إسلام، ورؤى) في كود النظام الأساسي مباشرة. فلن يختفوا أبداً حتى عند عمل Deploy أو تحديث.
+                </p>
+              </div>
+
+              <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 space-y-2">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center font-black text-xs">
+                  2
+                </div>
+                <h5 className="font-extrabold text-white text-xs">تصدير الباك اب قبل التعديل الكبير</h5>
+                <p className="text-slate-400 leading-relaxed text-[11px]">
+                  إذا قمتِ بإضافة عملاء أو مهام أو موظفين جدد على الدومين (<strong>tazkoraio.com</strong>)، اضغطي زر <strong>"تصدير نسخة احتياطية"</strong> واحتفظي بالملف.
+                </p>
+              </div>
+
+              <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 space-y-2">
+                <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-xs">
+                  3
+                </div>
+                <h5 className="font-extrabold text-white text-xs">استيراد النسخة على الرابط المنشور</h5>
+                <p className="text-slate-400 leading-relaxed text-[11px]">
+                  بعد نشر التعديلات أو فتح السيستم، يمكنك الضغط على <strong>"استيراد نسخة احتياطية"</strong> واختيار الملف لتعود كل البيانات والمهام كما كانت تماماً بنقرة زر.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Sticky Bottom Actions Bar */}
       <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-lg flex items-center justify-between gap-3">

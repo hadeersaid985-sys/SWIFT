@@ -986,6 +986,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                 <div className="text-[11px] text-blue-600 font-bold mt-0.5">{currentUser.role}</div>
                 <div className="text-[10px] text-slate-500">{currentUser.department}</div>
 
+                <button
+                  onClick={() => {
+                    setActiveTab('team');
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full mt-2 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  title="تغيير صورتك أو صور أعضاء الفريق"
+                >
+                  <Camera className="w-3.5 h-3.5 text-blue-600" />
+                  <span>تغيير صورة الحساب والأفاتار 📷</span>
+                </button>
+
                 <div className="mt-2 pt-2 border-t border-slate-200/60 font-mono text-[10px] space-y-1">
                   <div className="flex items-center justify-between text-slate-600">
                     <span className="font-sans font-bold text-slate-400">اليوزر:</span>

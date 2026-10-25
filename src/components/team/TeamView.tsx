@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Users,
   Mail,
@@ -34,10 +34,26 @@ import {
   DollarSign,
   Calendar,
   Clock,
-  CreditCard
+  CreditCard,
+  ArrowDownToLine,
+  Camera,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { TeamMember, AccessLevel } from '../../types/crm';
+
+const PRESET_AVATARS = [
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80'
+];
 
 export const TeamView: React.FC = () => {
   const {
@@ -51,7 +67,8 @@ export const TeamView: React.FC = () => {
     impersonateUser,
     addTeamMember,
     setIsBrandModalOpen,
-    updateTeamMemberSalary
+    updateTeamMemberSalary,
+    exportSystemBackup
   } = useCRM();
 
   // Role check: Is current user Manager / Admin?
@@ -107,6 +124,45 @@ export const TeamView: React.FC = () => {
     whatsapp: '',
     github: ''
   });
+
+  const editAvatarFileRef = useRef<HTMLInputElement>(null);
+  const addAvatarFileRef = useRef<HTMLInputElement>(null);
+
+  const handleEditAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('حجم الصورة كبير، يرجى اختيار صورة أقل من 5 ميجابايت');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const res = ev.target?.result as string;
+      if (res) {
+        setEditFormData(prev => ({ ...prev, avatar: res }));
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleAddAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('حجم الصورة كبير، يرجى اختيار صورة أقل من 5 ميجابايت');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const res = ev.target?.result as string;
+      if (res) {
+        setNewMemberData(prev => ({ ...prev, avatar: res }));
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const departments = [
     'all',
@@ -401,12 +457,24 @@ export const TeamView: React.FC = () => {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shrink-0 shadow-2xs transition-all cursor-pointer text-[11px]"
-            >
-              + إضافة موظف وحساب
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => exportSystemBackup()}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-2xs transition-all cursor-pointer text-[11px] flex items-center gap-1.5"
+                title="تصدير وتنزيل نسخة احتياطية لبيانات الفريق والسيستم كاملاً (JSON)"
+              >
+                <ArrowDownToLine className="w-3.5 h-3.5" />
+                <span>تصدير نسخة احتياطية (JSON)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-2xs transition-all cursor-pointer text-[11px]"
+              >
+                + إضافة موظف وحساب
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
@@ -441,12 +509,20 @@ export const TeamView: React.FC = () => {
                         {/* Member & Code */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2.5">
-                            <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(member)}
+                              className="relative group shrink-0 cursor-pointer"
+                              title="انقر لتعديل صورة أو بيانات العضو 📷"
+                            >
                               <img
                                 src={member.avatar}
                                 alt={member.name}
-                                className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
+                                className="w-9 h-9 rounded-lg object-cover border border-slate-200 group-hover:ring-2 group-hover:ring-blue-500 transition-all"
                               />
+                              <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Camera className="w-3.5 h-3.5 text-white" />
+                              </div>
                               <span
                                 className={`w-2.5 h-2.5 rounded-full border-2 border-white absolute -bottom-0.5 -right-0.5 ${
                                   member.status === 'online'
@@ -456,7 +532,7 @@ export const TeamView: React.FC = () => {
                                     : 'bg-amber-400'
                                 }`}
                               />
-                            </div>
+                            </button>
                             <div>
                               <div className="font-extrabold text-slate-900 flex items-center gap-1.5">
                                 <span>{member.name}</span>
@@ -700,12 +776,20 @@ export const TeamView: React.FC = () => {
 
                 {/* Profile Header */}
                 <div className="flex items-start gap-3">
-                  <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(member)}
+                    className="relative shrink-0 group cursor-pointer"
+                    title="انقر لتعديل صورة أو بيانات العضو 📷"
+                  >
                     <img
                       src={member.avatar}
                       alt={member.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-2xs"
+                      className="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-2xs group-hover:ring-2 group-hover:ring-blue-500 transition-all"
                     />
+                    <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="w-4 h-4 text-white" />
+                    </div>
                     <span
                       className={`w-3 h-3 rounded-full border-2 border-white absolute -bottom-0.5 -right-0.5 ${
                         member.status === 'online'
@@ -715,7 +799,7 @@ export const TeamView: React.FC = () => {
                           : 'bg-amber-400'
                       }`}
                     />
-                  </div>
+                  </button>
 
                   <div className="flex-1 min-w-0">
                     <h3 className="font-extrabold text-slate-900 text-sm truncate">
@@ -1221,6 +1305,109 @@ export const TeamView: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveEdit} className="p-5 overflow-y-auto space-y-4 text-xs">
+              {/* Profile Avatar Section */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <label className="block font-bold text-slate-800 mb-2">
+                  صورة الملف الشخصي / الأفاتار (Profile Avatar)
+                </label>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  {/* Current Avatar Preview */}
+                  <div className="relative group shrink-0">
+                    <img
+                      src={
+                        editFormData.avatar ||
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+                      }
+                      alt={editFormData.name || 'avatar'}
+                      className="w-16 h-16 rounded-full object-cover ring-2 ring-blue-500 shadow-sm"
+                      onError={e => {
+                        (e.target as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => editAvatarFileRef.current?.click()}
+                      className="absolute inset-0 bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      title="تغيير الصورة"
+                    >
+                      <Camera className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Upload button & URL input */}
+                  <div className="flex-1 w-full space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        ref={editAvatarFileRef}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleEditAvatarFile}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => editAvatarFileRef.current?.click()}
+                        className="flex-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-bold border border-blue-200 flex items-center justify-center gap-1.5 cursor-pointer text-[11px] transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>رفع صورة من جهازك</span>
+                      </button>
+                      {editFormData.avatar && (
+                        <button
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, avatar: '' })}
+                          className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[10px] font-semibold cursor-pointer"
+                          title="حذف الصورة والرجوع للافتراضي"
+                        >
+                          إلغاء
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="أو الصق رابط صورة مباشر (URL)..."
+                        value={editFormData.avatar || ''}
+                        onChange={e => setEditFormData({ ...editFormData, avatar: e.target.value })}
+                        className="w-full pl-2 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                      />
+                      <ImageIcon className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="mt-3 pt-2.5 border-t border-slate-200/70">
+                  <div className="text-[10px] text-slate-500 font-semibold mb-1.5 flex items-center justify-between">
+                    <span>أو اختر صورة جاهزة سريعة:</span>
+                    <span className="text-slate-400">انقر للتطبيق الفوري</span>
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {PRESET_AVATARS.map((presetUrl, idx) => {
+                      const isSelected = editFormData.avatar === presetUrl;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, avatar: presetUrl })}
+                          className={`relative rounded-full shrink-0 transition-transform hover:scale-105 cursor-pointer ${
+                            isSelected ? 'ring-2 ring-blue-600 scale-105' : 'opacity-80 hover:opacity-100'
+                          }`}
+                        >
+                          <img
+                            src={presetUrl}
+                            alt={`Preset ${idx + 1}`}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
               {/* Basic Info */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1454,6 +1641,109 @@ export const TeamView: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveNewMember} className="p-5 overflow-y-auto space-y-4 text-xs">
+              {/* Profile Avatar Section */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <label className="block font-bold text-slate-800 mb-2">
+                  صورة الملف الشخصي / الأفاتار (Profile Avatar)
+                </label>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  {/* Current Avatar Preview */}
+                  <div className="relative group shrink-0">
+                    <img
+                      src={
+                        newMemberData.avatar ||
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+                      }
+                      alt={newMemberData.name || 'avatar'}
+                      className="w-16 h-16 rounded-full object-cover ring-2 ring-blue-500 shadow-sm"
+                      onError={e => {
+                        (e.target as HTMLImageElement).src =
+                          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => addAvatarFileRef.current?.click()}
+                      className="absolute inset-0 bg-black/40 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      title="تغيير الصورة"
+                    >
+                      <Camera className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Upload button & URL input */}
+                  <div className="flex-1 w-full space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        ref={addAvatarFileRef}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAddAvatarFile}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addAvatarFileRef.current?.click()}
+                        className="flex-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-bold border border-blue-200 flex items-center justify-center gap-1.5 cursor-pointer text-[11px] transition-colors"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>رفع صورة من جهازك</span>
+                      </button>
+                      {newMemberData.avatar && (
+                        <button
+                          type="button"
+                          onClick={() => setNewMemberData({ ...newMemberData, avatar: '' })}
+                          className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[10px] font-semibold cursor-pointer"
+                          title="حذف الصورة والرجوع للافتراضي"
+                        >
+                          إلغاء
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="أو الصق رابط صورة مباشر (URL)..."
+                        value={newMemberData.avatar || ''}
+                        onChange={e => setNewMemberData({ ...newMemberData, avatar: e.target.value })}
+                        className="w-full pl-2 pr-7 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                      />
+                      <ImageIcon className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="mt-3 pt-2.5 border-t border-slate-200/70">
+                  <div className="text-[10px] text-slate-500 font-semibold mb-1.5 flex items-center justify-between">
+                    <span>أو اختر صورة جاهزة سريعة:</span>
+                    <span className="text-slate-400">انقر للتطبيق الفوري</span>
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {PRESET_AVATARS.map((presetUrl, idx) => {
+                      const isSelected = newMemberData.avatar === presetUrl;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setNewMemberData({ ...newMemberData, avatar: presetUrl })}
+                          className={`relative rounded-full shrink-0 transition-transform hover:scale-105 cursor-pointer ${
+                            isSelected ? 'ring-2 ring-blue-600 scale-105' : 'opacity-80 hover:opacity-100'
+                          }`}
+                        >
+                          <img
+                            src={presetUrl}
+                            alt={`Preset ${idx + 1}`}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">الاسم الكامل *</label>
