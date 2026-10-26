@@ -9,12 +9,18 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
 
-  // Strict anti-caching headers for all API requests to ensure multi-device freshness
-  app.use('/api', (_req, res, next) => {
+  // Strict anti-caching & CORS headers for all API requests to ensure multi-device freshness
+  app.use('/api', (req, res, next) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
     res.set('Surrogate-Control', 'no-store');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
     next();
   });
 

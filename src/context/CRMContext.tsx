@@ -363,6 +363,33 @@ export const ensureValidBrandConfig = (b: any): BrandConfig => {
   };
 };
 
+export const TEAM_ALIASES: Record<string, string[]> = {
+  'user-eman': ['user-eman', 'user-2', 'user-104', 'sm-104', 'eman', 'eman ashraf', 'eman_ashraf', 'ايمان', 'إيمان', 'ايمان اشرف', 'إيمان أشرف'],
+  'user-amira': ['user-amira', 'user-110', 'sm-110', 'user-3', 'amira', 'amira2', 'اميرة', 'أميرة'],
+  'user-aya': ['user-aya', 'user-103', 'sm-103', 'user-4', 'aya', 'aya gaber', 'اية', 'آية', 'اية جابر', 'آية جابر'],
+  'user-maibel': ['user-maibel', 'user-105', 'sm-105', 'maibel', 'maibel emad', 'مايبل', 'ميبل', 'مايبل عماد'],
+  'user-mariam': ['user-mariam', 'user-106', 'sm-106', 'mariam', 'mariam islam', 'مريم', 'مريم إسلام', 'مريم اسلام'],
+  'user-yomna': ['user-yomna', 'user-107', 'sm-107', 'yomna', 'يمنى', 'يمنا'],
+  'user-islam': ['user-islam', 'user-108', 'sm-108', 'islam', 'إسلام', 'اسلام'],
+  'user-roaa': ['user-roaa', 'user-109', 'sm-109', 'roaa', 'roaa_hetemy', 'رؤى', 'رؤى حتيمي', 'روءة', 'روءا'],
+  'user-1': ['user-1', 'user-admin', 'hadeer', 'hadeer.admin', 'هدير', 'هدير سعيد', 'admin', 'المدير']
+};
+
+export const getCanonicalUserId = (val?: string | null): string => {
+  if (!val) return '';
+  const clean = val.trim().toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\-_.]/g, ' ').replace(/\s+/g, ' ');
+  for (const [canonId, aliases] of Object.entries(TEAM_ALIASES)) {
+    if (canonId.toLowerCase() === val.trim().toLowerCase()) return canonId;
+    for (const a of aliases) {
+      const cleanA = a.toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\-_.]/g, ' ').replace(/\s+/g, ' ');
+      if (clean === cleanA || clean === cleanA.replace(/\s+/g, '') || (cleanA.length >= 3 && (clean.includes(cleanA) || cleanA.includes(clean)))) {
+        return canonId;
+      }
+    }
+  }
+  return val.trim().toLowerCase();
+};
+
 export const isTaskAssignedToUser = (task: Task, user: TeamMember): boolean => {
   if (!user || !task) return false;
   const aid = (task.assignedToId || '').trim().toLowerCase();
@@ -378,15 +405,48 @@ export const isTaskAssignedToUser = (task: Task, user: TeamMember): boolean => {
   ) {
     return true;
   }
+
+  // Canonical mapping check
+  const taskCanon = getCanonicalUserId(task.assignedToId);
+  const userCanonId = getCanonicalUserId(user.id);
+  const userCanonName = getCanonicalUserId(user.name);
+  const userCanonUsername = getCanonicalUserId(user.username);
+  const userCanonCode = getCanonicalUserId(user.employeeCode);
+
+  if (
+    taskCanon &&
+    (taskCanon === userCanonId ||
+      taskCanon === userCanonName ||
+      taskCanon === userCanonUsername ||
+      taskCanon === userCanonCode)
+  ) {
+    return true;
+  }
+
+  // Fallback direct check
   if (aid === (user.id || '').toLowerCase()) return true;
   if (user.username && aid === user.username.toLowerCase()) return true;
   if (user.employeeCode && aid === user.employeeCode.toLowerCase()) return true;
   if (user.name && aid === user.name.toLowerCase()) return true;
+
+  // Normalized Arabic check
+  const normAid = aid.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+  const normUserName = (user.name || '').toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+  if (normAid && normUserName && (normAid === normUserName || normUserName.includes(normAid) || normAid.includes(normUserName))) {
+    return true;
+  }
+
   return false;
 };
 
 export const isUserMentionedInTask = (task: Task, user?: TeamMember | null): boolean => {
   if (!user || !task) return false;
+  const userCanon =
+    getCanonicalUserId(user.id) ||
+    getCanonicalUserId(user.name) ||
+    getCanonicalUserId(user.username) ||
+    getCanonicalUserId(user.employeeCode);
+
   const uid = (user.id || '').trim().toLowerCase();
   const uname = (user.username || '').trim().toLowerCase();
   const name = (user.name || '').trim().toLowerCase();
@@ -397,6 +457,7 @@ export const isUserMentionedInTask = (task: Task, user?: TeamMember | null): boo
   if (Array.isArray(task.mentionedUserIds)) {
     for (const mId of task.mentionedUserIds) {
       const cleanMid = (mId || '').trim().toLowerCase();
+      if (userCanon && getCanonicalUserId(cleanMid) === userCanon) return true;
       if (
         cleanMid === uid ||
         cleanMid === uname ||
@@ -413,12 +474,33 @@ export const isUserMentionedInTask = (task: Task, user?: TeamMember | null): boo
   if (Array.isArray(task.comments)) {
     for (const c of task.comments) {
       if (Array.isArray(c.mentionedUserIds)) {
-        if (c.mentionedUserIds.some(id => {
-          const lid = (id || '').trim().toLowerCase();
-          return lid === uid || lid === uname || lid === code || (name && lid === name);
-        })) return true;
+        for (const mId of c.mentionedUserIds) {
+          const cleanMid = (mId || '').trim().toLowerCase();
+          if (userCanon && getCanonicalUserId(cleanMid) === userCanon) return true;
+          if (
+            cleanMid === uid ||
+            cleanMid === uname ||
+            cleanMid === code ||
+            (name && cleanMid === name) ||
+            (firstName && firstName.length >= 3 && cleanMid === firstName)
+          ) {
+            return true;
+          }
+        }
       }
       const cContent = (c.content || '').toLowerCase();
+      if (userCanon && TEAM_ALIASES[userCanon]) {
+        for (const alias of TEAM_ALIASES[userCanon]) {
+          const cleanAlias = alias.toLowerCase();
+          if (
+            cContent.includes(`@${cleanAlias}`) ||
+            cContent.includes(`@${cleanAlias.replace(/\s+/g, '_')}`) ||
+            cContent.includes(cleanAlias)
+          ) {
+            return true;
+          }
+        }
+      }
       if (
         (uname && (cContent.includes(`@${uname}`) || cContent.includes(uname))) ||
         (name && (cContent.includes(`@${name}`) || cContent.includes(name.replace(/\s+/g, '_')))) ||
@@ -433,6 +515,19 @@ export const isUserMentionedInTask = (task: Task, user?: TeamMember | null): boo
 
   // 3. Scan title and description
   const text = `${task.title || ''} ${task.description || ''}`.toLowerCase();
+  if (userCanon && TEAM_ALIASES[userCanon]) {
+    for (const alias of TEAM_ALIASES[userCanon]) {
+      const cleanAlias = alias.toLowerCase();
+      if (
+        text.includes(`@${cleanAlias}`) ||
+        text.includes(`@${cleanAlias.replace(/\s+/g, '_')}`) ||
+        (cleanAlias.length >= 4 && text.includes(cleanAlias))
+      ) {
+        return true;
+      }
+    }
+  }
+
   if (uname && (text.includes(`@${uname}`) || text.includes(`@${uname.replace(/_/g, ' ')}`))) return true;
   if (name && (text.includes(`@${name}`) || text.includes(name.replace(/\s+/g, '_')))) return true;
   if (firstName && firstName.length >= 3 && text.includes(`@${firstName}`)) return true;
@@ -446,20 +541,6 @@ export const isUserMentionedInTask = (task: Task, user?: TeamMember | null): boo
 
   if (normName && (normText.includes(`@${normName}`) || normText.includes(`@${normName.replace(/\s+/g, '_')}`))) return true;
   if (normFirst && normFirst.length >= 3 && normText.includes(`@${normFirst}`)) return true;
-
-  // Specific check for Eman (Arabic: إيمان / ايمان, username: Eman)
-  if (uname === 'eman' || normName.includes('ايمان') || uid === 'user-eman') {
-    if (
-      normText.includes('@eman') ||
-      normText.includes('@ايمان') ||
-      normText.includes('eman_ashraf') ||
-      normText.includes('@eman_ashraf') ||
-      text.includes('@eman') ||
-      text.includes('user-eman')
-    ) {
-      return true;
-    }
-  }
 
   return false;
 };
@@ -638,6 +719,16 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const privTask = INITIAL_TASKS.find(t => t.id === 'task-mgr-private-1');
             if (privTask) result = [privTask, ...result];
           }
+
+          // Merge any tasks from INITIAL_TASKS that are not yet in local storage
+          const existingIds = new Set(result.map(t => t.id));
+          INITIAL_TASKS.forEach(initT => {
+            if (!existingIds.has(initT.id)) {
+              result.push(initT);
+              existingIds.add(initT.id);
+            }
+          });
+
           return result;
         }
       }
@@ -2635,6 +2726,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (!isMounted || !serverData || typeof serverData !== 'object') return;
 
           if (Array.isArray(serverData.tasks) && serverData.tasks.length > 0) {
+            isSyncingFromServerRef.current = true;
             setTasks(serverData.tasks);
           }
           if (Array.isArray(serverData.deletedTasks)) {
@@ -2668,13 +2760,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // Debounced auto-save to server store whenever tasks or core state change (Only runs AFTER server data is loaded)
+  // Debounced auto-save to server store whenever tasks or core state change (Only runs AFTER server data is loaded, and only by admin/manager)
   useEffect(() => {
     if (!isInitialDataLoadedRef.current) return;
     if (isSyncingFromServerRef.current) {
       isSyncingFromServerRef.current = false;
       return;
     }
+
+    // Protection: regular employee accounts should never push full system wipes
+    const isUserAdmin = currentUser.accessLevel === 'admin' || currentUser.accessLevel === 'manager' || currentUser.id === 'user-1';
+    if (!isUserAdmin) return;
 
     const timer = setTimeout(async () => {
       try {
@@ -2698,11 +2794,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e) {}
     }, 800);
     return () => clearTimeout(timer);
-  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications]);
+  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications, currentUser]);
 
-  // Background polling every 1.5 seconds to guarantee fresh data across all devices
+  // Real-time polling & window focus listener to guarantee fresh tasks across all devices
   useEffect(() => {
-    const interval = setInterval(async () => {
+    const fetchFreshTasks = async () => {
       try {
         const res = await fetch('/api/tasks?_t=' + Date.now(), {
           cache: 'no-store',
@@ -2710,7 +2806,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         if (res.ok) {
           const serverData = await res.json();
-          if (serverData && Array.isArray(serverData.tasks)) {
+          if (serverData && Array.isArray(serverData.tasks) && serverData.tasks.length > 0) {
             setTasks(prev => {
               if (JSON.stringify(prev) !== JSON.stringify(serverData.tasks)) {
                 isSyncingFromServerRef.current = true;
@@ -2748,8 +2844,20 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
       } catch {}
-    }, 1500);
-    return () => clearInterval(interval);
+    };
+
+    // Run immediately on component mount
+    fetchFreshTasks();
+
+    const interval = setInterval(fetchFreshTasks, 1000);
+    window.addEventListener('focus', fetchFreshTasks);
+    document.addEventListener('visibilitychange', fetchFreshTasks);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', fetchFreshTasks);
+      document.removeEventListener('visibilitychange', fetchFreshTasks);
+    };
   }, []);
 
   const validateAdminPin = (pin: string): boolean => {
