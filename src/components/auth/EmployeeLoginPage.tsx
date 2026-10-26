@@ -102,18 +102,21 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
           <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500" />
 
           {/* Heading */}
-          <div className="text-center space-y-2 mb-6">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl mx-auto flex items-center justify-center shadow-md shadow-blue-500/20">
-              <Lock className="w-7 h-7" />
+            {/* SwiftMynd Official Logo Badge */}
+            <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-500/20 overflow-hidden border border-blue-100 bg-[#1e54b7] p-1 transition-transform hover:scale-105">
+              <img
+                src={brandConfig?.customLogoUrl || '/assets/aistudio/PROFILE2_3fe3b3a5.png'}
+                alt={brandConfig?.brandName || 'SWIFTMYND'}
+                className="w-full h-full object-contain rounded-xl"
+              />
             </div>
 
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              تسجيل الدخول للمنظومة
+              تسجيل دخول الموظف
             </h1>
             <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-              أدخل اسم المستخدم وكلمة المرور الخاصة بحسابك للوصول إلى لوحة العمل والمهام
+              بوابة تسجيل دخول موظفي وفريق عمل <span className="font-bold text-blue-600">{brandConfig?.brandName || 'SWIFTMYND'}</span>
             </p>
-          </div>
 
           {/* Status Messages */}
           {errorMsg && (

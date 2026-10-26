@@ -278,10 +278,10 @@ export const DEFAULT_BRAND_CONFIG: BrandConfig = {
   brandName: 'SWIFTMYND',
   brandSubtitle: 'منظومة إدارة المهام وتتبع الإنتاجية',
   brandBadge: 'CRM Cloud',
-  logoType: 'default',
+  logoType: 'custom_image',
   logoDisplayMode: 'icon_and_text',
-  customLogoUrl: '',
-  customFaviconUrl: '',
+  customLogoUrl: '/assets/aistudio/PROFILE2_3fe3b3a5.png',
+  customFaviconUrl: '/assets/aistudio/PROFILE2_3fe3b3a5.png',
   customLogoHeight: 38,
   primaryColor: '#0284c7',
   secondaryColor: '#1e3a8a',
@@ -365,9 +365,14 @@ export const ensureValidUser = (u: any): TeamMember => {
 
 export const ensureValidBrandConfig = (b: any): BrandConfig => {
   if (!b || typeof b !== 'object') return DEFAULT_BRAND_CONFIG;
+  const logoUrl = b.customLogoUrl && b.customLogoUrl.trim() !== '' ? b.customLogoUrl : DEFAULT_BRAND_CONFIG.customLogoUrl;
+  const faviconUrl = b.customFaviconUrl && b.customFaviconUrl.trim() !== '' ? b.customFaviconUrl : DEFAULT_BRAND_CONFIG.customFaviconUrl;
   return {
     ...DEFAULT_BRAND_CONFIG,
     ...b,
+    logoType: 'custom_image',
+    customLogoUrl: logoUrl,
+    customFaviconUrl: faviconUrl,
     brandName: b.brandName || DEFAULT_BRAND_CONFIG.brandName,
     brandSubtitle: b.brandSubtitle || DEFAULT_BRAND_CONFIG.brandSubtitle,
     brandBadge: b.brandBadge || DEFAULT_BRAND_CONFIG.brandBadge,
@@ -3179,7 +3184,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (brandConfig?.customFaviconUrl) {
         faviconLink.href = brandConfig.customFaviconUrl;
       } else {
-        faviconLink.href = '/favicon.svg';
+        faviconLink.href = '/assets/aistudio/PROFILE2_3fe3b3a5.png';
       }
 
       if (brandConfig?.primaryColor) {

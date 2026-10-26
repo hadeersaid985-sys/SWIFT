@@ -473,27 +473,28 @@ export const SystemSettingsView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 4. Quick Preset: Use Attached Logo from Chat */}
+                  {/* 4. Quick Preset: Use Official SWIFTMYND Logo */}
                   <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-[11px] text-slate-700">
                       <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>هل ترغب باستخدام الشعار المرفق في المحادثة؟</span>
+                      <span>هل ترغب باستخدام شعار SWIFTMYND المعتمد؟</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => {
-                        const sampleUrl = '/assets/aistudio/image_03195a0b.png';
+                        const sampleUrl = '/assets/aistudio/PROFILE2_3fe3b3a5.png';
                         setFormData(prev => ({
                           ...prev,
                           logoType: 'custom_image',
                           customLogoUrl: sampleUrl,
-                          logoDisplayMode: 'full_image_only'
+                          customFaviconUrl: sampleUrl,
+                          logoDisplayMode: 'icon_and_text'
                         }));
                         setLogoUrlInput(sampleUrl);
                       }}
                       className="px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0"
                     >
-                      تجربة الصورة المرفقة
+                      تطبيق شعار سويفت المعتمد
                     </button>
                   </div>
 

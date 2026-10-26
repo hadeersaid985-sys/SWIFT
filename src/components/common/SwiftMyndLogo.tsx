@@ -74,90 +74,16 @@ export const SwiftMyndLogo: React.FC<SwiftMyndLogoProps> = ({
     }
   };
 
-  // Render the logo mark (custom image or SVG Swift mark)
+  // Render the logo mark (official SWIFTMYND image or custom uploaded logo)
   const renderLogoMark = () => {
-    if (activeBrandConfig.logoType === 'custom_image' && activeBrandConfig.customLogoUrl) {
-      return (
-        <img
-          src={activeBrandConfig.customLogoUrl}
-          alt={activeBrandConfig.brandName}
-          style={{ width: currentIcon.w, height: currentIcon.h }}
-          className="shrink-0 object-contain rounded-xl shadow-2xs transition-transform duration-200 group-hover:scale-105"
-        />
-      );
-    }
-
-    // Default Swift SM Vector Logo Mark
+    const logoSrc = activeBrandConfig.customLogoUrl || '/assets/aistudio/PROFILE2_3fe3b3a5.png';
     return (
-      <svg
-        width={currentIcon.w}
-        height={currentIcon.h}
-        viewBox="0 0 240 240"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="shrink-0 transition-transform duration-200 group-hover:scale-105"
-      >
-        <defs>
-          <linearGradient id="smGradOfficial" x1="40" y1="50" x2="200" y2="180" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor={activeBrandConfig.secondaryColor || '#1e54b7'} />
-            <stop offset="35%" stopColor="#2563eb" />
-            <stop offset="70%" stopColor={activeBrandConfig.primaryColor || '#0284c7'} />
-            <stop offset="100%" stopColor="#38bdf8" />
-          </linearGradient>
-
-          <linearGradient id="cyanPersonGrad" x1="80" y1="140" x2="110" y2="180" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor={activeBrandConfig.primaryColor || '#0284c7'} />
-            <stop offset="100%" stopColor="#38bdf8" />
-          </linearGradient>
-        </defs>
-
-        {/* Main SM Ribbon Ligature matching PROFILE1.png */}
-        <path
-          d="M 120 72
-             C 120 56, 95 50, 72 58
-             C 48 66, 36 88, 36 112
-             C 36 138, 54 160, 84 160
-             C 98 160, 108 150, 110 138
-             C 112 126, 102 118, 90 118
-             L 68 118
-             C 58 118, 52 106, 60 98
-             C 68 90, 88 88, 106 88
-             L 138 132
-             L 162 94
-             L 162 165
-             L 196 165
-             L 196 82
-             C 196 66, 184 50, 168 45
-             C 156 42, 144 48, 136 58
-             L 120 72 Z"
-          fill="url(#smGradOfficial)"
-        />
-
-        {/* 3 Feather/Claw Slashes on top-right peak of M */}
-        <path
-          d="M 178 50 L 190 43 C 193 45, 194 49, 192 53 L 182 58 Z"
-          fill="#ffffff"
-        />
-        <path
-          d="M 185 58 L 196 52 C 198 55, 199 58, 196 62 L 187 66 Z"
-          fill="#ffffff"
-        />
-        <path
-          d="M 190 68 L 201 63 C 203 66, 203 70, 199 74 L 192 76 Z"
-          fill="#ffffff"
-        />
-
-        {/* Stylized Cyan Person Accent under the S */}
-        <circle cx="86" cy="154" r="6.5" fill="url(#cyanPersonGrad)" />
-        <path
-          d="M 85 163
-             C 78 163, 73 170, 73 177
-             C 73 182, 78 187, 85 187
-             C 93 187, 98 180, 98 172
-             C 98 166, 92 163, 85 163 Z"
-          fill="url(#cyanPersonGrad)"
-        />
-      </svg>
+      <img
+        src={logoSrc}
+        alt={activeBrandConfig.brandName || 'SWIFTMYND'}
+        style={{ width: currentIcon.w, height: currentIcon.h }}
+        className="shrink-0 object-contain rounded-xl shadow-2xs transition-transform duration-200 group-hover:scale-105"
+      />
     );
   };
 

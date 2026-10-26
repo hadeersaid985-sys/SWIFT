@@ -383,14 +383,19 @@ export const BrandSettingsModal: React.FC = () => {
                         أو اختر من نماذج وشعارات مقترحة جاهزة:
                       </span>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {/* Preset 1: Original Swift SM SVG Logo */}
+                        {/* Preset 1: Official Swift SM Profile Logo */}
                         <button
                           type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, logoType: 'default', customLogoUrl: '' }))}
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            logoType: 'custom_image',
+                            customLogoUrl: '/assets/aistudio/PROFILE2_3fe3b3a5.png',
+                            customFaviconUrl: '/assets/aistudio/PROFILE2_3fe3b3a5.png'
+                          }))}
                           className="p-2 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center gap-1 shadow-2xs"
                         >
-                          <span className="text-sm">⚡</span>
-                          <span className="text-[10px] font-bold text-slate-700">شعار سويفت الأصلي</span>
+                          <img src="/assets/aistudio/PROFILE2_3fe3b3a5.png" alt="SWIFT" className="w-5 h-5 object-contain rounded" />
+                          <span className="text-[10px] font-bold text-slate-700">شعار سويفت المعتمد</span>
                         </button>
 
                         {/* Preset 2: Hex Tech Modern */}
