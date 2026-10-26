@@ -97,8 +97,14 @@ export const WeeklyExecutiveModal: React.FC<WeeklyExecutiveModalProps> = ({ isOp
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden text-slate-800 my-auto">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in cursor-pointer"
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden text-slate-800 my-auto cursor-default"
+      >
         {/* Header (Hidden in Print) */}
         <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-5 sm:p-6 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-3">

@@ -2779,8 +2779,14 @@ export const TasksView: React.FC = () => {
         const newTotalMins = (stoppingTask.totalLoggedMinutes || 0) + elapsedMinutes;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in select-none">
-            <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+          <div
+            onClick={() => setStopTimerTaskId(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in select-none cursor-pointer"
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col cursor-default"
+            >
               {/* Header */}
               <div className="bg-gradient-to-r from-[#172033] via-slate-900 to-[#172033] text-white p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -2909,8 +2915,14 @@ export const TasksView: React.FC = () => {
 
       {/* MODAL 2: MANUAL TIME LOG ENTRY (من يوم إيه لإيه) */}
       {manualLogTaskId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+        <div
+          onClick={() => setManualLogTaskId(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden cursor-default"
+          >
             <div className="bg-[#172033] text-white p-4 flex items-center justify-between">
               <h3 className="font-extrabold text-sm flex items-center gap-2">
                 <History className="w-4 h-4 text-emerald-400" />
@@ -3031,8 +3043,17 @@ export const TasksView: React.FC = () => {
 
       {/* MODAL 3: TASK DETAILS, WORK PERIODS & INTERACTIVE MENTIONS */}
       {selectedTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+        <div
+          onClick={() => {
+            setSelectedTaskId(null);
+            setEditingTaskId(null);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] cursor-default"
+          >
             <div className="bg-[#172033] text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-blue-600 rounded-lg">
@@ -3518,8 +3539,14 @@ export const TasksView: React.FC = () => {
 
       {/* Tasks Trash Modal (سلة مهملات المهام - استعادة وتفريغ بالكامل) */}
       {isTasksTrashModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[85vh] flex flex-col">
+        <div
+          onClick={() => setIsTasksTrashModalOpen(false)}
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-100 max-h-[85vh] flex flex-col cursor-default"
+          >
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-2">

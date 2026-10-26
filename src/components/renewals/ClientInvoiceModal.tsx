@@ -35,8 +35,14 @@ export const ClientInvoiceModal: React.FC<ClientInvoiceModalProps> = ({ client, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in">
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden text-slate-800 my-auto flex flex-col">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in cursor-pointer"
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden text-slate-800 my-auto flex flex-col cursor-default"
+      >
         {/* Top Action Bar (Hidden in Print) */}
         <div className="bg-slate-900 text-white p-4 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-2">

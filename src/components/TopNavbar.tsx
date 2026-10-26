@@ -1216,8 +1216,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
 
       {/* Confirmation Modal for Top Actions */}
       {confirmModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+        <div
+          onClick={() => setConfirmModal(null)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+          >
             <div className="flex items-center gap-3 text-rose-600">
               <div className="p-2.5 bg-rose-50 rounded-xl">
                 <AlertTriangle className="w-6 h-6" />

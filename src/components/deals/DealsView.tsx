@@ -217,8 +217,14 @@ export const DealsView: React.FC = () => {
 
       {/* Selected Deal Details Modal */}
       {selectedDeal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div
+          onClick={() => setSelectedDeal(null)}
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+          >
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div>
                 <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">

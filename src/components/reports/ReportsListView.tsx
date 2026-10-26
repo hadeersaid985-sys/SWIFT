@@ -650,8 +650,14 @@ export const ReportsListView: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {reportToDelete && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-2xs z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+        <div
+          onClick={() => setReportToDelete(null)}
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-2xs z-50 flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+          >
             <div className="flex items-start gap-3">
               <div className="p-2.5 bg-rose-100 rounded-xl text-rose-600 shrink-0 mt-0.5">
                 <Trash2 className="w-6 h-6" />
@@ -696,8 +702,14 @@ export const ReportsListView: React.FC = () => {
 
       {/* Interactive Report View Modal */}
       {activeReportModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-2xs z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div
+          onClick={() => setActiveReportModal(null)}
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-2xs z-50 flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
+          >
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -826,10 +838,14 @@ export const ReportsListView: React.FC = () => {
 
       {/* Upload & Create Report Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-2xs z-50 flex items-center justify-center p-4 animate-in fade-in">
+        <div
+          onClick={() => setShowCreateModal(false)}
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-2xs z-50 flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
           <form
+            onClick={e => e.stopPropagation()}
             onSubmit={handleCreateReport}
-            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 cursor-default"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>

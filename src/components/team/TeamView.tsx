@@ -1179,8 +1179,14 @@ export const TeamView: React.FC = () => {
 
       {/* MODAL: EDIT EMPLOYEE SALARY & TENURE */}
       {editingSalaryMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+        <div
+          onClick={() => setEditingSalaryMember(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden cursor-default"
+          >
             <div className="bg-gradient-to-r from-emerald-700 to-teal-800 text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-white/20 rounded-lg">
@@ -1311,8 +1317,14 @@ export const TeamView: React.FC = () => {
 
       {/* MODAL 1: EDIT MEMBER CREDENTIALS & ACCOUNTS */}
       {editingMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+        <div
+          onClick={() => setEditingMember(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] cursor-default"
+          >
             <div className="bg-[#172033] text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-blue-600 rounded-lg">
@@ -1665,8 +1677,14 @@ export const TeamView: React.FC = () => {
 
       {/* MODAL 2: ADD NEW MEMBER COMPLETE MODAL */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+        <div
+          onClick={() => setIsAddModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] cursor-default"
+          >
             <div className="bg-[#172033] text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-blue-600 rounded-lg">
@@ -1985,8 +2003,14 @@ export const TeamView: React.FC = () => {
 
       {/* MODAL 3: DELETE TEAM MEMBER CONFIRMATION */}
       {memberToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+        <div
+          onClick={() => setMemberToDelete(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden cursor-default"
+          >
             <div className="p-6 text-center">
               <div className="w-14 h-14 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Trash2 className="w-7 h-7" />

@@ -91,8 +91,14 @@ export const WhatsAppRenewalModal: React.FC<WhatsAppRenewalModalProps> = ({ clie
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden text-slate-800 my-auto">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in cursor-pointer"
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden text-slate-800 my-auto cursor-default"
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 text-white p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">

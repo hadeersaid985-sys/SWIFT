@@ -359,8 +359,14 @@ export const QuickModals: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 animate-in fade-in">
-      <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+    <div
+      onClick={() => setOpenQuickModal(null)}
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 animate-in fade-in cursor-pointer"
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto cursor-default"
+      >
         {/* MODAL 1: ADD TASK */}
         {openQuickModal === 'task' && (
           <form onSubmit={handleCreateTask} className="space-y-4">

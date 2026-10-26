@@ -657,8 +657,14 @@ export const LeadsView: React.FC = () => {
 
       {/* Log Interaction Modal (تدوين مكالمة / تعامل مع رقم العميل) */}
       {logInteractionLead && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div
+          onClick={() => setLogInteractionLead(null)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+          >
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div>
                 <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
@@ -753,8 +759,14 @@ export const LeadsView: React.FC = () => {
 
       {/* ================= MODAL: تسليم العميل المحتمل لباقي التيم وتحديد من يظهر له ================= */}
       {handoffModalLead && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto">
+        <div
+          onClick={() => setHandoffModalLead(null)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto cursor-default"
+          >
             {/* Header */}
             <div className="flex items-start justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">

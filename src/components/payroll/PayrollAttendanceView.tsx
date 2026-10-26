@@ -487,8 +487,14 @@ export const PayrollAttendanceView: React.FC = () => {
     };
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-        <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+      <div
+        onClick={() => setSelectedMemberForPayslip(null)}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in cursor-pointer"
+      >
+        <div
+          onClick={e => e.stopPropagation()}
+          className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] cursor-default"
+        >
           {/* Header */}
           <div className="bg-[#172033] text-white p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1581,8 +1587,14 @@ export const PayrollAttendanceView: React.FC = () => {
 
       {/* MODAL 1: ADD COMPANY EXPENSE */}
       {isExpenseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+        <div
+          onClick={() => setIsExpenseModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden cursor-default"
+          >
             <div className="bg-[#172033] text-white p-4 flex items-center justify-between">
               <h3 className="font-extrabold text-sm">إضافة مصروف تشغيلي للشركة</h3>
               <button
@@ -1679,8 +1691,14 @@ export const PayrollAttendanceView: React.FC = () => {
 
       {/* MODAL 2: EDIT SALARY & ALLOWANCES & TENURE */}
       {editingMemberSalary && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+        <div
+          onClick={() => setEditingMemberSalary(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col cursor-default"
+          >
             <div className="bg-[#172033] text-white p-4 flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-sm">تعديل الراتب والبدلات والعقد: {editingMemberSalary.name}</h3>
@@ -1809,8 +1827,14 @@ export const PayrollAttendanceView: React.FC = () => {
 
       {/* MODAL 3: EDIT COMPANY EXPENSE */}
       {editingExpense && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+        <div
+          onClick={() => setEditingExpense(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden cursor-default"
+          >
             <div className="bg-[#172033] text-white p-4 flex items-center justify-between">
               <h3 className="font-extrabold text-sm">تعديل مصروف تشغيلي</h3>
               <button
@@ -1908,8 +1932,14 @@ export const PayrollAttendanceView: React.FC = () => {
 
       {/* MODAL 4: ADD & EDIT ATTENDANCE RECORD */}
       {isAttendanceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+        <div
+          onClick={() => setIsAttendanceModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden cursor-default"
+          >
             <div className="bg-[#172033] text-white p-4 flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-sm">

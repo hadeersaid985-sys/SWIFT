@@ -139,8 +139,14 @@ export const BrandSettingsModal: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in select-none">
-      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div
+      onClick={() => setIsBrandModalOpen(false)}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in select-none cursor-pointer"
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] cursor-default"
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-[#172033] via-slate-900 to-[#172033] text-white p-4.5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">

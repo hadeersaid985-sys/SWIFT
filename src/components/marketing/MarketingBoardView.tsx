@@ -1682,8 +1682,14 @@ export const MarketingBoardView: React.FC = () => {
 
       {/* MODAL: TELEPROMPTER READER (وضع الملقن لقراءة الاسكربت أثناء التصوير) */}
       {teleprompterScript && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 text-white space-y-6 shadow-2xl flex flex-col max-h-[90vh]">
+        <div
+          onClick={() => setTeleprompterScript(null)}
+          className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 text-white space-y-6 shadow-2xl flex flex-col max-h-[90vh] cursor-default"
+          >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <span className="p-2 bg-pink-600/30 text-pink-400 rounded-xl">
@@ -1744,8 +1750,14 @@ export const MarketingBoardView: React.FC = () => {
 
       {/* MODAL: ADD VIDEO SCRIPT */}
       {showAddScriptModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto">
+        <div
+          onClick={() => setShowAddScriptModal(false)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto cursor-default"
+          >
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-pink-100 text-pink-600 rounded-xl">
@@ -1985,8 +1997,14 @@ export const MarketingBoardView: React.FC = () => {
 
       {/* Card Details Modal (عرض وتعديل ونسخ ولصق الكارت) */}
       {selectedCardForModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div
+          onClick={() => setSelectedCardForModal(null)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
+          >
             {/* Modal Top Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -2369,8 +2387,14 @@ export const MarketingBoardView: React.FC = () => {
 
       {/* Top Add Card Full Modal */}
       {showTopAddCardModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div
+          onClick={() => setShowTopAddCardModal(false)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+          >
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                 <Plus className="w-4 h-4 text-blue-600" />
@@ -2518,8 +2542,14 @@ export const MarketingBoardView: React.FC = () => {
 
       {/* Confirmation Modal */}
       {confirmDeleteModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 space-y-4">
+        <div
+          onClick={() => setConfirmDeleteModal(null)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+          >
             <h3 className="text-sm font-black text-slate-900">{confirmDeleteModal.title}</h3>
             <p className="text-xs text-slate-600">{confirmDeleteModal.message}</p>
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -2547,8 +2577,14 @@ export const MarketingBoardView: React.FC = () => {
 
       {/* Add Marketing Task Modal */}
       {showAddMarketingTaskModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div
+          onClick={() => setShowAddMarketingTaskModal(false)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+          >
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                 <CheckSquare className="w-4 h-4 text-emerald-600" />

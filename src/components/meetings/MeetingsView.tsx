@@ -531,8 +531,14 @@ export const MeetingsView: React.FC = () => {
 
       {/* MODAL: ADD VIP MEETING RECORDING */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+        <div
+          onClick={() => setIsAddModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] cursor-default"
+          >
             <div className="bg-gradient-to-r from-rose-600 to-pink-600 text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-white/20 rounded-lg">
