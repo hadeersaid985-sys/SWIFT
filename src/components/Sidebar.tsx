@@ -45,7 +45,7 @@ import {
   LogOut,
   FolderGit2
 } from 'lucide-react';
-import { useCRM, isTaskAssignedToUser } from '../context/CRMContext';
+import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 
 export const Sidebar: React.FC = () => {
@@ -76,20 +76,14 @@ export const Sidebar: React.FC = () => {
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState('');
 
-  // Helper: Is current user mentioned in task?
-  const isUserMentionedInTask = (t: any) => {
-    if (!currentUser) return false;
-    if (t.mentionedUserIds && t.mentionedUserIds.includes(currentUser.id)) return true;
-    if (t.comments && t.comments.some((c: any) => (currentUser.name && c.content?.includes(`@${currentUser.name}`)) || (currentUser.username && c.content?.includes(`@${currentUser.username}`)))) return true;
-    if (t.description && ((currentUser.name && t.description.includes(`@${currentUser.name}`)) || (currentUser.username && t.description.includes(`@${currentUser.username}`)))) return true;
-    if (t.title && ((currentUser.name && t.title.includes(`@${currentUser.name}`)) || (currentUser.username && t.title.includes(`@${currentUser.username}`)))) return true;
-    return false;
-  };
-
   // Visible tasks for the current user in sidebar
   const userVisibleTasks = isManager
     ? tasks
-    : tasks.filter(t => !t.isPrivate && ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentionedInTask(t)));
+    : tasks.filter(t => !t.isPrivate && ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentionedInTask(t, currentUser)));
+
+  const mentionedTasksCount = isManager
+    ? tasks.filter(t => isUserMentionedInTask(t, currentUser)).length
+    : tasks.filter(t => !t.isPrivate && isUserMentionedInTask(t, currentUser)).length;
 
   // Check overdue tasks for current user
   const overdueCount = userVisibleTasks.filter(t => {
@@ -98,7 +92,6 @@ export const Sidebar: React.FC = () => {
   }).length;
 
   const pendingTasksCount = userVisibleTasks.filter(t => t.status !== 'completed').length;
-  const mentionedTasksCount = userVisibleTasks.filter(t => isUserMentionedInTask(t)).length;
 
   return (
     <aside

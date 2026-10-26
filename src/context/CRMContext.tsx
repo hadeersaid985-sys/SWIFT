@@ -385,6 +385,85 @@ export const isTaskAssignedToUser = (task: Task, user: TeamMember): boolean => {
   return false;
 };
 
+export const isUserMentionedInTask = (task: Task, user?: TeamMember | null): boolean => {
+  if (!user || !task) return false;
+  const uid = (user.id || '').trim().toLowerCase();
+  const uname = (user.username || '').trim().toLowerCase();
+  const name = (user.name || '').trim().toLowerCase();
+  const firstName = name.split(' ')[0] || '';
+  const code = (user.employeeCode || '').trim().toLowerCase();
+
+  // 1. Explicit mentionedUserIds
+  if (Array.isArray(task.mentionedUserIds)) {
+    for (const mId of task.mentionedUserIds) {
+      const cleanMid = (mId || '').trim().toLowerCase();
+      if (
+        cleanMid === uid ||
+        cleanMid === uname ||
+        cleanMid === code ||
+        (name && cleanMid === name) ||
+        (firstName && firstName.length >= 3 && cleanMid === firstName)
+      ) {
+        return true;
+      }
+    }
+  }
+
+  // 2. Comments
+  if (Array.isArray(task.comments)) {
+    for (const c of task.comments) {
+      if (Array.isArray(c.mentionedUserIds)) {
+        if (c.mentionedUserIds.some(id => {
+          const lid = (id || '').trim().toLowerCase();
+          return lid === uid || lid === uname || lid === code || (name && lid === name);
+        })) return true;
+      }
+      const cContent = (c.content || '').toLowerCase();
+      if (
+        (uname && (cContent.includes(`@${uname}`) || cContent.includes(uname))) ||
+        (name && (cContent.includes(`@${name}`) || cContent.includes(name.replace(/\s+/g, '_')))) ||
+        (firstName && firstName.length >= 3 && (cContent.includes(`@${firstName}`) || cContent.includes(firstName))) ||
+        (code && cContent.includes(`@${code}`)) ||
+        (uid && cContent.includes(uid))
+      ) {
+        return true;
+      }
+    }
+  }
+
+  // 3. Scan title and description
+  const text = `${task.title || ''} ${task.description || ''}`.toLowerCase();
+  if (uname && (text.includes(`@${uname}`) || text.includes(`@${uname.replace(/_/g, ' ')}`))) return true;
+  if (name && (text.includes(`@${name}`) || text.includes(name.replace(/\s+/g, '_')))) return true;
+  if (firstName && firstName.length >= 3 && text.includes(`@${firstName}`)) return true;
+  if (code && text.includes(`@${code}`)) return true;
+  if (uid && text.includes(uid)) return true;
+
+  // Arabic variations for Eman / Amira / Aya etc.
+  const normText = text.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+  const normName = name.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+  const normFirst = firstName.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+
+  if (normName && (normText.includes(`@${normName}`) || normText.includes(`@${normName.replace(/\s+/g, '_')}`))) return true;
+  if (normFirst && normFirst.length >= 3 && normText.includes(`@${normFirst}`)) return true;
+
+  // Specific check for Eman (Arabic: إيمان / ايمان, username: Eman)
+  if (uname === 'eman' || normName.includes('ايمان') || uid === 'user-eman') {
+    if (
+      normText.includes('@eman') ||
+      normText.includes('@ايمان') ||
+      normText.includes('eman_ashraf') ||
+      normText.includes('@eman_ashraf') ||
+      text.includes('@eman') ||
+      text.includes('user-eman')
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 export const matchUserCredentials = (
   member: TeamMember,
   inputUsername: string,
@@ -1652,7 +1731,29 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       team.forEach(m => {
         const mNameLower = m.name.toLowerCase();
         const mFirstName = mNameLower.split(' ')[0];
-        if (cleanName === mNameLower || cleanName === mFirstName || mNameLower.includes(cleanName) || cleanName.includes(mFirstName)) {
+        const mUsernameLower = (m.username || '').toLowerCase();
+        const mCodeLower = (m.employeeCode || '').toLowerCase();
+        const mIdLower = (m.id || '').toLowerCase();
+
+        // Arabic normalization
+        const normClean = cleanName.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+        const normMName = mNameLower.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+        const normMFirst = mFirstName.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+
+        if (
+          cleanName === mIdLower ||
+          cleanName === mUsernameLower ||
+          cleanName === mCodeLower ||
+          cleanName === mNameLower ||
+          cleanName === mFirstName ||
+          cleanName === mNameLower.replace(/\s+/g, '') ||
+          normClean === normMName ||
+          normClean === normMFirst ||
+          (normClean === 'ايمان' && (mUsernameLower === 'eman' || mIdLower === 'user-eman')) ||
+          (cleanName === 'eman' && (mUsernameLower === 'eman' || mIdLower === 'user-eman')) ||
+          (cleanName.includes('eman') && mIdLower === 'user-eman') ||
+          (normClean.includes('ايمان') && mIdLower === 'user-eman')
+        ) {
           explicitMentionIds.add(m.id);
         }
       });
@@ -1694,8 +1795,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newNotifications: AppNotification[] = [];
 
     // Notify assigned member if not self
-    if (newTask.assignedToId !== currentUser.id) {
-      const assigned = team.find(m => m.id === newTask.assignedToId);
+    if (newTask.assignedToId && newTask.assignedToId !== currentUser.id) {
       newNotifications.push({
         id: 'notif-assign-' + Date.now() + '-' + newTask.assignedToId,
         title: `تم تكليفك بمهمة جديدة: ${newTask.title}`,
@@ -1703,7 +1803,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         timestamp: 'الآن',
         type: 'task_deadline',
         isRead: false,
-        linkTab: 'tasks'
+        linkTab: 'tasks',
+        taskId: newTaskId,
+        senderName: currentUser.name,
+        senderAvatar: currentUser.avatar,
+        recipientUserId: newTask.assignedToId
       });
     }
 
@@ -1712,18 +1816,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (mId !== currentUser.id) {
         newNotifications.push({
           id: 'notif-mention-' + Date.now() + '-' + mId,
-          title: `🔔 منشن لك في عنوان مهمة جديدة من ${currentUser.name}`,
+          title: `🔔 منشن لك في مهمة جديدة من ${currentUser.name}`,
           message: `المهمة: "${newTask.title}" | موعد التسليم: ${newTask.dueDate} ${newTask.dueTime || ''}`,
           timestamp: 'الآن',
           type: 'task_mention',
           isRead: false,
-          linkTab: 'tasks'
+          linkTab: 'tasks',
+          taskId: newTaskId,
+          senderName: currentUser.name,
+          senderAvatar: currentUser.avatar,
+          mentionedUserId: mId,
+          recipientUserId: mId
         });
       }
     });
 
-    // Notify Manager/Admin if not the creator:
-    // "عايزه فرد التيم التاسكات بتاعته بس انا المدير اكسيس واحد كل الاكونتات وكل واحد شغال في ايه ويجيلي اشعار لو حد عمل منشن للتاسك ليا او لحد من التيم لبعضه"
+    // Notify Manager/Admin if not the creator
     const managerUser = team.find(m => m.accessLevel === 'admin' || m.id === 'user-1' || m.accessLevel === 'manager');
     if (managerUser && managerUser.id !== currentUser.id && finalMentionedUserIds.length > 0) {
       const mentionedNames = finalMentionedUserIds
@@ -1737,16 +1845,41 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         timestamp: 'الآن',
         type: 'task_mention',
         isRead: false,
-        linkTab: 'tasks'
+        linkTab: 'tasks',
+        taskId: newTaskId,
+        senderName: currentUser.name,
+        senderAvatar: currentUser.avatar,
+        recipientUserId: managerUser.id
       });
     }
 
     if (newNotifications.length > 0) {
       setNotifications(prev => [...newNotifications, ...prev]);
     }
+
+    // Instant Multi-Device Server Sync (No 800ms lag)
+    try {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task: newTask,
+          notifications: newNotifications,
+          activity: {
+            id: 'act-' + Date.now(),
+            type: 'task',
+            title: 'تم إنشاء مهمة جديدة وتحديد موعد التسليم',
+            description: newTask.title,
+            timestamp: 'الآن',
+            user: currentUser.name
+          }
+        })
+      }).catch(err => console.warn('[SWIFTMYND] Instant task sync notice:', err));
+    } catch (e) {}
   };
 
   const updateTask = (id: string, updates: Partial<Task>) => {
+    let updatedTaskObj: Task | null = null;
     setTasks(prev =>
       prev.map(task => {
         if (task.id === id) {
@@ -1760,11 +1893,23 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
             logActivity('task', 'تم إنجاز المهمة بنجاح 🎉', task.title);
           }
+          updatedTaskObj = updated;
           return updated;
         }
         return task;
       })
     );
+
+    // Instant multi-device sync
+    if (updatedTaskObj) {
+      try {
+        fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task: updatedTaskObj })
+        }).catch(() => {});
+      } catch (e) {}
+    }
   };
 
   const deleteTask = (id: string) => {
@@ -1773,6 +1918,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDeletedTasks(prev => [{ ...t, completedAt: t.completedAt || new Date().toISOString() }, ...prev]);
       setTasks(prev => prev.filter(task => task.id !== id));
       logActivity('task', 'تم نقل المهمة لسلة المهملات', t.title);
+
+      // Instant server sync
+      try {
+        fetch('/api/tasks/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskId: id })
+        }).catch(() => {});
+      } catch (e) {}
     }
   };
 
@@ -2031,12 +2185,13 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       targetUsersToNotify.add(targetTask.assignedToId);
     }
 
-    // Manager always gets notified if team members mention each other or manager is mentioned:
-    // "ويجيلي اشعار لو حد عمل منشن للتاسك ليا او لحد من التيمل لبعضه"
+    // Manager always gets notified if team members mention each other or manager is mentioned
     const adminUser = team.find(m => m.accessLevel === 'admin' || m.id === adminUserId);
     if (adminUser && adminUser.id !== currentUser.id) {
       targetUsersToNotify.add(adminUser.id);
     }
+
+    const createdNotifs: AppNotification[] = [];
 
     targetUsersToNotify.forEach(memberId => {
       const isDirectMention = mentionedUserIds.includes(memberId);
@@ -2044,25 +2199,40 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ? `🔔 منشن لك من ${currentUser.name} في مهمة: ${targetTask.title}`
         : `💬 منشن وتفاعل بين أعضاء الفريق في مهمة: ${targetTask.title}`;
 
-      setNotifications(prev => [
-        {
-          id: 'notif-mention-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-          title: notifTitle,
-          message: `"${content}" - المكتوب بواسطة: ${currentUser.name}`,
-          timestamp: 'الآن',
-          type: 'task_mention',
-          isRead: false,
-          linkTab: 'tasks',
-          taskId: taskId,
-          senderName: currentUser.name,
-          senderAvatar: currentUser.avatar,
-          mentionedUserId: memberId
-        },
-        ...prev
-      ]);
+      createdNotifs.push({
+        id: 'notif-mention-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        title: notifTitle,
+        message: `"${content}" - المكتوب بواسطة: ${currentUser.name}`,
+        timestamp: 'الآن',
+        type: 'task_mention',
+        isRead: false,
+        linkTab: 'tasks',
+        taskId: taskId,
+        senderName: currentUser.name,
+        senderAvatar: currentUser.avatar,
+        mentionedUserId: memberId,
+        recipientUserId: memberId
+      });
     });
 
+    if (createdNotifs.length > 0) {
+      setNotifications(prev => [...createdNotifs, ...prev]);
+    }
+
     logActivity('task', 'منشن في مهمة', `${currentUser.name} أضاف تعليقاً ومنشن في: ${targetTask.title}`);
+
+    // Instant server sync
+    try {
+      fetch('/api/tasks/comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskId,
+          comment: newComment,
+          notifications: createdNotifs
+        })
+      }).catch(() => {});
+    } catch (e) {}
   };
 
   // Team Actions
@@ -2399,6 +2569,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return DEFAULT_BRAND_CONFIG;
   });
 
+  const isInitialDataLoadedRef = React.useRef(false);
+  const isSyncingFromServerRef = React.useRef(false);
+
   // Synchronize state with server /api/data for multi-user / multi-device access
   useEffect(() => {
     let isMounted = true;
@@ -2410,21 +2583,19 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (!isMounted || !serverData || typeof serverData !== 'object') return;
 
           if (Array.isArray(serverData.tasks) && serverData.tasks.length > 0) {
-            setTasks(prev => {
-              const serverIds = new Set(serverData.tasks.map((t: Task) => t.id));
-              const localOnly = prev.filter(t => !serverIds.has(t.id));
-              return [...serverData.tasks, ...localOnly];
-            });
+            setTasks(serverData.tasks);
           }
           if (Array.isArray(serverData.deletedTasks)) {
             setDeletedTasks(serverData.deletedTasks);
           }
           if (Array.isArray(serverData.team) && serverData.team.length > 0) {
-            setTeam(prev => {
-              const serverMemberIds = new Set(serverData.team.map((m: TeamMember) => m.id));
-              const localOnly = prev.filter(m => !serverMemberIds.has(m.id));
-              return [...serverData.team, ...localOnly];
-            });
+            setTeam(serverData.team);
+          }
+          if (Array.isArray(serverData.notifications) && serverData.notifications.length > 0) {
+            setNotifications(serverData.notifications);
+          }
+          if (Array.isArray(serverData.activities) && serverData.activities.length > 0) {
+            setActivities(serverData.activities);
           }
           if (Array.isArray(serverData.emails) && serverData.emails.length > 0) {
             setEmails(serverData.emails);
@@ -2432,9 +2603,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (serverData.brandConfig && typeof serverData.brandConfig === 'object') {
             setBrandConfig(ensureValidBrandConfig(serverData.brandConfig));
           }
+          isInitialDataLoadedRef.current = true;
         }
       } catch (err) {
         // Standalone/fallback mode
+        isInitialDataLoadedRef.current = true;
       }
     };
 
@@ -2444,8 +2617,14 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // Debounced auto-save to server store whenever tasks or core state change
+  // Debounced auto-save to server store whenever tasks or core state change (Only runs AFTER server data is loaded)
   useEffect(() => {
+    if (!isInitialDataLoadedRef.current) return;
+    if (isSyncingFromServerRef.current) {
+      isSyncingFromServerRef.current = false;
+      return;
+    }
+
     const timer = setTimeout(async () => {
       try {
         await fetch('/api/data', {
@@ -2470,40 +2649,56 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => clearTimeout(timer);
   }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications]);
 
-  // Background polling every 4 seconds to sync tasks created by other accounts/devices
+  // Background polling every 2 seconds to instantly sync tasks and mentions across all devices
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('/api/data');
+        const res = await fetch('/api/tasks');
         if (res.ok) {
           const serverData = await res.json();
           if (serverData && Array.isArray(serverData.tasks)) {
             setTasks(prev => {
-              if (JSON.stringify(prev) !== JSON.stringify(serverData.tasks)) {
+              const prevDigest = prev.map(t => `${t.id}:${t.status}:${t.assignedToId}:${t.comments?.length || 0}:${t.timeLogs?.length || 0}:${t.isTimerRunning}`).join('|');
+              const serverDigest = serverData.tasks.map((t: any) => `${t.id}:${t.status}:${t.assignedToId}:${t.comments?.length || 0}:${t.timeLogs?.length || 0}:${t.isTimerRunning}`).join('|');
+              if (prevDigest !== serverDigest || prev.length !== serverData.tasks.length) {
+                isSyncingFromServerRef.current = true;
                 return serverData.tasks;
+              }
+              return prev;
+            });
+          }
+          if (serverData && Array.isArray(serverData.notifications)) {
+            setNotifications(prev => {
+              const prevIds = prev.map(n => n.id).join(',');
+              const serverIds = serverData.notifications.map((n: any) => n.id).join(',');
+              if (prevIds !== serverIds || prev.length !== serverData.notifications.length) {
+                isSyncingFromServerRef.current = true;
+                return serverData.notifications;
               }
               return prev;
             });
           }
           if (serverData && Array.isArray(serverData.deletedTasks)) {
             setDeletedTasks(prev => {
-              if (JSON.stringify(prev) !== JSON.stringify(serverData.deletedTasks)) {
+              if (prev.length !== serverData.deletedTasks.length) {
+                isSyncingFromServerRef.current = true;
                 return serverData.deletedTasks;
               }
               return prev;
             });
           }
-          if (serverData && Array.isArray(serverData.emails)) {
-            setEmails(prev => {
-              if (JSON.stringify(prev) !== JSON.stringify(serverData.emails)) {
-                return serverData.emails;
+          if (serverData && Array.isArray(serverData.team) && serverData.team.length > 0) {
+            setTeam(prev => {
+              if (prev.length !== serverData.team.length) {
+                isSyncingFromServerRef.current = true;
+                return serverData.team;
               }
               return prev;
             });
           }
         }
       } catch {}
-    }, 4000);
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -2527,14 +2722,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
 
   const isMemberMentioned = (t: Task, member?: TeamMember | null) => {
-    if (!t || !member || !member.id) return false;
-    if (t.mentionedUserIds && t.mentionedUserIds.includes(member.id)) return true;
-    const nameMatch = member.name ? `@${member.name}` : null;
-    const userMatch = member.username ? `@${member.username}` : null;
-    if (t.comments && t.comments.some(c => (nameMatch && c.content?.includes(nameMatch)) || (userMatch && c.content?.includes(userMatch)))) return true;
-    if (t.description && ((nameMatch && t.description.includes(nameMatch)) || (userMatch && t.description.includes(userMatch)))) return true;
-    if (t.title && ((nameMatch && t.title.includes(nameMatch)) || (userMatch && t.title.includes(userMatch)))) return true;
-    return false;
+    return isUserMentionedInTask(t, member);
   };
 
   const isCurrentManager = Boolean(
@@ -2543,7 +2731,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const userActiveTasks = isCurrentManager
     ? tasks
-    : tasks.filter(t => !t.isPrivate && (Boolean(currentUser && (t.assignedToId === currentUser.id || isMemberMentioned(t, currentUser)))));
+    : tasks.filter(t => !t.isPrivate && (isTaskAssignedToUser(t, currentUser) || isUserMentionedInTask(t, currentUser)));
 
   const digestOverdueCount = userActiveTasks.filter(t => {
     if (t.status === 'completed') return false;

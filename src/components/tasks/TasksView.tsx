@@ -47,7 +47,7 @@ import {
   ArrowDown,
   FileSpreadsheet
 } from 'lucide-react';
-import { useCRM, isTaskAssignedToUser } from '../../context/CRMContext';
+import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
 import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember } from '../../types/crm';
 import { exportTasksToExcel } from '../../utils/excelExport';
 
@@ -238,16 +238,6 @@ export const TasksView: React.FC = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-
-  // Helper: check if a user is mentioned in a task (mentions or comments or description)
-  const isUserMentionedInTask = (task: Task, user: TeamMember) => {
-    if (!user) return false;
-    if (task.mentionedUserIds && task.mentionedUserIds.includes(user.id)) return true;
-    if (task.comments && task.comments.some(c => (user.name && c.content?.includes(`@${user.name}`)) || (user.username && c.content?.includes(`@${user.username}`)))) return true;
-    if (task.description && ((user.name && task.description.includes(`@${user.name}`)) || (user.username && task.description.includes(`@${user.username}`)))) return true;
-    if (task.title && ((user.name && task.title.includes(`@${user.name}`)) || (user.username && task.title.includes(`@${user.username}`)))) return true;
-    return false;
-  };
 
   // Base tasks for current user:
   // "اكسيس واكونتات التيم هيكون فيها التاسكات الخاصه بكل اكونت بس لوو معموله مننش والتاسكات ومواعيدها"
@@ -1351,7 +1341,7 @@ export const TasksView: React.FC = () => {
               ? (filterMember === 'all' ? team : team.filter(m => m.id === filterMember))
               : team.filter(m => m.id === currentUser.id)
             ).map(member => {
-              const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member));
+              const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member) || isUserMentionedInTask(t, member));
               const completedCount = memberTasks.filter(t => t.status === 'completed').length;
               const isCurrentMemberOpen = quickAddColumn === member.id;
 

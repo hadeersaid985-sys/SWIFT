@@ -92,6 +92,38 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         currentUser.id === 'user-1')
   );
 
+  const visibleNotifications = isManagerUser
+    ? notifications
+    : notifications.filter(n => {
+        if (n.recipientUserId) {
+          return (
+            n.recipientUserId === currentUser.id ||
+            n.recipientUserId === currentUser.username ||
+            n.recipientUserId === currentUser.employeeCode
+          );
+        }
+        if (n.mentionedUserId) {
+          return (
+            n.mentionedUserId === currentUser.id ||
+            n.mentionedUserId === currentUser.username ||
+            n.mentionedUserId === currentUser.employeeCode
+          );
+        }
+        if (n.id.includes(currentUser.id)) return true;
+        if (n.type === 'task_mention' || n.type === 'task_deadline') {
+          return (
+            n.id.includes(currentUser.id) ||
+            (currentUser.name && n.message.includes(currentUser.name)) ||
+            (currentUser.name && n.title.includes(currentUser.name)) ||
+            (currentUser.username && n.message.includes(currentUser.username)) ||
+            (currentUser.username && n.title.includes(currentUser.username))
+          );
+        }
+        return true;
+      });
+
+  const userUnreadCount = visibleNotifications.filter(n => !n.isRead).length;
+
   const [topSearch, setTopSearch] = useState('');
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showEditMenu, setShowEditMenu] = useState(false);
@@ -701,9 +733,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
             title="الإشعارات ومواعيد المهام ومنشنات الفريق"
           >
             <Bell className="w-4 h-4" />
-            {unreadNotificationsCount > 0 && (
+            {userUnreadCount > 0 && (
               <span className="min-w-4 h-4 px-1 bg-rose-600 text-white rounded-full absolute -top-1 -right-1 text-[9px] font-black flex items-center justify-center animate-pulse">
-                {unreadNotificationsCount}
+                {userUnreadCount}
               </span>
             )}
           </button>
@@ -724,10 +756,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
               </div>
 
               <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 mt-1">
-                {notifications.length === 0 ? (
+                {visibleNotifications.length === 0 ? (
                   <div className="py-6 text-center text-slate-400">لا توجد إشعارات جديدة</div>
                 ) : (
-                  notifications.map(n => {
+                  visibleNotifications.map(n => {
                     const isMention = n.type === 'task_mention';
                     const isDigest = n.type === 'daily_digest';
                     return (

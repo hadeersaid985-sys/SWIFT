@@ -414,6 +414,172 @@
         }
       ],
       "createdAt": "2026-10-21"
+    },
+    {
+      "title": "تقفيل السيستم كامل",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-1",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-25",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792940504374",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "التاسكات بضفها من المدير الي الموظف مش بيظهر خالص علشان جهاز تاني عايزه التاسكات تظهر  والمنشن بعملها منشن علي الحساب بتعاعها مش بتظهر علي الجهاز بتاعتها  خالص المنشن ولا التاسكات",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-1",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-25",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792938874231",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "رفع 3 مقالات الدرب",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-25",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792938244638",
+      "mentionedUserIds": [],
+      "comments": [
+        {
+          "id": "comment-1792938753743",
+          "taskId": "task-1792938244638",
+          "authorId": "user-1",
+          "authorName": "هدير سعيد",
+          "authorAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+          "content": "@Eman_Ashraf",
+          "createdAt": "٠٥:٣٢ م اليوم",
+          "mentionedUserIds": [
+            "user-eman"
+          ]
+        }
+      ],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "باك لينك ساوث كوست",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-29",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934640413",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25",
+      "completedAt": "2026-10-25"
+    },
+    {
+      "title": "باك لينك جودلن وابديت للمحتوي",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-28",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934620837",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "رفع gx المقالات + باك لينك",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-11-25",
+      "dueDate": "2026-10-27",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934453877",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "باك لينك موقع باورتك",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-25",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934402381",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
+    },
+    {
+      "title": "رفع 3 مقالات الدرب",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-25",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1792934381326",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-25"
     }
   ],
   "leads": [
@@ -430,7 +596,7 @@
       "assignedToId": "user-2",
       "estimatedValue": 180000,
       "notes": "يبحثون عن أتمتة لجميع فروعهم الـ 14 مع تتبع فوري لمواعيد التسليم.",
-      "createdAt": "2026-10-22"
+      "createdAt": "2026-10-23"
     },
     {
       "id": "lead-302",
@@ -445,7 +611,7 @@
       "assignedToId": "user-1",
       "estimatedValue": 95000,
       "notes": "تحتاج لربط برامج العيادات مع نظام إدارة مهام الأطباء ومواعيد الزيارات.",
-      "createdAt": "2026-10-25"
+      "createdAt": "2026-10-26"
     },
     {
       "id": "lead-303",
@@ -460,7 +626,7 @@
       "assignedToId": "user-2",
       "estimatedValue": 240000,
       "notes": "طلب إعادة الاتصال بعد دراسة الميزانية السنوية الجديدة للشركة.",
-      "createdAt": "2026-10-23"
+      "createdAt": "2026-10-24"
     },
     {
       "id": "lead-304",
@@ -475,7 +641,7 @@
       "assignedToId": "user-4",
       "estimatedValue": 310000,
       "notes": "طلبوا تجربة عملية ديمو للربط مع نظام إدارة الأسطول والمخازن.",
-      "createdAt": "2026-10-20"
+      "createdAt": "2026-10-21"
     }
   ],
   "deals": [
@@ -490,9 +656,9 @@
       "currency": "ج.م",
       "stage": "تفاوض",
       "probability": 85,
-      "expectedCloseDate": "2026-10-30",
+      "expectedCloseDate": "2026-10-31",
       "assignedToId": "user-1",
-      "createdAt": "2026-10-10",
+      "createdAt": "2026-10-11",
       "notes": "الصفقة في مرحلة الصياغة القانونية النهائية للعقد."
     },
     {
@@ -506,9 +672,9 @@
       "currency": "ج.م",
       "stage": "عرض سعر",
       "probability": 60,
-      "expectedCloseDate": "2026-11-06",
+      "expectedCloseDate": "2026-11-07",
       "assignedToId": "user-2",
-      "createdAt": "2026-10-15",
+      "createdAt": "2026-10-16",
       "notes": "العرض يشمل التخصيص والأمان العالي وربط الفروع المصرفية."
     },
     {
@@ -522,9 +688,9 @@
       "currency": "ج.م",
       "stage": "مؤهل",
       "probability": 40,
-      "expectedCloseDate": "2026-11-14",
+      "expectedCloseDate": "2026-11-15",
       "assignedToId": "user-3",
-      "createdAt": "2026-10-21",
+      "createdAt": "2026-10-22",
       "notes": "تم تقديم العرض الأولي والمقارنة مع الحلول المنافسة."
     },
     {
@@ -538,9 +704,9 @@
       "currency": "ج.م",
       "stage": "مغلقة ناجحة",
       "probability": 100,
-      "expectedCloseDate": "2026-10-22",
+      "expectedCloseDate": "2026-10-23",
       "assignedToId": "user-2",
-      "createdAt": "2026-09-25",
+      "createdAt": "2026-09-26",
       "notes": "تم توقيع العقد رسمياً واستلام الدفعة الأولى بنجاح!"
     }
   ],
@@ -548,7 +714,7 @@
     {
       "id": "meet-1",
       "title": "الاجتماع الصباحي اليومي لفريق المبيعات (Daily Standup)",
-      "date": "2026-10-25",
+      "date": "2026-10-26",
       "time": "10:00",
       "duration": "20 دقيقة",
       "location": "Google Meet",
@@ -564,7 +730,7 @@
     {
       "id": "meet-2",
       "title": "عرض ديمو تفاعلي مباشر مع مسؤولي بنك الرياض للاستثمار",
-      "date": "2026-10-26",
+      "date": "2026-10-27",
       "time": "12:30",
       "duration": "45 دقيقة",
       "location": "Zoom",
@@ -581,7 +747,7 @@
     {
       "id": "meet-3",
       "title": "جلسة التخطيط المالي وتوزيع ميزانية الربع الرابع",
-      "date": "2026-10-29",
+      "date": "2026-10-30",
       "time": "14:00",
       "duration": "60 دقيقة",
       "location": "مقر الشركة",
@@ -1140,185 +1306,162 @@
       "createdAt": "2026-10-19"
     }
   ],
-  "reports": [],
+  "reports": [
+    {
+      "id": "rep-1",
+      "title": "أعلى 10 قوالب حسب معدل النقر",
+      "description": "أعلى 10 قوالب حسب النسبة المئوية للمستخدمين والعملاء الذين نقروا على الروابط...",
+      "folder": "تقارير البريد الإلكتروني",
+      "lastAccessed": "-",
+      "createdBy": "النظام الآلي"
+    },
+    {
+      "id": "rep-2",
+      "title": "أعلى 10 قوالب حسب معدل الفتح",
+      "description": "أعلى 10 قوالب حسب النسبة المئوية للمستخدمين الذين فتحوا وقرأوا الرسائل...",
+      "folder": "تقارير البريد الإلكتروني",
+      "lastAccessed": "-",
+      "createdBy": "النظام الآلي"
+    },
+    {
+      "id": "rep-3",
+      "title": "تقرير تحليلات البريد الإلكتروني والنشاطات",
+      "description": "عدد رسائل البريد الإلكتروني المرسلة والمردود عليها والنشاطات المترتبة على التواصل...",
+      "folder": "تقارير البريد الإلكتروني",
+      "lastAccessed": "-",
+      "createdBy": "هدير سعيد"
+    },
+    {
+      "id": "rep-4",
+      "title": "تقرير تحليلات البريد الإلكتروني والمكالمة",
+      "description": "عدد رسائل البريد المرسلة والمردود عليها والمكالمات الهاتفية المرتبطة بكل عميل...",
+      "folder": "تقارير البريد الإلكتروني",
+      "lastAccessed": "-",
+      "createdBy": "هدير سعيد"
+    },
+    {
+      "id": "rep-5",
+      "title": "أعلى 10 مستخدمين",
+      "description": "أعلى 10 مستخدمين حسب معدل البريد المرسل وسرعة الاستجابة والتواصل...",
+      "folder": "تقارير البريد الإلكتروني",
+      "lastAccessed": "-",
+      "createdBy": "أحمد الشريف"
+    },
+    {
+      "id": "rep-6",
+      "title": "تحليلات البريد الإلكتروني",
+      "description": "ملخص، حالة البريد الإلكتروني (مرسل ومرتد ومفتوح وتم الرد)...",
+      "folder": "تقارير البريد الإلكتروني",
+      "lastAccessed": "-",
+      "createdBy": "النظام الآلي"
+    },
+    {
+      "id": "rep-7",
+      "title": "تقرير الارتداد",
+      "description": "ملخص، رسائل البريد الإلكتروني المرتدة، وسبب الارتداد ونظافة السجلات...",
+      "folder": "تقارير البريد الإلكتروني",
+      "lastAccessed": "-",
+      "createdBy": "طارق القحطاني"
+    },
+    {
+      "id": "rep-8",
+      "title": "الاجتماعات المخططة مقابل المحققة هذا الشهر",
+      "description": "اعرف عدد تسجيلات الوصول المخطط لها والتي تحققت بالفعل لفريق المبيعات...",
+      "folder": "تقارير الاجتماع",
+      "lastAccessed": "-",
+      "createdBy": "أحمد الشريف"
+    },
+    {
+      "id": "rep-9",
+      "title": "عدد تسجيلات الوصول من جانب فرد المبيعات",
+      "description": "احصل على عدد تسجيلات الوصول الشهرية للعملاء لكل فرد من مسؤولي المبيعات...",
+      "folder": "تقارير الاجتماع",
+      "lastAccessed": "-",
+      "createdBy": "أحمد الشريف"
+    },
+    {
+      "id": "rep-10",
+      "title": "عدد تسجيلات الوصول حسب المكان",
+      "description": "احصل على إجمالي عدد تسجيلات الوصول الشهرية مصنفة حسب الفروع والمقرات...",
+      "folder": "تقارير الاجتماع",
+      "lastAccessed": "-",
+      "createdBy": "منى زهران"
+    },
+    {
+      "id": "rep-11",
+      "title": "تسجيلات الوصول حسب المكان",
+      "description": "احصل على تفاصيل تسجيل الوصول مصنفة حسب الموقع الجغرافي والمدينة...",
+      "folder": "تقارير الاجتماع",
+      "lastAccessed": "-",
+      "createdBy": "منى زهران"
+    },
+    {
+      "id": "rep-12",
+      "title": "تسجيلات الوصول للعملاء المحتملين",
+      "description": "احصل على تفاصيل تسجيل الوصول لكل عميل محتمل ونسبة تحويله...",
+      "folder": "تقارير الاجتماع",
+      "lastAccessed": "-",
+      "createdBy": "سارة المنصوري"
+    },
+    {
+      "id": "rep-13",
+      "title": "تسجيلات الوصول للحسابات",
+      "description": "احصل على تفاصيل تسجيل الوصول لكل حساب ومؤسسة تجارية مسجلة...",
+      "folder": "تقارير الاجتماع",
+      "lastAccessed": "-",
+      "createdBy": "كريم الدسوقي"
+    },
+    {
+      "id": "rep-14",
+      "title": "تقرير إنتاجية المهام ومواعيد الاستحقاق (Deadlines)",
+      "description": "تتبع معدل الالتزام بمواعيد تسليم المهام والمهام المتأخرة والمنجزة بدقة...",
+      "folder": "تقارير المهام والأنشطة",
+      "lastAccessed": "اليوم",
+      "createdBy": "هدير سعيد"
+    },
+    {
+      "id": "rep-15",
+      "title": "تقرير مسار صفقات المبيعات وإيرادات الربع السنوي",
+      "description": "ملخص قيم الصفقات حسب المرحلة ومعدل الإغلاق وحجم الإيرادات المتوقعة...",
+      "folder": "تقارير المبيعات",
+      "lastAccessed": "اليوم",
+      "createdBy": "هدير سعيد"
+    }
+  ],
   "activities": [
     {
-      "id": "act-1792932096528",
-      "type": "team",
-      "title": "تعديل هوية المنظومة واللوجو",
-      "description": "قام الأدمن بتحديث لوجو سويفت واسم المنظومة",
-      "timestamp": "الآن",
+      "id": "act-1",
+      "type": "deal",
+      "title": "تم نقل الصفقة إلى مرحلة التفاوض النهائي",
+      "description": "صفقة \"توريد نظام سحابي لمجموعة إعمار المستقبل\" بقيمة 285,000 ر.س",
+      "timestamp": "منذ 35 دقيقة",
       "userName": "هدير سعيد",
       "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
     },
     {
-      "id": "act-1792932080832",
-      "type": "team",
-      "title": "تعديل هوية المنظومة واللوجو",
-      "description": "قام الأدمن بتحديث لوجو سويفت واسم المنظومة",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792931306204",
+      "id": "act-2",
       "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "🔒 مراجعة الحسابات وتوزيع مكافآت الربع السنوي (سري للمدير)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+      "title": "تم تحديث حالة المهمة إلى \"جاري العمل\"",
+      "description": "إطلاق حملة لينكد إن الموجهة لمديري المشتريات بالرياض",
+      "timestamp": "منذ ساعتين",
+      "userName": "سارة المنصوري",
+      "userAvatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80"
     },
     {
-      "id": "act-1792931238476",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "🔒 مراجعة الحسابات وتوزيع مكافآت الربع السنوي (سري للمدير)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+      "id": "act-3",
+      "type": "email",
+      "title": "تم إرسال بريد إلكتروني جديد",
+      "description": "تقرير نتائج حملة الربع الحالي لفريق العمل",
+      "timestamp": "منذ 4 ساعات",
+      "userName": "سارة المنصوري",
+      "userAvatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80"
     },
     {
-      "id": "act-1792931231550",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "تدريب أعضاء قسم المبيعات على ميزة التنبؤات والتحليلات",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "تسوية القيود البنكية ومطابقة تحويلات العملاء لليوم",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "متابعة تذاكر الدعم العالقة لعملاء باقة Enterprise (متأخرة)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "مراقبة أداء قواعد البيانات وسرعة استجابة الـ API اليوم",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "فحص ثغرات الحماية الدورية وتحديث شهادات خوادم الإنتاج (متأخرة)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "إعداد ونشر التقرير الأسبوعي وتحديث لوحة الماركيتنج",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "مراجعة تقرير أداء إعلانات جوجل لحملة الرياض (متأخرة)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "إرسال جدول تسليم المراحل والدفعات لشركة أفق السحاب",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "متابعة موافقة العرض الفني والمالي مع شركة بوابة الأعمال (متأخرة)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "إعداد ومطابقة الإقرارات الضريبية والفواتير الإلكترونية",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "مكالمة ترحيب واستبيان رضا عملاء باقة Pro الجدد",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930719277",
-      "type": "task",
-      "title": "تم حذف المهمة",
-      "description": "إرسال عرض السعر النهائي والتعاقد مع @هدير_سعيد لشركة إعمار المستقبل",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930702452",
-      "type": "task",
-      "title": "تم حذف تقرير",
-      "description": "تقرير مسار صفقات المبيعات وإيرادات الربع السنوي",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930702452",
-      "type": "task",
-      "title": "تم حذف تقرير",
-      "description": "تقرير إنتاجية المهام ومواعيد الاستحقاق (Deadlines)",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930702452",
-      "type": "task",
-      "title": "تم حذف تقرير",
-      "description": "تسجيلات الوصول للحسابات",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1792930702452",
-      "type": "task",
-      "title": "تم حذف تقرير",
-      "description": "تسجيلات الوصول للعملاء المحتملين",
-      "timestamp": "الآن",
+      "id": "act-4",
+      "type": "lead",
+      "title": "تم إضافة عميل محتمل جديد",
+      "description": "فاطمة الزهراء النجار - شركة النور للحلول الطبية",
+      "timestamp": "منذ 5 ساعات",
       "userName": "هدير سعيد",
       "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
     }
@@ -1377,6 +1520,18 @@
       "type": "deal_won",
       "isRead": true,
       "linkTab": "deals"
+    },
+    {
+      "id": "notif-test-mention-1",
+      "title": "🔔 منشن لك في مهمة: مهمة فحص السيو بالتنسيق مع @Eman",
+      "message": "تم تكليفك وتضمين منشن لحسابك من المدير",
+      "timestamp": "الآن",
+      "type": "task_mention",
+      "isRead": false,
+      "linkTab": "tasks",
+      "taskId": "task-test-sync-1",
+      "mentionedUserId": "user-eman",
+      "recipientUserId": "user-eman"
     }
   ],
   "attendanceRecords": [
@@ -1505,5 +1660,28 @@
       "notes": "تراخيص إيميلات الفريق"
     }
   ],
-  "monthlyPayrolls": []
+  "monthlyPayrolls": [],
+  "deletedTasks": [
+    {
+      "id": "task-test-sync-1",
+      "title": "مهمة فحص السيو بالتنسيق مع @Eman",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "urgent",
+      "status": "todo",
+      "startDate": "2026-10-26",
+      "dueDate": "2026-10-28",
+      "dueTime": "18:00",
+      "category": "تقني",
+      "estimatedHours": 3,
+      "timeLogs": [],
+      "subtasks": [],
+      "mentionedUserIds": [
+        "user-eman"
+      ],
+      "isPrivate": false,
+      "createdAt": "2026-10-26"
+    }
+  ],
+  "updatedAt": "2026-10-26T07:28:33.663Z"
 }

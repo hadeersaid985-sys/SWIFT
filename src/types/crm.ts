@@ -201,6 +201,7 @@ export interface AppNotification {
   senderName?: string;
   senderAvatar?: string;
   mentionedUserId?: string;
+  recipientUserId?: string;
 }
 
 export interface ReportItem {
