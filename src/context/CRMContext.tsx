@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Task,
@@ -200,6 +200,7 @@ interface CRMContextType {
   markRenewalCompleted: (id: string) => void;
   addClientFile: (clientId: string, file: Omit<ClientFileDocument, 'id' | 'uploadedAt'>) => void;
   deleteClientFile: (clientId: string, fileId: string) => void;
+  updateClientFilePermissions: (clientId: string, fileId: string, allowedTeamMemberIds: string[]) => void;
   addClientNote: (clientId: string, text: string) => void;
   assignClientTeam: (clientId: string, memberIds: string[]) => void;
   convertLeadToClientAndHandoff: (leadId: string, data: { serviceName: string; amount: number; planCycle: 'شهري' | 'ربع سنوي' | 'نصف سنوي' | 'سنوي'; currency?: string; assignedTeamIds: string[]; onboardingNotes?: string }) => void;
@@ -918,16 +919,21 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return parsed.map(p => {
             const initMatch = INITIAL_CLIENT_RENEWALS.find(i => i.id === p.id);
             const curr = (p.currency === 'ر.س' || !p.currency) ? 'ج.م' : p.currency;
-            if (initMatch && !p.sheetUrl) {
-              return {
-                ...p,
-                currency: curr,
-                sheetUrl: initMatch.sheetUrl,
-                sheetTitle: initMatch.sheetTitle,
-                contractNumber: p.contractNumber || initMatch.contractNumber
-              };
-            }
-            return { ...p, currency: curr };
+            return {
+              ...initMatch,
+              ...p,
+              currency: curr,
+              projectDescription: p.projectDescription || initMatch?.projectDescription || '',
+              assignedTeamMemberIds: (p.assignedTeamMemberIds && p.assignedTeamMemberIds.length > 0)
+                ? p.assignedTeamMemberIds
+                : (initMatch?.assignedTeamMemberIds || ['user-1']),
+              folderFiles: (p.folderFiles && p.folderFiles.length > 0)
+                ? p.folderFiles
+                : (initMatch?.folderFiles || []),
+              sheetUrl: p.sheetUrl || initMatch?.sheetUrl,
+              sheetTitle: p.sheetTitle || initMatch?.sheetTitle,
+              contractNumber: p.contractNumber || initMatch?.contractNumber
+            };
           });
         }
       }
@@ -1530,6 +1536,23 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  const updateClientFilePermissions = (clientId: string, fileId: string, allowedTeamMemberIds: string[]) => {
+    setClientRenewals(prev =>
+      prev.map(c => {
+        if (c.id === clientId && c.folderFiles) {
+          return {
+            ...c,
+            folderFiles: c.folderFiles.map(f =>
+              f.id === fileId ? { ...f, allowedTeamMemberIds } : f
+            )
+          };
+        }
+        return c;
+      })
+    );
+    logActivity('team', 'تعديل صلاحيات ملف للعميل', `قام ${currentUser.name} بتحديث صلاحيات وصول الموظفين لمستند بالعميل`);
+  };
+
   const addClientNote = (clientId: string, text: string) => {
     const newNote: ClientDossierNote = {
       id: 'note-' + Date.now(),
@@ -1683,16 +1706,30 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser.id === 'user-1')
   );
 
-  const visibleClients = isUserAdminOrRoot
-    ? clientRenewals
-    : clientRenewals.filter(c =>
+  const visibleClients = useMemo(() => {
+    if (isUserAdminOrRoot) {
+      return clientRenewals;
+    }
+    if (!currentUser) return [];
+    return clientRenewals
+      .filter(c =>
         Boolean(
-          currentUser &&
-            (c.assignedTeamMemberIds?.includes(currentUser.id) ||
-              c.managedBy === currentUser.name ||
-              c.managedBy === currentUser.id)
+          c.assignedTeamMemberIds?.includes(currentUser.id) ||
+            c.managedBy === currentUser.name ||
+            c.managedBy === currentUser.id
         )
-      );
+      )
+      .map(client => ({
+        ...client,
+        // تأمين الملفات في طبقة البيانات: إخفاء أي ملف لم يصرح الأدمن لهذا الموظف بالوصول إليه
+        folderFiles: (client.folderFiles || []).filter(file => {
+          if (!file.allowedTeamMemberIds || file.allowedTeamMemberIds.length === 0) {
+            return true; // متاح لموظفي هذا العميل افتراضياً
+          }
+          return file.allowedTeamMemberIds.includes(currentUser.id);
+        })
+      }));
+  }, [clientRenewals, isUserAdminOrRoot, currentUser]);
 
   const visibleLeads = isUserAdminOrRoot
     ? leads
@@ -3460,6 +3497,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markRenewalCompleted,
         addClientFile,
         deleteClientFile,
+        updateClientFilePermissions,
         addClientNote,
         assignClientTeam,
         convertLeadToClientAndHandoff,

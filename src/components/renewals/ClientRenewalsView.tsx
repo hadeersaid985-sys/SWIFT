@@ -61,6 +61,7 @@ export const ClientRenewalsView: React.FC = () => {
     markRenewalCompleted,
     addClientFile,
     deleteClientFile,
+    updateClientFilePermissions,
     addClientNote,
     assignClientTeam,
     renewalsDueSoonCount,
@@ -73,6 +74,8 @@ export const ClientRenewalsView: React.FC = () => {
   const [activeRenewalSubTab, setActiveRenewalSubTab] = useState<'client_dossiers' | 'renewals_list' | 'timeline' | 'coaching_offers' | 'swift_accounts'>('client_dossiers');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'due_soon' | 'active' | 'overdue' | 'renewed'>('all');
+  const [employeeFilter, setEmployeeFilter] = useState<string>('all'); // تصفية العملاء حسب كل موظف
+  const [editingFilePermsId, setEditingFilePermsId] = useState<string | null>(null); // إدارة صلاحيات كل ملف
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [copiedOfferId, setCopiedOfferId] = useState<string | null>(null);
 
@@ -85,11 +88,13 @@ export const ClientRenewalsView: React.FC = () => {
     category: 'عقد' | 'فاتورة' | 'بريف فني' | 'عرض سعر' | 'ملفات تصميم' | 'أخرى';
     url: string;
     size: string;
+    allowedTeamMemberIds: string[];
   }>({
     name: '',
     category: 'عقد',
     url: '',
-    size: '1.4 MB'
+    size: '1.4 MB',
+    allowedTeamMemberIds: []
   });
   const [newClientNoteInput, setNewClientNoteInput] = useState('');
   const [selectedTeamMemberIdsForClient, setSelectedTeamMemberIdsForClient] = useState<string[]>([]);
@@ -117,20 +122,21 @@ export const ClientRenewalsView: React.FC = () => {
 
   // Active client being viewed in the dossier modal (always synced with latest state)
   const currentDossierClient = selectedClientForDossier
-    ? clientRenewals.find(c => c.id === selectedClientForDossier.id) || selectedClientForDossier
+    ? (visibleClients || clientRenewals).find(c => c.id === selectedClientForDossier.id) || selectedClientForDossier
     : null;
 
   // Form state
   const [formData, setFormData] = useState<Omit<ClientRenewal, 'id' | 'createdAt'>>({
     clientName: '',
     company: '',
+    projectDescription: '',
     phone: '',
     whatsappNumber: '',
     email: '',
     serviceName: 'استضافة وسيرفرات سويفت (2 سيستم + 2 دومين)',
     planCycle: 'سنوي',
     amount: 2500,
-    currency: 'ر.س',
+    currency: 'ج.م',
     renewalDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     status: 'renewing_soon',
     notes: '',
@@ -165,11 +171,19 @@ export const ClientRenewalsView: React.FC = () => {
       if (r.status !== 'renewed') return false;
     }
 
+    if (employeeFilter !== 'all') {
+      const isAssigned = (r.assignedTeamMemberIds || []).includes(employeeFilter) ||
+        r.managedBy === employeeFilter ||
+        team.find(m => m.id === employeeFilter)?.name === r.managedBy;
+      if (!isAssigned) return false;
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return (
         r.clientName.toLowerCase().includes(q) ||
         r.company.toLowerCase().includes(q) ||
+        (r.projectDescription && r.projectDescription.toLowerCase().includes(q)) ||
         r.serviceName.toLowerCase().includes(q) ||
         r.phone.includes(q) ||
         r.renewalDate.includes(q)
@@ -207,13 +221,14 @@ export const ClientRenewalsView: React.FC = () => {
     setFormData({
       clientName: '',
       company: '',
+      projectDescription: '',
       phone: '',
       whatsappNumber: '',
       email: '',
       serviceName: 'استضافة وسيرفرات سويفت (2 سيستم + 2 دومين)',
       planCycle: 'سنوي',
       amount: 2500,
-      currency: 'ر.س',
+      currency: 'ج.م',
       renewalDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'renewing_soon',
       notes: '',
@@ -230,6 +245,7 @@ export const ClientRenewalsView: React.FC = () => {
     setFormData({
       clientName: ren.clientName,
       company: ren.company,
+      projectDescription: ren.projectDescription || '',
       phone: ren.phone,
       whatsappNumber: ren.whatsappNumber,
       email: ren.email || '',
@@ -279,17 +295,19 @@ export const ClientRenewalsView: React.FC = () => {
       url: newFileData.url.trim() || '#',
       size: newFileData.size || '1.4 MB',
       type: 'pdf',
-      uploadedBy: currentUser.name
+      uploadedBy: currentUser.name,
+      allowedTeamMemberIds: newFileData.allowedTeamMemberIds
     });
 
     setNewFileData({
       name: '',
       category: 'عقد',
       url: '',
-      size: '1.4 MB'
+      size: '1.4 MB',
+      allowedTeamMemberIds: []
     });
     setShowAddFileModal(false);
-    showToast('تمت إضافة المستند بنجاح إلى فولدر العميل 📁');
+    showToast('تمت إضافة المستند وتحديد صلاحيات الوصول بنجاح 📁');
   };
 
   // Add Note to Client Dossier
@@ -542,7 +560,7 @@ export const ClientRenewalsView: React.FC = () => {
             <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
             <span>ملفات العملاء وشيتات المتابعة (للتيم) 📗</span>
             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${activeRenewalSubTab === 'client_dossiers' ? 'bg-white text-emerald-900' : 'bg-emerald-100 text-emerald-800'}`}>
-              {clientRenewals.length} ملف
+              {activeClientsPool.length} عميل
             </span>
           </button>
 
@@ -617,28 +635,34 @@ export const ClientRenewalsView: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-base sm:text-lg font-black text-slate-900">
-                      ملفات العملاء وشيتات جوجل (Google Sheets) لسهولة وصول التيم
+                      {isManager
+                        ? 'إدارة ملفات العملاء وتوزيعها على الفريق (شيتات وملفات المشاريع)'
+                        : `قائمة العملاء المخصصين لك (${activeClientsPool.length} عميل)`}
                     </h2>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2.5 py-0.5 rounded-full">
-                      متاحة لكافة أعضاء الفريق 📗
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2.5 py-0.5 rounded-full font-mono">
+                      {isManager ? 'إدارة الأدمن والتحكم 🔒' : 'العملاء المسندين لحسابك فقط 👤'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    وصول سريع ومباشر لكل عميل: ملف البيانات، باقة السيرفر والدومين، رابط شيت المهام، والتواصل الفوري عبر الواتساب والمكالمات.
+                    {isManager
+                      ? 'إدارة وتوزيع العملاء على الموظفين، تحديد وصف ومرفقات كل مشروع، والتحكم في ظهور الملفات لكل موظف.'
+                      : 'قائمة العملاء المسندين إليك من قبل الإدارة مع وصف المشروع والمستندات المصرح لك بالاطلاع عليها.'}
                   </p>
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  setEditingRenewal(null);
-                  setShowAddModal(true);
-                }}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer text-xs shrink-0 self-start sm:self-auto"
-              >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>+ إضافة عميل وشيت جديد</span>
-              </button>
+              {isManager && (
+                <button
+                  onClick={() => {
+                    setEditingRenewal(null);
+                    setShowAddModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer text-xs shrink-0 self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                  <span>+ إضافة عميل ومشروع جديد</span>
+                </button>
+              )}
             </div>
 
             {/* Filter and Search Bar */}
@@ -652,7 +676,7 @@ export const ClientRenewalsView: React.FC = () => {
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
-                  كافة العملاء ({clientRenewals.length})
+                  كافة العملاء ({activeClientsPool.length})
                 </button>
                 <button
                   onClick={() => setStatusFilter('due_soon')}
@@ -710,13 +734,78 @@ export const ClientRenewalsView: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* شريط تصفية وتوزيع العملاء حسب كل موظف (للأدمن لعرض عملاء كل موظف والأعداد الفعلية) */}
+            {isManager && (
+              <div className="pt-2.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-extrabold text-slate-700 flex items-center gap-1.5 shrink-0">
+                    <Users className="w-4 h-4 text-indigo-600" />
+                    <span>عملاء كل موظف (التحكم والتوزيع):</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEmployeeFilter('all')}
+                    className={`px-2.5 py-1 rounded-xl font-bold transition-all cursor-pointer ${
+                      employeeFilter === 'all'
+                        ? 'bg-indigo-600 text-white shadow-2xs font-black'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    الكل ({clientRenewals.length})
+                  </button>
+                  {team.map(member => {
+                    const empClientsCount = clientRenewals.filter(c =>
+                      (c.assignedTeamMemberIds || []).includes(member.id) ||
+                      c.managedBy === member.name ||
+                      c.managedBy === member.id
+                    ).length;
+                    return (
+                      <button
+                        key={member.id}
+                        type="button"
+                        onClick={() => setEmployeeFilter(member.id)}
+                        className={`px-2.5 py-1 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                          employeeFilter === member.id
+                            ? 'bg-indigo-600 text-white border-indigo-700 shadow-2xs font-black'
+                            : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                        }`}
+                        title={`عرض عملاء ${member.name} (${empClientsCount} عميل)`}
+                      >
+                        <img src={member.avatar} alt={member.name} className="w-4 h-4 rounded-full object-cover shrink-0" />
+                        <span>{member.name}</span>
+                        <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-black ${
+                          employeeFilter === member.id
+                            ? 'bg-white text-indigo-900'
+                            : empClientsCount > 0
+                            ? 'bg-indigo-100 text-indigo-800'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {empClientsCount}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Dossiers Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRenewals.length === 0 ? (
-              <div className="col-span-full bg-white p-12 text-center text-slate-400 rounded-2xl border border-slate-200">
-                لا توجد ملفات عملاء مطابقة للبحث الحالي.
+              <div className="col-span-full bg-white p-12 text-center rounded-2xl border border-slate-200 space-y-3">
+                <Folder className="w-12 h-12 text-slate-300 mx-auto" />
+                <h3 className="text-sm font-black text-slate-800">
+                  {isManager
+                    ? 'لا توجد ملفات عملاء مطابقة للتصفية الحالية'
+                    : 'لم يتم إسناد أي عملاء لحسابك حالياً (0 عميل)'}
+                </h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                  {isManager
+                    ? 'يمكنك تغيير الموظف المحدد في الفلتر أو النقر على "+ إضافة عميل ومشروع جديد" لتسجيل عميل جديد وتوزيعه.'
+                    : 'عندما يقوم الأدمن بتخصيص عملاء لك، ستظهر تفاصيل المشروع، الملفات المصرح بها، وشيتات جوجل الخاصة بهم هنا مباشرة.'}
+                </p>
               </div>
             ) : (
               filteredRenewals.map(client => {
@@ -908,6 +997,19 @@ export const ClientRenewalsView: React.FC = () => {
                         )}
                       </div>
 
+                      {/* Project Description snippet if exists */}
+                      {client.projectDescription && (
+                        <div className="mt-2 text-[11px] text-slate-700 bg-amber-50/80 p-2 rounded-xl border border-amber-200/80">
+                          <span className="font-bold text-amber-900 block mb-0.5 flex items-center gap-1">
+                            <FileText className="w-3 h-3 text-amber-600" />
+                            وصف المشروع:
+                          </span>
+                          <p className="line-clamp-2 text-slate-600 leading-relaxed font-medium">
+                            {client.projectDescription}
+                          </p>
+                        </div>
+                      )}
+
                       {/* Notes snippet if exists */}
                       {client.notes && (
                         <p className="mt-2 text-[10px] text-slate-500 line-clamp-2 bg-slate-50/70 p-1.5 rounded-md border border-slate-100">
@@ -958,27 +1060,31 @@ export const ClientRenewalsView: React.FC = () => {
                         <span>فاتورة PDF</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEdit(client)}
-                        className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-xl border border-slate-200 cursor-pointer transition-colors shadow-2xs shrink-0"
-                        title="تعديل بيانات العميل والشيت"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
+                      {isManager && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(client)}
+                          className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-blue-600 rounded-xl border border-slate-200 cursor-pointer transition-colors shadow-2xs shrink-0"
+                          title="تعديل بيانات العميل والشيت"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
 
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirmModal({
-                          id: client.id,
-                          isBulk: false,
-                          title: `حذف ملف واشتراك العميل (${client.clientName}) بالكامل؟`
-                        })}
-                        className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 rounded-xl border border-rose-200 cursor-pointer transition-colors shadow-2xs shrink-0"
-                        title="حذف العميل نهائياً"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {isManager && (
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmModal({
+                            id: client.id,
+                            isBulk: false,
+                            title: `حذف ملف واشتراك العميل (${client.clientName}) بالكامل؟`
+                          })}
+                          className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 rounded-xl border border-rose-200 cursor-pointer transition-colors shadow-2xs shrink-0"
+                          title="حذف العميل نهائياً"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -1731,7 +1837,7 @@ export const ClientRenewalsView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">الخدمة أو الباقة المشترك بها:</label>
+                <label className="block font-bold text-slate-700 mb-1">الخدمة أو الباقة المشترك بها: *</label>
                 <input
                   type="text"
                   required
@@ -1739,6 +1845,17 @@ export const ClientRenewalsView: React.FC = () => {
                   onChange={e => setFormData({ ...formData, serviceName: e.target.value })}
                   placeholder="مثال: استضافة وسيرفرات سويفت 2 سيستم و2 دومين"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-500 font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">وصف المشروع وتفاصيل العمل: *</label>
+                <textarea
+                  rows={2}
+                  value={formData.projectDescription || ''}
+                  onChange={e => setFormData({ ...formData, projectDescription: e.target.value })}
+                  placeholder="اكتب وصف المشروع ومتطلبات العمل والملفات ليطلع عليها الموظف المسند إليه..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-500 resize-none font-bold"
                 />
               </div>
 
@@ -1989,6 +2106,29 @@ export const ClientRenewalsView: React.FC = () => {
               </button>
             </div>
 
+            {/* بطاقة تفاصيل ووصف المشروع الفني للعميل (يظهر للموظف والأدمن) */}
+            <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-amber-50/30 p-4 rounded-2xl border border-amber-200/90 shadow-2xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-amber-600" />
+                  <span>تفاصيل ووصف المشروع الفني:</span>
+                </span>
+                {isManager && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(currentDossierClient)}
+                    className="text-[11px] font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1 cursor-pointer bg-white/90 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs hover:bg-blue-50 transition-colors"
+                  >
+                    <Edit3 className="w-3 h-3 text-blue-600" />
+                    <span>تعديل الوصف وتفاصيل العميل</span>
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-800 font-medium leading-relaxed bg-white/95 p-3 rounded-xl border border-amber-200/80 shadow-2xs whitespace-pre-wrap">
+                {currentDossierClient.projectDescription || 'لم يتم تسجيل وصف تفصيلي لهذا المشروع بعد. يمكنك إضافته وتعديله من لوحة التحكم.'}
+              </p>
+            </div>
+
             {/* Sub-tabs Navigation inside Dossier */}
             <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl text-xs font-bold overflow-x-auto">
               <button
@@ -2061,7 +2201,7 @@ export const ClientRenewalsView: React.FC = () => {
               </button>
             </div>
 
-            {/* TAB 1: فولدر المستندات والملفات (عايزه ازود العملاء كل واحد ليه تفاصيله وفودلر بتاعه احط كل التفاصيل) */}
+            {/* TAB 1: فولدر المستندات والملفات (التحكم في ظهور الملفات لكل موظف) */}
             {dossierActiveTab === 'folder' && (
               <div className="space-y-4 animate-in fade-in">
                 <div className="flex items-center justify-between bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/90 gap-3">
@@ -2071,26 +2211,30 @@ export const ClientRenewalsView: React.FC = () => {
                       <span>فولدر المستندات والملفات المرفوعة للعميل</span>
                     </h4>
                     <p className="text-[11px] text-amber-900/80 font-medium mt-0.5">
-                      عقود الخدمة، الفواتير، بريف العمل، بيانات السيرفر، وأي ملفات خاصة بالعميل.
+                      {isManager
+                        ? 'يمكنك كأدمن رفع الملفات وتحديد أي من الموظفين مسموح له برؤية كل ملف على حدة.'
+                        : 'الملفات والمستندات المصرح لك برؤيتها والاطلاع عليها من قبل الأدمن.'}
                     </p>
                   </div>
 
-                  <button
-                    onClick={() => setShowAddFileModal(!showAddFileModal)}
-                    className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0"
-                  >
-                    <Plus className="w-4 h-4 stroke-[2.5]" />
-                    <span>+ إضافة مستند للفولدر</span>
-                  </button>
+                  {isManager && (
+                    <button
+                      onClick={() => setShowAddFileModal(!showAddFileModal)}
+                      className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0"
+                    >
+                      <Plus className="w-4 h-4 stroke-[2.5]" />
+                      <span>+ إضافة مستند للفولدر</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Inline Add Document Form */}
-                {showAddFileModal && (
+                {showAddFileModal && isManager && (
                   <form onSubmit={handleAddFileSubmit} className="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-amber-300 space-y-3 text-xs animate-in slide-in-from-top-2">
                     <div className="flex items-center justify-between">
                       <span className="font-black text-slate-800 flex items-center gap-1.5">
                         <Upload className="w-4 h-4 text-amber-600" />
-                        <span>إرفاق مستند جديد إلى فولدر العميل</span>
+                        <span>إرفاق مستند جديد وتحديد صلاحيات ظهور الملف للموظفين</span>
                       </span>
                       <button
                         type="button"
@@ -2099,6 +2243,34 @@ export const ClientRenewalsView: React.FC = () => {
                       >
                         <X className="w-4 h-4" />
                       </button>
+                    </div>
+
+                    {/* Local File Upload Picker */}
+                    <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+                      <label className="block font-bold text-slate-700">
+                        اختر ملف من جهازك (أو أدخل رابط سحابي بالأسفل):
+                      </label>
+                      <input
+                        type="file"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const fileName = file.name;
+                          const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const dataUrl = ev.target?.result as string;
+                            setNewFileData(prev => ({
+                              ...prev,
+                              name: prev.name || fileName,
+                              size: sizeMB,
+                              url: dataUrl
+                            }));
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                        className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer"
+                      />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2155,6 +2327,56 @@ export const ClientRenewalsView: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* صلاحيات الموظفين المصرح لهم برؤية هذا الملف */}
+                    <div className="p-3 bg-purple-50/80 rounded-xl border border-purple-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
+                          <Shield className="w-3.5 h-3.5 text-purple-600" />
+                          <span>التحكم في ظهور هذا الملف للموظفين:</span>
+                        </label>
+                        <span className="text-[10px] text-purple-700 font-bold">
+                          {newFileData.allowedTeamMemberIds.length === 0
+                            ? 'متاح لجميع الموظفين المسندين للعميل 🌐'
+                            : `مخصص لـ (${newFileData.allowedTeamMemberIds.length}) موظف 🔒`}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-purple-800">
+                        حدد الموظف الذي ترغب في أن يظهر له هذا الملف فقط. إذا لم تحدد أي موظف سيظهر لجميع الموظفين المسندين للعميل.
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1">
+                        {team.map(m => {
+                          const isAssignedToClient = (currentDossierClient.assignedTeamMemberIds || []).includes(m.id);
+                          const isChecked = newFileData.allowedTeamMemberIds.includes(m.id);
+                          return (
+                            <label
+                              key={m.id}
+                              className={`flex items-center gap-2 p-1.5 rounded-lg border text-[11px] cursor-pointer ${
+                                isChecked
+                                  ? 'bg-purple-100 border-purple-400 font-bold text-purple-950'
+                                  : 'bg-white border-slate-200 text-slate-700'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={e => {
+                                  const updated = e.target.checked
+                                    ? [...newFileData.allowedTeamMemberIds, m.id]
+                                    : newFileData.allowedTeamMemberIds.filter(id => id !== m.id);
+                                  setNewFileData({ ...newFileData, allowedTeamMemberIds: updated });
+                                }}
+                                className="w-3.5 h-3.5 text-purple-600 rounded cursor-pointer"
+                              />
+                              <span className="truncate">{m.name}</span>
+                              {isAssignedToClient && (
+                                <span className="text-[9px] bg-purple-200 text-purple-800 px-1 rounded">مع العميل</span>
+                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-end gap-2 pt-1">
                       <button
                         type="button"
@@ -2179,67 +2401,173 @@ export const ClientRenewalsView: React.FC = () => {
                   {(!currentDossierClient.folderFiles || currentDossierClient.folderFiles.length === 0) ? (
                     <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 text-center space-y-2">
                       <Folder className="w-10 h-10 text-slate-300 mx-auto" />
-                      <p className="text-xs font-bold text-slate-600">لا توجد ملفات أو مستندات في فولدر هذا العميل حتى الآن.</p>
-                      <p className="text-[11px] text-slate-400">انقر على زر "+ إضافة مستند للفولدر" أعلاه لإرفاق العقود والفواتير وروابط المشاريع.</p>
+                      <p className="text-xs font-bold text-slate-600">
+                        {isManager
+                          ? 'لا توجد ملفات أو مستندات في فولدر هذا العميل حتى الآن.'
+                          : 'لم يقم الأدمن بمشاركة ملفات أو مستندات معك لهذا العميل حتى الآن.'}
+                      </p>
+                      {isManager && (
+                        <p className="text-[11px] text-slate-400">انقر على زر "+ إضافة مستند للفولدر" أعلاه لإرفاق العقود والفواتير وتحديد صلاحيات ظهورها.</p>
+                      )}
                     </div>
                   ) : (
-                    currentDossierClient.folderFiles.map(file => (
-                      <div
-                        key={file.id}
-                        className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs hover:border-amber-300 transition-all flex items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-black shrink-0">
-                            <FileText className="w-5 h-5" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-black text-slate-900 truncate">{file.name}</span>
-                              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                                {file.category}
-                              </span>
-                              {file.size && (
-                                <span className="text-[10px] font-mono text-slate-400">
-                                  {file.size}
-                                </span>
+                    currentDossierClient.folderFiles.map(file => {
+                      const isFileOpenPerms = editingFilePermsId === file.id;
+                      const hasSpecificPerms = file.allowedTeamMemberIds && file.allowedTeamMemberIds.length > 0;
+                      const allowedNames = (file.allowedTeamMemberIds || [])
+                        .map(id => team.find(m => m.id === id)?.name || id)
+                        .join('، ');
+
+                      return (
+                        <div
+                          key={file.id}
+                          className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-xs hover:border-amber-300 transition-all space-y-3"
+                        >
+                          <div className="flex items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-black shrink-0">
+                                <FileText className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-black text-slate-900 truncate">{file.name}</span>
+                                  <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                                    {file.category}
+                                  </span>
+                                  {file.size && (
+                                    <span className="text-[10px] font-mono text-slate-400">
+                                      {file.size}
+                                    </span>
+                                  )}
+                                  {/* بطاقة الصلاحيات للملف */}
+                                  {hasSpecificPerms ? (
+                                    <span className="text-[10px] font-bold bg-purple-50 text-purple-800 px-2 py-0.5 rounded-full border border-purple-200 flex items-center gap-1">
+                                      <Shield className="w-2.5 h-2.5 text-purple-600" />
+                                      <span>متاح فقط لـ: {allowedNames}</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                      <Users className="w-2.5 h-2.5 text-slate-400" />
+                                      <span>متاح لكافة التيم المسند</span>
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
+                                  <span>تاريخ الإضافة: {file.uploadedAt}</span>
+                                  {file.uploadedBy && <span>• بواسطة: {file.uploadedBy}</span>}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {file.url && file.url !== '#' && (
+                                <a
+                                  href={file.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  download={file.name}
+                                  className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                                  title="فتح أو تحميل الملف"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                  <span>فتح / تحميل ↗</span>
+                                </a>
+                              )}
+
+                              {/* زر تحكم الأدمن في صلاحيات الملف */}
+                              {isManager && (
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingFilePermsId(isFileOpenPerms ? null : file.id)}
+                                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border cursor-pointer flex items-center gap-1 transition-all ${
+                                    isFileOpenPerms
+                                      ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
+                                      : 'bg-purple-50 hover:bg-purple-100 text-purple-800 border-purple-200'
+                                  }`}
+                                  title="تحديد الموظفين المصرح لهم برؤية هذا الملف"
+                                >
+                                  <Shield className="w-3.5 h-3.5" />
+                                  <span>صلاحيات الملف ⚙️</span>
+                                </button>
+                              )}
+
+                              {isManager && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`هل تريد بالتأكيد حذف المستند: ${file.name}؟`)) {
+                                      deleteClientFile(currentDossierClient.id, file.id);
+                                      showToast('تم حذف المستند من الفولدر 🗑️');
+                                    }
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                  title="حذف المستند"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
                               )}
                             </div>
-                            <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
-                              <span>تاريخ الإضافة: {file.uploadedAt}</span>
-                              {file.uploadedBy && <span>• بواسطة: {file.uploadedBy}</span>}
-                            </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {file.url && file.url !== '#' && (
-                            <a
-                              href={file.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer transition-colors"
-                              title="فتح الرابط أو الملف"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>فتح ↗</span>
-                            </a>
+                          {/* Inline Permission Editor for Admin */}
+                          {isFileOpenPerms && isManager && (
+                            <div className="p-3 bg-purple-50/90 rounded-xl border border-purple-200 space-y-2 animate-in slide-in-from-top-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-black text-purple-950 flex items-center gap-1.5">
+                                  <Shield className="w-3.5 h-3.5 text-purple-600" />
+                                  <span>تحديد الموظفين المصرح لهم برؤية المستند ({file.name}):</span>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateClientFilePermissions(currentDossierClient.id, file.id, []);
+                                    showToast('تم تعيين الملف متاحاً لجميع موظفي العميل 🌐');
+                                  }}
+                                  className="text-[10px] font-bold text-purple-700 hover:underline cursor-pointer"
+                                >
+                                  إتاحة للجميع (عام)
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                                {team.map(m => {
+                                  const isAssignedToClient = (currentDossierClient.assignedTeamMemberIds || []).includes(m.id);
+                                  const isPermitted = (file.allowedTeamMemberIds || []).includes(m.id);
+                                  return (
+                                    <label
+                                      key={m.id}
+                                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                        isPermitted
+                                          ? 'bg-purple-600 text-white border-purple-700 font-bold shadow-2xs'
+                                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                      }`}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isPermitted}
+                                        onChange={e => {
+                                          const cur = file.allowedTeamMemberIds || [];
+                                          const updated = e.target.checked
+                                            ? [...cur, m.id]
+                                            : cur.filter(id => id !== m.id);
+                                          updateClientFilePermissions(currentDossierClient.id, file.id, updated);
+                                          showToast(`تم تحديث صلاحية الملف للموظف ${m.name} ✅`);
+                                        }}
+                                        className="w-3.5 h-3.5 text-purple-600 rounded cursor-pointer"
+                                      />
+                                      <span className="truncate">{m.name}</span>
+                                      {isAssignedToClient && (
+                                        <span className={`text-[9px] px-1 rounded ${isPermitted ? 'bg-purple-800 text-purple-100' : 'bg-slate-100 text-slate-600'}`}>
+                                          مسند
+                                        </span>
+                                      )}
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           )}
-
-                          <button
-                            onClick={() => {
-                              if (confirm(`هل تريد بالتأكيد حذف المستند: ${file.name}؟`)) {
-                                deleteClientFile(currentDossierClient.id, file.id);
-                                showToast('تم حذف المستند من الفولدر 🗑️');
-                              }
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
-                            title="حذف المستند"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>

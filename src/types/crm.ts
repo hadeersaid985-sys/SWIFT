@@ -283,6 +283,8 @@ export interface ClientFileDocument {
   url?: string;
   uploadedAt: string;
   uploadedBy?: string;
+  // صلاحية الظهور للموظفين: معرّفات الموظفين المصرح لهم برؤية هذا الملف (فارغة أو غير محددة = متاح لجميع موظفي هذا العميل)
+  allowedTeamMemberIds?: string[];
 }
 
 // ملاحظات وسجل متابعة العميل
@@ -300,6 +302,7 @@ export interface ClientRenewal {
   id: string;
   clientName: string;
   company: string;
+  projectDescription?: string; // وصف المشروع ومتطلبات العمل والملفات
   phone: string;
   whatsappNumber: string;
   email?: string;

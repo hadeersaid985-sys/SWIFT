@@ -60,6 +60,7 @@ export const Sidebar: React.FC = () => {
     isManager,
     renewalsDueSoonCount,
     clientRenewals,
+    visibleClients,
     impersonateUser,
     returnToAdmin,
     team,
@@ -333,7 +334,7 @@ export const Sidebar: React.FC = () => {
               </div>
               {!isCollapsed && (
                 <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.2 rounded font-bold font-mono">
-                  {clientRenewals.length} عميل
+                  {visibleClients.length} عميل
                 </span>
               )}
             </button>
