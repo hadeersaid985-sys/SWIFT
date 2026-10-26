@@ -61,7 +61,8 @@ export const WorkQueueView: React.FC = () => {
     changeTaskStatus,
     deleteTask,
     addTask,
-    setActiveTab
+    setActiveTab,
+    isManager
   } = useCRM();
 
   // Active Category / Queue
@@ -72,6 +73,25 @@ export const WorkQueueView: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Auto-redirect non-manager users away from WorkQueue
+  React.useEffect(() => {
+    if (!isManager) {
+      setActiveTab('tasks');
+    }
+  }, [isManager, setActiveTab]);
+
+  if (!isManager) {
+    return (
+      <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center max-w-lg mx-auto my-12 shadow-sm">
+        <div className="p-3 bg-amber-50 text-amber-600 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+          <FolderClock className="w-6 h-6" />
+        </div>
+        <h2 className="text-base font-black text-slate-800">قائمة انتظار العمل متاحة للمدير والمسؤول فقط (Admin Only)</h2>
+        <p className="text-xs text-slate-500 mt-1">يتم توجيهك لمهامك الشخصية الموكلة إليك...</p>
+      </div>
+    );
+  }
 
   // Deletion States (إمكانية حذف العناصر المحددة من طابور العمل)
   const [deletedItemIds, setDeletedItemIds] = useState<string[]>(() => {
@@ -176,11 +196,6 @@ export const WorkQueueView: React.FC = () => {
       assigneeAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
     }
   ], []);
-
-  const isManager =
-    currentUser.accessLevel === 'admin' ||
-    currentUser.accessLevel === 'manager' ||
-    currentUser.id === 'user-1';
 
   // Map real CRM tasks into queue items
   const mappedCrmTasks: WorkQueueItem[] = useMemo(() => {
@@ -500,7 +515,7 @@ export const WorkQueueView: React.FC = () => {
                 قائمة انتظار العمل (Work Queue)
               </h1>
               <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md font-bold text-[10px]">
-                Zoho CRM Queue
+                SwiftMynd Work Queue
               </span>
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">

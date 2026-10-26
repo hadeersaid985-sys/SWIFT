@@ -194,16 +194,13 @@ const AppContent: React.FC = () => {
     }
   }, [brandConfig?.customFaviconUrl]);
 
-  // Security & Role check: Non-admin employees ONLY see their allowed personal tabs
-  const allowedEmployeeTabs = ['tasks', 'work_queue', 'meetings', 'calls', 'mail', 'profile'];
+  // Security & Role check: Non-admin employees ONLY see their allowed personal tabs (Work Queue is strictly for Admin)
+  const allowedEmployeeTabs = ['tasks', 'renewals', 'meetings', 'calls', 'mail', 'profile'];
   
   // Compute safe effective tab immediately to prevent blank content on role switch
   const effectiveTab = React.useMemo(() => {
     if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
       return 'tasks';
-    }
-    if (isManager && activeTab === 'work_queue') {
-      return 'reports';
     }
     return activeTab || (isManager ? 'reports' : 'tasks');
   }, [isManager, activeTab]);
@@ -212,14 +209,11 @@ const AppContent: React.FC = () => {
     if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
       setActiveTab('tasks');
     }
-    if (isManager && activeTab === 'work_queue') {
-      setActiveTab('reports');
-    }
   }, [isManager, activeTab, setActiveTab]);
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#f4f6f9] text-slate-800 flex flex-row selection:bg-blue-600 selection:text-white">
-      {/* Right Navigation Sidebar (Zoho / swiftmynd style) */}
+      {/* Right Navigation Sidebar (SwiftMynd style) */}
       <Sidebar />
 
       {/* Main View Area */}
@@ -251,22 +245,23 @@ const AppContent: React.FC = () => {
 
         {/* Content Body */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-5">
-          {/* Employee only sees tasks, work queue, meetings, calls, mail, profile */}
+          {/* Employee only sees personal tasks, meetings, calls, mail, renewals, and profile */}
           {!isManager ? (
             <>
               {effectiveTab === 'profile' && <ProfileView />}
-              {effectiveTab === 'work_queue' && <WorkQueueView />}
+              {effectiveTab === 'renewals' && <ClientRenewalsView />}
               {effectiveTab === 'meetings' && <MeetingsView />}
               {effectiveTab === 'calls' && <MeetingsView />}
               {effectiveTab === 'mail' && <MailView />}
               {effectiveTab === 'tasks' && <TasksView />}
-              {!['profile', 'work_queue', 'meetings', 'calls', 'mail', 'tasks'].includes(effectiveTab) && (
+              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'tasks'].includes(effectiveTab) && (
                 <TasksView />
               )}
             </>
           ) : (
             <>
               {effectiveTab === 'profile' && <ProfileView />}
+              {effectiveTab === 'work_queue' && <WorkQueueView />}
               {effectiveTab === 'marketing' && <MarketingBoardView />}
               {effectiveTab === 'renewals' && <ClientRenewalsView />}
               {effectiveTab === 'host_migration' && <HostMigrationView />}
@@ -296,7 +291,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'mcp' && <AnalyticsView />}
 
               {/* Fallback for unlisted manager tabs */}
-              {!['profile', 'marketing', 'renewals', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
+              {!['profile', 'work_queue', 'marketing', 'renewals', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
                 <ReportsListView />
               )}
             </>

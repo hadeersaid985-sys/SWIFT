@@ -793,7 +793,7 @@ export const QuickModals: React.FC = () => {
                   <Mail className="w-5 h-5" />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-900">
-                  إنشاء رسالة بريد إلكتروني رسمية (Zoho Mail)
+                  إنشاء رسالة بريد إلكتروني رسمية (SwiftMail)
                 </h3>
               </div>
               <button

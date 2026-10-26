@@ -122,7 +122,7 @@ export const MailView: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900">
-              بريد الفريق والمراسلات الرسمية (Zoho Mail)
+              بريد الفريق والمراسلات الرسمية (SwiftMail)
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
               نظام بريد إلكتروني متكامل للتواصل الداخلي مع أعضاء الفريق وخارجي مع العملاء

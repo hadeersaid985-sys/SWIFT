@@ -16,6 +16,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
+import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 
 export const Header: React.FC = () => {
   const {
@@ -36,7 +37,8 @@ export const Header: React.FC = () => {
     leads,
     deals,
     emails,
-    resetToDemoData
+    resetToDemoData,
+    brandConfig
   } = useCRM();
 
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -94,23 +96,11 @@ export const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand & Workspace */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Authentic Zoho 4-Color Logo */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('home')}>
-            <div className="grid grid-cols-2 gap-0.5 p-1 rounded-md bg-white shadow-xs">
-              <span className="w-2.5 h-2.5 bg-red-500 rounded-[2px]" />
-              <span className="w-2.5 h-2.5 bg-green-500 rounded-[2px]" />
-              <span className="w-2.5 h-2.5 bg-blue-500 rounded-[2px]" />
-              <span className="w-2.5 h-2.5 bg-amber-400 rounded-[2px]" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-black text-lg tracking-tight text-white">Zoho</span>
-                <span className="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-600 text-white">CRM</span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-medium hidden md:inline">
-                {orgId} | مساحة فريق CRM
-              </span>
-            </div>
+            <SwiftMyndLogo variant="full" size="md" isDark={true} />
+            <span className="text-[10px] text-slate-400 font-medium hidden md:inline mr-2">
+              {orgId} | مساحة فريق CRM
+            </span>
           </div>
         </div>
 
@@ -424,7 +414,7 @@ export const Header: React.FC = () => {
           {/* Reset Demo Data Button */}
           <button
             onClick={() => {
-              if (confirm('هل تريد إعادة تعيين البيانات التجريبية لنظام زوهم CRM؟')) {
+              if (confirm('هل تريد إعادة تعيين البيانات التجريبية لنظام CRM؟')) {
                 resetToDemoData();
               }
             }}
