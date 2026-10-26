@@ -237,183 +237,42 @@
   ],
   "tasks": [
     {
-      "id": "task-102",
-      "title": "مكالمة متابعة العرض مع بنك الرياض بالتنسيق مع @طارق_القحطاني",
-      "description": "الرد على استفسارات الأمن السيبراني والتشفير والتأكد من توافق المعايير الحكومية.",
-      "assignedToId": "user-2",
-      "priority": "high",
-      "status": "todo",
-      "startDate": "2026-10-25",
-      "dueDate": "2026-10-26",
-      "dueTime": "11:30",
-      "category": "مبيعات",
-      "estimatedHours": 4,
-      "totalLoggedMinutes": 60,
-      "isTimerRunning": false,
-      "relatedTo": {
-        "type": "deal",
-        "id": "deal-202",
-        "name": "مشروع الربط المصرفي"
-      },
-      "timeLogs": [
-        {
-          "id": "log-3",
-          "memberId": "user-2",
-          "memberName": "أحمد الشريف",
-          "startDate": "2026-10-25",
-          "startTime": "09:00",
-          "endDate": "2026-10-25",
-          "endTime": "10:00",
-          "durationMinutes": 60,
-          "note": "مراجعة بنود الأمان مع المهندس طارق وتجهيز العرض التقديمي",
-          "createdAt": "2026-10-25"
-        }
-      ],
-      "subtasks": [
-        {
-          "id": "sub-4",
-          "title": "تجهيز ملف شهادات ISO وSOC2",
-          "completed": false
-        },
-        {
-          "id": "sub-5",
-          "title": "التنسيق مع مهندس الأمن طارق",
-          "completed": false
-        }
-      ],
-      "comments": [
-        {
-          "id": "comment-102-1",
-          "taskId": "task-102",
-          "authorId": "user-2",
-          "authorName": "أحمد الشريف",
-          "authorAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-          "content": "@طارق_القحطاني محتاجين تقرير شهادات التشفير والأمان قبل اجتماع بنك الرياض الرقمي غداً.",
-          "createdAt": "09:20 ص اليوم",
-          "mentionedUserIds": [
-            "user-4"
-          ]
-        }
-      ],
-      "createdAt": "2026-10-24"
-    },
-    {
-      "id": "task-103",
-      "title": "تجديد شهادات SSL ومراجعة النسخ الاحتياطية للخوادم",
-      "description": "التحقق من سلامة الباك اب الأسبوعي وتجديد شهادات النطاقات عبر خادم Cloudflare.",
-      "assignedToId": "user-4",
-      "priority": "high",
-      "status": "review",
-      "startDate": "2026-10-22",
-      "dueDate": "2026-10-27",
-      "dueTime": "18:00",
-      "category": "تقني",
-      "estimatedHours": 8,
-      "totalLoggedMinutes": 310,
-      "isTimerRunning": false,
-      "timeLogs": [
-        {
-          "id": "log-4",
-          "memberId": "user-4",
-          "memberName": "طارق القحطاني",
-          "startDate": "2026-10-22",
-          "startTime": "13:00",
-          "endDate": "2026-10-22",
-          "endTime": "16:30",
-          "durationMinutes": 210,
-          "note": "تثبيت وتجديد شهادات Wildcard SSL وفحص منافذ السيرفر",
-          "createdAt": "2026-10-22"
-        },
-        {
-          "id": "log-5",
-          "memberId": "user-4",
-          "memberName": "طارق القحطاني",
-          "startDate": "2026-10-23",
-          "startTime": "11:00",
-          "endDate": "2026-10-23",
-          "endTime": "12:40",
-          "durationMinutes": 100,
-          "note": "اختبار النسخ الاحتياطي التلقائي ومزامنة الـ S3 Buckets",
-          "createdAt": "2026-10-23"
-        }
-      ],
-      "subtasks": [
-        {
-          "id": "sub-6",
-          "title": "فحص التشفير وحسابات DNS",
-          "completed": true
-        },
-        {
-          "id": "sub-7",
-          "title": "اختبار استرجاع عينة بيانات تجريبية",
-          "completed": true
-        },
-        {
-          "id": "sub-8",
-          "title": "توثيق سجل الصيانة في مساحة الفريق",
-          "completed": false
-        }
-      ],
-      "createdAt": "2026-10-22"
-    },
-    {
-      "id": "task-104",
-      "title": "إطلاق حملة لينكد إن الموجهة لمديري المشتريات بالرياض",
-      "description": "توزيع ميزانية 15,000 ريال على حملات Lead Generation المباشرة واستهداف قطاع المقاولات والتجزئة.",
-      "assignedToId": "user-3",
+      "id": "task-aya-gh4",
+      "title": "غ4",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-aya",
       "priority": "medium",
-      "status": "in_progress",
-      "startDate": "2026-10-21",
-      "dueDate": "2026-10-28",
-      "dueTime": "14:00",
-      "category": "تسويق",
-      "estimatedHours": 10,
-      "totalLoggedMinutes": 270,
+      "status": "todo",
+      "startDate": "2026-10-26",
+      "dueDate": "2026-10-26",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "totalLoggedMinutes": 0,
       "isTimerRunning": false,
-      "timeLogs": [
-        {
-          "id": "log-6",
-          "memberId": "user-3",
-          "memberName": "سارة المنصوري",
-          "startDate": "2026-10-21",
-          "startTime": "11:00",
-          "endDate": "2026-10-21",
-          "endTime": "13:30",
-          "durationMinutes": 150,
-          "note": "إعداد الجمهور المستهدف وصياغة نصوص الإعلانات بالعربية",
-          "createdAt": "2026-10-21"
-        },
-        {
-          "id": "log-7",
-          "memberId": "user-3",
-          "memberName": "سارة المنصوري",
-          "startDate": "2026-10-23",
-          "startTime": "14:30",
-          "endDate": "2026-10-23",
-          "endTime": "16:30",
-          "durationMinutes": 120,
-          "note": "ربط استمارة العملاء المحتملين مع نظام swiftmynd",
-          "createdAt": "2026-10-23"
-        }
-      ],
-      "subtasks": [
-        {
-          "id": "sub-9",
-          "title": "تصميم البنرات الإعلانية بالهوية العربية",
-          "completed": true
-        },
-        {
-          "id": "sub-10",
-          "title": "صياغة نصوص الإعلانات وتدقيقها",
-          "completed": true
-        },
-        {
-          "id": "sub-11",
-          "title": "ربط استمارة الـ Leads مباشرة مع swiftmynd CRM",
-          "completed": false
-        }
-      ],
-      "createdAt": "2026-10-21"
+      "subtasks": [],
+      "timeLogs": [],
+      "isPrivate": false,
+      "createdAt": "2026-10-26"
+    },
+    {
+      "id": "task-aya-yr77",
+      "title": "yr77",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-aya",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-26",
+      "dueDate": "2026-10-26",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "totalLoggedMinutes": 0,
+      "isTimerRunning": false,
+      "subtasks": [],
+      "timeLogs": [],
+      "isPrivate": false,
+      "createdAt": "2026-10-26"
     },
     {
       "title": "تقفيل السيستم كامل",
@@ -1663,6 +1522,12 @@
   "monthlyPayrolls": [],
   "deletedTasks": [
     {
+      "id": "task-test-sync",
+      "title": "مهمة اختبار المزامنة",
+      "assignedToId": "user-aya",
+      "completedAt": "2026-10-26T09:04:37.008Z"
+    },
+    {
       "id": "task-test-sync-1",
       "title": "مهمة فحص السيو بالتنسيق مع @Eman",
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
@@ -1681,7 +1546,255 @@
       ],
       "isPrivate": false,
       "createdAt": "2026-10-26"
+    },
+    {
+      "id": "test-curl-1",
+      "title": "Test Task from Curl",
+      "assignedToId": "user-aya",
+      "completedAt": "2026-10-26T09:03:54.875Z"
+    },
+    {
+      "id": "task-102",
+      "title": "مكالمة متابعة العرض مع بنك الرياض بالتنسيق مع @طارق_القحطاني",
+      "description": "الرد على استفسارات الأمن السيبراني والتشفير والتأكد من توافق المعايير الحكومية.",
+      "assignedToId": "user-2",
+      "priority": "high",
+      "status": "todo",
+      "startDate": "2026-10-25",
+      "dueDate": "2026-10-26",
+      "dueTime": "11:30",
+      "category": "مبيعات",
+      "estimatedHours": 4,
+      "totalLoggedMinutes": 60,
+      "isTimerRunning": false,
+      "relatedTo": {
+        "type": "deal",
+        "id": "deal-202",
+        "name": "مشروع الربط المصرفي"
+      },
+      "timeLogs": [
+        {
+          "id": "log-3",
+          "memberId": "user-2",
+          "memberName": "أحمد الشريف",
+          "startDate": "2026-10-25",
+          "startTime": "09:00",
+          "endDate": "2026-10-25",
+          "endTime": "10:00",
+          "durationMinutes": 60,
+          "note": "مراجعة بنود الأمان مع المهندس طارق وتجهيز العرض التقديمي",
+          "createdAt": "2026-10-25"
+        }
+      ],
+      "subtasks": [
+        {
+          "id": "sub-4",
+          "title": "تجهيز ملف شهادات ISO وSOC2",
+          "completed": false
+        },
+        {
+          "id": "sub-5",
+          "title": "التنسيق مع مهندس الأمن طارق",
+          "completed": false
+        }
+      ],
+      "comments": [
+        {
+          "id": "comment-102-1",
+          "taskId": "task-102",
+          "authorId": "user-2",
+          "authorName": "أحمد الشريف",
+          "authorAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+          "content": "@طارق_القحطاني محتاجين تقرير شهادات التشفير والأمان قبل اجتماع بنك الرياض الرقمي غداً.",
+          "createdAt": "09:20 ص اليوم",
+          "mentionedUserIds": [
+            "user-4"
+          ]
+        }
+      ],
+      "createdAt": "2026-10-24",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-103",
+      "title": "تجديد شهادات SSL ومراجعة النسخ الاحتياطية للخوادم",
+      "description": "التحقق من سلامة الباك اب الأسبوعي وتجديد شهادات النطاقات عبر خادم Cloudflare.",
+      "assignedToId": "user-4",
+      "priority": "high",
+      "status": "review",
+      "startDate": "2026-10-22",
+      "dueDate": "2026-10-27",
+      "dueTime": "18:00",
+      "category": "تقني",
+      "estimatedHours": 8,
+      "totalLoggedMinutes": 310,
+      "isTimerRunning": false,
+      "timeLogs": [
+        {
+          "id": "log-4",
+          "memberId": "user-4",
+          "memberName": "طارق القحطاني",
+          "startDate": "2026-10-22",
+          "startTime": "13:00",
+          "endDate": "2026-10-22",
+          "endTime": "16:30",
+          "durationMinutes": 210,
+          "note": "تثبيت وتجديد شهادات Wildcard SSL وفحص منافذ السيرفر",
+          "createdAt": "2026-10-22"
+        },
+        {
+          "id": "log-5",
+          "memberId": "user-4",
+          "memberName": "طارق القحطاني",
+          "startDate": "2026-10-23",
+          "startTime": "11:00",
+          "endDate": "2026-10-23",
+          "endTime": "12:40",
+          "durationMinutes": 100,
+          "note": "اختبار النسخ الاحتياطي التلقائي ومزامنة الـ S3 Buckets",
+          "createdAt": "2026-10-23"
+        }
+      ],
+      "subtasks": [
+        {
+          "id": "sub-6",
+          "title": "فحص التشفير وحسابات DNS",
+          "completed": true
+        },
+        {
+          "id": "sub-7",
+          "title": "اختبار استرجاع عينة بيانات تجريبية",
+          "completed": true
+        },
+        {
+          "id": "sub-8",
+          "title": "توثيق سجل الصيانة في مساحة الفريق",
+          "completed": false
+        }
+      ],
+      "createdAt": "2026-10-22",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-104",
+      "title": "إطلاق حملة لينكد إن الموجهة لمديري المشتريات بالرياض",
+      "description": "توزيع ميزانية 15,000 ريال على حملات Lead Generation المباشرة واستهداف قطاع المقاولات والتجزئة.",
+      "assignedToId": "user-3",
+      "priority": "medium",
+      "status": "in_progress",
+      "startDate": "2026-10-21",
+      "dueDate": "2026-10-28",
+      "dueTime": "14:00",
+      "category": "تسويق",
+      "estimatedHours": 10,
+      "totalLoggedMinutes": 270,
+      "isTimerRunning": false,
+      "timeLogs": [
+        {
+          "id": "log-6",
+          "memberId": "user-3",
+          "memberName": "سارة المنصوري",
+          "startDate": "2026-10-21",
+          "startTime": "11:00",
+          "endDate": "2026-10-21",
+          "endTime": "13:30",
+          "durationMinutes": 150,
+          "note": "إعداد الجمهور المستهدف وصياغة نصوص الإعلانات بالعربية",
+          "createdAt": "2026-10-21"
+        },
+        {
+          "id": "log-7",
+          "memberId": "user-3",
+          "memberName": "سارة المنصوري",
+          "startDate": "2026-10-23",
+          "startTime": "14:30",
+          "endDate": "2026-10-23",
+          "endTime": "16:30",
+          "durationMinutes": 120,
+          "note": "ربط استمارة العملاء المحتملين مع نظام swiftmynd",
+          "createdAt": "2026-10-23"
+        }
+      ],
+      "subtasks": [
+        {
+          "id": "sub-9",
+          "title": "تصميم البنرات الإعلانية بالهوية العربية",
+          "completed": true
+        },
+        {
+          "id": "sub-10",
+          "title": "صياغة نصوص الإعلانات وتدقيقها",
+          "completed": true
+        },
+        {
+          "id": "sub-11",
+          "title": "ربط استمارة الـ Leads مباشرة مع swiftmynd CRM",
+          "completed": false
+        }
+      ],
+      "createdAt": "2026-10-21",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-101",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-105",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-106",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-107",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-108",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-109",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-110",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-111",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-112",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-113",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-114",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
+    },
+    {
+      "id": "task-115",
+      "title": "مهمة سابقة محذوفة",
+      "completedAt": "2026-10-26T09:03:54.876Z"
     }
   ],
-  "updatedAt": "2026-10-26T08:42:37.572Z"
+  "updatedAt": "2026-10-26T09:04:37.008Z"
 }

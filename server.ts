@@ -186,6 +186,7 @@ async function startServer() {
       broadcastLiveSync({
         type: 'TASK_MUTATION',
         tasks: current.tasks,
+        deletedTasks: current.deletedTasks,
         notifications: current.notifications,
         updatedAt: current.updatedAt
       });
@@ -371,7 +372,8 @@ async function startServer() {
 
       const currentData = readCurrentData();
 
-      // Smart merge tasks: do not delete server tasks unless they are explicitly in incoming.deletedTasks!
+      // Smart merge tasks: incoming tasks from manager represent the active tasks.
+      // Any server task that is missing from incoming.tasks was deleted by the user!
       const currentTasks: any[] = currentData.tasks || [];
       const incomingTasks: any[] = Array.isArray(incoming.tasks) ? incoming.tasks : [];
       const deletedTaskIds = new Set([
@@ -379,20 +381,33 @@ async function startServer() {
         ...((incoming.deletedTasks || []).map((t: any) => t.id))
       ]);
 
+      if (Array.isArray(incoming.tasks)) {
+        const incomingIdSet = new Set(incoming.tasks.map((t: any) => t.id));
+        currentTasks.forEach((t: any) => {
+          if (!incomingIdSet.has(t.id)) {
+            deletedTaskIds.add(t.id);
+            if (!currentData.deletedTasks?.some((d: any) => d.id === t.id)) {
+              currentData.deletedTasks = [{ ...t, completedAt: t.completedAt || new Date().toISOString() }, ...(currentData.deletedTasks || [])];
+            }
+          }
+        });
+      }
+
       const tasksMap = new Map<string, any>();
-      // First populate server tasks
-      currentTasks.forEach(t => {
+      // Incoming tasks from the user take absolute precedence
+      incomingTasks.forEach(t => {
         if (!deletedTaskIds.has(t.id)) {
           tasksMap.set(t.id, t);
         }
       });
-      // Then merge incoming tasks
-      incomingTasks.forEach(t => {
-        if (!deletedTaskIds.has(t.id)) {
-          const existing = tasksMap.get(t.id);
-          tasksMap.set(t.id, existing ? { ...existing, ...t } : t);
-        }
-      });
+      // Fallback only if incoming.tasks was not provided
+      if (!Array.isArray(incoming.tasks)) {
+        currentTasks.forEach(t => {
+          if (!deletedTaskIds.has(t.id)) {
+            tasksMap.set(t.id, t);
+          }
+        });
+      }
       const mergedTasks = Array.from(tasksMap.values());
 
       // Smart merge notifications: union by ID, newest first

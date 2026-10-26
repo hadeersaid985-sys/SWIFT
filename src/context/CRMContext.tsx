@@ -364,14 +364,14 @@ export const ensureValidBrandConfig = (b: any): BrandConfig => {
 };
 
 export const TEAM_ALIASES: Record<string, string[]> = {
-  'user-eman': ['user-eman', 'user-2', 'user-104', 'sm-104', 'eman', 'eman ashraf', 'eman_ashraf', 'ايمان', 'إيمان', 'ايمان اشرف', 'إيمان أشرف'],
-  'user-amira': ['user-amira', 'user-110', 'sm-110', 'user-3', 'amira', 'amira2', 'اميرة', 'أميرة'],
-  'user-aya': ['user-aya', 'user-103', 'sm-103', 'user-4', 'aya', 'aya gaber', 'اية', 'آية', 'اية جابر', 'آية جابر'],
-  'user-maibel': ['user-maibel', 'user-105', 'sm-105', 'maibel', 'maibel emad', 'مايبل', 'ميبل', 'مايبل عماد'],
-  'user-mariam': ['user-mariam', 'user-106', 'sm-106', 'mariam', 'mariam islam', 'مريم', 'مريم إسلام', 'مريم اسلام'],
-  'user-yomna': ['user-yomna', 'user-107', 'sm-107', 'yomna', 'يمنى', 'يمنا'],
-  'user-islam': ['user-islam', 'user-108', 'sm-108', 'islam', 'إسلام', 'اسلام'],
-  'user-roaa': ['user-roaa', 'user-109', 'sm-109', 'roaa', 'roaa_hetemy', 'رؤى', 'رؤى حتيمي', 'روءة', 'روءا'],
+  'user-eman': ['user-eman', 'sm-104', 'eman', 'eman ashraf', 'eman_ashraf', 'ايمان', 'إيمان', 'ايمان اشرف', 'إيمان أشرف'],
+  'user-amira': ['user-amira', 'sm-110', 'amira', 'amira2', 'اميرة', 'أميرة'],
+  'user-aya': ['user-aya', 'sm-103', 'aya', 'aya gaber', 'aya_gaber', 'اية', 'آية', 'اية جابر', 'آية جابر'],
+  'user-maibel': ['user-maibel', 'sm-105', 'maibel', 'maibel emad', 'مايبل', 'ميبل', 'مايبل عماد'],
+  'user-mariam': ['user-mariam', 'sm-106', 'mariam', 'mariam islam', 'مريم', 'مريم إسلام', 'مريم اسلام'],
+  'user-yomna': ['user-yomna', 'sm-107', 'yomna', 'يمنى', 'يمنا'],
+  'user-islam': ['user-islam', 'sm-108', 'islam', 'إسلام', 'اسلام'],
+  'user-roaa': ['user-roaa', 'sm-109', 'roaa', 'roaa_hetemy', 'رؤى', 'رؤى حتيمي', 'روءة', 'روءا'],
   'user-1': ['user-1', 'user-admin', 'hadeer', 'hadeer.admin', 'هدير', 'هدير سعيد', 'admin', 'المدير']
 };
 
@@ -513,15 +513,14 @@ export const isUserMentionedInTask = (task: Task, user?: TeamMember | null): boo
     }
   }
 
-  // 3. Scan title and description
+  // 3. Scan title and description for explicit @ mentions
   const text = `${task.title || ''} ${task.description || ''}`.toLowerCase();
   if (userCanon && TEAM_ALIASES[userCanon]) {
     for (const alias of TEAM_ALIASES[userCanon]) {
       const cleanAlias = alias.toLowerCase();
       if (
         text.includes(`@${cleanAlias}`) ||
-        text.includes(`@${cleanAlias.replace(/\s+/g, '_')}`) ||
-        (cleanAlias.length >= 4 && text.includes(cleanAlias))
+        text.includes(`@${cleanAlias.replace(/\s+/g, '_')}`)
       ) {
         return true;
       }
@@ -529,12 +528,11 @@ export const isUserMentionedInTask = (task: Task, user?: TeamMember | null): boo
   }
 
   if (uname && (text.includes(`@${uname}`) || text.includes(`@${uname.replace(/_/g, ' ')}`))) return true;
-  if (name && (text.includes(`@${name}`) || text.includes(name.replace(/\s+/g, '_')))) return true;
+  if (name && (text.includes(`@${name}`) || text.includes(`@${name.replace(/\s+/g, '_')}`))) return true;
   if (firstName && firstName.length >= 3 && text.includes(`@${firstName}`)) return true;
   if (code && text.includes(`@${code}`)) return true;
-  if (uid && text.includes(uid)) return true;
 
-  // Arabic variations for Eman / Amira / Aya etc.
+  // Arabic variations for Eman / Amira / Aya etc. with @
   const normText = text.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
   const normName = name.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
   const normFirst = firstName.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
@@ -732,15 +730,6 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const privTask = INITIAL_TASKS.find(t => t.id === 'task-mgr-private-1');
             if (privTask) result = [privTask, ...result];
           }
-
-          // Merge any tasks from INITIAL_TASKS that are neither in local storage nor in deleted tasks
-          const existingIds = new Set(result.map(t => t.id));
-          INITIAL_TASKS.forEach(initT => {
-            if (!existingIds.has(initT.id) && !deletedIds.has(initT.id)) {
-              result.push(initT);
-              existingIds.add(initT.id);
-            }
-          });
 
           return result;
         }
@@ -1893,6 +1882,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString().split('T')[0]
     };
 
+    lastLocalMutationTimeRef.current = Date.now();
     setTasks(prev => [newTask, ...prev]);
     logActivity('task', 'تم إنشاء مهمة جديدة وتحديد موعد التسليم', newTask.title);
 
@@ -1998,6 +1988,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       logActivity('task', 'تم إنجاز المهمة بنجاح 🎉', updatedTaskObj.title);
     }
 
+    lastLocalMutationTimeRef.current = Date.now();
     setTasks(prev =>
       prev.map(task => (task.id === id ? { ...task, ...updatedTaskObj } : task))
     );
@@ -2017,6 +2008,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const targetTask: Task = t || ({ id, title: 'مهمة محذوفة' } as Task);
     const withCompleted = { ...targetTask, completedAt: targetTask.completedAt || new Date().toISOString() };
 
+    lastLocalMutationTimeRef.current = Date.now();
     setDeletedTasks(prev => [withCompleted, ...prev.filter(x => x.id !== id)]);
     setTasks(prev => prev.filter(task => task.id !== id));
     if (t) {
@@ -2036,6 +2028,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteTasks = (ids: string[]) => {
     const toDelete = tasks.filter(t => ids.includes(t.id));
     if (toDelete.length > 0) {
+      lastLocalMutationTimeRef.current = Date.now();
       setDeletedTasks(prev => [...toDelete, ...prev.filter(x => !ids.includes(x.id))]);
       setTasks(prev => prev.filter(task => !ids.includes(task.id)));
       logActivity('task', 'نقل مهام لسلة المهملات', `تم نقل ${ids.length} مهمة لسلة المهملات`);
@@ -2053,6 +2046,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const clearCompletedTasks = () => {
     const completedList = tasks.filter(t => t.status === 'completed');
     if (completedList.length > 0) {
+      lastLocalMutationTimeRef.current = Date.now();
       const completedIds = completedList.map(t => t.id);
       setDeletedTasks(prev => [...completedList, ...prev.filter(x => !completedIds.includes(x.id))]);
       setTasks(prev => prev.filter(task => task.status !== 'completed'));
@@ -2071,6 +2065,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const restoreTaskFromTrash = (taskId: string) => {
     const t = deletedTasks.find(x => x.id === taskId);
     if (t) {
+      lastLocalMutationTimeRef.current = Date.now();
       setTasks(prev => [t, ...prev.filter(x => x.id !== taskId)]);
       setDeletedTasks(prev => prev.filter(x => x.id !== taskId));
       logActivity('task', 'استعادة مهمة من سلة المهملات', t.title);
@@ -2706,6 +2701,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isInitialDataLoadedRef = React.useRef(false);
   const isSyncingFromServerRef = React.useRef(false);
+  const lastLocalMutationTimeRef = React.useRef(0);
 
   // Real-time zero-latency sync via Server-Sent Events (SSE)
   useEffect(() => {
@@ -2853,6 +2849,10 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Real-time polling & window focus listener to guarantee fresh tasks across all devices
   useEffect(() => {
     const fetchFreshTasks = async () => {
+      // Avoid overriding freshly added or edited tasks while request is settling
+      if (Date.now() - lastLocalMutationTimeRef.current < 2500) {
+        return;
+      }
       try {
         const res = await fetch('/api/tasks?_t=' + Date.now(), {
           cache: 'no-store',
