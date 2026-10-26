@@ -172,8 +172,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   // Title translation
   const getTabTitle = (tab: string) => {
     switch (tab) {
-      case 'work_queue':
-        return 'قائمة انتظار العمل';
       case 'reports':
         return 'التقارير';
       case 'tasks':

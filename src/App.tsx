@@ -12,7 +12,6 @@ import { LeadsView } from './components/leads/LeadsView';
 import { MeetingsView } from './components/meetings/MeetingsView';
 import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { ProjectsView } from './components/projects/ProjectsView';
-import { WorkQueueView } from './components/workqueue/WorkQueueView';
 import { MarketingBoardView } from './components/marketing/MarketingBoardView';
 import { ClientRenewalsView } from './components/renewals/ClientRenewalsView';
 import { HostMigrationView } from './components/host/HostMigrationView';
@@ -194,7 +193,7 @@ const AppContent: React.FC = () => {
     }
   }, [brandConfig?.customFaviconUrl]);
 
-  // Security & Role check: Non-admin employees ONLY see their allowed personal tabs (Work Queue is strictly for Admin)
+  // Security & Role check: Non-admin employees ONLY see their allowed personal tabs
   const allowedEmployeeTabs = ['tasks', 'renewals', 'meetings', 'calls', 'mail', 'profile'];
   
   // Compute safe effective tab immediately to prevent blank content on role switch
@@ -202,11 +201,16 @@ const AppContent: React.FC = () => {
     if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
       return 'tasks';
     }
+    if (activeTab === 'work_queue') {
+      return isManager ? 'reports' : 'tasks';
+    }
     return activeTab || (isManager ? 'reports' : 'tasks');
   }, [isManager, activeTab]);
 
   useEffect(() => {
-    if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
+    if (activeTab === 'work_queue') {
+      setActiveTab(isManager ? 'reports' : 'tasks');
+    } else if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
       setActiveTab('tasks');
     }
   }, [isManager, activeTab, setActiveTab]);
@@ -261,7 +265,6 @@ const AppContent: React.FC = () => {
           ) : (
             <>
               {effectiveTab === 'profile' && <ProfileView />}
-              {effectiveTab === 'work_queue' && <WorkQueueView />}
               {effectiveTab === 'marketing' && <MarketingBoardView />}
               {effectiveTab === 'renewals' && <ClientRenewalsView />}
               {effectiveTab === 'host_migration' && <HostMigrationView />}
@@ -291,7 +294,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'mcp' && <AnalyticsView />}
 
               {/* Fallback for unlisted manager tabs */}
-              {!['profile', 'work_queue', 'marketing', 'renewals', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
+              {!['profile', 'marketing', 'renewals', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
                 <ReportsListView />
               )}
             </>

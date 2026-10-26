@@ -27,7 +27,6 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Sliders,
-  FolderClock,
   Clock,
   Bell,
   Sparkles,
@@ -714,25 +713,6 @@ export const Sidebar: React.FC = () => {
                       </span>
                     )}
                   </div>
-                )}
-              </button>
-
-              {/* قائمة انتظار العمل (Work Queue) - خاص بالأدمن حصرياً */}
-              <button
-                onClick={() => setActiveTab('work_queue')}
-                className={`w-full text-right flex items-center justify-between px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'work_queue' ? 'bg-blue-600 text-white font-bold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="قائمة انتظار العمل (Work Queue) - خاص بالأدمن"
-              >
-                <div className="flex items-center gap-2">
-                  <FolderClock className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-                  {!isCollapsed && <span>قائمة انتظار العمل</span>}
-                </div>
-                {!isCollapsed && (
-                  <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.2 rounded font-bold font-mono">
-                    6
-                  </span>
                 )}
               </button>
 
