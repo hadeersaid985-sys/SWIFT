@@ -47,6 +47,17 @@ import {
   INITIAL_ATTENDANCE,
   INITIAL_EXPENSES
 } from '../data/initialData';
+import {
+  saveTaskToFirestore,
+  deleteTaskFromFirestore,
+  bulkDeleteTasksFromFirestore,
+  restoreTaskInFirestore,
+  onTasksSnapshot,
+  onDeletedTasksSnapshot,
+  onNotificationsSnapshot,
+  saveNotificationToFirestore,
+  seedInitialTasksIfEmpty
+} from '../firebase';
 
 interface DeadlineStatus {
   label: string;
@@ -1951,7 +1962,10 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setNotifications(prev => [...newNotifications, ...prev]);
     }
 
-    // Instant Multi-Device Server Sync (No 800ms lag)
+    // Instant Firebase Firestore Synchronization (Global zero-lag sync across all team members)
+    saveTaskToFirestore(newTask);
+
+    // Instant Multi-Device Server Sync (Backup channel)
     try {
       fetch('/api/tasks', {
         method: 'POST',
@@ -1993,6 +2007,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(task => (task.id === id ? { ...task, ...updatedTaskObj } : task))
     );
 
+    // Instant Firebase Firestore Synchronization
+    saveTaskToFirestore(updatedTaskObj);
+
     // Instant multi-device sync
     try {
       fetch('/api/tasks', {
@@ -2015,6 +2032,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       logActivity('task', 'تم نقل المهمة لسلة المهملات', t.title);
     }
 
+    // Instant Firebase Firestore Deletion & Move to Trash
+    deleteTaskFromFirestore(id, withCompleted);
+
     // Instant server sync & broadcast across all devices
     try {
       fetch('/api/tasks/delete', {
@@ -2032,6 +2052,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDeletedTasks(prev => [...toDelete, ...prev.filter(x => !ids.includes(x.id))]);
       setTasks(prev => prev.filter(task => !ids.includes(task.id)));
       logActivity('task', 'نقل مهام لسلة المهملات', `تم نقل ${ids.length} مهمة لسلة المهملات`);
+
+      // Instant Firebase Firestore Bulk Deletion
+      bulkDeleteTasksFromFirestore(ids, tasks);
 
       try {
         fetch('/api/tasks/delete-bulk', {
@@ -2052,6 +2075,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTasks(prev => prev.filter(task => task.status !== 'completed'));
       logActivity('task', 'تفريغ ونقل المهام المكتملة لسلة المهملات', `تم نقل ${completedList.length} مهمة مكتملة لسلة المهملات`);
 
+      // Instant Firebase Firestore Bulk Deletion
+      bulkDeleteTasksFromFirestore(completedIds, tasks);
+
       try {
         fetch('/api/tasks/delete-bulk', {
           method: 'POST',
@@ -2069,6 +2095,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTasks(prev => [t, ...prev.filter(x => x.id !== taskId)]);
       setDeletedTasks(prev => prev.filter(x => x.id !== taskId));
       logActivity('task', 'استعادة مهمة من سلة المهملات', t.title);
+
+      // Instant Firebase Firestore Restore
+      restoreTaskInFirestore(taskId, t);
 
       try {
         fetch('/api/tasks/restore', {
@@ -2108,6 +2137,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setTasks(prev => prev.map(task => (task.id === taskId ? updated : task)));
 
+    // Instant Firebase Firestore Sync
+    saveTaskToFirestore(updated);
+
     try {
       fetch('/api/tasks', {
         method: 'POST',
@@ -2146,6 +2178,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Timer & Work Session Tracking
   const startTaskTimer = (taskId: string) => {
     const now = Date.now();
+    const target = tasks.find(t => t.id === taskId);
+    if (target) {
+      const updated = {
+        ...target,
+        isTimerRunning: true,
+        timerStartedAt: now,
+        status: target.status === 'todo' ? ('in_progress' as TaskStatus) : target.status
+      };
+      saveTaskToFirestore(updated);
+      logActivity('task', 'بدء مؤقت العمل الفعلي', `قام ${currentUser.name} بتشغيل المؤقت على: ${target.title}`);
+    }
+
     setTasks(prev =>
       prev.map(task => {
         if (task.id === taskId) {
@@ -2159,10 +2203,6 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return task;
       })
     );
-    const target = tasks.find(t => t.id === taskId);
-    if (target) {
-      logActivity('task', 'بدء مؤقت العمل الفعلي', `قام ${currentUser.name} بتشغيل المؤقت على: ${target.title}`);
-    }
   };
 
   const stopTaskTimer = (taskId: string, sessionNote?: string, markCompleted?: boolean) => {
@@ -2194,20 +2234,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: todayStr
     };
 
+    const updatedTask: Task = {
+      ...targetTask,
+      isTimerRunning: false,
+      timerStartedAt: undefined,
+      totalLoggedMinutes: (targetTask.totalLoggedMinutes || 0) + elapsedMinutes,
+      timeLogs: [newLog, ...(targetTask.timeLogs || [])],
+      status: markCompleted ? 'completed' : targetTask.status,
+      completedAt: markCompleted ? todayStr : targetTask.completedAt
+    };
+
+    saveTaskToFirestore(updatedTask);
+
     setTasks(prev =>
       prev.map(task => {
         if (task.id === taskId) {
-          const logs = [newLog, ...(task.timeLogs || [])];
-          const totalMins = (task.totalLoggedMinutes || 0) + elapsedMinutes;
-          return {
-            ...task,
-            isTimerRunning: false,
-            timerStartedAt: undefined,
-            totalLoggedMinutes: totalMins,
-            timeLogs: logs,
-            status: markCompleted ? 'completed' : task.status,
-            completedAt: markCompleted ? todayStr : task.completedAt
-          };
+          return updatedTask;
         }
         return task;
       })
@@ -2347,7 +2389,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (createdNotifs.length > 0) {
       setNotifications(prev => [...createdNotifs, ...prev]);
+      createdNotifs.forEach(n => saveNotificationToFirestore(n));
     }
+
+    // Instant Firebase Firestore Sync
+    const updatedWithComments: Task = {
+      ...targetTask,
+      comments: [...(targetTask.comments || []), newComment]
+    };
+    saveTaskToFirestore(updatedWithComments);
 
     logActivity('task', 'منشن في مهمة', `${currentUser.name} أضاف تعليقاً ومنشن في: ${targetTask.title}`);
 
@@ -2702,6 +2752,55 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isInitialDataLoadedRef = React.useRef(false);
   const isSyncingFromServerRef = React.useRef(false);
   const lastLocalMutationTimeRef = React.useRef(0);
+
+  // Real-time bidirectional synchronization via Firebase Firestore (Across all accounts & devices)
+  useEffect(() => {
+    let unsubscribeTasks: (() => void) | null = null;
+    let unsubscribeDeleted: (() => void) | null = null;
+    let unsubscribeNotifications: (() => void) | null = null;
+
+    try {
+      unsubscribeTasks = onTasksSnapshot(remoteTasks => {
+        if (Array.isArray(remoteTasks)) {
+          if (remoteTasks.length === 0 && tasks.length > 0) {
+            seedInitialTasksIfEmpty(tasks);
+            return;
+          }
+          if (Date.now() - lastLocalMutationTimeRef.current < 1500) {
+            return;
+          }
+          isSyncingFromServerRef.current = true;
+          setTasks(remoteTasks);
+          safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(remoteTasks));
+        }
+      });
+
+      unsubscribeDeleted = onDeletedTasksSnapshot(remoteDeleted => {
+        if (Array.isArray(remoteDeleted)) {
+          setDeletedTasks(remoteDeleted);
+          safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_tasks`, JSON.stringify(remoteDeleted));
+        }
+      });
+
+      unsubscribeNotifications = onNotificationsSnapshot(remoteNotifs => {
+        if (Array.isArray(remoteNotifs) && remoteNotifs.length > 0) {
+          setNotifications(prev => {
+            const notifMap = new Map(prev.map(n => [n.id, n]));
+            remoteNotifs.forEach(n => notifMap.set(n.id, n));
+            return Array.from(notifMap.values());
+          });
+        }
+      });
+    } catch (err) {
+      console.warn('[Firebase] Snapshot registration notice:', err);
+    }
+
+    return () => {
+      if (unsubscribeTasks) unsubscribeTasks();
+      if (unsubscribeDeleted) unsubscribeDeleted();
+      if (unsubscribeNotifications) unsubscribeNotifications();
+    };
+  }, []);
 
   // Real-time zero-latency sync via Server-Sent Events (SSE)
   useEffect(() => {

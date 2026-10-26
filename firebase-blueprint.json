@@ -1,0 +1,57 @@
+{
+  "entities": {
+    "Task": {
+      "title": "Task",
+      "description": "Team tasks assigned to members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "assignedToId": { "type": "string" },
+        "priority": { "type": "string" },
+        "status": { "type": "string" },
+        "startDate": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "dueTime": { "type": "string" },
+        "category": { "type": "string" },
+        "isPrivate": { "type": "boolean" },
+        "totalLoggedMinutes": { "type": "number" },
+        "isTimerRunning": { "type": "boolean" },
+        "completedAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "assignedToId", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Task mentions and assignments notifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "type": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "recipientUserId": { "type": "string" }
+      },
+      "required": ["id", "title", "recipientUserId"]
+    }
+  },
+  "firestore": {
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Global tasks collection shared across all team members"
+    },
+    "/deletedTasks/{taskId}": {
+      "schema": "Task",
+      "description": "Trash collection of deleted tasks"
+    },
+    "/notifications/{notifId}": {
+      "schema": "Notification",
+      "description": "Notifications collection for team members"
+    }
+  }
+}
