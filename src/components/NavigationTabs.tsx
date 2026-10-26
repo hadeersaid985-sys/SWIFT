@@ -47,7 +47,7 @@ export const NavigationTabs: React.FC = () => {
       id: 'tasks',
       label: 'المهام ومواعيدها',
       icon: CheckSquare,
-      badge: pendingTasksCount > 0 ? pendingTasksCount : null,
+      badge: null,
       badgeColor: 'bg-rose-500 text-white'
     },
     {

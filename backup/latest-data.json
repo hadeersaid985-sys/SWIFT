@@ -144,9 +144,9 @@
     {
       "id": "user-mariam",
       "employeeCode": "SM-106",
-      "name": "Mariam Islam",
-      "role": "worspress developer",
-      "department": "المبيعات",
+      "name": "Mariam",
+      "role": "Web Developer",
+      "department": "التطوير والتقنية",
       "email": "Mariam@swiftmynd.com",
       "phone": "201091910719",
       "whatsappNumber": "201091910719",
@@ -571,7 +571,7 @@
       "totalRenewalsCount": 2,
       "lastPaymentDate": "2025-10-24",
       "notes": "متبقي 4 أيام على التجديد السنوي. تواصل المدير لتأكيد إصدار فاتورة التجديد وتحديث عدد تراخيص الموظفين.",
-      "managedBy": "Mariam Islam",
+      "managedBy": "Mariam",
       "sheetUrl": "https://docs.google.com/spreadsheets/d/1C-AldosariGroup-CRM-Sales-Tracking/edit?usp=sharing",
       "sheetTitle": "شيت إعداد وتدريب مستخدمي CRM مجموعة الدوسري",
       "contractNumber": "CNT-SA-2024-309",
@@ -624,7 +624,7 @@
           "size": "950 KB",
           "type": "application/vnd.openxmlformats",
           "uploadedAt": "2024-11-01",
-          "uploadedBy": "Mariam Islam",
+          "uploadedBy": "Mariam",
           "allowedTeamMemberIds": [
             "user-1",
             "user-mariam"
@@ -1372,7 +1372,7 @@
     {
       "id": "att-6",
       "memberId": "user-mariam",
-      "memberName": "Mariam Islam",
+      "memberName": "Mariam",
       "date": "2026-10-25",
       "status": "absent",
       "notes": "غياب بدون إذن مسبق"

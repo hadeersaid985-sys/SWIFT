@@ -146,9 +146,9 @@ export const INITIAL_TEAM: TeamMember[] = [
   {
     id: 'user-mariam',
     employeeCode: 'SM-106',
-    name: 'Mariam Islam',
-    role: 'worspress developer',
-    department: 'المبيعات',
+    name: 'Mariam',
+    role: 'Web Developer',
+    department: 'التطوير والتقنية',
     email: 'Mariam@swiftmynd.com',
     phone: '201091910719',
     whatsappNumber: '201091910719',
@@ -1640,7 +1640,7 @@ export const INITIAL_CLIENT_RENEWALS: ClientRenewal[] = [
     totalRenewalsCount: 2,
     lastPaymentDate: '2025-10-24',
     notes: 'متبقي 4 أيام على التجديد السنوي. تواصل المدير لتأكيد إصدار فاتورة التجديد وتحديث عدد تراخيص الموظفين.',
-    managedBy: 'Mariam Islam',
+    managedBy: 'Mariam',
     sheetUrl: 'https://docs.google.com/spreadsheets/d/1C-AldosariGroup-CRM-Sales-Tracking/edit?usp=sharing',
     sheetTitle: 'شيت إعداد وتدريب مستخدمي CRM مجموعة الدوسري',
     contractNumber: 'CNT-SA-2024-309',
@@ -1657,7 +1657,7 @@ export const INITIAL_CLIENT_RENEWALS: ClientRenewal[] = [
     onboardingStage: 'تسليم ومتابعة مستمرة',
     folderFiles: [
       { id: 'doc-6', name: 'عقد_تراخيص_CRM_مجموعة_الدوسري.pdf', category: 'عقد', size: '2.1 MB', type: 'application/pdf', uploadedAt: '2024-10-24', uploadedBy: 'هدير سعيد', allowedTeamMemberIds: ['user-1', 'user-mariam'] },
-      { id: 'doc-7', name: 'خطة_تدريب_فريق_المبيعات_سويفت.docx', category: 'بريف فني', size: '950 KB', type: 'application/vnd.openxmlformats', uploadedAt: '2024-11-01', uploadedBy: 'Mariam Islam', allowedTeamMemberIds: ['user-1', 'user-mariam'] }
+      { id: 'doc-7', name: 'خطة_تدريب_فريق_المبيعات_سويفت.docx', category: 'بريف فني', size: '950 KB', type: 'application/vnd.openxmlformats', uploadedAt: '2024-11-01', uploadedBy: 'Mariam', allowedTeamMemberIds: ['user-1', 'user-mariam'] }
     ]
   },
   {
@@ -1996,7 +1996,7 @@ export const INITIAL_ATTENDANCE: AttendanceRecord[] = [
   {
     id: 'att-6',
     memberId: 'user-mariam',
-    memberName: 'Mariam Islam',
+    memberName: 'Mariam',
     date: '2026-10-25',
     status: 'absent',
     notes: 'غياب بدون إذن مسبق'

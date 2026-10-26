@@ -223,10 +223,10 @@ export const Sidebar: React.FC = () => {
               )}
 
               <div className="space-y-0.5 pr-1 mt-1">
-                {/* 1. تاسكات الفريق والتايمر (مع البادجات 7 و 4 مطابقة للصورة تماماً) */}
+                {/* 1. تاسكات الفريق والتايمر */}
                 <button
                   onClick={() => setActiveTab('tasks')}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                  className={`w-full text-right flex items-center px-3 py-2 rounded-lg transition-all cursor-pointer ${
                     activeTab === 'tasks'
                       ? 'bg-blue-600 text-white font-extrabold shadow-md'
                       : 'text-slate-200 hover:bg-slate-800/80 hover:text-white'
@@ -237,18 +237,6 @@ export const Sidebar: React.FC = () => {
                     <CheckSquare className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
                     {!isCollapsed && <span className="font-bold">تاسكات الفريق والتايمر</span>}
                   </div>
-                  {!isCollapsed && (
-                    <div className="flex items-center gap-1 font-mono font-bold">
-                      {overdueCount > 0 && (
-                        <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded-full font-bold shadow-2xs">
-                          {overdueCount}
-                        </span>
-                      )}
-                      <span className="text-[10px] bg-slate-700 text-slate-200 px-1.5 py-0.2 rounded-full">
-                        {pendingTasksCount}
-                      </span>
-                    </div>
-                  )}
                 </button>
 
                 {/* 2. مهام معمول لي فيها منشن (@) */}
@@ -691,7 +679,7 @@ export const Sidebar: React.FC = () => {
             <div className="space-y-0.5 pr-2">
               <button
                 onClick={() => setActiveTab('tasks')}
-                className={`w-full text-right flex items-center justify-between px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
+                className={`w-full text-right flex items-center px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
                   activeTab === 'tasks' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
                 }`}
                 title="مهام وتاسكات الفريق ومؤقت العمل"
@@ -700,20 +688,6 @@ export const Sidebar: React.FC = () => {
                   <CheckSquare className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
                   {!isCollapsed && <span>تاسكات الفريق والتايمر</span>}
                 </div>
-                {!isCollapsed && (
-                  <div className="flex items-center gap-1">
-                    {overdueCount > 0 && (
-                      <span className="text-[10px] bg-rose-500 text-white px-1.5 py-0.2 rounded-full font-bold">
-                        {overdueCount}
-                      </span>
-                    )}
-                    {pendingTasksCount > 0 && (
-                      <span className="text-[10px] bg-slate-700 text-slate-200 px-1.5 py-0.2 rounded-full font-bold">
-                        {pendingTasksCount}
-                      </span>
-                    )}
-                  </div>
-                )}
               </button>
 
               <button

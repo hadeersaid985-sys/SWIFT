@@ -351,7 +351,7 @@ export const safeSessionStorage = {
 
 export const ensureValidUser = (u: any): TeamMember => {
   if (!u || typeof u !== 'object') return CURRENT_USER;
-  return {
+  const valid: TeamMember = {
     ...CURRENT_USER,
     ...u,
     id: u.id || CURRENT_USER.id,
@@ -361,6 +361,23 @@ export const ensureValidUser = (u: any): TeamMember => {
     role: u.role || CURRENT_USER.role,
     avatar: u.avatar || CURRENT_USER.avatar
   };
+
+  // Strictly enforce separation for Mariam (Web Developer) and Islam (Video Editor)
+  if (valid.id === 'user-mariam') {
+    valid.name = 'Mariam';
+    valid.role = 'Web Developer';
+    valid.department = 'التطوير والتقنية';
+    valid.username = 'Mariam';
+    valid.employeeCode = 'SM-106';
+  } else if (valid.id === 'user-islam') {
+    valid.name = 'Islam';
+    valid.role = 'Video Editor';
+    valid.department = 'المبيعات';
+    valid.username = 'Islam';
+    valid.employeeCode = 'SM-108';
+  }
+
+  return valid;
 };
 
 export const ensureValidBrandConfig = (b: any): BrandConfig => {
@@ -385,31 +402,55 @@ export const TEAM_ALIASES: Record<string, string[]> = {
   'user-amira': ['user-amira', 'sm-110', 'amira', 'amira2', 'اميرة', 'أميرة'],
   'user-aya': ['user-aya', 'sm-103', 'aya', 'aya gaber', 'aya_gaber', 'اية', 'آية', 'اية جابر', 'آية جابر'],
   'user-maibel': ['user-maibel', 'sm-105', 'maibel', 'maibel emad', 'مايبل', 'ميبل', 'مايبل عماد'],
-  'user-mariam': ['user-mariam', 'sm-106', 'mariam', 'mariam islam', 'مريم', 'مريم إسلام', 'مريم اسلام'],
+  'user-mariam': ['user-mariam', 'sm-106', 'mariam', 'مريم', 'mariam web developer', 'mariam developer'],
   'user-yomna': ['user-yomna', 'sm-107', 'yomna', 'يمنى', 'يمنا'],
-  'user-islam': ['user-islam', 'sm-108', 'islam', 'إسلام', 'اسلام'],
+  'user-islam': ['user-islam', 'sm-108', 'islam', 'إسلام', 'اسلام', 'islam video editor', 'video editor'],
   'user-roaa': ['user-roaa', 'sm-109', 'roaa', 'roaa_hetemy', 'رؤى', 'رؤى حتيمي', 'روءة', 'روءا'],
   'user-1': ['user-1', 'user-admin', 'hadeer', 'hadeer.admin', 'هدير', 'هدير سعيد', 'admin', 'المدير']
 };
 
 export const getCanonicalUserId = (val?: string | null): string => {
   if (!val) return '';
-  const clean = val.trim().toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\-_.]/g, ' ').replace(/\s+/g, ' ');
+  const clean = val.trim().toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\-_.]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!clean) return '';
+
+  // Pass 1: Direct key match
+  for (const canonId of Object.keys(TEAM_ALIASES)) {
+    if (canonId.toLowerCase() === clean) return canonId;
+  }
+
+  // Pass 2: Exact alias match across all members
   for (const [canonId, aliases] of Object.entries(TEAM_ALIASES)) {
-    if (canonId.toLowerCase() === val.trim().toLowerCase()) return canonId;
     for (const a of aliases) {
-      const cleanA = a.toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\-_.]/g, ' ').replace(/\s+/g, ' ');
-      if (clean === cleanA || clean === cleanA.replace(/\s+/g, '') || (cleanA.length >= 3 && (clean.includes(cleanA) || cleanA.includes(clean)))) {
+      const cleanA = a.toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\-_.]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (clean === cleanA || clean === cleanA.replace(/\s+/g, '')) {
         return canonId;
       }
     }
   }
-  return val.trim().toLowerCase();
+
+  // Pass 3: Token/word match (clean exactly equals one of the words, never loose substring)
+  for (const [canonId, aliases] of Object.entries(TEAM_ALIASES)) {
+    for (const a of aliases) {
+      const cleanA = a.toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\-_.]/g, ' ').replace(/\s+/g, ' ').trim();
+      const wordsA = cleanA.split(/\s+/);
+      const wordsClean = clean.split(/\s+/);
+      if (wordsClean.length === 1 && wordsA.includes(wordsClean[0])) {
+        return canonId;
+      }
+      if (wordsA.length === 1 && wordsClean.includes(wordsA[0])) {
+        return canonId;
+      }
+    }
+  }
+
+  return clean;
 };
 
 export const isTaskAssignedToUser = (task: Task, user: TeamMember): boolean => {
   if (!user || !task) return false;
   const aid = (task.assignedToId || '').trim().toLowerCase();
+  
   // Support tasks assigned to all accounts / all team members
   if (
     aid === 'all' ||
@@ -423,33 +464,33 @@ export const isTaskAssignedToUser = (task: Task, user: TeamMember): boolean => {
     return true;
   }
 
-  // Canonical mapping check
+  // 1. Direct ID match (highest priority, strictly isolated)
+  if (user.id && aid === user.id.toLowerCase()) return true;
+
+  // 2. Canonical mapping comparison
   const taskCanon = getCanonicalUserId(task.assignedToId);
   const userCanonId = getCanonicalUserId(user.id);
-  const userCanonName = getCanonicalUserId(user.name);
   const userCanonUsername = getCanonicalUserId(user.username);
   const userCanonCode = getCanonicalUserId(user.employeeCode);
 
   if (
     taskCanon &&
     (taskCanon === userCanonId ||
-      taskCanon === userCanonName ||
       taskCanon === userCanonUsername ||
       taskCanon === userCanonCode)
   ) {
     return true;
   }
 
-  // Fallback direct check
-  if (aid === (user.id || '').toLowerCase()) return true;
-  if (user.username && aid === user.username.toLowerCase()) return true;
-  if (user.employeeCode && aid === user.employeeCode.toLowerCase()) return true;
-  if (user.name && aid === user.name.toLowerCase()) return true;
+  // 3. Fallback direct exact check (strictly exact, never loose substring)
+  if (user.username && aid === user.username.trim().toLowerCase()) return true;
+  if (user.employeeCode && aid === user.employeeCode.trim().toLowerCase()) return true;
+  if (user.name && aid === user.name.trim().toLowerCase()) return true;
 
-  // Normalized Arabic check
-  const normAid = aid.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
-  const normUserName = (user.name || '').toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
-  if (normAid && normUserName && (normAid === normUserName || normUserName.includes(normAid) || normAid.includes(normUserName))) {
+  // 4. Exact normalized Arabic check (must be exact match, NEVER substring includes between different users!)
+  const normAid = aid.replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').trim();
+  const normUserName = (user.name || '').toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').trim();
+  if (normAid && normUserName && normAid === normUserName) {
     return true;
   }
 
@@ -586,13 +627,14 @@ export const matchUserCredentials = (
   // Match Eman specifically (Arabic / English)
   const isEmanUser =
     (cleanUser === 'eman' || normInput === 'ايمان' || normInput === 'ايمن') &&
-    (memberUsername === 'eman' || memberUsername.includes('eman') || normName.includes('ايمان'));
+    (memberUsername === 'eman' || memberCode === 'sm-104' || normName === 'ايمان' || normName === 'ايمان اشرف');
 
   // Match Amira specifically (Amira, Amira2, SM-110, Arabic أميرة)
   const isAmiraUser =
-    (cleanUser === 'amira' || cleanUser === 'amira2' || cleanUser === 'sm-110' || cleanUser === 'sm-107' || normInput === 'اميرة' || normInput === 'اميره' || cleanUser.startsWith('amira')) &&
-    (memberUsername.includes('amira') || memberEmail.includes('amira') || normName.includes('امير') || memberCode === 'sm-110' || memberCode === 'sm-107');
+    (cleanUser === 'amira' || cleanUser === 'amira2' || cleanUser === 'sm-110' || cleanUser === 'sm-107' || normInput === 'اميرة' || normInput === 'اميره') &&
+    (memberUsername === 'amira' || memberUsername === 'amira2' || memberCode === 'sm-110' || memberCode === 'sm-107' || normName === 'اميرة' || normName === 'أميرة');
 
+  // Strictly exact user match - NEVER use loose substring normName.includes(normInput) which confuses Islam with Mariam!
   const isUserMatch =
     memberUsername === cleanUser ||
     memberEmail === cleanUser ||
@@ -602,7 +644,6 @@ export const matchUserCredentials = (
     memberUserPrefix === cleanUser ||
     normName === normInput ||
     normFirstName === normInput ||
-    normName.includes(normInput) ||
     isEmanUser ||
     isAmiraUser ||
     (cleanUser === 'admin' && (member.accessLevel === 'admin' || member.id === 'user-1'));
@@ -740,6 +781,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   updated.comments = initT.comments;
                 }
               }
+
+              // Sanitize legacy or misassigned tasks for Mariam and Islam
+              if (
+                updated.assignedToId === 'Mariam Islam' ||
+                updated.assignedToId === 'Mariam' ||
+                updated.assignedToId === 'مريم'
+              ) {
+                updated.assignedToId = 'user-mariam';
+              } else if (
+                updated.assignedToId === 'Islam' ||
+                updated.assignedToId === 'إسلام' ||
+                updated.assignedToId === 'اسلام'
+              ) {
+                updated.assignedToId = 'user-islam';
+              }
+
               return updated;
             });
 
@@ -784,16 +841,29 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               x => x.id === m.id || (x.username && x.username.toLowerCase() === (m.username || '').toLowerCase())
             );
             const salCurr = (m.salaryCurrency === 'ر.س' || !m.salaryCurrency) ? 'ج.م' : m.salaryCurrency;
-            if (initM) {
-              return {
-                ...initM,
-                ...m,
-                salaryCurrency: salCurr,
-                password: m.password || initM.password,
-                username: m.username || initM.username
-              };
+            let memberObj = initM ? {
+              ...initM,
+              ...m,
+              salaryCurrency: salCurr,
+              password: m.password || initM.password,
+              username: m.username || initM.username
+            } : { ...m, salaryCurrency: salCurr };
+
+            // Explicitly separate and preserve Mariam and Islam
+            if (memberObj.id === 'user-mariam') {
+              memberObj.name = 'Mariam';
+              memberObj.role = 'Web Developer';
+              memberObj.department = 'التطوير والتقنية';
+              memberObj.username = 'Mariam';
+              memberObj.employeeCode = 'SM-106';
+            } else if (memberObj.id === 'user-islam') {
+              memberObj.name = 'Islam';
+              memberObj.role = 'Video Editor';
+              memberObj.username = 'Islam';
+              memberObj.employeeCode = 'SM-108';
             }
-            return { ...m, salaryCurrency: salCurr };
+
+            return memberObj;
           });
           return [...merged, ...missingMembers];
         }
@@ -1927,8 +1997,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
+    let cleanAssignedId = newTaskData.assignedToId;
+    if (cleanAssignedId) {
+      const canonId = getCanonicalUserId(cleanAssignedId);
+      if (canonId && TEAM_ALIASES[canonId]) {
+        cleanAssignedId = canonId;
+      }
+    }
+
     const newTask: Task = {
       ...newTaskData,
+      assignedToId: cleanAssignedId,
       id: newTaskId,
       mentionedUserIds: finalMentionedUserIds,
       comments: initialComments,
@@ -2029,10 +2108,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateTask = (id: string, updates: Partial<Task>) => {
+    let finalUpdates = { ...updates };
+    if (finalUpdates.assignedToId) {
+      const canonId = getCanonicalUserId(finalUpdates.assignedToId);
+      if (canonId && TEAM_ALIASES[canonId]) {
+        finalUpdates.assignedToId = canonId;
+      }
+    }
+
     const existing = tasks.find(t => t.id === id);
     const updatedTaskObj: Task = existing
-      ? { ...existing, ...updates }
-      : ({ id, ...updates } as Task);
+      ? { ...existing, ...finalUpdates }
+      : ({ id, ...finalUpdates } as Task);
 
     if (updates.status === 'completed' && existing?.status !== 'completed') {
       updatedTaskObj.completedAt = new Date().toISOString().split('T')[0];

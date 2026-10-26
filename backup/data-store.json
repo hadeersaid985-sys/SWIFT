@@ -145,9 +145,9 @@
     {
       "id": "user-mariam",
       "employeeCode": "SM-106",
-      "name": "Mariam Islam",
-      "role": "worspress developer",
-      "department": "المبيعات",
+      "name": "Mariam",
+      "role": "Web Developer",
+      "department": "التطوير والتقنية",
       "email": "Mariam@swiftmynd.com",
       "phone": "201091910719",
       "whatsappNumber": "201091910719",
@@ -1446,7 +1446,7 @@
     {
       "id": "att-6",
       "memberId": "user-mariam",
-      "memberName": "Mariam Islam",
+      "memberName": "Mariam",
       "date": "2026-10-25",
       "status": "absent",
       "notes": "غياب بدون إذن مسبق"
