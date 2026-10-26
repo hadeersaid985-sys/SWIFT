@@ -2572,12 +2572,64 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isInitialDataLoadedRef = React.useRef(false);
   const isSyncingFromServerRef = React.useRef(false);
 
-  // Synchronize state with server /api/data for multi-user / multi-device access
+  // Real-time zero-latency sync via Server-Sent Events (SSE)
+  useEffect(() => {
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource('/api/live-sync');
+      eventSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === 'TASK_MUTATION' || payload.type === 'FULL_SYNC') {
+            if (Array.isArray(payload.tasks)) {
+              setTasks(prev => {
+                if (JSON.stringify(prev) !== JSON.stringify(payload.tasks)) {
+                  isSyncingFromServerRef.current = true;
+                  return payload.tasks;
+                }
+                return prev;
+              });
+            }
+            if (Array.isArray(payload.notifications)) {
+              setNotifications(prev => {
+                if (JSON.stringify(prev) !== JSON.stringify(payload.notifications)) {
+                  isSyncingFromServerRef.current = true;
+                  return payload.notifications;
+                }
+                return prev;
+              });
+            }
+            if (Array.isArray(payload.team) && payload.team.length > 0) {
+              setTeam(prev => {
+                if (prev.length !== payload.team.length) {
+                  isSyncingFromServerRef.current = true;
+                  return payload.team;
+                }
+                return prev;
+              });
+            }
+            if (Array.isArray(payload.deletedTasks)) {
+              setDeletedTasks(payload.deletedTasks);
+            }
+          }
+        } catch {}
+      };
+    } catch {}
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, []);
+
+  // Synchronize state with server /api/data for multi-user / multi-device access (with anti-cache)
   useEffect(() => {
     let isMounted = true;
     const fetchInitialData = async () => {
       try {
-        const res = await fetch('/api/data');
+        const res = await fetch('/api/data?_t=' + Date.now(), {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+        });
         if (res.ok) {
           const serverData = await res.json();
           if (!isMounted || !serverData || typeof serverData !== 'object') return;
@@ -2606,7 +2658,6 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           isInitialDataLoadedRef.current = true;
         }
       } catch (err) {
-        // Standalone/fallback mode
         isInitialDataLoadedRef.current = true;
       }
     };
@@ -2649,18 +2700,19 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => clearTimeout(timer);
   }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications]);
 
-  // Background polling every 2 seconds to instantly sync tasks and mentions across all devices
+  // Background polling every 1.5 seconds to guarantee fresh data across all devices
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch('/api/tasks');
+        const res = await fetch('/api/tasks?_t=' + Date.now(), {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+        });
         if (res.ok) {
           const serverData = await res.json();
           if (serverData && Array.isArray(serverData.tasks)) {
             setTasks(prev => {
-              const prevDigest = prev.map(t => `${t.id}:${t.status}:${t.assignedToId}:${t.comments?.length || 0}:${t.timeLogs?.length || 0}:${t.isTimerRunning}`).join('|');
-              const serverDigest = serverData.tasks.map((t: any) => `${t.id}:${t.status}:${t.assignedToId}:${t.comments?.length || 0}:${t.timeLogs?.length || 0}:${t.isTimerRunning}`).join('|');
-              if (prevDigest !== serverDigest || prev.length !== serverData.tasks.length) {
+              if (JSON.stringify(prev) !== JSON.stringify(serverData.tasks)) {
                 isSyncingFromServerRef.current = true;
                 return serverData.tasks;
               }
@@ -2669,9 +2721,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           if (serverData && Array.isArray(serverData.notifications)) {
             setNotifications(prev => {
-              const prevIds = prev.map(n => n.id).join(',');
-              const serverIds = serverData.notifications.map((n: any) => n.id).join(',');
-              if (prevIds !== serverIds || prev.length !== serverData.notifications.length) {
+              if (JSON.stringify(prev) !== JSON.stringify(serverData.notifications)) {
                 isSyncingFromServerRef.current = true;
                 return serverData.notifications;
               }
@@ -2698,7 +2748,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
       } catch {}
-    }, 2000);
+    }, 1500);
     return () => clearInterval(interval);
   }, []);
 

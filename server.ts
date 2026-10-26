@@ -9,12 +9,36 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
 
+  // Strict anti-caching headers for all API requests to ensure multi-device freshness
+  app.use('/api', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+    next();
+  });
+
   const BACKUP_DIR = path.join(process.cwd(), 'backup');
   const DATA_FILE = path.join(BACKUP_DIR, 'data-store.json');
   const LATEST_FILE = path.join(BACKUP_DIR, 'latest-data.json');
 
   if (!fs.existsSync(BACKUP_DIR)) {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  }
+
+  // Active SSE client connections for instant zero-latency cross-device broadcast
+  const sseClients = new Set<express.Response>();
+
+  function broadcastLiveSync(payload: any) {
+    if (sseClients.size === 0) return;
+    const msg = `data: ${JSON.stringify(payload)}\n\n`;
+    for (const client of sseClients) {
+      try {
+        client.write(msg);
+      } catch {
+        sseClients.delete(client);
+      }
+    }
   }
 
   // Safe file reader with fallback
@@ -54,6 +78,36 @@ async function startServer() {
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
+
+  // Server-Sent Events (SSE) Live Stream for 0ms Real-Time Multi-Device Sync
+  app.get('/api/live-sync', (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+
+    res.write('retry: 2000\n\n');
+    res.write(`data: ${JSON.stringify({ type: 'CONNECTED', timestamp: new Date().toISOString() })}\n\n`);
+
+    sseClients.add(res);
+
+    req.on('close', () => {
+      sseClients.delete(res);
+    });
+  });
+
+  // Keep-alive heartbeat for SSE every 20 seconds
+  setInterval(() => {
+    for (const client of sseClients) {
+      try {
+        client.write(': ping\n\n');
+      } catch {
+        sseClients.delete(client);
+      }
+    }
+  }, 20000);
 
   // Get full synchronized data
   app.get('/api/data', (_req, res) => {
@@ -122,6 +176,14 @@ async function startServer() {
       saveData(current);
       console.log(`[SWIFTMYND] Task synced immediately: "${task.title}" (Assigned: ${task.assignedToId})`);
 
+      // Broadcast immediately to all connected devices in 0ms
+      broadcastLiveSync({
+        type: 'TASK_MUTATION',
+        tasks: current.tasks,
+        notifications: current.notifications,
+        updatedAt: current.updatedAt
+      });
+
       return res.json({
         success: true,
         task,
@@ -148,6 +210,13 @@ async function startServer() {
         current.tasks = tasks.filter((t: any) => t.id !== taskId);
         current.deletedTasks = [target, ...(current.deletedTasks || [])];
         saveData(current);
+
+        broadcastLiveSync({
+          type: 'TASK_MUTATION',
+          tasks: current.tasks,
+          deletedTasks: current.deletedTasks,
+          updatedAt: current.updatedAt
+        });
       }
 
       return res.json({ success: true, taskId });
@@ -180,6 +249,13 @@ async function startServer() {
         }
 
         saveData(current);
+
+        broadcastLiveSync({
+          type: 'TASK_MUTATION',
+          tasks: current.tasks,
+          notifications: current.notifications,
+          updatedAt: current.updatedAt
+        });
       }
 
       return res.json({ success: true, taskId });
@@ -247,6 +323,15 @@ async function startServer() {
       };
 
       saveData(merged);
+
+      broadcastLiveSync({
+        type: 'FULL_SYNC',
+        tasks: mergedTasks,
+        notifications: mergedNotifications,
+        team: mergedTeam,
+        updatedAt: merged.updatedAt
+      });
+
       return res.json({ success: true, timestamp: merged.updatedAt, tasksCount: mergedTasks.length });
     } catch (err: any) {
       console.error('Error saving shared data store:', err);

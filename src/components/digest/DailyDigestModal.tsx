@@ -16,7 +16,7 @@ import {
   ListTodo,
   CheckCheck
 } from 'lucide-react';
-import { useCRM, isTaskAssignedToUser } from '../../context/CRMContext';
+import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
 import { Task } from '../../types/crm';
 
 export const DailyDigestModal: React.FC = () => {
@@ -35,7 +35,7 @@ export const DailyDigestModal: React.FC = () => {
   const isManager = Boolean(currentUser && (currentUser.accessLevel === 'admin' || currentUser.id === 'user-1'));
 
   // Active filter within the digest
-  const [activeTabFilter, setActiveTabFilter] = useState<'all' | 'overdue' | 'today'>('all');
+  const [activeTabFilter, setActiveTabFilter] = useState<'all' | 'today' | 'overdue' | 'upcoming'>('all');
   const [copiedTaskId, setCopiedTaskId] = useState<string | null>(null);
   const [dontShowAgainToday, setDontShowAgainToday] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<string[]>([]);
@@ -44,31 +44,29 @@ export const DailyDigestModal: React.FC = () => {
 
   // Strict user task isolation:
   // Non-managers only see tasks assigned to them or where they are mentioned (@)
-  const isUserMentioned = (t: Task) => {
-    if (!currentUser) return false;
-    if (t.mentionedUserIds && t.mentionedUserIds.includes(currentUser.id)) return true;
-    if (t.comments && t.comments.some(c => (currentUser.name && c.content?.includes(`@${currentUser.name}`)) || (currentUser.username && c.content?.includes(`@${currentUser.username}`)))) return true;
-    if (t.description && ((currentUser.name && t.description.includes(`@${currentUser.name}`)) || (currentUser.username && t.description.includes(`@${currentUser.username}`)))) return true;
-    if (t.title && ((currentUser.name && t.title.includes(`@${currentUser.name}`)) || (currentUser.username && t.title.includes(`@${currentUser.username}`)))) return true;
-    return false;
-  };
-
   const userTasks = isManager
     ? tasks
-    : tasks.filter(t => !t.isPrivate && ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentioned(t)));
+    : tasks.filter(t => !t.isPrivate && ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentionedInTask(t, currentUser)));
+
+  // All active/pending tasks for this user
+  const activeTasks = userTasks.filter(t => t.status !== 'completed' && !completedTaskIds.includes(t.id));
 
   // 1. Overdue tasks (المهام المتأخرة)
-  const overdueTasks = userTasks.filter(t => {
-    if (t.status === 'completed' || completedTaskIds.includes(t.id)) return false;
+  const overdueTasks = activeTasks.filter(t => {
     const deadline = getDeadlineStatus(t.dueDate, t.dueTime, t.status);
     return deadline.isOverdue;
   });
 
   // 2. Today's scheduled tasks (المهام المجدولة لليوم الحالي فقط)
-  const todayTasks = userTasks.filter(t => {
-    if (t.status === 'completed' || completedTaskIds.includes(t.id)) return false;
+  const todayTasks = activeTasks.filter(t => {
     const deadline = getDeadlineStatus(t.dueDate, t.dueTime, t.status);
     return deadline.isToday;
+  });
+
+  // 3. Upcoming tasks (مهام قادمة)
+  const upcomingTasks = activeTasks.filter(t => {
+    const deadline = getDeadlineStatus(t.dueDate, t.dueTime, t.status);
+    return !deadline.isOverdue && !deadline.isToday;
   });
 
   // Display list based on tab
@@ -77,7 +75,9 @@ export const DailyDigestModal: React.FC = () => {
       ? overdueTasks
       : activeTabFilter === 'today'
       ? todayTasks
-      : [...overdueTasks, ...todayTasks];
+      : activeTabFilter === 'upcoming'
+      ? upcomingTasks
+      : activeTasks;
 
   // Arabic date formatter
   const todayDateFormatted = new Intl.DateTimeFormat('ar-EG', {
@@ -226,24 +226,24 @@ export const DailyDigestModal: React.FC = () => {
               <div className="flex items-center justify-between text-amber-300 text-[11px] font-bold">
                 <span className="flex items-center gap-1">
                   <Flame className="w-3.5 h-3.5 text-amber-400" />
-                  <span>إجمالي تاسكات اليوم</span>
+                  <span>إجمالي مهامك النشطة</span>
                 </span>
-                <span className="text-[10px] bg-amber-400/20 text-amber-300 px-1 rounded font-mono">التركيز</span>
+                <span className="text-[10px] bg-amber-400/20 text-amber-300 px-1 rounded font-mono">النشطة</span>
               </div>
               <div className="text-xl font-black text-white mt-1">
-                {overdueTasks.length + todayTasks.length}{' '}
+                {activeTasks.length}{' '}
                 <span className="text-xs font-normal text-amber-200">مهمة</span>
               </div>
               <div className="text-[10px] text-amber-200/70 mt-0.5">
-                خطة العمل المقترحة لبداية يومك
+                كافة المهام المكلف بها والمنشن
               </div>
             </div>
           </div>
         </div>
 
         {/* Tab Filters */}
-        <div className="px-5 pt-3 pb-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2 shrink-0 text-xs">
-          <div className="flex items-center gap-1.5">
+        <div className="px-5 pt-3 pb-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2 shrink-0 text-xs overflow-x-auto">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => setActiveTabFilter('all')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -253,7 +253,19 @@ export const DailyDigestModal: React.FC = () => {
               }`}
             >
               <ListTodo className="w-3.5 h-3.5" />
-              <span>الكل ({overdueTasks.length + todayTasks.length})</span>
+              <span>الكل ({activeTasks.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTabFilter('today')}
+              className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTabFilter === 'today'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-white text-blue-700 hover:bg-blue-50 border border-blue-200'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5 text-blue-500" />
+              <span>مجدولة لليوم ({todayTasks.length})</span>
             </button>
 
             <button
@@ -269,20 +281,20 @@ export const DailyDigestModal: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setActiveTabFilter('today')}
+              onClick={() => setActiveTabFilter('upcoming')}
               className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTabFilter === 'today'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-white text-blue-700 hover:bg-blue-50 border border-blue-200'
+                activeTabFilter === 'upcoming'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'
               }`}
             >
-              <Clock className="w-3.5 h-3.5 text-blue-500" />
-              <span>مجدولة لليوم ({todayTasks.length})</span>
+              <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+              <span>مهام قادمة ({upcomingTasks.length})</span>
             </button>
           </div>
 
-          <span className="text-[11px] text-slate-400 hidden sm:inline">
-            يتم التحديث تلقائياً بمواعيد المهام
+          <span className="text-[11px] text-slate-400 hidden sm:inline shrink-0">
+            محدث لحظياً ومباشر مع الخادم
           </span>
         </div>
 
@@ -302,7 +314,9 @@ export const DailyDigestModal: React.FC = () => {
                     ? 'ليس لديك أي مهام متأخرة حالياً! التزامك بالمواعيد ممتاز.'
                     : activeTabFilter === 'today'
                     ? 'لا توجد مهام مجدولة للتسليم اليوم. يومك منظم بنجاح.'
-                    : 'لا توجد أي مهام متأخرة أو مجدولة لليوم الحالي. يمكنك مراجعة باقي المهام أو إضافة مهمة جديدة.'}
+                    : activeTabFilter === 'upcoming'
+                    ? 'لا توجد مهام مجدولة لأيام قادمة.'
+                    : 'لا توجد أي مهام نشطة مكلف بها أو مشار إليها حالياً.'}
                 </p>
               </div>
 
