@@ -691,39 +691,52 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_REPORTS;
   });
 
-  // Load state from localStorage or fallback
+  // Load state from localStorage or fallback (excluding any deleted tasks)
   const [tasks, setTasks] = useState<Task[]>(() => {
     try {
+      const savedDeleted = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_tasks`);
+      const deletedIds = new Set<string>();
+      if (savedDeleted) {
+        try {
+          const parsedDel = JSON.parse(savedDeleted);
+          if (Array.isArray(parsedDel)) {
+            parsedDel.forEach((d: any) => d?.id && deletedIds.add(d.id));
+          }
+        } catch {}
+      }
+
       const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}tasks`);
       if (saved) {
         const parsed: Task[] = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          let result = parsed.map(t => {
-            const initT = INITIAL_TASKS.find(x => x.id === t.id);
-            const updated = { ...t };
-            if (initT && !t.title?.includes('@') && initT.title?.includes('@')) {
-              updated.title = initT.title;
-            }
-            if (initT && initT.isPrivate !== undefined) {
-              updated.isPrivate = initT.isPrivate;
-            }
-            if (!t.comments || t.comments.length === 0) {
-              if (initT && initT.comments && initT.comments.length > 0) {
-                updated.comments = initT.comments;
+          let result = parsed
+            .filter(t => !deletedIds.has(t.id))
+            .map(t => {
+              const initT = INITIAL_TASKS.find(x => x.id === t.id);
+              const updated = { ...t };
+              if (initT && !t.title?.includes('@') && initT.title?.includes('@')) {
+                updated.title = initT.title;
               }
-            }
-            return updated;
-          });
+              if (initT && initT.isPrivate !== undefined) {
+                updated.isPrivate = initT.isPrivate;
+              }
+              if (!t.comments || t.comments.length === 0) {
+                if (initT && initT.comments && initT.comments.length > 0) {
+                  updated.comments = initT.comments;
+                }
+              }
+              return updated;
+            });
 
-          if (!result.some(t => t.id === 'task-mgr-private-1')) {
+          if (!result.some(t => t.id === 'task-mgr-private-1') && !deletedIds.has('task-mgr-private-1')) {
             const privTask = INITIAL_TASKS.find(t => t.id === 'task-mgr-private-1');
             if (privTask) result = [privTask, ...result];
           }
 
-          // Merge any tasks from INITIAL_TASKS that are not yet in local storage
+          // Merge any tasks from INITIAL_TASKS that are neither in local storage nor in deleted tasks
           const existingIds = new Set(result.map(t => t.id));
           INITIAL_TASKS.forEach(initT => {
-            if (!existingIds.has(initT.id)) {
+            if (!existingIds.has(initT.id) && !deletedIds.has(initT.id)) {
               result.push(initT);
               existingIds.add(initT.id);
             }
@@ -1970,81 +1983,105 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateTask = (id: string, updates: Partial<Task>) => {
-    let updatedTaskObj: Task | null = null;
+    const existing = tasks.find(t => t.id === id);
+    const updatedTaskObj: Task = existing
+      ? { ...existing, ...updates }
+      : ({ id, ...updates } as Task);
+
+    if (updates.status === 'completed' && existing?.status !== 'completed') {
+      updatedTaskObj.completedAt = new Date().toISOString().split('T')[0];
+      confetti({
+        particleCount: 70,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
+      logActivity('task', 'تم إنجاز المهمة بنجاح 🎉', updatedTaskObj.title);
+    }
+
     setTasks(prev =>
-      prev.map(task => {
-        if (task.id === id) {
-          const updated = { ...task, ...updates };
-          if (updates.status === 'completed' && task.status !== 'completed') {
-            updated.completedAt = new Date().toISOString().split('T')[0];
-            confetti({
-              particleCount: 70,
-              spread: 60,
-              origin: { y: 0.6 }
-            });
-            logActivity('task', 'تم إنجاز المهمة بنجاح 🎉', task.title);
-          }
-          updatedTaskObj = updated;
-          return updated;
-        }
-        return task;
-      })
+      prev.map(task => (task.id === id ? { ...task, ...updatedTaskObj } : task))
     );
 
     // Instant multi-device sync
-    if (updatedTaskObj) {
-      try {
-        fetch('/api/tasks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task: updatedTaskObj })
-        }).catch(() => {});
-      } catch (e) {}
-    }
+    try {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: updatedTaskObj })
+      }).catch(err => console.warn('[SWIFTMYND] Update task sync notice:', err));
+    } catch (e) {}
   };
 
   const deleteTask = (id: string) => {
     const t = tasks.find(x => x.id === id);
-    if (t) {
-      setDeletedTasks(prev => [{ ...t, completedAt: t.completedAt || new Date().toISOString() }, ...prev]);
-      setTasks(prev => prev.filter(task => task.id !== id));
-      logActivity('task', 'تم نقل المهمة لسلة المهملات', t.title);
+    const targetTask: Task = t || ({ id, title: 'مهمة محذوفة' } as Task);
+    const withCompleted = { ...targetTask, completedAt: targetTask.completedAt || new Date().toISOString() };
 
-      // Instant server sync
-      try {
-        fetch('/api/tasks/delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ taskId: id })
-        }).catch(() => {});
-      } catch (e) {}
+    setDeletedTasks(prev => [withCompleted, ...prev.filter(x => x.id !== id)]);
+    setTasks(prev => prev.filter(task => task.id !== id));
+    if (t) {
+      logActivity('task', 'تم نقل المهمة لسلة المهملات', t.title);
     }
+
+    // Instant server sync & broadcast across all devices
+    try {
+      fetch('/api/tasks/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: id, task: withCompleted })
+      }).catch(err => console.warn('[SWIFTMYND] Delete task sync notice:', err));
+    } catch (e) {}
   };
 
   const deleteTasks = (ids: string[]) => {
     const toDelete = tasks.filter(t => ids.includes(t.id));
     if (toDelete.length > 0) {
-      setDeletedTasks(prev => [...toDelete, ...prev]);
+      setDeletedTasks(prev => [...toDelete, ...prev.filter(x => !ids.includes(x.id))]);
       setTasks(prev => prev.filter(task => !ids.includes(task.id)));
       logActivity('task', 'نقل مهام لسلة المهملات', `تم نقل ${ids.length} مهمة لسلة المهملات`);
+
+      try {
+        fetch('/api/tasks/delete-bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskIds: ids })
+        }).catch(() => {});
+      } catch (e) {}
     }
   };
 
   const clearCompletedTasks = () => {
     const completedList = tasks.filter(t => t.status === 'completed');
     if (completedList.length > 0) {
-      setDeletedTasks(prev => [...completedList, ...prev]);
+      const completedIds = completedList.map(t => t.id);
+      setDeletedTasks(prev => [...completedList, ...prev.filter(x => !completedIds.includes(x.id))]);
       setTasks(prev => prev.filter(task => task.status !== 'completed'));
       logActivity('task', 'تفريغ ونقل المهام المكتملة لسلة المهملات', `تم نقل ${completedList.length} مهمة مكتملة لسلة المهملات`);
+
+      try {
+        fetch('/api/tasks/delete-bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskIds: completedIds })
+        }).catch(() => {});
+      } catch (e) {}
     }
   };
 
   const restoreTaskFromTrash = (taskId: string) => {
     const t = deletedTasks.find(x => x.id === taskId);
     if (t) {
-      setTasks(prev => [t, ...prev]);
+      setTasks(prev => [t, ...prev.filter(x => x.id !== taskId)]);
       setDeletedTasks(prev => prev.filter(x => x.id !== taskId));
       logActivity('task', 'استعادة مهمة من سلة المهملات', t.title);
+
+      try {
+        fetch('/api/tasks/restore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskId })
+        }).catch(() => {});
+      } catch (e) {}
     }
   };
 
@@ -2060,22 +2097,29 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleSubTask = (taskId: string, subtaskId: string) => {
-    setTasks(prev =>
-      prev.map(task => {
-        if (task.id !== taskId) return task;
-        const updatedSubtasks = task.subtasks.map(st =>
-          st.id === subtaskId ? { ...st, completed: !st.completed } : st
-        );
-        // If all subtasks completed, offer completion
-        const allCompleted = updatedSubtasks.every(st => st.completed);
-        return {
-          ...task,
-          subtasks: updatedSubtasks,
-          status: allCompleted ? 'completed' : task.status,
-          completedAt: allCompleted ? new Date().toISOString().split('T')[0] : task.completedAt
-        };
-      })
+    const target = tasks.find(t => t.id === taskId);
+    if (!target) return;
+
+    const updatedSubtasks = (target.subtasks || []).map(st =>
+      st.id === subtaskId ? { ...st, completed: !st.completed } : st
     );
+    const allCompleted = updatedSubtasks.length > 0 && updatedSubtasks.every(st => st.completed);
+    const updated: Task = {
+      ...target,
+      subtasks: updatedSubtasks,
+      status: allCompleted ? 'completed' : target.status,
+      completedAt: allCompleted ? new Date().toISOString().split('T')[0] : target.completedAt
+    };
+
+    setTasks(prev => prev.map(task => (task.id === taskId ? updated : task)));
+
+    try {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: updated })
+      }).catch(() => {});
+    } catch (e) {}
   };
 
   const changeTaskStatus = (taskId: string, status: TaskStatus) => {
@@ -2672,14 +2716,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try {
           const payload = JSON.parse(event.data);
           if (payload.type === 'TASK_MUTATION' || payload.type === 'FULL_SYNC') {
+            const serverDeletedSet = new Set((payload.deletedTasks || []).map((t: any) => t.id));
+            
             if (Array.isArray(payload.tasks)) {
+              const cleanTasks = payload.tasks.filter((t: any) => !serverDeletedSet.has(t.id));
               setTasks(prev => {
-                if (JSON.stringify(prev) !== JSON.stringify(payload.tasks)) {
+                if (JSON.stringify(prev) !== JSON.stringify(cleanTasks)) {
                   isSyncingFromServerRef.current = true;
-                  return payload.tasks;
+                  safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(cleanTasks));
+                  return cleanTasks;
                 }
                 return prev;
               });
+            }
+            if (Array.isArray(payload.deletedTasks)) {
+              setDeletedTasks(payload.deletedTasks);
+              safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_tasks`, JSON.stringify(payload.deletedTasks));
             }
             if (Array.isArray(payload.notifications)) {
               setNotifications(prev => {
@@ -2698,9 +2750,6 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 }
                 return prev;
               });
-            }
-            if (Array.isArray(payload.deletedTasks)) {
-              setDeletedTasks(payload.deletedTasks);
             }
           }
         } catch {}
@@ -2725,12 +2774,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const serverData = await res.json();
           if (!isMounted || !serverData || typeof serverData !== 'object') return;
 
-          if (Array.isArray(serverData.tasks) && serverData.tasks.length > 0) {
+          const serverDeletedSet = new Set((serverData.deletedTasks || []).map((t: any) => t.id));
+
+          if (Array.isArray(serverData.tasks)) {
+            const cleanTasks = serverData.tasks.filter((t: any) => !serverDeletedSet.has(t.id));
             isSyncingFromServerRef.current = true;
-            setTasks(serverData.tasks);
+            setTasks(cleanTasks);
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(cleanTasks));
           }
           if (Array.isArray(serverData.deletedTasks)) {
             setDeletedTasks(serverData.deletedTasks);
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_tasks`, JSON.stringify(serverData.deletedTasks));
           }
           if (Array.isArray(serverData.team) && serverData.team.length > 0) {
             setTeam(serverData.team);
@@ -2806,11 +2860,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         if (res.ok) {
           const serverData = await res.json();
-          if (serverData && Array.isArray(serverData.tasks) && serverData.tasks.length > 0) {
+          const serverDeletedSet = new Set((serverData?.deletedTasks || []).map((t: any) => t.id));
+
+          if (serverData && Array.isArray(serverData.tasks)) {
+            const cleanTasks = serverData.tasks.filter((t: any) => !serverDeletedSet.has(t.id));
             setTasks(prev => {
-              if (JSON.stringify(prev) !== JSON.stringify(serverData.tasks)) {
+              if (JSON.stringify(prev) !== JSON.stringify(cleanTasks)) {
                 isSyncingFromServerRef.current = true;
-                return serverData.tasks;
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(cleanTasks));
+                return cleanTasks;
               }
               return prev;
             });
@@ -2826,8 +2884,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           if (serverData && Array.isArray(serverData.deletedTasks)) {
             setDeletedTasks(prev => {
-              if (prev.length !== serverData.deletedTasks.length) {
+              if (JSON.stringify(prev) !== JSON.stringify(serverData.deletedTasks)) {
                 isSyncingFromServerRef.current = true;
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_tasks`, JSON.stringify(serverData.deletedTasks));
                 return serverData.deletedTasks;
               }
               return prev;

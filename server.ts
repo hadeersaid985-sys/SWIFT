@@ -202,19 +202,110 @@ async function startServer() {
     }
   });
 
-  // Atomic Task Delete
+  // Atomic Task Delete (Instant broadcast across all manager & employee screens)
   app.post('/api/tasks/delete', (req, res) => {
+    try {
+      const { taskId, task } = req.body;
+      if (!taskId) return res.status(400).json({ error: 'taskId required' });
+
+      const current = readCurrentData();
+      const tasks: any[] = current.tasks || [];
+      const target = tasks.find((t: any) => t.id === taskId) || task || { id: taskId, title: 'مهمة محذوفة' };
+
+      current.tasks = tasks.filter((t: any) => t.id !== taskId);
+      
+      const existingDeleted = (current.deletedTasks || []).filter((t: any) => t.id !== taskId);
+      current.deletedTasks = [{ ...target, completedAt: target.completedAt || new Date().toISOString() }, ...existingDeleted];
+      saveData(current);
+      console.log(`[SWIFTMYND] Task deleted and broadcasted: "${taskId}"`);
+
+      broadcastLiveSync({
+        type: 'TASK_MUTATION',
+        tasks: current.tasks,
+        deletedTasks: current.deletedTasks,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, taskId, remainingTasks: current.tasks.length });
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      return res.status(500).json({ error: 'Failed to delete task' });
+    }
+  });
+
+  // REST DELETE /api/tasks/:id
+  app.delete('/api/tasks/:id', (req, res) => {
+    try {
+      const taskId = req.params.id;
+      if (!taskId) return res.status(400).json({ error: 'taskId required' });
+
+      const current = readCurrentData();
+      const tasks: any[] = current.tasks || [];
+      const target = tasks.find((t: any) => t.id === taskId) || { id: taskId, title: 'مهمة محذوفة' };
+
+      current.tasks = tasks.filter((t: any) => t.id !== taskId);
+      const existingDeleted = (current.deletedTasks || []).filter((t: any) => t.id !== taskId);
+      current.deletedTasks = [{ ...target, completedAt: target.completedAt || new Date().toISOString() }, ...existingDeleted];
+      saveData(current);
+
+      broadcastLiveSync({
+        type: 'TASK_MUTATION',
+        tasks: current.tasks,
+        deletedTasks: current.deletedTasks,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, taskId });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to delete task' });
+    }
+  });
+
+  // Bulk Delete Tasks
+  app.post('/api/tasks/delete-bulk', (req, res) => {
+    try {
+      const { taskIds } = req.body;
+      if (!Array.isArray(taskIds) || taskIds.length === 0) {
+        return res.status(400).json({ error: 'taskIds array required' });
+      }
+
+      const current = readCurrentData();
+      const tasks: any[] = current.tasks || [];
+      const idSet = new Set(taskIds);
+
+      const toDelete = tasks.filter((t: any) => idSet.has(t.id));
+      current.tasks = tasks.filter((t: any) => !idSet.has(t.id));
+      
+      const existingDeleted = (current.deletedTasks || []).filter((t: any) => !idSet.has(t.id));
+      current.deletedTasks = [...toDelete, ...existingDeleted];
+      saveData(current);
+
+      broadcastLiveSync({
+        type: 'TASK_MUTATION',
+        tasks: current.tasks,
+        deletedTasks: current.deletedTasks,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, deletedCount: taskIds.length });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to bulk delete tasks' });
+    }
+  });
+
+  // Restore Task from Trash
+  app.post('/api/tasks/restore', (req, res) => {
     try {
       const { taskId } = req.body;
       if (!taskId) return res.status(400).json({ error: 'taskId required' });
 
       const current = readCurrentData();
-      const tasks = current.tasks || [];
-      const target = tasks.find((t: any) => t.id === taskId);
+      const deletedList: any[] = current.deletedTasks || [];
+      const target = deletedList.find((t: any) => t.id === taskId);
 
       if (target) {
-        current.tasks = tasks.filter((t: any) => t.id !== taskId);
-        current.deletedTasks = [target, ...(current.deletedTasks || [])];
+        current.deletedTasks = deletedList.filter((t: any) => t.id !== taskId);
+        current.tasks = [target, ...(current.tasks || []).filter((t: any) => t.id !== taskId)];
         saveData(current);
 
         broadcastLiveSync({
@@ -227,7 +318,7 @@ async function startServer() {
 
       return res.json({ success: true, taskId });
     } catch (err) {
-      return res.status(500).json({ error: 'Failed to delete task' });
+      return res.status(500).json({ error: 'Failed to restore task' });
     }
   });
 
