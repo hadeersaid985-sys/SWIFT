@@ -295,6 +295,13 @@ export interface ClientDossierNote {
   date: string;
 }
 
+// شيتات جوجل المتعددة للعميل
+export interface ClientGoogleSheet {
+  id: string;
+  title: string;
+  url: string;
+}
+
 // Client Renewals Tracker (مواعيد تجديد اشتراكات العملاء والتنبيهات بـ 4 أيام)
 export type RenewalStatus = 'active' | 'renewing_soon' | 'overdue' | 'renewed' | 'cancelled';
 
@@ -319,6 +326,7 @@ export interface ClientRenewal {
   managedBy?: string;
   sheetUrl?: string; // رابط شيت جوجل (Google Sheet) لسهولة وصول التيم للملف والبيانات
   sheetTitle?: string; // عنوان الشيت مثلاً "شيت متابعة الحملات والعميل"
+  googleSheets?: ClientGoogleSheet[]; // شيتات جوجل المتعددة للعميل (+ إضافة أكثر من شيت)
   driveFolderUrl?: string; // رابط مجلد جوجل درايف للعميل
   contractNumber?: string; // رقم العقد
   clientDocuments?: { id: string; name: string; type: string; url: string; date: string }[];

@@ -126,7 +126,7 @@ async function startServer() {
     }
   });
 
-  // Get tasks and notifications specifically (lightweight endpoint for fast polling)
+  // Get tasks, renewals and notifications (lightweight endpoint for fast polling across all devices)
   app.get('/api/tasks', (_req, res) => {
     try {
       const data = readCurrentData();
@@ -135,10 +135,89 @@ async function startServer() {
         deletedTasks: data.deletedTasks || [],
         notifications: data.notifications || [],
         team: data.team || [],
+        clientRenewals: data.clientRenewals || [],
         updatedAt: data.updatedAt
       });
     } catch (err: any) {
       return res.status(500).json({ error: 'Failed to get tasks' });
+    }
+  });
+
+  // Get Client Renewals specifically
+  app.get('/api/renewals', (_req, res) => {
+    try {
+      const data = readCurrentData();
+      return res.json({
+        clientRenewals: data.clientRenewals || [],
+        updatedAt: data.updatedAt
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: 'Failed to get client renewals' });
+    }
+  });
+
+  // Atomic Client Renewal Create or Update (Instant sync between Admin & Team members)
+  app.post('/api/renewals', (req, res) => {
+    try {
+      const { renewal, clientRenewals: fullList } = req.body;
+      const current = readCurrentData();
+
+      if (Array.isArray(fullList)) {
+        current.clientRenewals = fullList;
+      } else if (renewal && renewal.id) {
+        const existing: any[] = current.clientRenewals || [];
+        const idx = existing.findIndex(r => r.id === renewal.id);
+        if (idx >= 0) {
+          existing[idx] = { ...existing[idx], ...renewal };
+        } else {
+          existing.unshift(renewal);
+        }
+        current.clientRenewals = existing;
+      } else {
+        return res.status(400).json({ error: 'renewal or clientRenewals array required' });
+      }
+
+      saveData(current);
+      console.log(`[SWIFTMYND] Client renewal synced: ${renewal?.clientName || 'list updated'}`);
+
+      broadcastLiveSync({
+        type: 'RENEWAL_MUTATION',
+        clientRenewals: current.clientRenewals,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({
+        success: true,
+        clientRenewals: current.clientRenewals,
+        updatedAt: current.updatedAt
+      });
+    } catch (err) {
+      console.error('Error saving client renewal:', err);
+      return res.status(500).json({ error: 'Failed to save renewal' });
+    }
+  });
+
+  // Atomic Client Renewal Delete
+  app.post('/api/renewals/delete', (req, res) => {
+    try {
+      const { renewalId, id } = req.body;
+      const targetId = renewalId || id;
+      if (!targetId) return res.status(400).json({ error: 'renewalId required' });
+
+      const current = readCurrentData();
+      current.clientRenewals = (current.clientRenewals || []).filter((r: any) => r.id !== targetId);
+      saveData(current);
+
+      broadcastLiveSync({
+        type: 'RENEWAL_MUTATION',
+        clientRenewals: current.clientRenewals,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, renewalId: targetId });
+    } catch (err) {
+      console.error('Error deleting client renewal:', err);
+      return res.status(500).json({ error: 'Failed to delete renewal' });
     }
   });
 
@@ -425,12 +504,19 @@ async function startServer() {
       });
       const mergedTeam = Array.from(teamMap.values());
 
+      // Smart merge client renewals
+      let mergedRenewals = currentData.clientRenewals || [];
+      if (Array.isArray(incoming.clientRenewals)) {
+        mergedRenewals = incoming.clientRenewals;
+      }
+
       const merged = {
         ...currentData,
         ...incoming,
         tasks: mergedTasks,
         notifications: mergedNotifications,
         team: mergedTeam.length > 0 ? mergedTeam : currentData.team,
+        clientRenewals: mergedRenewals,
         deletedTasks: Array.from(deletedTaskIds).map(id => ({ id }))
       };
 
@@ -441,6 +527,7 @@ async function startServer() {
         tasks: mergedTasks,
         notifications: mergedNotifications,
         team: mergedTeam,
+        clientRenewals: mergedRenewals,
         updatedAt: merged.updatedAt
       });
 
