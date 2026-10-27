@@ -42,7 +42,8 @@ import {
   Settings,
   Camera,
   LogOut,
-  FolderGit2
+  FolderGit2,
+  PauseCircle
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
@@ -60,6 +61,7 @@ export const Sidebar: React.FC = () => {
     renewalsDueSoonCount,
     clientRenewals,
     visibleClients,
+    suspendedContracts,
     impersonateUser,
     returnToAdmin,
     team,
@@ -440,6 +442,27 @@ export const Sidebar: React.FC = () => {
                   }`}
                 >
                   {renewalsDueSoonCount > 0 ? `🚨 ${renewalsDueSoonCount} تجديد` : 'ساري'}
+                </span>
+              )}
+            </button>
+
+            {/* Item 3.2: عقود موقفه (مباشرة تحت ملفات العملاء وتجديد الاشتراكات) */}
+            <button
+              onClick={() => setActiveTab('suspended_contracts')}
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                activeTab === 'suspended_contracts'
+                  ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white font-extrabold shadow-md'
+                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/30 border border-amber-500/20'
+              }`}
+              title="عقود موقفه: العملاء المتوقفين وتوثيق سبب الإيقاف مع إمكانية إعادة التفعيل"
+            >
+              <div className="flex items-center gap-2.5">
+                <PauseCircle className="w-4 h-4 shrink-0 text-amber-400" />
+                {!isCollapsed && <span className="font-bold">عقود موقفه</span>}
+              </div>
+              {!isCollapsed && (
+                <span className="text-[9px] bg-amber-500/25 text-amber-200 border border-amber-400/30 font-bold px-1.5 py-0.5 rounded shadow-2xs">
+                  {suspendedContracts.length} موقوف
                 </span>
               )}
             </button>

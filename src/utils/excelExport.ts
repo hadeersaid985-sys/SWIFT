@@ -77,3 +77,40 @@ export const exportTasksToExcel = (tasks: Task[], team: TeamMember[]) => {
   const dateStr = new Date().toISOString().split('T')[0];
   XLSX.writeFile(workbook, `سويفت-مايند-كشف-المهام-${dateStr}.xlsx`);
 };
+
+/**
+ * Export Suspended Contracts to Excel (.xlsx) with Reasons
+ */
+export const exportSuspendedContractsToExcel = (clients: ClientRenewal[]) => {
+  const data = clients.map((c, index) => ({
+    'م': index + 1,
+    'اسم العميل': c.clientName,
+    'الشركة / المنشأة': c.company || '-',
+    'رقم الهاتف': c.phone || '-',
+    'الباقة والخدمة': c.serviceName,
+    'قيمة العقد': c.amount,
+    'العملة': c.currency,
+    'دورة الاشتراك': c.planCycle,
+    'سبب الإيقاف': c.suspensionReason || 'غير محدد',
+    'تصنيف سبب الإيقاف': c.suspensionCategory === 'financial' ? 'تعثر مالي / تأخر سداد' :
+                        c.suspensionCategory === 'client_request' ? 'طلب العميل مؤقتاً' :
+                        c.suspensionCategory === 'technical' ? 'أسباب فنية وتقنية' :
+                        c.suspensionCategory === 'restructuring' ? 'إعادة هيكلة النشاط' :
+                        c.suspensionCategory === 'project_done' ? 'انتهاء المشروع' : 'أسباب أخرى',
+    'تاريخ الإيقاف': c.suspendedAt || '-',
+    'تاريخ الاستئناف المتوقع': c.expectedResumeDate || '-',
+    'ملاحظات وتفاصيل إضافية': c.suspensionNotes || c.notes || '-',
+    'مسؤول المتابعة': c.managedBy || 'هدير سعيد'
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  if (!worksheet['!views']) worksheet['!views'] = [];
+  worksheet['!views'].push({ rightToLeft: true });
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'العقود الموقوفة وأسباب التوقف');
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(workbook, `سويفت-مايند-عقود-موقفة-وأسباب-التوقف-${dateStr}.xlsx`);
+};
+

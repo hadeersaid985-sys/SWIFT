@@ -306,7 +306,7 @@ export interface ClientGoogleSheet {
 }
 
 // Client Renewals Tracker (مواعيد تجديد اشتراكات العملاء والتنبيهات بـ 4 أيام)
-export type RenewalStatus = 'active' | 'renewing_soon' | 'overdue' | 'renewed' | 'cancelled';
+export type RenewalStatus = 'active' | 'renewing_soon' | 'overdue' | 'renewed' | 'cancelled' | 'suspended';
 
 export interface ClientRenewal {
   id: string;
@@ -328,6 +328,13 @@ export interface ClientRenewal {
   lastPaymentDate?: string;
   notes?: string;
   managedBy?: string;
+  // تفاصيل إيقاف العقد (السبب والتاريخ والتصنيف)
+  suspensionReason?: string; // سبب إيقاف العقد والاشتراك (السبب يكون مسجل ومحفوظ)
+  suspendedAt?: string; // تاريخ إيقاف العقد
+  suspensionCategory?: 'financial' | 'client_request' | 'technical' | 'restructuring' | 'project_done' | 'other';
+  suspensionNotes?: string; // تفاصيل إضافية وملاحظات المتابعة لسبب الإيقاف
+  expectedResumeDate?: string; // تاريخ العودة المتوقع
+  suspendedBy?: string; // الشخص الذي قام بالإيقاف
   sheetUrl?: string; // رابط شيت جوجل (Google Sheet) لسهولة وصول التيم للملف والبيانات
   sheetTitle?: string; // عنوان الشيت مثلاً "شيت متابعة الحملات والعميل"
   googleSheets?: ClientGoogleSheet[]; // شيتات جوجل المتعددة للعميل (+ إضافة أكثر من شيت)

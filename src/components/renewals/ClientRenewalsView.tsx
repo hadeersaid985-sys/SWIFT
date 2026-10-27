@@ -40,7 +40,8 @@ import {
   Download,
   Upload,
   Shield,
-  Tag
+  Tag,
+  PauseCircle
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { ClientRenewal, RenewalStatus, ClientFileDocument } from '../../types/crm';
@@ -67,7 +68,10 @@ export const ClientRenewalsView: React.FC = () => {
     renewalsDueSoonCount,
     isManager,
     coachingOffers,
-    sendCoachingOffer
+    sendCoachingOffer,
+    suspendedContracts,
+    suspendClientContract,
+    setActiveTab
   } = useCRM();
 
   // Subtabs: 'client_dossiers' (ملفات العملاء والشيتات للتيم), 'renewals_list' (مواعيد التجديد), 'timeline', 'coaching_offers', 'swift_accounts'
@@ -116,6 +120,37 @@ export const ClientRenewalsView: React.FC = () => {
     isBulk?: boolean;
     title: string;
   } | null>(null);
+
+  // Suspend client modal state
+  const [suspendModalClient, setSuspendModalClient] = useState<ClientRenewal | null>(null);
+  const [suspendReasonInput, setSuspendReasonInput] = useState('');
+  const [suspendCategoryInput, setSuspendCategoryInput] = useState<'financial' | 'client_request' | 'technical' | 'restructuring' | 'project_done' | 'other'>('client_request');
+  const [suspendNotesInput, setSuspendNotesInput] = useState('');
+
+  const handleOpenSuspendModal = (client: ClientRenewal) => {
+    setSuspendModalClient(client);
+    setSuspendReasonInput(client.suspensionReason || '');
+    setSuspendCategoryInput(client.suspensionCategory || 'client_request');
+    setSuspendNotesInput(client.suspensionNotes || '');
+  };
+
+  const handleConfirmSuspend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!suspendModalClient) return;
+    if (!suspendReasonInput.trim()) {
+      showToast('يرجى إدخال سبب الإيقاف ليتم حفظه');
+      return;
+    }
+    suspendClientContract(
+      suspendModalClient.id,
+      suspendReasonInput.trim(),
+      suspendNotesInput.trim(),
+      suspendCategoryInput
+    );
+    showToast(`تم إيقاف عقد العميل (${suspendModalClient.clientName}) ونقله إلى "عقود موقفه" بنجاح ⏸️`);
+    setSuspendModalClient(null);
+  };
+
 
   // Active pool: Admin sees all clientRenewals; non-admin employee sees visibleClients
   const activeClientsPool = visibleClients || clientRenewals;
@@ -495,6 +530,16 @@ export const ClientRenewalsView: React.FC = () => {
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>+ إضافة اشتراك / تجديد عميل</span>
+          </button>
+
+          {/* الانتقال إلى العقود الموقوفة */}
+          <button
+            onClick={() => setActiveTab('suspended_contracts')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded-xl transition-all cursor-pointer text-xs shadow-2xs"
+            title="الانتقال إلى قسم العقود الموقوفة لمعاينة العملاء وأسباب الإيقاف"
+          >
+            <PauseCircle className="w-4 h-4 text-amber-600" />
+            <span>عقود موقفه ({suspendedContracts.length})</span>
           </button>
 
           {/* 2. ✏️ تعديل من فوق */}
@@ -1140,6 +1185,18 @@ export const ClientRenewalsView: React.FC = () => {
                         >
                           <FileText className="w-3.5 h-3.5 text-amber-600" />
                           <span>فاتورة PDF</span>
+                        </button>
+                      )}
+
+                      {isManager && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSuspendModal(client)}
+                          className="py-1.5 px-2.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs shrink-0"
+                          title="إيقاف العقد مؤقتاً وتوثيق سبب التوقف"
+                        >
+                          <PauseCircle className="w-3.5 h-3.5 text-rose-600" />
+                          <span>إيقاف العقد ⏸️</span>
                         </button>
                       )}
 
@@ -3303,6 +3360,102 @@ export const ClientRenewalsView: React.FC = () => {
                 <span>حفظ وتحديث الرابط</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: SUSPEND CONTRACT ================= */}
+      {suspendModalClient && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95">
+            <div className="p-4 border-b border-slate-100 bg-amber-50/60 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                  <PauseCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-slate-800">إيقاف عقد العميل وتوثيق السبب</h3>
+                  <p className="text-[11px] text-slate-500">{suspendModalClient.clientName} ({suspendModalClient.company})</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSuspendModalClient(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmSuspend} className="p-5 space-y-4 text-xs">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 font-bold">الخدمة:</span>
+                  <span className="font-extrabold text-slate-800">{suspendModalClient.serviceName}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 font-bold">قيمة العقد:</span>
+                  <span className="font-black text-slate-900">{suspendModalClient.amount?.toLocaleString()} {suspendModalClient.currency}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">تصنيف سبب الإيقاف:</label>
+                <select
+                  value={suspendCategoryInput}
+                  onChange={e => setSuspendCategoryInput(e.target.value as any)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-800"
+                >
+                  <option value="client_request">⏸️ طلب العميل مؤقتاً (تجميد)</option>
+                  <option value="financial">💳 تعثر مالي / تأخر سداد الدفعات</option>
+                  <option value="technical">⚙️ أسباب فنية وتقنية لدى العميل</option>
+                  <option value="restructuring">🔄 تغيير النشاط أو إعادة هيكلة</option>
+                  <option value="project_done">📦 انتهاء مدة المشروع</option>
+                  <option value="other">📝 أسباب أخرى</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  سبب الإيقاف بالتفصيل <span className="text-rose-500">*</span>:
+                </label>
+                <textarea
+                  value={suspendReasonInput}
+                  onChange={e => setSuspendReasonInput(e.target.value)}
+                  rows={3}
+                  placeholder="اكتب هنا سبب إيقاف العقد بدقة (ليكون مسجل ومحفوظ معك دائماً)..."
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-bold focus:ring-2 focus:ring-amber-500/20"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">ملاحظات إضافية وتفاصيل المتابعة:</label>
+                <textarea
+                  value={suspendNotesInput}
+                  onChange={e => setSuspendNotesInput(e.target.value)}
+                  rows={2}
+                  placeholder="أي ملاحظات إضافية أو شروط لإعادة التفعيل..."
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSuspendModalClient(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white font-black shadow-md cursor-pointer"
+                >
+                  تأكيد الإيقاف وحفظ السبب ⏸️
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

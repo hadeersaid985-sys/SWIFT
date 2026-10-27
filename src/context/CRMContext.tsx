@@ -211,6 +211,14 @@ interface CRMContextType {
   renewalsDueSoonCount: number;
   visibleLeads: Lead[]; // كل الليدز للأدمن، والموكلين للموظف
 
+  // Suspended Contracts (العقود الموقوفة وتوثيق سبب الإيقاف لكل عميل)
+  suspendedContracts: ClientRenewal[];
+  suspendClientContract: (id: string, reason: string, notes?: string, category?: string) => void;
+  reactivateClientContract: (id: string) => void;
+  updateSuspensionReason: (id: string, reason: string, notes?: string, category?: string) => void;
+  addSuspendedContract: (data: Omit<ClientRenewal, 'id' | 'createdAt' | 'status'> & { suspensionReason: string; notes?: string; suspensionCategory?: string }) => void;
+
+
   // تسجيلات ميتنج العملاء المهمين (VIP Google Meet Recordings)
   meetingRecordings: MeetingRecording[];
   addMeetingRecording: (rec: Omit<MeetingRecording, 'id' | 'createdAt'>) => void;
@@ -1716,6 +1724,101 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
   };
+
+  // Suspended Contracts Methods (العقود الموقوفة وتوثيق سبب الإيقاف)
+  const suspendClientContract = (id: string, reason: string, notes?: string, category?: string) => {
+    const target = clientRenewals.find(r => r.id === id);
+    if (!target) return;
+    const nowStr = new Date().toISOString().split('T')[0];
+    const updated: ClientRenewal = {
+      ...target,
+      status: 'suspended',
+      suspensionReason: reason,
+      suspendedAt: nowStr,
+      suspensionCategory: (category as any) || 'financial',
+      suspensionNotes: notes || '',
+      suspendedBy: currentUser?.name || 'المدير العام'
+    };
+    setClientRenewals(prev => {
+      const next = prev.map(r => (r.id === id ? updated : r));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+    logActivity('deal', 'إيقاف عقد عميل مؤقتاً ⏸️', `${target.clientName} (${target.company}) - سبب الإيقاف: ${reason}`);
+    setNotifications(prev => [
+      {
+        id: 'notif-' + Date.now(),
+        title: `⏸️ تم إيقاف عقد العميل: ${target.clientName}`,
+        message: `تم تحويل العقد إلى قسم العقود الموقوفة. السبب: ${reason}`,
+        timestamp: 'الآن',
+        type: 'renewal_alert',
+        isRead: false,
+        linkTab: 'suspended_contracts'
+      },
+      ...prev
+    ]);
+  };
+
+  const reactivateClientContract = (id: string) => {
+    const target = clientRenewals.find(r => r.id === id);
+    if (!target) return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const updated: ClientRenewal = {
+      ...target,
+      status: 'active',
+      notes: (target.notes ? target.notes + '\n' : '') + `[تمت إعادة تفعيل العقد والاشتراك بتاريخ ${todayStr}]`
+    };
+    setClientRenewals(prev => {
+      const next = prev.map(r => (r.id === id ? updated : r));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+    logActivity('deal', 'إعادة تفعيل عقد عميل ▶️', `تمت إعادة تفعيل عقد ${target.clientName} بنجاح`);
+    confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
+  };
+
+  const updateSuspensionReason = (id: string, reason: string, notes?: string, category?: string) => {
+    setClientRenewals(prev => {
+      const next = prev.map(r => {
+        if (r.id !== id) return r;
+        return {
+          ...r,
+          suspensionReason: reason,
+          suspensionNotes: notes !== undefined ? notes : r.suspensionNotes,
+          suspensionCategory: category ? (category as any) : r.suspensionCategory
+        };
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+    logActivity('deal', 'تحديث سبب إيقاف العقد ✏️', `تم تحديث سبب إيقاف العقد: ${reason}`);
+  };
+
+  const addSuspendedContract = (data: Omit<ClientRenewal, 'id' | 'createdAt' | 'status'> & { suspensionReason: string; notes?: string; suspensionCategory?: string }) => {
+    const nowStr = new Date().toISOString().split('T')[0];
+    const newRen: ClientRenewal = {
+      ...data,
+      id: 'ren-' + Date.now(),
+      status: 'suspended',
+      suspendedAt: data.suspendedAt || nowStr,
+      suspensionReason: data.suspensionReason,
+      suspensionCategory: (data.suspensionCategory as any) || 'financial',
+      suspensionNotes: data.notes || '',
+      suspendedBy: currentUser?.name || 'المدير العام',
+      createdAt: nowStr
+    };
+    setClientRenewals(prev => {
+      const next = [newRen, ...prev];
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+    logActivity('deal', 'تسجيل عقد موقوف جديد', `${newRen.clientName} (${newRen.company}) - السبب: ${data.suspensionReason}`);
+  };
+
+  const suspendedContracts = React.useMemo(() => {
+    return (clientRenewals || []).filter(r => r.status === 'suspended');
+  }, [clientRenewals]);
+
 
   // Client Folder Files & Documents (إدارة مجلد ومستندات كل عميل)
   const addClientFile = (clientId: string, fileData: Omit<ClientFileDocument, 'id' | 'uploadedAt'>) => {
@@ -4022,6 +4125,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         convertLeadToClientAndHandoff,
         renewalsDueSoonCount,
         visibleLeads,
+        suspendedContracts,
+        suspendClientContract,
+        reactivateClientContract,
+        updateSuspensionReason,
+        addSuspendedContract,
         meetingRecordings,
         addMeetingRecording,
         deleteMeetingRecording,

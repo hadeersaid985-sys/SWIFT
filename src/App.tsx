@@ -14,6 +14,7 @@ import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { ProjectsView } from './components/projects/ProjectsView';
 import { MarketingBoardView } from './components/marketing/MarketingBoardView';
 import { ClientRenewalsView } from './components/renewals/ClientRenewalsView';
+import { SuspendedContractsView } from './components/clients/SuspendedContractsView';
 import { HostMigrationView } from './components/host/HostMigrationView';
 import { SystemSettingsView } from './components/settings/SystemSettingsView';
 import { PayrollAttendanceView } from './components/payroll/PayrollAttendanceView';
@@ -267,6 +268,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'profile' && <ProfileView />}
               {effectiveTab === 'marketing' && <MarketingBoardView />}
               {effectiveTab === 'renewals' && <ClientRenewalsView />}
+              {effectiveTab === 'suspended_contracts' && <SuspendedContractsView />}
               {effectiveTab === 'host_migration' && <HostMigrationView />}
               {effectiveTab === 'reports' && <ReportsListView />}
               {effectiveTab === 'tasks' && <TasksView />}
@@ -294,7 +296,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'mcp' && <AnalyticsView />}
 
               {/* Fallback for unlisted manager tabs */}
-              {!['profile', 'marketing', 'renewals', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
+              {!['profile', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
                 <ReportsListView />
               )}
             </>
