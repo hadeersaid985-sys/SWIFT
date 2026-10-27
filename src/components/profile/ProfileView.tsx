@@ -23,7 +23,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { useCRM } from '../../context/CRMContext';
+import { useCRM, isTaskAssignedToUser } from '../../context/CRMContext';
 import { TeamMember } from '../../types/crm';
 
 // Preset avatar collection
@@ -67,7 +67,7 @@ export const ProfileView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // User Stats
-  const assignedTasks = tasks.filter(t => t.assignedToId === currentUser?.id);
+  const assignedTasks = tasks.filter(t => isTaskAssignedToUser(t, currentUser));
   const completedTasks = assignedTasks.filter(t => t.status === 'completed');
   const totalLoggedMinutes = assignedTasks.reduce((acc, t) => acc + (t.totalLoggedMinutes || 0), 0);
   const loggedHours = (totalLoggedMinutes / 60).toFixed(1);

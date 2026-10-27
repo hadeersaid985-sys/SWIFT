@@ -60,7 +60,7 @@ async function startServer() {
     });
   }
 
-  // Safe file reader with fallback
+  // Safe file reader with fallback and automatic sync
   function readCurrentData(): any {
     try {
       let parsed: any = {};
@@ -72,6 +72,49 @@ async function startServer() {
         parsed = JSON.parse(raw);
         fs.writeFileSync(DATA_FILE, JSON.stringify(parsed, null, 2), 'utf-8');
       }
+
+      // Merge with LATEST_FILE if both exist to guarantee no tasks or edits are lost
+      if (fs.existsSync(LATEST_FILE) && fs.existsSync(DATA_FILE)) {
+        try {
+          const latestRaw = fs.readFileSync(LATEST_FILE, 'utf-8');
+          const latestParsed = JSON.parse(latestRaw);
+          if (Array.isArray(latestParsed.tasks) && latestParsed.tasks.length > 0) {
+            const currentTasksMap = new Map<string, any>((parsed.tasks || []).map((t: any) => [t.id, t]));
+            latestParsed.tasks.forEach((t: any) => {
+              if (!currentTasksMap.has(t.id)) {
+                currentTasksMap.set(t.id, t);
+              }
+            });
+            parsed.tasks = Array.from(currentTasksMap.values());
+          }
+        } catch {}
+      }
+
+      // Normalize Islam canonical identity across tasks
+      if (Array.isArray(parsed.tasks)) {
+        parsed.tasks = parsed.tasks.map((t: any) => {
+          const aid = (t.assignedToId || '').toLowerCase();
+          if (aid === 'user-1793025675186' || aid === 'user-1793016178916' || aid === 'islam') {
+            t.assignedToId = 'user-islam';
+          }
+          return t;
+        });
+      }
+
+      // Normalize Islam in team
+      if (Array.isArray(parsed.team)) {
+        const islamInTeam = parsed.team.find((m: any) => m.id === 'user-islam' || (m.username || '').toLowerCase() === 'islam');
+        if (islamInTeam) {
+          islamInTeam.id = 'user-islam';
+          islamInTeam.username = 'Islam';
+          islamInTeam.employeeCode = 'SM-108';
+          islamInTeam.name = 'Islam';
+          islamInTeam.role = 'Video Editor';
+          // Filter out temporary duplicate entries
+          parsed.team = parsed.team.filter((m: any) => m.id !== 'user-1793025675186' && m.id !== 'user-1793016178916');
+        }
+      }
+
       if (Array.isArray(parsed.clientRenewals)) {
         parsed.clientRenewals = cleanClientRenewals(parsed.clientRenewals);
       }
@@ -490,6 +533,62 @@ async function startServer() {
     }
   });
 
+  // Self-Service Profile Update endpoint for all authenticated users (Employees and Admin)
+  app.post('/api/profile', (req, res) => {
+    try {
+      const { memberId, username, updates } = req.body;
+      if (!updates || typeof updates !== 'object') {
+        return res.status(400).json({ error: 'Updates object required' });
+      }
+
+      const current = readCurrentData();
+      const teamList: any[] = current.team || [];
+      const targetIndex = teamList.findIndex(
+        (m: any) =>
+          (memberId && (m.id === memberId || (m.id === 'user-islam' && (memberId === 'user-1793025675186' || memberId === 'user-1793016178916')))) ||
+          (username && (m.username || '').toLowerCase() === (username || '').toLowerCase())
+      );
+
+      if (targetIndex >= 0) {
+        const existing = teamList[targetIndex];
+        const updatedMember = { ...existing, ...updates };
+        teamList[targetIndex] = updatedMember;
+        current.team = teamList;
+
+        // If avatar was updated, propagate to all tasks assigned to this user
+        if (updates.avatar) {
+          const tasksList: any[] = current.tasks || [];
+          current.tasks = tasksList.map((t: any) => {
+            if (
+              t.assignedToId === existing.id ||
+              (existing.id === 'user-islam' && (t.assignedToId === 'user-islam' || t.assignedToId === 'Islam'))
+            ) {
+              return { ...t, assigneeAvatar: updates.avatar };
+            }
+            return t;
+          });
+        }
+
+        saveData(current);
+        console.log(`[SWIFTMYND] Profile updated permanently for: ${updatedMember.name} (${updatedMember.id})`);
+
+        broadcastLiveSync({
+          type: 'TEAM_MUTATION',
+          team: current.team,
+          tasks: current.tasks,
+          updatedAt: current.updatedAt
+        });
+
+        return res.json({ success: true, member: updatedMember, updatedAt: current.updatedAt });
+      }
+
+      return res.status(404).json({ error: 'Team member not found' });
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      return res.status(500).json({ error: 'Failed to update profile' });
+    }
+  });
+
   // Save / Sync full synchronized data with SMART MERGE (prevents cross-device data wiping)
   app.post('/api/data', (req, res) => {
     try {
@@ -500,42 +599,28 @@ async function startServer() {
 
       const currentData = readCurrentData();
 
-      // Smart merge tasks: incoming tasks from manager represent the active tasks.
-      // Any server task that is missing from incoming.tasks was deleted by the user!
+      // Safe non-destructive task merge: preserve existing tasks and update with incoming changes
       const currentTasks: any[] = currentData.tasks || [];
       const incomingTasks: any[] = Array.isArray(incoming.tasks) ? incoming.tasks : [];
-      const deletedTaskIds = new Set([
+      const explicitDeletedSet = new Set<string>([
         ...((currentData.deletedTasks || []).map((t: any) => t.id)),
         ...((incoming.deletedTasks || []).map((t: any) => t.id))
       ]);
 
-      if (Array.isArray(incoming.tasks)) {
-        const incomingIdSet = new Set(incoming.tasks.map((t: any) => t.id));
-        currentTasks.forEach((t: any) => {
-          if (!incomingIdSet.has(t.id)) {
-            deletedTaskIds.add(t.id);
-            if (!currentData.deletedTasks?.some((d: any) => d.id === t.id)) {
-              currentData.deletedTasks = [{ ...t, completedAt: t.completedAt || new Date().toISOString() }, ...(currentData.deletedTasks || [])];
-            }
-          }
-        });
-      }
-
       const tasksMap = new Map<string, any>();
-      // Incoming tasks from the user take absolute precedence
-      incomingTasks.forEach(t => {
-        if (!deletedTaskIds.has(t.id)) {
+      // Preserve current server tasks
+      currentTasks.forEach((t: any) => {
+        if (!explicitDeletedSet.has(t.id)) {
           tasksMap.set(t.id, t);
         }
       });
-      // Fallback only if incoming.tasks was not provided
-      if (!Array.isArray(incoming.tasks)) {
-        currentTasks.forEach(t => {
-          if (!deletedTaskIds.has(t.id)) {
-            tasksMap.set(t.id, t);
-          }
-        });
-      }
+      // Merge incoming tasks (update existing or insert new)
+      incomingTasks.forEach((t: any) => {
+        if (!explicitDeletedSet.has(t.id)) {
+          const existing = tasksMap.get(t.id) || {};
+          tasksMap.set(t.id, { ...existing, ...t });
+        }
+      });
       const mergedTasks = Array.from(tasksMap.values());
 
       // Smart merge notifications: union by ID, newest first
@@ -570,7 +655,7 @@ async function startServer() {
         team: mergedTeam,
         deletedTeamMemberIds: Array.from(deletedMemberIds),
         clientRenewals: mergedRenewals,
-        deletedTasks: Array.from(deletedTaskIds).map(id => ({ id }))
+        deletedTasks: Array.from(explicitDeletedSet).map(id => ({ id }))
       };
 
       saveData(merged);

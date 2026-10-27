@@ -363,18 +363,28 @@ export const ensureValidUser = (u: any): TeamMember => {
   };
 
   // Strictly enforce separation for Mariam (Web Developer) and Islam (Video Editor)
-  if (valid.id === 'user-mariam') {
-    valid.name = 'Mariam';
-    valid.role = 'Web Developer';
-    valid.department = 'التطوير والتقنية';
+  if (valid.id === 'user-mariam' || (valid.username && valid.username.toLowerCase() === 'mariam')) {
+    valid.id = 'user-mariam';
+    valid.name = u.name || 'Mariam';
+    valid.role = u.role || 'Web Developer';
+    valid.department = u.department || 'التطوير والتقنية';
     valid.username = 'Mariam';
-    valid.employeeCode = 'SM-106';
-  } else if (valid.id === 'user-islam') {
-    valid.name = 'Islam';
-    valid.role = 'Video Editor';
-    valid.department = 'المبيعات';
+    valid.employeeCode = u.employeeCode || 'SM-106';
+    valid.avatar = u.avatar || valid.avatar;
+  } else if (
+    valid.id === 'user-islam' ||
+    valid.id === 'user-1793025675186' ||
+    valid.id === 'user-1793016178916' ||
+    (valid.username && valid.username.toLowerCase() === 'islam')
+  ) {
+    valid.id = 'user-islam';
+    valid.name = u.name || 'Islam';
+    valid.role = u.role || 'Video Editor';
+    valid.department = u.department || 'المبيعات';
     valid.username = 'Islam';
-    valid.employeeCode = 'SM-108';
+    valid.employeeCode = u.employeeCode || 'SM-108';
+    valid.avatar = u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    valid.password = u.password || 'Sw!ftiHaiQ$Cka6';
   }
 
   return valid;
@@ -402,9 +412,9 @@ export const TEAM_ALIASES: Record<string, string[]> = {
   'user-amira': ['user-amira', 'sm-110', 'amira', 'amira2', 'اميرة', 'أميرة', 'اميره'],
   'user-aya': ['user-aya', 'sm-103', 'aya', 'aya gaber', 'aya_gaber', 'اية', 'آية', 'ايه', 'اية جابر', 'آية جابر'],
   'user-maibel': ['user-maibel', 'sm-105', 'maibel', 'maibel emad', 'مايبل', 'ميبل', 'مايبل عماد'],
-  'user-mariam': ['user-mariam', 'sm-106', 'mariam', 'مريم'],
+  'user-mariam': ['user-mariam', 'user-1793016396281', 'sm-106', 'mariam', 'مريم'],
   'user-yomna': ['user-yomna', 'sm-107', 'yomna', 'يمنى', 'يمنا'],
-  'user-islam': ['user-islam', 'sm-108', 'sm-111', 'islam', 'إسلام', 'اسلام'],
+  'user-islam': ['user-islam', 'user-1793025675186', 'user-1793016178916', 'sm-108', 'sm-111', 'islam', 'إسلام', 'اسلام'],
   'user-roaa': ['user-roaa', 'sm-109', 'roaa', 'roaa_hetemy', 'رؤى', 'رؤى حتيمي', 'روءة', 'روءا'],
   'user-1': ['user-1', 'user-admin', 'hadeer', 'hadeer.admin', 'هدير', 'هدير سعيد', 'admin', 'المدير']
 };
@@ -875,12 +885,20 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               username: m.username || initM.username
             } : { ...m, salaryCurrency: salCurr };
 
-            if (memberObj.id === 'user-islam' || (memberObj.username || '').toLowerCase() === 'islam') {
+            if (
+              memberObj.id === 'user-islam' ||
+              memberObj.id === 'user-1793025675186' ||
+              memberObj.id === 'user-1793016178916' ||
+              (memberObj.username || '').toLowerCase() === 'islam'
+            ) {
+              memberObj.id = 'user-islam';
               memberObj.name = 'Islam';
               memberObj.role = 'Video Editor';
               memberObj.username = 'Islam';
               memberObj.employeeCode = 'SM-108';
               memberObj.isAccountActive = true;
+              memberObj.avatar = m.avatar || memberObj.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+              memberObj.password = m.password || memberObj.password || 'Sw!ftiHaiQ$Cka6';
             }
 
             return memberObj;
@@ -2658,11 +2676,24 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // If avatar was updated, propagate to all tasks assigned to this user
     if (updates.avatar) {
       setTasks(prev => {
-        const updated = prev.map(t => (t.assignedToId === id ? { ...t, assigneeAvatar: updates.avatar } : t));
+        const updated = prev.map(t => (t.assignedToId === id || (id === 'user-islam' && (t.assignedToId === 'user-islam' || t.assignedToId === 'Islam')) ? { ...t, assigneeAvatar: updates.avatar } : t));
         safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(updated));
         return updated;
       });
     }
+
+    // Immediately persist profile updates to backend server so it never reverts on reload or sync
+    try {
+      fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: id,
+          username: updates.username,
+          updates
+        })
+      }).catch(err => console.warn('[SWIFTMYND] Profile sync notice:', err));
+    } catch (e) {}
   };
 
   const adminUserId = 'user-1';
@@ -3005,9 +3036,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (Date.now() - lastLocalMutationTimeRef.current < 1500) {
             return;
           }
-          isSyncingFromServerRef.current = true;
-          setTasks(remoteTasks);
-          safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(remoteTasks));
+          if (remoteTasks.length > 0) {
+            isSyncingFromServerRef.current = true;
+            setTasks(prev => {
+              const taskMap = new Map<string, Task>();
+              prev.forEach(t => taskMap.set(t.id, t));
+              remoteTasks.forEach(t => taskMap.set(t.id, { ...(taskMap.get(t.id) || {}), ...t }));
+              const merged = Array.from(taskMap.values());
+              safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(merged));
+              return merged;
+            });
+          }
         }
       });
 
@@ -3137,6 +3176,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (Array.isArray(serverData.team) && serverData.team.length > 0) {
             setTeam(serverData.team);
             safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(serverData.team));
+
+            // Sync currentUser with serverData.team while preserving active avatar and credentials
+            setCurrentUser(prevUser => {
+              if (!prevUser || !prevUser.id) return prevUser;
+              const matchedMember = serverData.team.find(
+                (m: any) =>
+                  m.id === prevUser.id ||
+                  (m.username && prevUser.username && m.username.toLowerCase() === prevUser.username.toLowerCase()) ||
+                  (prevUser.id === 'user-islam' && (m.id === 'user-islam' || m.id === 'user-1793025675186' || m.id === 'user-1793016178916'))
+              );
+              if (matchedMember) {
+                const updatedUser = ensureValidUser({
+                  ...prevUser,
+                  ...matchedMember,
+                  avatar: prevUser.avatar?.startsWith('data:') ? prevUser.avatar : (matchedMember.avatar || prevUser.avatar)
+                });
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(updatedUser));
+                return updatedUser;
+              }
+              return prevUser;
+            });
           }
           if (Array.isArray(serverData.clientRenewals)) {
             setClientRenewals(serverData.clientRenewals);

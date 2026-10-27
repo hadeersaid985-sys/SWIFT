@@ -40,7 +40,7 @@ import {
   Upload,
   Image as ImageIcon
 } from 'lucide-react';
-import { useCRM } from '../../context/CRMContext';
+import { useCRM, isTaskAssignedToUser } from '../../context/CRMContext';
 import { TeamMember, AccessLevel } from '../../types/crm';
 import { PayrollAttendanceView } from '../payroll/PayrollAttendanceView';
 
@@ -182,6 +182,14 @@ export const TeamView: React.FC = () => {
   ];
 
   const filteredTeam = team.filter(m => {
+    // Strict isolation: non-managers can ONLY see their own personal card and profile
+    if (!isManager) {
+      const isSelf =
+        m.id === currentUser.id ||
+        (m.username && currentUser.username && m.username.toLowerCase() === currentUser.username.toLowerCase()) ||
+        (currentUser.id === 'user-islam' && (m.id === 'user-islam' || m.id === 'user-1793025675186' || m.id === 'user-1793016178916'));
+      if (!isSelf) return false;
+    }
     if (selectedDept !== 'all' && m.department !== selectedDept) return false;
     if (searchMember.trim()) {
       const q = searchMember.toLowerCase();
@@ -358,12 +366,14 @@ export const TeamView: React.FC = () => {
         </div>
 
         <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-          <div className="text-slate-400 font-bold text-[11px]">المهام المكلفة قيد العمل</div>
+          <div className="text-slate-400 font-bold text-[11px]">
+            {isManager ? 'المهام المكلفة قيد العمل' : 'مهامي المكلفة قيد العمل'}
+          </div>
           <div className="text-2xl font-black text-amber-600 mt-1">
-            {tasks.filter(t => t.status !== 'completed').length} تاسك
+            {(isManager ? tasks : tasks.filter(t => isTaskAssignedToUser(t, currentUser))).filter(t => t.status !== 'completed').length} تاسك
           </div>
           <div className="text-[10px] text-slate-500 mt-0.5">
-            موزعة بين أعضاء الفريق بمؤقتات متابعة
+            {isManager ? 'موزعة بين أعضاء الفريق بمؤقتات متابعة' : 'المهام المباشرة المكلف بها حالياً'}
           </div>
         </div>
       </div>
@@ -504,7 +514,7 @@ export const TeamView: React.FC = () => {
                   {filteredTeam.map(member => {
                     const isCurrent = member.id === currentUser.id;
                     const isPwVisible = !!showPasswords[member.id];
-                    const memberTasksCount = tasks.filter(t => t.assignedToId === member.id && t.status !== 'completed').length;
+                    const memberTasksCount = tasks.filter(t => isTaskAssignedToUser(t, member) && t.status !== 'completed').length;
 
                     return (
                       <tr
@@ -769,7 +779,7 @@ export const TeamView: React.FC = () => {
       {activeSubTab === 'directory' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTeam.map(member => {
-            const memberTasks = tasks.filter(t => t.assignedToId === member.id);
+            const memberTasks = tasks.filter(t => isTaskAssignedToUser(t, member));
             const pendingTasks = memberTasks.filter(t => t.status !== 'completed');
             const completedTasks = memberTasks.filter(t => t.status === 'completed');
             const completionRate =

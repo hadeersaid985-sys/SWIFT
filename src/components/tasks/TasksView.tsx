@@ -472,9 +472,9 @@ export const TasksView: React.FC = () => {
   const allTimeLogs: { task: Task; log: TimeLogEntry }[] = [];
   tasks.forEach(task => {
     // If regular member, only collect their own logs
-    if (!isManager && task.assignedToId !== currentUser.id) return;
+    if (!isManager && !isTaskAssignedToUser(task, currentUser)) return;
     (task.timeLogs || []).forEach(log => {
-      if (!isManager && log.memberId !== currentUser.id) return;
+      if (!isManager && log.memberId !== currentUser.id && !isTaskAssignedToUser({ id: 'dummy', title: '', assignedToId: log.memberId } as Task, currentUser)) return;
       allTimeLogs.push({ task, log });
     });
   });
@@ -1339,7 +1339,7 @@ export const TasksView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
             {(isManager && managerScope === 'all'
               ? (filterMember === 'all' ? team : team.filter(m => m.id === filterMember))
-              : team.filter(m => m.id === currentUser.id)
+              : team.filter(m => m.id === currentUser.id || isTaskAssignedToUser({ id: 'dummy', title: '', assignedToId: m.id } as Task, currentUser) || (m.username && currentUser.username && m.username.toLowerCase() === currentUser.username.toLowerCase()))
             ).map(member => {
               const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member));
               const completedCount = memberTasks.filter(t => t.status === 'completed').length;

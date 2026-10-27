@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "system": "SWIFTMYND / tazkoraio",
-  "exportedAt": "2026-10-27T10:01:19.916Z",
+  "exportedAt": "2026-10-27T08:21:52.167Z",
   "brandConfig": {
     "brandName": "SWIFT MYND",
     "brandSubtitle": "منظومة إدارة المهام وتتبع الإنتاجية",
@@ -189,14 +189,14 @@
       "bankIban": "SA39200000091827461927"
     },
     {
-      "id": "user-1793025675186",
+      "id": "user-islam",
       "employeeCode": "SM-108",
       "name": "Islam",
       "role": "Video Editor",
-      "department": "التطوير والتقنية",
+      "department": "المبيعات",
       "email": "Islam@swiftmynd.com",
-      "phone": "+966 50 000 0000",
-      "whatsappNumber": "+966 50 000 0000",
+      "phone": "201055945337",
+      "whatsappNumber": "201055945337",
       "username": "Islam",
       "password": "Sw!ftiHaiQ$Cka6",
       "accessLevel": "member",
@@ -209,14 +209,7 @@
       "allowances": 700,
       "contractType": "دوام كامل",
       "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA84200000011827461926",
-      "secondaryEmail": "",
-      "socialAccounts": {
-        "linkedin": "",
-        "slack": "",
-        "whatsapp": "",
-        "github": ""
-      }
+      "bankIban": "SA84200000011827461926"
     }
   ],
   "tasks": [
@@ -829,7 +822,9 @@
       "mentionedUserIds": [],
       "comments": [],
       "id": "task-1793016206520",
-      "createdAt": "2026-10-26"
+      "createdAt": "2026-10-26",
+      "assigneeName": "Islam",
+      "assigneeAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
     },
     {
       "estimatedHours": 2,
@@ -982,7 +977,9 @@
       "comments": [],
       "isPrivate": false,
       "category": "إداري",
-      "assignedToId": "user-islam"
+      "assignedToId": "user-islam",
+      "assigneeName": "Islam",
+      "assigneeAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
     },
     {
       "category": "إداري",
@@ -1002,7 +999,9 @@
       "updatedAt": "2026-10-27T08:56:15.746Z",
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
       "timeLogs": [],
-      "dueTime": "18:00"
+      "dueTime": "18:00",
+      "assigneeName": "Islam",
+      "assigneeAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
     },
     {
       "isPrivate": false,
@@ -1102,7 +1101,9 @@
       "startDate": "2026-10-27",
       "timeLogs": [],
       "status": "todo",
-      "isPrivate": false
+      "isPrivate": false,
+      "assigneeName": "Islam",
+      "assigneeAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
     }
   ],
   "leads": [
@@ -1749,24 +1750,6 @@
   "reports": [],
   "activities": [
     {
-      "id": "act-1793094373325",
-      "type": "task",
-      "title": "تم إنشاء مهمة جديدة وتحديد موعد التسليم",
-      "description": "فيديوهات",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1793092688667",
-      "type": "task",
-      "title": "تم إنشاء مهمة جديدة وتحديد موعد التسليم",
-      "description": "رفع مقالات الدرب",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
       "id": "act-1793026278170",
       "type": "team",
       "title": "حذف موظف من الفريق",
@@ -1927,35 +1910,27 @@
       "timestamp": "الآن",
       "userName": "هدير سعيد",
       "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1793024639515",
+      "type": "deal",
+      "title": "إضافة موعد تجديد اشتراك عميل",
+      "description": "ساوث كوست - باقة سيو ",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1793024552371",
+      "type": "deal",
+      "title": "إضافة موعد تجديد اشتراك عميل",
+      "description": "ساوث كوست - باقة سيو ",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
     }
   ],
   "notifications": [
-    {
-      "id": "notif-assign-1793094373325-user-1793025675186",
-      "title": "تم تكليفك بمهمة جديدة: فيديوهات",
-      "message": "موعد التسليم النهائي: 2026-10-27 الساعة 18:00 | الأولوية: عالية 🟡",
-      "timestamp": "الآن",
-      "type": "task_deadline",
-      "isRead": false,
-      "linkTab": "tasks",
-      "taskId": "task-1793094373325",
-      "senderName": "هدير سعيد",
-      "senderAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-      "recipientUserId": "user-1793025675186"
-    },
-    {
-      "id": "notif-assign-1793092688667-user-eman",
-      "title": "تم تكليفك بمهمة جديدة: رفع مقالات الدرب",
-      "message": "موعد التسليم النهائي: 2026-10-27 الساعة 18:00 | الأولوية: عالية 🟡",
-      "timestamp": "الآن",
-      "type": "task_deadline",
-      "isRead": false,
-      "linkTab": "tasks",
-      "taskId": "task-1793092688667",
-      "senderName": "هدير سعيد",
-      "senderAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-      "recipientUserId": "user-eman"
-    },
     {
       "id": "notif-assign-1793025844602-user-1793025675186",
       "title": "تم تكليفك بمهمة جديدة: فيديوهات",
@@ -2149,18 +2124,18 @@
       "recipientUserId": "user-yomna"
     },
     {
-      "linkTab": "tasks",
-      "type": "task_mention",
-      "id": "notif-mention-1793028006234-ou14",
-      "message": "\"عملت 20 باك لينك متنوعين ما بين المقالات والصور\" - المكتوب بواسطة: Eman Ashraf",
+      "mentionedUserId": "user-1",
       "senderAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-      "isRead": false,
-      "senderName": "Eman Ashraf",
-      "timestamp": "الآن",
+      "id": "notif-mention-1793028006234-ou14",
+      "linkTab": "tasks",
       "recipientUserId": "user-1",
-      "taskId": "task-1793014816815",
+      "isRead": false,
+      "message": "\"عملت 20 باك لينك متنوعين ما بين المقالات والصور\" - المكتوب بواسطة: Eman Ashraf",
       "title": "💬 منشن وتفاعل بين أعضاء الفريق في مهمة: باك لينك gx",
-      "mentionedUserId": "user-1"
+      "taskId": "task-1793014816815",
+      "type": "task_mention",
+      "timestamp": "الآن",
+      "senderName": "Eman Ashraf"
     }
   ],
   "attendanceRecords": [
@@ -2289,5 +2264,11 @@
       "notes": "تراخيص إيميلات الفريق"
     }
   ],
-  "monthlyPayrolls": []
+  "monthlyPayrolls": [],
+  "deletedTeamMemberIds": [
+    "user-mariam",
+    "user-1793016396281"
+  ],
+  "deletedTasks": [],
+  "updatedAt": "2026-10-27T09:25:54.992Z"
 }
