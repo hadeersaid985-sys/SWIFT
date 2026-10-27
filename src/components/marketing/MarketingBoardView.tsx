@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Edit3,
@@ -147,8 +147,7 @@ export const MarketingBoardView: React.FC = () => {
     showToast('تمت إزالة صورة الكارت بنجاح 🗑️');
   };
 
-  // Dedicated Marketing Tasks State (تاسكات الماركيتنج وكل الشغل عليه)
-  const [marketingTasks, setMarketingTasks] = useState([
+  const DEFAULT_MARKETING_TASKS = [
     {
       id: 'mtask-1',
       title: 'صياغة ونشر فيديو ريلز: كيف تظهر شركتك أول نتيجة في ChatGPT بدلاً من جوجل؟ (GEO)',
@@ -204,7 +203,31 @@ export const MarketingBoardView: React.FC = () => {
       assignee: 'سارة المنصوري',
       notes: 'الميزانية اليومية 250 ر.س مع صفحة هبوط مخصصة لعرض الـ 2 دومين.'
     }
-  ]);
+  ];
+
+  // Dedicated Marketing Tasks State with Permanent Deletion and LocalStorage Sync
+  const [marketingTasks, setMarketingTasks] = useState(() => {
+    try {
+      const savedDel = localStorage.getItem('swiftmynd_deleted_marketing_task_ids');
+      const delSet = new Set(savedDel ? JSON.parse(savedDel) : []);
+      const saved = localStorage.getItem('swiftmynd_marketing_tasks_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((t: any) => !delSet.has(t.id));
+        }
+      }
+      return DEFAULT_MARKETING_TASKS.filter(t => !delSet.has(t.id));
+    } catch {
+      return DEFAULT_MARKETING_TASKS;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('swiftmynd_marketing_tasks_list', JSON.stringify(marketingTasks));
+    } catch {}
+  }, [marketingTasks]);
   const [taskFilterChannel, setTaskFilterChannel] = useState('all');
   const [showAddMarketingTaskModal, setShowAddMarketingTaskModal] = useState(false);
   const [newMarketingTaskData, setNewMarketingTaskData] = useState({
@@ -1390,7 +1413,20 @@ export const MarketingBoardView: React.FC = () => {
                     <button
                       onClick={() => {
                         if (confirm(`حذف التاسك التسويقي: "${t.title}"؟`)) {
-                          setMarketingTasks(prev => prev.filter(x => x.id !== t.id));
+                          setMarketingTasks(prev => {
+                            const updated = prev.filter(x => x.id !== t.id);
+                            try {
+                              localStorage.setItem('swiftmynd_marketing_tasks_list', JSON.stringify(updated));
+                              const savedDel = localStorage.getItem('swiftmynd_deleted_marketing_task_ids');
+                              const delList = savedDel ? JSON.parse(savedDel) : [];
+                              if (!delList.includes(t.id)) {
+                                delList.push(t.id);
+                                localStorage.setItem('swiftmynd_deleted_marketing_task_ids', JSON.stringify(delList));
+                              }
+                            } catch {}
+                            return updated;
+                          });
+                          showToast('تم حذف التاسك بنجاح 🗑️');
                         }
                       }}
                       className="p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg cursor-pointer transition-colors"

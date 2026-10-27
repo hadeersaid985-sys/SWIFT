@@ -118,6 +118,23 @@ async function startServer() {
       if (Array.isArray(parsed.clientRenewals)) {
         parsed.clientRenewals = cleanClientRenewals(parsed.clientRenewals);
       }
+
+      // Filter permanently deleted marketing cards and lists
+      const delMarketingCards = new Set<string>(parsed.deletedMarketingCardIds || []);
+      const delMarketingLists = new Set<string>(parsed.deletedMarketingListIds || []);
+      if (Array.isArray(parsed.marketingBoards)) {
+        parsed.marketingBoards = parsed.marketingBoards
+          .filter((b: any) => !delMarketingLists.has(b.id))
+          .map((b: any) => ({
+            ...b,
+            lists: (b.lists || [])
+              .filter((l: any) => !delMarketingLists.has(l.id))
+              .map((l: any) => ({
+                ...l,
+                cards: (l.cards || []).filter((c: any) => !delMarketingCards.has(c.id))
+              }))
+          }));
+      }
       return parsed;
     } catch (e) {
       console.error('[SWIFTMYND] Error reading data store:', e);
@@ -279,6 +296,89 @@ async function startServer() {
     } catch (err) {
       console.error('Error deleting client renewal:', err);
       return res.status(500).json({ error: 'Failed to delete renewal' });
+    }
+  });
+
+  // Atomic Marketing Card Deletion (Instant sync and persistence across refreshes)
+  app.post('/api/marketing/delete-card', (req, res) => {
+    try {
+      const { cardId } = req.body;
+      if (!cardId) return res.status(400).json({ error: 'cardId required' });
+
+      const current = readCurrentData();
+      const deletedSet = new Set(current.deletedMarketingCardIds || []);
+      deletedSet.add(cardId);
+      current.deletedMarketingCardIds = Array.from(deletedSet);
+
+      if (Array.isArray(current.marketingBoards)) {
+        current.marketingBoards = current.marketingBoards.map((b: any) => ({
+          ...b,
+          lists: (b.lists || []).map((l: any) => ({
+            ...l,
+            cards: (l.cards || []).filter((c: any) => c.id !== cardId)
+          }))
+        }));
+      }
+
+      saveData(current);
+      console.log(`[SWIFTMYND] Marketing card permanently deleted: ${cardId}`);
+
+      broadcastLiveSync({
+        type: 'MARKETING_MUTATION',
+        deletedMarketingCardIds: current.deletedMarketingCardIds,
+        marketingBoards: current.marketingBoards,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, cardId });
+    } catch (err) {
+      console.error('Error deleting marketing card:', err);
+      return res.status(500).json({ error: 'Failed to delete marketing card' });
+    }
+  });
+
+  // Atomic Marketing List Deletion
+  app.post('/api/marketing/delete-list', (req, res) => {
+    try {
+      const { boardId, listId, cardIds } = req.body;
+      if (!listId) return res.status(400).json({ error: 'listId required' });
+
+      const current = readCurrentData();
+      const deletedListSet = new Set(current.deletedMarketingListIds || []);
+      deletedListSet.add(listId);
+      current.deletedMarketingListIds = Array.from(deletedListSet);
+
+      const deletedCardSet = new Set(current.deletedMarketingCardIds || []);
+      if (Array.isArray(cardIds)) {
+        cardIds.forEach((cid: string) => deletedCardSet.add(cid));
+      }
+      current.deletedMarketingCardIds = Array.from(deletedCardSet);
+
+      if (Array.isArray(current.marketingBoards)) {
+        current.marketingBoards = current.marketingBoards.map((b: any) => {
+          if (boardId && b.id !== boardId) return b;
+          return {
+            ...b,
+            lists: (b.lists || []).filter((l: any) => l.id !== listId)
+          };
+        });
+      }
+
+      saveData(current);
+      console.log(`[SWIFTMYND] Marketing list permanently deleted: ${listId}`);
+
+      broadcastLiveSync({
+        type: 'MARKETING_MUTATION',
+        deletedMarketingListIds: current.deletedMarketingListIds,
+        deletedMarketingCardIds: current.deletedMarketingCardIds,
+        marketingBoards: current.marketingBoards,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, listId });
+    } catch (err) {
+      console.error('Error deleting marketing list:', err);
+      return res.status(500).json({ error: 'Failed to delete marketing list' });
     }
   });
 
@@ -647,6 +747,33 @@ async function startServer() {
         mergedRenewals = cleanClientRenewals(incoming.clientRenewals);
       }
 
+      // Smart merge marketing deleted items and boards
+      const deletedMarketingCardIds = Array.from(new Set([
+        ...((currentData.deletedMarketingCardIds || [])),
+        ...((incoming.deletedMarketingCardIds || []))
+      ]));
+      const deletedMarketingListIds = Array.from(new Set([
+        ...((currentData.deletedMarketingListIds || [])),
+        ...((incoming.deletedMarketingListIds || []))
+      ]));
+      const delCardSet = new Set(deletedMarketingCardIds);
+      const delListSet = new Set(deletedMarketingListIds);
+
+      let mergedMarketingBoards = incoming.marketingBoards || currentData.marketingBoards || [];
+      if (Array.isArray(mergedMarketingBoards)) {
+        mergedMarketingBoards = mergedMarketingBoards
+          .filter((b: any) => !delListSet.has(b.id))
+          .map((b: any) => ({
+            ...b,
+            lists: (b.lists || [])
+              .filter((l: any) => !delListSet.has(l.id))
+              .map((l: any) => ({
+                ...l,
+                cards: (l.cards || []).filter((c: any) => !delCardSet.has(c.id))
+              }))
+          }));
+      }
+
       const merged = {
         ...currentData,
         ...incoming,
@@ -655,7 +782,10 @@ async function startServer() {
         team: mergedTeam,
         deletedTeamMemberIds: Array.from(deletedMemberIds),
         clientRenewals: mergedRenewals,
-        deletedTasks: Array.from(explicitDeletedSet).map(id => ({ id }))
+        deletedTasks: Array.from(explicitDeletedSet).map(id => ({ id })),
+        deletedMarketingCardIds,
+        deletedMarketingListIds,
+        marketingBoards: mergedMarketingBoards
       };
 
       saveData(merged);

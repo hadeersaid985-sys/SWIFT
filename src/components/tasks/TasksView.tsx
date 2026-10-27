@@ -5,6 +5,7 @@ import {
   Plus,
   Play,
   Pause,
+  Square,
   History,
   Calendar,
   Kanban,
@@ -69,6 +70,8 @@ export const TasksView: React.FC = () => {
     reorderTask,
     getDeadlineStatus,
     startTaskTimer,
+    pauseTaskTimer,
+    resumeTaskTimer,
     stopTaskTimer,
     addManualTimeLog,
     deleteTimeLog,
@@ -111,6 +114,7 @@ export const TasksView: React.FC = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [stopTimerTaskId, setStopTimerTaskId] = useState<string | null>(null);
   const [stopTimerNote, setStopTimerNote] = useState<string>('');
+  const [stopTimerCustomMinutes, setStopTimerCustomMinutes] = useState<number | null>(null);
 
   // Manual time log modal state
   const [manualLogTaskId, setManualLogTaskId] = useState<string | null>(null);
@@ -321,10 +325,26 @@ export const TasksView: React.FC = () => {
   // Selected task for detailed modal
   const selectedTask = tasks.find(t => t.id === selectedTaskId) || null;
 
-  // Helper format elapsed timer
-  const formatLiveTimer = (startedAt?: number) => {
-    if (!startedAt) return '00:00:00';
-    const elapsedSeconds = Math.max(0, Math.floor((liveTicks - startedAt) / 1000));
+  // Helper calculate active worked seconds on a task (excluding pause intervals)
+  const getTaskActiveElapsedSeconds = (task?: Task | null): number => {
+    if (!task) return 0;
+    let totalMs = task.timerAccumulatedMs || 0;
+    if (task.isTimerRunning) {
+      const sessionStart = task.timerLastResumedAt || task.timerStartedAt || liveTicks;
+      totalMs += Math.max(0, liveTicks - sessionStart);
+    }
+    return Math.max(0, Math.floor(totalMs / 1000));
+  };
+
+  // Helper format elapsed timer (calculates actual active work, excluding pauses)
+  const formatLiveTimer = (target?: Task | number | null) => {
+    if (!target) return '00:00:00';
+    let elapsedSeconds = 0;
+    if (typeof target === 'object' && target !== null && 'id' in target) {
+      elapsedSeconds = getTaskActiveElapsedSeconds(target);
+    } else if (typeof target === 'number') {
+      elapsedSeconds = Math.max(0, Math.floor((liveTicks - target) / 1000));
+    }
     const hours = Math.floor(elapsedSeconds / 3600);
     const minutes = Math.floor((elapsedSeconds % 3600) / 60);
     const seconds = elapsedSeconds % 60;
@@ -513,15 +533,19 @@ export const TasksView: React.FC = () => {
             </div>
           </div>
 
-          {/* EMPLOYEE LIVE TIMER & FOCUS WIDGET (التايمر وشغله ومواعيده) */}
+          {/* EMPLOYEE LIVE TIMER & FOCUS WIDGET (التايمر وشغله ومواعيده مع ميزة الإيقاف المؤقت واستبعاد أوقات الراحة) */}
           {(() => {
             const activeRunningTask = userBaseTasks.find(t => t.isTimerRunning && t.assignedToId === currentUser.id);
+            const activePausedTask = userBaseTasks.find(t => t.isTimerPaused && t.assignedToId === currentUser.id);
+            const currentActiveTask = activeRunningTask || activePausedTask;
             const myPendingTasks = userBaseTasks.filter(t => t.status !== 'completed' && t.assignedToId === currentUser.id);
 
             return (
               <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
                 activeRunningTask
                   ? 'bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 text-white border-emerald-500/40 ring-2 ring-emerald-400/30'
+                  : activePausedTask
+                  ? 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 text-white border-amber-500/40 ring-2 ring-amber-400/30'
                   : 'bg-white border-slate-200/90 text-slate-800'
               }`}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -530,6 +554,8 @@ export const TasksView: React.FC = () => {
                     <div className={`p-3 rounded-2xl flex items-center justify-center ${
                       activeRunningTask
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+                        : activePausedTask
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
                         : 'bg-slate-100 text-slate-600'
                     }`}>
                       <Timer className={`w-7 h-7 ${activeRunningTask ? 'animate-spin' : ''}`} />
@@ -537,25 +563,36 @@ export const TasksView: React.FC = () => {
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                        <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
                           activeRunningTask
                             ? 'bg-emerald-500 text-slate-950 animate-pulse'
+                            : activePausedTask
+                            ? 'bg-amber-500 text-slate-950 font-bold'
                             : 'bg-slate-200 text-slate-700'
                         }`}>
-                          {activeRunningTask ? '⏱️ المؤقت يعمل الآن' : '⏸️ المؤقت متوقف'}
+                          {activeRunningTask
+                            ? '⏱️ المؤقت يعمل الآن'
+                            : activePausedTask
+                            ? '⏸️ المؤقت متوقف مؤقتاً (استراحة)'
+                            : '⏸️ المؤقت متوقف'}
                         </span>
-                        {activeRunningTask && (
-                          <span className="text-xs font-mono font-black text-emerald-300">
-                            {formatLiveTimer(activeRunningTask.timerStartedAt)}
+                        {currentActiveTask && (
+                          <span className={`text-xs font-mono font-black ${activeRunningTask ? 'text-emerald-300' : 'text-amber-300'}`}>
+                            {formatLiveTimer(currentActiveTask)}
+                          </span>
+                        )}
+                        {activePausedTask && (
+                          <span className="text-[10px] text-amber-300 font-bold hidden sm:inline">
+                            (وقت الراحة لا يُحسب)
                           </span>
                         )}
                       </div>
 
                       <div className="font-extrabold text-sm mt-1">
-                        {activeRunningTask ? (
-                          <span className="text-emerald-100 flex items-center gap-1.5">
-                            <span>جاري تسجيل وقت العمل على:</span>
-                            <span className="text-white underline">{activeRunningTask.title}</span>
+                        {currentActiveTask ? (
+                          <span className={activeRunningTask ? 'text-emerald-100 flex items-center gap-1.5' : 'text-amber-100 flex items-center gap-1.5'}>
+                            <span>{activeRunningTask ? 'جاري تسجيل وقت العمل الفعلي على:' : 'متوقف مؤقتاً على:'}</span>
+                            <span className="text-white underline">{currentActiveTask.title}</span>
                           </span>
                         ) : (
                           <span className="text-slate-600 text-xs">
@@ -567,30 +604,65 @@ export const TasksView: React.FC = () => {
                   </div>
 
                   {/* Right: Timer Controls & Daily Summary */}
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    {activeRunningTask ? (
-                      <button
-                        type="button"
-                        onClick={() => setStopTimerTaskId(activeRunningTask.id)}
-                        className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer hover:scale-102"
-                      >
-                        <Pause className="w-3.5 h-3.5" />
-                        <span>⏹️ إيقاف التايمر وتسجيل فترة العمل</span>
-                      </button>
-                    ) : (
-                      myPendingTasks.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => startTaskTimer(myPendingTasks[0].id)}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer hover:scale-102"
-                            title={`بدء التايمر على: ${myPendingTasks[0].title}`}
-                          >
-                            <Play className="w-3.5 h-3.5" />
-                            <span>▶️ تشغيل التايمر على أول مهمة جارية</span>
-                          </button>
-                        </div>
-                      )
+                  <div className="flex flex-wrap items-center gap-2">
+                    {activeRunningTask && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => pauseTaskTimer(activeRunningTask.id)}
+                          className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                          title="إيقاف مؤقت للاستراحة - لن يتم احتساب وقت التوقف"
+                        >
+                          <Pause className="w-3.5 h-3.5" />
+                          <span>إيقاف مؤقت ⏸️</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setStopTimerTaskId(activeRunningTask.id)}
+                          className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer hover:scale-102"
+                        >
+                          <Square className="w-3.5 h-3.5 fill-current" />
+                          <span>⏹️ إنهاء وحساب الوقت</span>
+                        </button>
+                      </>
+                    )}
+
+                    {activePausedTask && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => resumeTaskTimer(activePausedTask.id)}
+                          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer animate-pulse"
+                          title="استئناف مؤقت العمل"
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          <span>استئناف العمل ▶️</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setStopTimerTaskId(activePausedTask.id)}
+                          className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                        >
+                          <Square className="w-3.5 h-3.5 fill-current" />
+                          <span>⏹️ إنهاء وحساب الوقت</span>
+                        </button>
+                      </>
+                    )}
+
+                    {!currentActiveTask && myPendingTasks.length > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => startTaskTimer(myPendingTasks[0].id)}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer hover:scale-102"
+                          title={`بدء التايمر على: ${myPendingTasks[0].title}`}
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          <span>▶️ تشغيل التايمر على أول مهمة</span>
+                        </button>
+                      </div>
                     )}
 
                     <div className="bg-slate-500/10 px-3 py-1.5 rounded-xl border border-slate-500/20 text-center font-mono">
@@ -1569,16 +1641,49 @@ export const TasksView: React.FC = () => {
                                   <div className="flex items-center gap-1">
                                     <span className="px-2 py-0.5 bg-emerald-600 text-white rounded-md font-mono text-[10px] font-bold flex items-center gap-1 animate-pulse">
                                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                                      <span>{formatLiveTimer(task.timerStartedAt)}</span>
+                                      <span>{formatLiveTimer(task)}</span>
                                     </span>
                                     <button
                                       type="button"
-                                      onClick={() => setStopTimerTaskId(task.id)}
-                                      className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
-                                      title="إنهاء الجلسة وحساب الوقت"
+                                      onClick={() => pauseTaskTimer(task.id)}
+                                      className="px-1.5 py-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
+                                      title="إيقاف مؤقت للاستراحة - لن يتم احتساب وقت التوقف"
                                     >
                                       <Pause className="w-2.5 h-2.5" />
-                                      <span>إنهاء (End)</span>
+                                      <span>إيقاف مؤقت</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setStopTimerTaskId(task.id)}
+                                      className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
+                                      title="إنهاء الجلسة وحساب الوقت الفعلي"
+                                    >
+                                      <Square className="w-2.5 h-2.5 fill-current" />
+                                      <span>إنهاء</span>
+                                    </button>
+                                  </div>
+                                ) : task.isTimerPaused ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="px-2 py-0.5 bg-amber-500 text-white rounded-md font-mono text-[10px] font-bold flex items-center gap-1">
+                                      <span>⏸️ {formatLiveTimer(task)}</span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => resumeTaskTimer(task.id)}
+                                      className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
+                                      title="استئناف العمل الفعلي"
+                                    >
+                                      <Play className="w-2.5 h-2.5 fill-current" />
+                                      <span>استئناف</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setStopTimerTaskId(task.id)}
+                                      className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
+                                      title="إنهاء الجلسة وحساب الوقت الفعلي"
+                                    >
+                                      <Square className="w-2.5 h-2.5 fill-current" />
+                                      <span>إنهاء</span>
                                     </button>
                                   </div>
                                 ) : (
@@ -1958,15 +2063,49 @@ export const TasksView: React.FC = () => {
                               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1">
                                   {task.isTimerRunning ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => setStopTimerTaskId(task.id)}
-                                      className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
-                                      title="إنهاء الجلسة وحساب الوقت"
-                                    >
-                                      <Pause className="w-2.5 h-2.5" />
-                                      <span>إنهاء (End)</span>
-                                    </button>
+                                    <div className="flex items-center gap-1">
+                                      <span className="px-1.5 py-0.5 bg-emerald-600 text-white rounded-md font-mono text-[9px] font-bold">
+                                        {formatLiveTimer(task)}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => pauseTaskTimer(task.id)}
+                                        className="px-1.5 py-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[9px] font-bold cursor-pointer"
+                                        title="إيقاف مؤقت للاستراحة - لن يحسب وقت التوقف"
+                                      >
+                                        <Pause className="w-2.5 h-2.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setStopTimerTaskId(task.id)}
+                                        className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[9px] font-bold cursor-pointer"
+                                        title="إنهاء الجلسة وحساب الوقت الفعلي"
+                                      >
+                                        <Square className="w-2.5 h-2.5 fill-current" />
+                                      </button>
+                                    </div>
+                                  ) : task.isTimerPaused ? (
+                                    <div className="flex items-center gap-1">
+                                      <span className="px-1.5 py-0.5 bg-amber-500 text-white rounded-md font-mono text-[9px] font-bold">
+                                        ⏸️ {formatLiveTimer(task)}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => resumeTaskTimer(task.id)}
+                                        className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[9px] font-bold cursor-pointer"
+                                        title="استئناف العمل"
+                                      >
+                                        <Play className="w-2.5 h-2.5 fill-current" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setStopTimerTaskId(task.id)}
+                                        className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[9px] font-bold cursor-pointer"
+                                        title="إنهاء الجلسة وحساب الوقت"
+                                      >
+                                        <Square className="w-2.5 h-2.5 fill-current" />
+                                      </button>
+                                    </div>
                                   ) : (
                                     <button
                                       type="button"
@@ -2236,14 +2375,43 @@ export const TasksView: React.FC = () => {
                             <div className="flex flex-col items-center gap-1">
                               <div className="px-2.5 py-1 bg-emerald-600 text-white rounded-lg font-mono font-bold text-xs flex items-center gap-1.5 shadow-2xs animate-pulse">
                                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                                <span>{formatLiveTimer(task.timerStartedAt)}</span>
+                                <span>{formatLiveTimer(task)}</span>
                               </div>
-                              <button
-                                onClick={() => setStopTimerTaskId(task.id)}
-                                className="text-[10px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 cursor-pointer bg-rose-50 px-2 py-0.5 rounded"
-                              >
-                                <Pause className="w-3 h-3" /> إيقاف وحفظ
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => pauseTaskTimer(task.id)}
+                                  className="text-[10px] text-amber-700 hover:text-amber-800 font-bold flex items-center gap-0.5 cursor-pointer bg-amber-50 px-2 py-0.5 rounded border border-amber-200"
+                                  title="إيقاف مؤقت للاستراحة - لن يحسب وقت التوقف"
+                                >
+                                  <Pause className="w-2.5 h-2.5" /> إيقاف مؤقت
+                                </button>
+                                <button
+                                  onClick={() => setStopTimerTaskId(task.id)}
+                                  className="text-[10px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-0.5 cursor-pointer bg-rose-50 px-2 py-0.5 rounded border border-rose-200"
+                                >
+                                  <Square className="w-2.5 h-2.5 fill-current" /> إنهاء وحفظ
+                                </button>
+                              </div>
+                            </div>
+                          ) : task.isTimerPaused ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="px-2.5 py-1 bg-amber-500 text-white rounded-lg font-mono font-bold text-xs flex items-center gap-1 shadow-2xs">
+                                <span>⏸️ {formatLiveTimer(task)}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => resumeTaskTimer(task.id)}
+                                  className="text-[10px] text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-0.5 cursor-pointer bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"
+                                >
+                                  <Play className="w-2.5 h-2.5 fill-current" /> استئناف
+                                </button>
+                                <button
+                                  onClick={() => setStopTimerTaskId(task.id)}
+                                  className="text-[10px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-0.5 cursor-pointer bg-rose-50 px-2 py-0.5 rounded border border-rose-200"
+                                >
+                                  <Square className="w-2.5 h-2.5 fill-current" /> إنهاء وحفظ
+                                </button>
+                              </div>
                             </div>
                           ) : (
                             <button
@@ -2757,7 +2925,7 @@ export const TasksView: React.FC = () => {
       )}
 
       {/* MODAL 1: STOP TIMER & EXACT TIME/DAY CALCULATION */}
-      {/* "التاسك يبداء امتي لما يدوس start ولما يخلص end يحسب الوقت واليوم والتاسك خد وقت اد ايه" */}
+      {/* "لما الموظف يبدء تاسك ويوقف ساعه ويرجع تاني يحسب الساعه لاء عايزه يحسب الوقت اللي اشتغله فعلي بس" */}
       {stopTimerTaskId && (() => {
         const stoppingTask = tasks.find(t => t.id === stopTimerTaskId);
         if (!stoppingTask) return null;
@@ -2771,16 +2939,34 @@ export const TasksView: React.FC = () => {
         const startTimeStr = startDateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
         const endTimeStr = nowObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
-        const elapsedMs = Math.max(0, Date.now() - startTimestamp);
-        const elapsedMinutes = Math.max(1, Math.round(elapsedMs / 60000));
-        const hours = Math.floor(elapsedMinutes / 60);
-        const mins = elapsedMinutes % 60;
+        // Calculate actual active worked time (excludes all pauses)
+        const currentActiveMs = stoppingTask.isTimerRunning
+          ? Math.max(0, Date.now() - (stoppingTask.timerLastResumedAt || stoppingTask.timerStartedAt || Date.now()))
+          : 0;
+        const totalActiveMs = (stoppingTask.timerAccumulatedMs || 0) + currentActiveMs;
+        const calculatedMinutes = Math.max(1, Math.round(totalActiveMs / 60000));
+
+        // Wall clock difference
+        const wallClockMs = Math.max(0, Date.now() - startTimestamp);
+        const wallClockMinutes = Math.max(1, Math.round(wallClockMs / 60000));
+        const idlePausedMinutes = Math.max(0, wallClockMinutes - calculatedMinutes);
+
+        // Effective minutes to record
+        const effectiveMinutes = typeof stopTimerCustomMinutes === 'number' && stopTimerCustomMinutes >= 1
+          ? stopTimerCustomMinutes
+          : calculatedMinutes;
+
+        const hours = Math.floor(effectiveMinutes / 60);
+        const mins = effectiveMinutes % 60;
         const durationArabic = hours > 0 ? `${hours} ساعة و ${mins} دقيقة` : `${mins} دقيقة`;
-        const newTotalMins = (stoppingTask.totalLoggedMinutes || 0) + elapsedMinutes;
+        const newTotalMins = (stoppingTask.totalLoggedMinutes || 0) + effectiveMinutes;
 
         return (
           <div
-            onClick={() => setStopTimerTaskId(null)}
+            onClick={() => {
+              setStopTimerTaskId(null);
+              setStopTimerCustomMinutes(null);
+            }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in select-none cursor-pointer"
           >
             <div
@@ -2795,7 +2981,7 @@ export const TasksView: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-sm flex items-center gap-1.5">
-                      <span>حساب وقت وجلسة العمل الفعلي (End Task Timer)</span>
+                      <span>حساب وقت العمل الفعلي فقط (End Task Timer)</span>
                     </h3>
                     <p className="text-[10px] text-slate-300 line-clamp-1 mt-0.5">
                       المهمة: {stoppingTask.title}
@@ -2803,7 +2989,10 @@ export const TasksView: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => setStopTimerTaskId(null)}
+                  onClick={() => {
+                    setStopTimerTaskId(null);
+                    setStopTimerCustomMinutes(null);
+                  }}
                   className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
                 >
                   <X className="w-5 h-5" />
@@ -2812,18 +3001,31 @@ export const TasksView: React.FC = () => {
 
               {/* Body: Calculations */}
               <div className="p-5 space-y-4 text-xs">
-                {/* Highlighted Result Box: التاسك خد وقت أد إيه */}
-                <div className="bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl p-4 text-center space-y-1">
-                  <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
-                    ⏱️ مدة الجلسة الفعلية المحسوبة (التاسك استغرق):
+                {/* Highlighted Result Box: التاسك خد وقت أد إيه فعلي */}
+                <div className="bg-emerald-50/90 border-2 border-emerald-300 rounded-2xl p-4 text-center space-y-1">
+                  <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
+                    ⏱️ مدة العمل الفعلية المحسوبة (صافي بدون أوقات التوقف والراحة):
                   </span>
-                  <div className="text-2xl font-black text-emerald-700 tracking-tight">
+                  <div className="text-3xl font-black text-emerald-700 tracking-tight font-mono">
                     {durationArabic}
                   </div>
-                  <div className="text-[11px] text-emerald-800 font-mono">
-                    ({elapsedMinutes} دقيقة عمل متواصلة)
+                  <div className="text-[11px] text-emerald-800 font-bold">
+                    ({effectiveMinutes} دقيقة عمل فعلي)
                   </div>
                 </div>
+
+                {/* Excluded Pause Notice if applicable */}
+                {idlePausedMinutes > 0 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5 text-amber-900">
+                    <span className="text-lg">☕</span>
+                    <div className="text-[11px] leading-relaxed">
+                      <strong>تم استبعاد أوقات التوقف والراحة تلقائياً:</strong>
+                      <span className="block text-amber-800">
+                        استغرقت فترات التوقف ({idlePausedMinutes >= 60 ? `${Math.floor(idlePausedMinutes / 60)} ساعة و ${idlePausedMinutes % 60} دقيقة` : `${idlePausedMinutes} دقيقة`}) وتم استبعادها تماماً من الحساب!
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Day & Times Breakdown Grid */}
                 <div className="grid grid-cols-3 gap-2 text-center">
@@ -2846,17 +3048,68 @@ export const TasksView: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Manual Adjustment in case timer was forgotten on */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-700 text-[11px]">
+                      هل تركت المؤقت يعمل دون قصد أثناء غيابك؟ عدل دقائق العمل الفعلية:
+                    </label>
+                    {stopTimerCustomMinutes !== null && (
+                      <button
+                        type="button"
+                        onClick={() => setStopTimerCustomMinutes(null)}
+                        className="text-[10px] text-blue-600 hover:underline font-bold cursor-pointer"
+                      >
+                        استعادة الوقت التلقائي ({calculatedMinutes} د)
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={1440}
+                      value={effectiveMinutes}
+                      onChange={e => {
+                        const val = parseInt(e.target.value, 10);
+                        setStopTimerCustomMinutes(isNaN(val) ? 1 : Math.max(1, val));
+                      }}
+                      className="w-24 p-2 bg-white border border-slate-300 rounded-lg text-center font-mono font-bold text-sm focus:outline-none focus:border-blue-500"
+                    />
+                    <span className="text-xs text-slate-500 font-bold">دقيقة عمل فعلي</span>
+
+                    {/* Quick presets */}
+                    <div className="flex items-center gap-1 mr-auto flex-wrap">
+                      {[15, 30, 45, 60, 90, 120].map(m => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setStopTimerCustomMinutes(m)}
+                          className={`px-2 py-1 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                            effectiveMinutes === m
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white border border-slate-200 hover:bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {m >= 60 ? (m === 60 ? 'ساعة' : `${m / 60} س`) : `${m} د`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Total Task Time Metric */}
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                  <span className="font-bold text-slate-600">إجمالي وقت المهمة المسجل حتى الآن:</span>
-                  <strong className="text-slate-900 font-mono text-sm">
+                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-slate-600">إجمالي وقت المهمة التراكمي بعد إضافة الجلسة:</span>
+                  <strong className="text-slate-900 font-mono text-xs">
                     {formatDurationMinutes(newTotalMins)}
                   </strong>
                 </div>
 
                 {/* Session Note */}
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
+                  <label className="block font-bold text-slate-700 mb-1 text-[11px]">
                     ملاحظات عما أنجزته في هذه الجلسة (اختياري):
                   </label>
                   <textarea
@@ -2864,7 +3117,7 @@ export const TasksView: React.FC = () => {
                     onChange={e => setStopTimerNote(e.target.value)}
                     placeholder="مثال: تم إكمال مسودة العقد، مراجعة الأسعار والتواصل مع العميل..."
                     rows={2}
-                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
 
@@ -2872,38 +3125,43 @@ export const TasksView: React.FC = () => {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t border-slate-100">
                   <button
                     type="button"
-                    onClick={() => setStopTimerTaskId(null)}
+                    onClick={() => {
+                      setStopTimerTaskId(null);
+                      setStopTimerCustomMinutes(null);
+                    }}
                     className="px-3 py-2 text-slate-500 hover:text-slate-800 font-bold cursor-pointer w-full sm:w-auto text-center"
                   >
-                    إلغاء وإبقاء المؤقت يعمل
+                    إلغاء وإبقاء المؤقت
                   </button>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => {
-                        stopTaskTimer(stopTimerTaskId, stopTimerNote, false);
+                        stopTaskTimer(stopTimerTaskId, stopTimerNote, false, effectiveMinutes);
                         setStopTimerTaskId(null);
                         setStopTimerNote('');
+                        setStopTimerCustomMinutes(null);
                       }}
                       className="flex-1 sm:flex-none px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition-all cursor-pointer text-xs"
-                      title="تسجيل فترة العمل مع إبقاء المهمة جارية"
+                      title="تسجيل فترة العمل الفعلي مع إبقاء المهمة جارية"
                     >
-                      حفظ الوقت وإبقاء المهمة جارية ⏱️
+                      حفظ الوقت الفعلي وإبقاء المهمة جارية ⏱️
                     </button>
 
                     <button
                       type="button"
                       onClick={() => {
-                        stopTaskTimer(stopTimerTaskId, stopTimerNote, true);
+                        stopTaskTimer(stopTimerTaskId, stopTimerNote, true, effectiveMinutes);
                         setStopTimerTaskId(null);
                         setStopTimerNote('');
+                        setStopTimerCustomMinutes(null);
                       }}
                       className="flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1 text-xs"
-                      title="تسجيل الوقت وإنهاء المهمة كـ مكتملة"
+                      title="تسجيل الوقت الفعلي وإنهاء المهمة كـ مكتملة"
                     >
                       <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      <span>حفظ وإنهاء المهمة بنجاح ✓</span>
+                      <span>حفظ الوقت وإنهاء المهمة بنجاح ✓</span>
                     </button>
                   </div>
                 </div>

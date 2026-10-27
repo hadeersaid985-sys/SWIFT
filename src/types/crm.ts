@@ -35,7 +35,10 @@ export interface Task {
   estimatedHours?: number; // الساعات التقديرية
   totalLoggedMinutes?: number; // إجمالي الدقائق المسجلة
   isTimerRunning?: boolean; // هل المؤقت يعمل حالياً
+  isTimerPaused?: boolean; // هل المؤقت متوقف مؤقتاً (Pause)
   timerStartedAt?: number; // timestamp بدء المؤقت
+  timerLastResumedAt?: number; // timestamp آخر مرة استؤنف فيها المؤقت
+  timerAccumulatedMs?: number; // إجمالي الميلي ثانية الفعلية المتراكمة بدون فترات التوقف
   timeLogs: TimeLogEntry[]; // سجل فترات عمل التيم (من يوم كذا لكذا)
   relatedTo?: {
     type: 'deal' | 'lead' | 'client';

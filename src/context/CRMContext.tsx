@@ -103,7 +103,9 @@ interface CRMContextType {
   reorderTask: (taskId: string, direction: 'up' | 'down') => void;
   getDeadlineStatus: (dueDate: string, dueTime?: string, status?: TaskStatus) => DeadlineStatus;
   startTaskTimer: (taskId: string) => void;
-  stopTaskTimer: (taskId: string, sessionNote?: string, markCompleted?: boolean) => void;
+  pauseTaskTimer: (taskId: string) => void;
+  resumeTaskTimer: (taskId: string) => void;
+  stopTaskTimer: (taskId: string, sessionNote?: string, markCompleted?: boolean, customDurationMinutes?: number) => void;
   addManualTimeLog: (taskId: string, entry: Omit<TimeLogEntry, 'id' | 'createdAt'>) => void;
   deleteTimeLog: (taskId: string, logId: string) => void;
   addTaskComment: (taskId: string, content: string, mentionedUserIds: string[]) => void;
@@ -190,6 +192,8 @@ interface CRMContextType {
   addMarketingList: (boardId: string, title: string) => void;
   deleteMarketingList: (boardId: string, listId: string) => void;
   updateMarketingListTitle: (boardId: string, listId: string, newTitle: string) => void;
+  deletedMarketingCardIds: string[];
+  deletedMarketingListIds: string[];
 
   // Client Renewals Tracker & Folder Dossiers (ملفات العملاء وفولدر المستندات وتوزيع الفريق)
   clientRenewals: ClientRenewal[];
@@ -995,27 +999,52 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser.id === 'user-1')
   );
 
+  // Marketing Deleted Items Tracking (تتبع المحذوفات لضمان عدم عودتها نهائياً مع الريفرش)
+  const [deletedMarketingCardIds, setDeletedMarketingCardIds] = useState<string[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_cards`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [deletedMarketingListIds, setDeletedMarketingListIds] = useState<string[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_lists`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   // Marketing Boards & Planner (للمدير العام والأدمن)
   const [marketingBoards, setMarketingBoards] = useState<MarketingBoard[]>(() => {
     try {
+      const savedDelCards = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_cards`);
+      const delCardSet = new Set<string>(savedDelCards ? JSON.parse(savedDelCards) : []);
+      const savedDelLists = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_lists`);
+      const delListSet = new Set<string>(savedDelLists ? JSON.parse(savedDelLists) : []);
+
       const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`);
+      let sourceBoards: MarketingBoard[] = INITIAL_MARKETING_BOARDS;
       if (saved) {
         const parsed: MarketingBoard[] = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          const overviewBoard = parsed.find(b => b.id === 'board-marketing-overview');
-          if (overviewBoard) {
-            const initialOverview = INITIAL_MARKETING_BOARDS.find(b => b.id === 'board-marketing-overview');
-            if (initialOverview) {
-              initialOverview.lists.forEach(initList => {
-                if (!overviewBoard.lists.some(l => l.id === initList.id || l.title === initList.title)) {
-                  overviewBoard.lists.push(initList);
-                }
-              });
-            }
-          }
-          return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          sourceBoards = parsed;
         }
       }
+
+      // Filter out permanently deleted lists and cards - never resurrect deleted items
+      return sourceBoards.map(board => ({
+        ...board,
+        lists: (board.lists || [])
+          .filter(l => !delListSet.has(l.id))
+          .map(l => ({
+            ...l,
+            cards: (l.cards || []).filter(c => !delCardSet.has(c.id))
+          }))
+      }));
     } catch {}
     return INITIAL_MARKETING_BOARDS;
   });
@@ -1127,6 +1156,14 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`, JSON.stringify(marketingBoards));
   }, [marketingBoards]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_cards`, JSON.stringify(deletedMarketingCardIds));
+  }, [deletedMarketingCardIds]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_lists`, JSON.stringify(deletedMarketingListIds));
+  }, [deletedMarketingListIds]);
 
   useEffect(() => {
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(clientRenewals));
@@ -1532,15 +1569,31 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteMarketingCard = (cardId: string) => {
-    setMarketingBoards(prev =>
-      prev.map(b => ({
+    // Record deletion permanently
+    setDeletedMarketingCardIds(prev => {
+      const updated = Array.from(new Set([...prev, cardId]));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_cards`, JSON.stringify(updated));
+      return updated;
+    });
+
+    setMarketingBoards(prev => {
+      const updated = prev.map(b => ({
         ...b,
         lists: b.lists.map(l => ({
           ...l,
           cards: l.cards.filter(c => c.id !== cardId)
         }))
-      }))
-    );
+      }));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`, JSON.stringify(updated));
+      return updated;
+    });
+
+    // Fire instant server deletion to ensure server store never resurrects it
+    fetch('/api/marketing/delete-card', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cardId })
+    }).catch(() => {});
   };
 
   const moveMarketingCard = (cardId: string, targetListId: string) => {
@@ -1577,9 +1630,37 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteMarketingList = (boardId: string, listId: string) => {
-    setMarketingBoards(prev =>
-      prev.map(b => (b.id === boardId ? { ...b, lists: b.lists.filter(l => l.id !== listId) } : b))
-    );
+    // Collect all card IDs in this list to permanently mark them as deleted too
+    const currentBoard = marketingBoards.find(b => b.id === boardId);
+    const targetList = currentBoard?.lists.find(l => l.id === listId);
+    const cardIdsInList = targetList ? targetList.cards.map(c => c.id) : [];
+
+    if (cardIdsInList.length > 0) {
+      setDeletedMarketingCardIds(prev => {
+        const updated = Array.from(new Set([...prev, ...cardIdsInList]));
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_cards`, JSON.stringify(updated));
+        return updated;
+      });
+    }
+
+    setDeletedMarketingListIds(prev => {
+      const updated = Array.from(new Set([...prev, listId]));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_lists`, JSON.stringify(updated));
+      return updated;
+    });
+
+    setMarketingBoards(prev => {
+      const updated = prev.map(b => (b.id === boardId ? { ...b, lists: b.lists.filter(l => l.id !== listId) } : b));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`, JSON.stringify(updated));
+      return updated;
+    });
+
+    // Fire instant server deletion
+    fetch('/api/marketing/delete-list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ boardId, listId, cardIds: cardIdsInList })
+    }).catch(() => {});
   };
 
   const updateMarketingListTitle = (boardId: string, listId: string, newTitle: string) => {
@@ -2399,28 +2480,40 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  // Timer & Work Session Tracking
+  // Timer & Work Session Tracking (حساب الوقت الفعلي الصافي واستبعاد فترات التوقف والراحة)
   const startTaskTimer = (taskId: string) => {
     const now = Date.now();
     const target = tasks.find(t => t.id === taskId);
     if (target) {
-      const updated = {
+      const isResuming = Boolean(target.isTimerPaused);
+      const updated: Task = {
         ...target,
         isTimerRunning: true,
-        timerStartedAt: now,
+        isTimerPaused: false,
+        timerStartedAt: isResuming ? (target.timerStartedAt || now) : now,
+        timerLastResumedAt: now,
+        timerAccumulatedMs: isResuming ? (target.timerAccumulatedMs || 0) : 0,
         status: target.status === 'todo' ? ('in_progress' as TaskStatus) : target.status
       };
       saveTaskToFirestore(updated);
-      logActivity('task', 'بدء مؤقت العمل الفعلي', `قام ${currentUser.name} بتشغيل المؤقت على: ${target.title}`);
+      logActivity(
+        'task',
+        isResuming ? 'استئناف مؤقت العمل' : 'بدء مؤقت العمل الفعلي',
+        `قام ${currentUser.name} بـ ${isResuming ? 'استئناف' : 'تشغيل'} المؤقت على: ${target.title}`
+      );
     }
 
     setTasks(prev =>
       prev.map(task => {
         if (task.id === taskId) {
+          const isResuming = Boolean(task.isTimerPaused);
           return {
             ...task,
             isTimerRunning: true,
-            timerStartedAt: now,
+            isTimerPaused: false,
+            timerStartedAt: isResuming ? (task.timerStartedAt || now) : now,
+            timerLastResumedAt: now,
+            timerAccumulatedMs: isResuming ? (task.timerAccumulatedMs || 0) : 0,
             status: task.status === 'todo' ? 'in_progress' : task.status
           };
         }
@@ -2429,18 +2522,81 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const stopTaskTimer = (taskId: string, sessionNote?: string, markCompleted?: boolean) => {
-    const targetTask = tasks.find(t => t.id === taskId);
-    if (!targetTask || !targetTask.timerStartedAt) return;
+  const pauseTaskTimer = (taskId: string) => {
+    const now = Date.now();
+    const target = tasks.find(t => t.id === taskId);
+    if (!target) return;
 
-    const elapsedMs = Date.now() - targetTask.timerStartedAt;
-    const elapsedMinutes = Math.max(1, Math.round(elapsedMs / 60000));
+    // Calculate actual active worked time in this segment
+    const segmentStart = target.timerLastResumedAt || target.timerStartedAt || now;
+    const segmentWorkedMs = target.isTimerRunning ? Math.max(0, now - segmentStart) : 0;
+    const newAccumulatedMs = (target.timerAccumulatedMs || 0) + segmentWorkedMs;
+
+    const updated: Task = {
+      ...target,
+      isTimerRunning: false,
+      isTimerPaused: true,
+      timerAccumulatedMs: newAccumulatedMs,
+      timerLastResumedAt: undefined
+    };
+
+    saveTaskToFirestore(updated);
+    setTasks(prev => prev.map(t => (t.id === taskId ? updated : t)));
+    logActivity(
+      'task',
+      'إيقاف مؤقت للعمل (Pause)',
+      `قام ${currentUser.name} بإيقاف المؤقت مؤقتاً لمهمة: ${target.title} (تم حفظ ${Math.round(newAccumulatedMs / 60000)} دقيقة عمل فعلية)`
+    );
+  };
+
+  const resumeTaskTimer = (taskId: string) => {
+    const now = Date.now();
+    const target = tasks.find(t => t.id === taskId);
+    if (!target) return;
+
+    const updated: Task = {
+      ...target,
+      isTimerRunning: true,
+      isTimerPaused: false,
+      timerStartedAt: target.timerStartedAt || now,
+      timerLastResumedAt: now,
+      timerAccumulatedMs: target.timerAccumulatedMs || 0,
+      status: target.status === 'todo' ? 'in_progress' : target.status
+    };
+
+    saveTaskToFirestore(updated);
+    setTasks(prev => prev.map(t => (t.id === taskId ? updated : t)));
+    logActivity('task', 'استئناف العمل الفعلي (Resume)', `قام ${currentUser.name} باستئناف مؤقت: ${target.title}`);
+  };
+
+  const stopTaskTimer = (
+    taskId: string,
+    sessionNote?: string,
+    markCompleted?: boolean,
+    customDurationMinutes?: number
+  ) => {
+    const targetTask = tasks.find(t => t.id === taskId);
+    if (!targetTask) return;
 
     const now = new Date();
+    const nowMs = now.getTime();
+
+    // Calculate actual worked time only (EXCLUDES ALL PAUSED TIME)
+    let elapsedMinutes: number;
+    if (typeof customDurationMinutes === 'number' && customDurationMinutes > 0) {
+      elapsedMinutes = Math.round(customDurationMinutes);
+    } else {
+      const currentSegmentWorkedMs = targetTask.isTimerRunning
+        ? Math.max(0, nowMs - (targetTask.timerLastResumedAt || targetTask.timerStartedAt || nowMs))
+        : 0;
+      const totalActiveWorkedMs = (targetTask.timerAccumulatedMs || 0) + currentSegmentWorkedMs;
+      elapsedMinutes = Math.max(1, Math.round(totalActiveWorkedMs / 60000));
+    }
+
     const todayStr = now.toISOString().split('T')[0];
     const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
-    const startDateObj = new Date(targetTask.timerStartedAt);
+    const startDateObj = new Date(targetTask.timerStartedAt || nowMs);
     const startDateStr = startDateObj.toISOString().split('T')[0];
     const startTimeStr = startDateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
@@ -2454,14 +2610,17 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       endDate: todayStr,
       endTime: timeStr,
       durationMinutes: elapsedMinutes,
-      note: sessionNote || (markCompleted ? 'إنجاز المهمة وحساب إجمالي الوقت' : 'جلسة عمل مسجلة عبر المؤقت المباشر'),
+      note: sessionNote || (markCompleted ? 'إنجاز المهمة وحساب الوقت الفعلي الصافي' : 'جلسة عمل فعلية مسجلة عبر المؤقت المباشر (مستبعد منها فترات التوقف)'),
       createdAt: todayStr
     };
 
     const updatedTask: Task = {
       ...targetTask,
       isTimerRunning: false,
+      isTimerPaused: false,
       timerStartedAt: undefined,
+      timerLastResumedAt: undefined,
+      timerAccumulatedMs: 0,
       totalLoggedMinutes: (targetTask.totalLoggedMinutes || 0) + elapsedMinutes,
       timeLogs: [newLog, ...(targetTask.timeLogs || [])],
       status: markCompleted ? 'completed' : targetTask.status,
@@ -2480,21 +2639,23 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 
     if (markCompleted) {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch {}
       logActivity(
         'task',
         'تم إنهاء المهمة بنجاح 🎉',
-        `${currentUser.name}: أنهى مهمة "${targetTask.title}" واستغرقت الجلسة ${elapsedMinutes} دقيقة`
+        `${currentUser.name}: أنهى مهمة "${targetTask.title}" واستغرقت جلسة العمل الفعلية ${elapsedMinutes} دقيقة`
       );
     } else {
       logActivity(
         'task',
-        'إيقاف المؤقت وحفظ فترة العمل',
-        `${currentUser.name}: عمل لمدة ${elapsedMinutes} دقيقة على: ${targetTask.title}`
+        'إيقاف المؤقت وحفظ وقت العمل الفعلي',
+        `${currentUser.name}: عمل ${elapsedMinutes} دقيقة عمل فعلي على: ${targetTask.title}`
       );
     }
   };
@@ -3139,6 +3300,31 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               });
             }
           }
+
+          if (payload.type === 'MARKETING_MUTATION' || payload.type === 'FULL_SYNC') {
+            if (Array.isArray(payload.deletedMarketingCardIds)) {
+              setDeletedMarketingCardIds(prev => Array.from(new Set([...prev, ...payload.deletedMarketingCardIds])));
+            }
+            if (Array.isArray(payload.deletedMarketingListIds)) {
+              setDeletedMarketingListIds(prev => Array.from(new Set([...prev, ...payload.deletedMarketingListIds])));
+            }
+            if (Array.isArray(payload.marketingBoards)) {
+              const delCards = new Set(payload.deletedMarketingCardIds || []);
+              const delLists = new Set(payload.deletedMarketingListIds || []);
+              const sanitized = payload.marketingBoards
+                .filter((b: any) => !delLists.has(b.id))
+                .map((b: any) => ({
+                  ...b,
+                  lists: (b.lists || [])
+                    .filter((l: any) => !delLists.has(l.id))
+                    .map((l: any) => ({
+                      ...l,
+                      cards: (l.cards || []).filter((c: any) => !delCards.has(c.id))
+                    }))
+                }));
+              setMarketingBoards(sanitized);
+            }
+          }
         } catch {}
       };
     } catch {}
@@ -3214,6 +3400,38 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (serverData.brandConfig && typeof serverData.brandConfig === 'object') {
             setBrandConfig(ensureValidBrandConfig(serverData.brandConfig));
           }
+          // Sync marketing deletions and boards
+          if (Array.isArray(serverData.deletedMarketingCardIds)) {
+            setDeletedMarketingCardIds(prev => {
+              const combined = Array.from(new Set([...prev, ...serverData.deletedMarketingCardIds]));
+              safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_cards`, JSON.stringify(combined));
+              return combined;
+            });
+          }
+          if (Array.isArray(serverData.deletedMarketingListIds)) {
+            setDeletedMarketingListIds(prev => {
+              const combined = Array.from(new Set([...prev, ...serverData.deletedMarketingListIds]));
+              safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_marketing_lists`, JSON.stringify(combined));
+              return combined;
+            });
+          }
+          if (Array.isArray(serverData.marketingBoards) && serverData.marketingBoards.length > 0) {
+            const delCards = new Set([...(serverData.deletedMarketingCardIds || []), ...deletedMarketingCardIds]);
+            const delLists = new Set([...(serverData.deletedMarketingListIds || []), ...deletedMarketingListIds]);
+            const sanitizedBoards = serverData.marketingBoards
+              .filter((b: any) => !delLists.has(b.id))
+              .map((b: any) => ({
+                ...b,
+                lists: (b.lists || [])
+                  .filter((l: any) => !delLists.has(l.id))
+                  .map((l: any) => ({
+                    ...l,
+                    cards: (l.cards || []).filter((c: any) => !delCards.has(c.id))
+                  }))
+              }));
+            setMarketingBoards(sanitizedBoards);
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_boards`, JSON.stringify(sanitizedBoards));
+          }
           isInitialDataLoadedRef.current = true;
         }
       } catch (err) {
@@ -3256,13 +3474,16 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             reports,
             activities,
             notifications,
-            clientRenewals
+            clientRenewals,
+            marketingBoards,
+            deletedMarketingCardIds,
+            deletedMarketingListIds
           })
         });
       } catch (e) {}
     }, 800);
     return () => clearTimeout(timer);
-  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications, clientRenewals, currentUser]);
+  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications, clientRenewals, marketingBoards, deletedMarketingCardIds, deletedMarketingListIds, currentUser]);
 
   // Real-time polling & window focus listener to guarantee fresh tasks across all devices
   useEffect(() => {
@@ -3728,6 +3949,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         reorderTask,
         getDeadlineStatus,
         startTaskTimer,
+        pauseTaskTimer,
+        resumeTaskTimer,
         stopTaskTimer,
         addManualTimeLog,
         deleteTimeLog,
@@ -3783,6 +4006,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addMarketingList,
         deleteMarketingList,
         updateMarketingListTitle,
+        deletedMarketingCardIds,
+        deletedMarketingListIds,
         clientRenewals,
         visibleClients,
         addClientRenewal,

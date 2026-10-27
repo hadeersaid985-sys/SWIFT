@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Play,
+  Pause,
   Square,
   ExternalLink,
   Copy,
@@ -27,6 +28,8 @@ export const DailyDigestModal: React.FC = () => {
     tasks,
     getDeadlineStatus,
     startTaskTimer,
+    pauseTaskTimer,
+    resumeTaskTimer,
     stopTaskTimer,
     changeTaskStatus,
     setActiveTab
@@ -426,13 +429,40 @@ export const DailyDigestModal: React.FC = () => {
                     {/* Timer control */}
                     <div className="flex items-center gap-2">
                       {task.isTimerRunning ? (
-                        <button
-                          onClick={() => stopTaskTimer(task.id)}
-                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
-                        >
-                          <Square className="w-3 h-3 fill-current" />
-                          <span>إيقاف التايمر</span>
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => pauseTaskTimer(task.id)}
+                            className="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                            title="إيقاف مؤقت للاستراحة - لن يحسب وقت التوقف"
+                          >
+                            <Pause className="w-3 h-3" />
+                            <span>إيقاف مؤقت</span>
+                          </button>
+                          <button
+                            onClick={() => stopTaskTimer(task.id)}
+                            className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                          >
+                            <Square className="w-3 h-3 fill-current" />
+                            <span>إنهاء</span>
+                          </button>
+                        </div>
+                      ) : task.isTimerPaused ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => resumeTaskTimer(task.id)}
+                            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                          >
+                            <Play className="w-3 h-3 fill-current" />
+                            <span>استئناف</span>
+                          </button>
+                          <button
+                            onClick={() => stopTaskTimer(task.id)}
+                            className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                          >
+                            <Square className="w-3 h-3 fill-current" />
+                            <span>إنهاء</span>
+                          </button>
+                        </div>
                       ) : (
                         <button
                           onClick={() => startTaskTimer(task.id)}
