@@ -137,12 +137,14 @@ export const ClientRenewalsView: React.FC = () => {
     planCycle: 'سنوي',
     amount: 2500,
     currency: 'ج.م',
+    startDate: new Date().toISOString().split('T')[0],
     renewalDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     status: 'renewing_soon',
     notes: '',
     managedBy: 'هدير سعيد',
     sheetUrl: '',
     sheetTitle: '',
+    googleSheets: [{ id: 'sheet-1', title: '', url: '' }],
     contractNumber: '',
     assignedTeamMemberIds: []
   });
@@ -210,11 +212,20 @@ export const ClientRenewalsView: React.FC = () => {
     e.preventDefault();
     if (!formData.clientName.trim() || !formData.company.trim()) return;
 
+    const validSheets = (formData.googleSheets || []).filter(s => s.url.trim() || s.title.trim());
+    const primarySheet = validSheets[0];
+    const payload = {
+      ...formData,
+      sheetUrl: primarySheet?.url || formData.sheetUrl || '',
+      sheetTitle: primarySheet?.title || formData.sheetTitle || '',
+      googleSheets: validSheets
+    };
+
     if (editingRenewal) {
-      updateClientRenewal(editingRenewal.id, formData);
+      updateClientRenewal(editingRenewal.id, payload);
       setEditingRenewal(null);
     } else {
-      addClientRenewal(formData);
+      addClientRenewal(payload);
       setShowAddModal(false);
     }
 
@@ -229,12 +240,14 @@ export const ClientRenewalsView: React.FC = () => {
       planCycle: 'سنوي',
       amount: 2500,
       currency: 'ج.م',
+      startDate: new Date().toISOString().split('T')[0],
       renewalDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'renewing_soon',
       notes: '',
       managedBy: 'هدير سعيد',
       sheetUrl: '',
       sheetTitle: '',
+      googleSheets: [{ id: 'sheet-1', title: '', url: '' }],
       contractNumber: '',
       assignedTeamMemberIds: []
     });
@@ -242,6 +255,10 @@ export const ClientRenewalsView: React.FC = () => {
 
   const handleOpenEdit = (ren: ClientRenewal) => {
     setEditingRenewal(ren);
+    const existingSheets = (ren.googleSheets && ren.googleSheets.length > 0)
+      ? ren.googleSheets
+      : (ren.sheetUrl ? [{ id: 'sheet-1', title: ren.sheetTitle || 'شيت المتابعة', url: ren.sheetUrl }] : [{ id: 'sheet-1', title: '', url: '' }]);
+
     setFormData({
       clientName: ren.clientName,
       company: ren.company,
@@ -253,12 +270,14 @@ export const ClientRenewalsView: React.FC = () => {
       planCycle: ren.planCycle,
       amount: ren.amount,
       currency: ren.currency,
+      startDate: ren.startDate || ren.createdAt || '',
       renewalDate: ren.renewalDate,
       status: ren.status,
       notes: ren.notes || '',
       managedBy: ren.managedBy || 'هدير سعيد',
       sheetUrl: ren.sheetUrl || '',
       sheetTitle: ren.sheetTitle || '',
+      googleSheets: existingSheets,
       contractNumber: ren.contractNumber || '',
       assignedTeamMemberIds: ren.assignedTeamMemberIds || []
     });
@@ -328,15 +347,16 @@ export const ClientRenewalsView: React.FC = () => {
     }, 3000);
   };
 
-  // 1-Click Copy Google Sheet link helper
-  const handleCopySheetLink = (e: React.MouseEvent, client: ClientRenewal) => {
+  // 1-Click Copy Google Sheet link helper (يدعم شيتات متعددة)
+  const handleCopySheetLink = (e: React.MouseEvent, client: ClientRenewal, specificUrl?: string) => {
     e.stopPropagation();
-    if (!client.sheetUrl) {
+    const targetUrl = specificUrl || client.sheetUrl || (client.googleSheets && client.googleSheets[0]?.url);
+    if (!targetUrl) {
       showToast('لا يوجد رابط شيت مسجل لهذا العميل حتى الآن');
       return;
     }
-    navigator.clipboard.writeText(client.sheetUrl);
-    setCopiedSheetId(client.id);
+    navigator.clipboard.writeText(targetUrl);
+    setCopiedSheetId(client.id + (specificUrl || ''));
     showToast('تم نسخ رابط الشيت إلى الحافظة بنجاح! 📋');
     setTimeout(() => setCopiedSheetId(null), 2500);
   };
@@ -528,13 +548,15 @@ export const ClientRenewalsView: React.FC = () => {
           <div className="text-[10px] text-amber-700 mt-0.5 font-bold">يستحق التواصل العاجل</div>
         </div>
 
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
-          <div className="text-slate-400 font-bold text-[11px]">إجمالي إيراد التجديدات المتوقع</div>
-          <div className="text-2xl font-black text-emerald-600 mt-1">
-            {totalRevenueExpected.toLocaleString()} ر.س
+        {isManager && (
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
+            <div className="text-slate-400 font-bold text-[11px]">إجمالي إيراد التجديدات المتوقع</div>
+            <div className="text-2xl font-black text-emerald-600 mt-1">
+              {totalRevenueExpected.toLocaleString()} ر.س
+            </div>
+            <div className="text-[10px] text-slate-500 mt-0.5">عبر العقود السنوية والشهرية (خاص بالأدمن)</div>
           </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">عبر العقود السنوية والشهرية</div>
-        </div>
+        )}
 
         <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
           <div className="text-slate-400 font-bold text-[11px]">اشتراكات متأخرة عن السداد</div>
@@ -581,17 +603,19 @@ export const ClientRenewalsView: React.FC = () => {
             )}
           </button>
 
-          <button
-            onClick={() => setActiveRenewalSubTab('timeline')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
-              activeRenewalSubTab === 'timeline'
-                ? 'bg-indigo-600 text-white shadow-2xs font-black'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <History className="w-4 h-4 text-indigo-400" />
-            <span>سجل وتاريخ كل اكونت من ساعات اشترك وجدد (للأدمن 🔒)</span>
-          </button>
+          {isManager && (
+            <button
+              onClick={() => setActiveRenewalSubTab('timeline')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition-all cursor-pointer ${
+                activeRenewalSubTab === 'timeline'
+                  ? 'bg-indigo-600 text-white shadow-2xs font-black'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <History className="w-4 h-4 text-indigo-400" />
+              <span>سجل وتاريخ كل اكونت من ساعات اشترك وجدد (للأدمن 🔒)</span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveRenewalSubTab('coaching_offers')}
@@ -714,7 +738,7 @@ export const ClientRenewalsView: React.FC = () => {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
-                  onClick={() => exportClientsToExcel(activeClientsPool)}
+                  onClick={() => exportClientsToExcel(activeClientsPool, isManager)}
                   className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs hover:scale-102 shrink-0"
                   title="تصدير كشف العملاء وشيتات المتابعة بصيغة ملف إكسيل (.xlsx)"
                 >
@@ -870,67 +894,103 @@ export const ClientRenewalsView: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* 📗 GOOGLE SHEET BOX (طلب المستخدم: لينك الشيت لسهولة الوصول ليه للتيم) */}
-                      <div className="mt-3 bg-gradient-to-br from-emerald-50/90 to-teal-50/70 border-2 border-emerald-300/80 rounded-xl p-3 space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-extrabold text-emerald-950 flex items-center gap-1.5">
-                            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                            <span>شيت المتابعة (Google Sheet):</span>
-                          </span>
-                          <button
-                            type="button"
-                            onClick={e => handleOpenEditSheet(e, client)}
-                            className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
-                          >
-                            {client.sheetUrl ? 'تعديل الرابط ✏️' : '+ إضافة رابط'}
-                          </button>
-                        </div>
+                      {/* 📗 GOOGLE SHEET BOX (طلب المستخدم: علامة + لإضافة أكثر من شيت لسهولة وصول التيم) */}
+                      {(() => {
+                        const sheetsList = (client.googleSheets && client.googleSheets.length > 0)
+                          ? client.googleSheets.filter(s => s.url || s.title)
+                          : (client.sheetUrl ? [{ id: 'sheet-default', title: client.sheetTitle || 'شيت المتابعة الرئيسي', url: client.sheetUrl }] : []);
 
-                        {client.sheetUrl ? (
-                          <div className="space-y-1.5">
-                            <div className="text-[11px] font-bold text-slate-800 truncate" title={client.sheetTitle || client.sheetUrl}>
-                              {client.sheetTitle || 'شيت متابعة الحملات والسيرفرات'}
+                        return (
+                          <div className="mt-3 bg-gradient-to-br from-emerald-50/90 to-teal-50/70 border-2 border-emerald-300/80 rounded-xl p-3 space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-extrabold text-emerald-950 flex items-center gap-1.5">
+                                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                                <span>شيت المتابعة (Google Sheet):</span>
+                                {sheetsList.length > 1 && (
+                                  <span className="text-[10px] bg-emerald-200 text-emerald-950 font-black px-1.5 py-0.2 rounded-full">
+                                    {sheetsList.length} شيتات
+                                  </span>
+                                )}
+                              </span>
+                              {isManager ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEdit(client)}
+                                  className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer flex items-center gap-0.5"
+                                  title="إدارة أو إضافة شيتات أخرى لهذا العميل"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  <span>{sheetsList.length > 0 ? 'تعديل / + شيت' : '+ إضافة شيت'}</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={e => handleOpenEditSheet(e, client)}
+                                  className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+                                >
+                                  {client.sheetUrl ? 'تعديل الرابط ✏️' : '+ إضافة رابط'}
+                                </button>
+                              )}
                             </div>
 
-                            <div className="flex items-center gap-1.5 pt-1">
-                              {/* Open Google Sheet Direct Button */}
-                              <a
-                                href={client.sheetUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex-1 py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-101"
-                                title="فتح شيت جوجل الخاص بالعميل في نافذة جديدة"
-                              >
-                                <FileSpreadsheet className="w-3.5 h-3.5" />
-                                <span>فتح الشيت الآن (Google Sheets) ↗</span>
-                              </a>
+                            {sheetsList.length > 0 ? (
+                              <div className="space-y-2">
+                                {sheetsList.map((sheet, sIdx) => {
+                                  const isSheetCopied = copiedSheetId === (client.id + (sheet.url || ''));
+                                  return (
+                                    <div key={sheet.id || sIdx} className="bg-white/90 p-2 rounded-xl border border-emerald-200/90 shadow-2xs space-y-1.5">
+                                      <div className="text-[11px] font-extrabold text-slate-800 truncate" title={sheet.title || sheet.url}>
+                                        {sheet.title || `شيت متابعة ${sIdx + 1}`}
+                                      </div>
 
-                              {/* Copy Link */}
+                                      <div className="flex items-center gap-1.5 pt-0.5">
+                                        {sheet.url ? (
+                                          <a
+                                            href={sheet.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="flex-1 py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-101"
+                                            title="فتح شيت جوجل الخاص بالعميل في نافذة جديدة"
+                                          >
+                                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                                            <span>فتح الشيت الآن (Google Sheets) ↗</span>
+                                          </a>
+                                        ) : (
+                                          <span className="flex-1 text-[11px] text-slate-400 italic py-1">لا يوجد رابط مسجل</span>
+                                        )}
+
+                                        {sheet.url && (
+                                          <button
+                                            type="button"
+                                            onClick={e => handleCopySheetLink(e, client, sheet.url)}
+                                            className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                                              isSheetCopied
+                                                ? 'bg-emerald-200 text-emerald-900 border-emerald-400'
+                                                : 'bg-white hover:bg-emerald-100 text-emerald-800 border-emerald-200'
+                                            }`}
+                                            title="نسخ رابط هذا الشيت"
+                                          >
+                                            {isSheetCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
                               <button
                                 type="button"
-                                onClick={e => handleCopySheetLink(e, client)}
-                                className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center justify-center shrink-0 ${
-                                  isCopied
-                                    ? 'bg-emerald-200 text-emerald-900 border-emerald-400'
-                                    : 'bg-white hover:bg-emerald-100 text-emerald-800 border-emerald-200'
-                                }`}
-                                title="نسخ رابط الشيت"
+                                onClick={e => isManager ? handleOpenEdit(client) : handleOpenEditSheet(e, client)}
+                                className="w-full py-2 px-3 bg-white hover:bg-emerald-100/50 border border-dashed border-emerald-300 rounded-lg text-xs font-bold text-emerald-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
                               >
-                                {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>+ إضافة رابط شيت جوجل لهذا العميل</span>
                               </button>
-                            </div>
+                            )}
                           </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={e => handleOpenEditSheet(e, client)}
-                            className="w-full py-2 px-3 bg-white hover:bg-emerald-100/50 border border-dashed border-emerald-300 rounded-lg text-xs font-bold text-emerald-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>+ إضافة رابط شيت جوجل لهذا العميل</span>
-                          </button>
-                        )}
-                      </div>
+                        );
+                      })()}
 
                       {/* Contact Bar: WhatsApp + Call + Email */}
                       <div className="mt-3 flex items-center gap-1.5 flex-wrap">
@@ -973,16 +1033,37 @@ export const ClientRenewalsView: React.FC = () => {
                           </span>
                         </div>
 
+                        {/* حقل سعر العقد (Contract Price) - يظهر للأدمن فقط ومخفي تماماً عن واجهة التيم */}
+                        {isManager && (
+                          <div className="flex items-center justify-between bg-amber-50/80 px-2.5 py-1.5 rounded-lg border border-amber-200">
+                            <span className="text-amber-900 font-bold flex items-center gap-1">
+                              <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                              <span>سعر العقد (للأدمن):</span>
+                            </span>
+                            <span className="font-black text-amber-950 font-mono">
+                              {client.amount.toLocaleString()} {client.currency}
+                            </span>
+                          </div>
+                        )}
+
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-500 font-bold">الاشتراك والدورة:</span>
+                          <span className="text-slate-500 font-bold">دورة الاشتراك:</span>
                           <span className="font-black text-slate-900">
-                            {client.amount.toLocaleString()} {client.currency} / {client.planCycle}
+                            {client.planCycle}
+                          </span>
+                        </div>
+
+                        {/* طلب المستخدم: تاريخ البدء وتاريخ التجديد */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 font-bold">تاريخ البدء:</span>
+                          <span className="font-mono font-bold text-slate-700">
+                            {client.startDate || client.createdAt?.split('T')[0] || '—'}
                           </span>
                         </div>
 
                         <div className="flex items-center justify-between">
                           <span className="text-slate-500 font-bold">موعد التجديد:</span>
-                          <span className="font-mono font-bold text-slate-900">
+                          <span className="font-mono font-black text-slate-900">
                             {client.renewalDate}
                           </span>
                         </div>
@@ -1050,15 +1131,17 @@ export const ClientRenewalsView: React.FC = () => {
                         <span>الملف والفولدر 📁</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setInvoiceModalClient(client)}
-                        className="py-1.5 px-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs shrink-0"
-                        title="إنشاء وطباعة فاتورة وسند اشتراك PDF رسمي"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-amber-600" />
-                        <span>فاتورة PDF</span>
-                      </button>
+                      {isManager && (
+                        <button
+                          type="button"
+                          onClick={() => setInvoiceModalClient(client)}
+                          className="py-1.5 px-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs shrink-0"
+                          title="إنشاء وطباعة فاتورة وسند اشتراك PDF رسمي"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-amber-600" />
+                          <span>فاتورة PDF</span>
+                        </button>
+                      )}
 
                       {isManager && (
                         <button
@@ -1161,7 +1244,7 @@ export const ClientRenewalsView: React.FC = () => {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
-            onClick={() => exportClientsToExcel(activeClientsPool)}
+            onClick={() => exportClientsToExcel(activeClientsPool, isManager)}
             className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs hover:scale-102 shrink-0"
             title="تصدير كشف العملاء ومواعيد التجديد لإكسيل (.xlsx)"
           >
@@ -1200,7 +1283,7 @@ export const ClientRenewalsView: React.FC = () => {
                 <th className="py-3 px-4">الخدمة / باقة الاشتراك</th>
                 <th className="py-3 px-4">شيت العميل (Google Sheets) 📗</th>
                 <th className="py-3 px-4">تاريخ التجديد والمدة المتبقية</th>
-                <th className="py-3 px-4">الدورة والمبلغ</th>
+                <th className="py-3 px-4">{isManager ? 'الدورة وسعر العقد' : 'دورة الاشتراك'}</th>
                 <th className="py-3 px-4">تواصل فوري (واتساب / هاتف)</th>
                 <th className="py-3 px-4 text-center">تأكيد التجديد</th>
                 <th className="py-3 px-4 text-center">إجراءات</th>
@@ -1337,10 +1420,18 @@ export const ClientRenewalsView: React.FC = () => {
 
                       {/* Amount & Plan Cycle */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="font-black text-slate-900 text-xs">
-                          {ren.amount.toLocaleString()} {ren.currency}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-bold">دورة: {ren.planCycle}</div>
+                        {isManager ? (
+                          <>
+                            <div className="font-black text-slate-900 text-xs">
+                              {ren.amount.toLocaleString()} {ren.currency}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-bold">دورة: {ren.planCycle}</div>
+                          </>
+                        ) : (
+                          <div className="font-bold text-slate-700 text-xs">
+                            دورة: {ren.planCycle}
+                          </div>
+                        )}
                       </td>
 
                       {/* Quick Contact: WhatsApp / Phone */}
@@ -1396,14 +1487,16 @@ export const ClientRenewalsView: React.FC = () => {
                           </button>
 
                           {/* زر فاتورة وسند PDF */}
-                          <button
-                            type="button"
-                            onClick={() => setInvoiceModalClient(ren)}
-                            className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg border border-amber-200 cursor-pointer transition-colors shadow-2xs"
-                            title="إنشاء وطباعة فاتورة وسند اشتراك PDF رسمي"
-                          >
-                            <FileText className="w-3.5 h-3.5 text-amber-600" />
-                          </button>
+                          {isManager && (
+                            <button
+                              type="button"
+                              onClick={() => setInvoiceModalClient(ren)}
+                              className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg border border-amber-200 cursor-pointer transition-colors shadow-2xs"
+                              title="إنشاء وطباعة فاتورة وسند اشتراك PDF رسمي"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-amber-600" />
+                            </button>
+                          )}
 
                           <button
                             type="button"
@@ -1868,7 +1961,17 @@ export const ClientRenewalsView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">تاريخ البدء: *</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.startDate || ''}
+                    onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:border-blue-500 font-mono"
+                  />
+                </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">تاريخ التجديد: *</label>
                   <input
@@ -1876,7 +1979,7 @@ export const ClientRenewalsView: React.FC = () => {
                     required
                     value={formData.renewalDate}
                     onChange={e => setFormData({ ...formData, renewalDate: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-blue-500 font-mono"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs focus:outline-none focus:border-blue-500 font-mono"
                   />
                 </div>
                 <div>
@@ -1884,7 +1987,7 @@ export const ClientRenewalsView: React.FC = () => {
                   <select
                     value={formData.planCycle}
                     onChange={e => setFormData({ ...formData, planCycle: e.target.value as any })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 cursor-pointer"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 cursor-pointer"
                   >
                     <option value="شهري">شهري</option>
                     <option value="ربع سنوي">ربع سنوي</option>
@@ -1893,7 +1996,7 @@ export const ClientRenewalsView: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">قيمة الاشتراك:</label>
+                  <label className="block font-bold text-slate-700 mb-1">سعر العقد (للأدمن): *</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
@@ -1931,33 +2034,111 @@ export const ClientRenewalsView: React.FC = () => {
                 </div>
               </div>
 
-              {/* قسم رابط شيت جوجل الخاص بالعميل (Google Sheets) */}
-              <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 space-y-2.5">
-                <div className="flex items-center gap-1.5 text-xs font-black text-emerald-950">
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                  <span>ملف وشيت جوجل (Google Sheet) لسهولة وصول التيم:</span>
+              {/* قسم روابط شيتات جوجل الخاصة بالعميل (Google Sheets) مع إمكانية إضافة أكثر من شيت بعلامة + */}
+              <div className="bg-emerald-50/80 p-3.5 rounded-2xl border-2 border-emerald-300 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+                    <span className="text-xs font-black text-emerald-950">
+                      ملف وشيت جوجل (Google Sheet) لسهولة وصول التيم:
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = formData.googleSheets || [];
+                      const newSheet = {
+                        id: `sheet-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+                        title: '',
+                        url: ''
+                      };
+                      setFormData({
+                        ...formData,
+                        googleSheets: [...current, newSheet]
+                      });
+                    }}
+                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs hover:scale-102"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>+ إضافة شيت آخر</span>
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[11px] font-bold text-emerald-900 mb-1">عنوان / اسم الشيت:</label>
-                    <input
-                      type="text"
-                      value={formData.sheetTitle || ''}
-                      onChange={e => setFormData({ ...formData, sheetTitle: e.target.value })}
-                      placeholder="مثال: شيت متابعة استضافة وسيرفرات الأفق"
-                      className="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-600 font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-emerald-900 mb-1">رابط الشيت (Google Sheets Link):</label>
-                    <input
-                      type="url"
-                      value={formData.sheetUrl || ''}
-                      onChange={e => setFormData({ ...formData, sheetUrl: e.target.value })}
-                      placeholder="https://docs.google.com/spreadsheets/d/..."
-                      className="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-600 font-mono text-[11px]"
-                    />
-                  </div>
+
+                <div className="space-y-2.5">
+                  {(formData.googleSheets && formData.googleSheets.length > 0 ? formData.googleSheets : [{ id: 'sheet-1', title: formData.sheetTitle || '', url: formData.sheetUrl || '' }]).map((sheet, index) => (
+                    <div key={sheet.id || index} className="p-2.5 bg-white rounded-xl border border-emerald-200 shadow-2xs space-y-2">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900">
+                        <span className="flex items-center gap-1">
+                          <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
+                          <span>شيت جوجل #{index + 1}</span>
+                        </span>
+                        {(formData.googleSheets?.length || 1) > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (formData.googleSheets || []).filter((_, i) => i !== index);
+                              setFormData({
+                                ...formData,
+                                googleSheets: updated,
+                                sheetUrl: updated[0]?.url || '',
+                                sheetTitle: updated[0]?.title || ''
+                              });
+                            }}
+                            className="text-rose-500 hover:text-rose-700 font-bold text-[10px] flex items-center gap-0.5 cursor-pointer"
+                            title="حذف هذا الشيت"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>حذف</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-bold text-emerald-950 mb-1">عنوان / اسم الشيت:</label>
+                          <input
+                            type="text"
+                            value={sheet.title || ''}
+                            onChange={e => {
+                              const sheets = [...(formData.googleSheets || [])];
+                              if (!sheets[index]) {
+                                sheets[index] = { id: `sheet-${index}`, title: '', url: '' };
+                              }
+                              sheets[index] = { ...sheets[index], title: e.target.value };
+                              setFormData({
+                                ...formData,
+                                googleSheets: sheets,
+                                sheetTitle: index === 0 ? e.target.value : formData.sheetTitle
+                              });
+                            }}
+                            placeholder="مثال: شيت متابعة مقالات السيو gxpway"
+                            className="w-full bg-slate-50 border border-emerald-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-600 font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-emerald-950 mb-1">رابط الشيت (Google Sheets Link):</label>
+                          <input
+                            type="url"
+                            value={sheet.url || ''}
+                            onChange={e => {
+                              const sheets = [...(formData.googleSheets || [])];
+                              if (!sheets[index]) {
+                                sheets[index] = { id: `sheet-${index}`, title: '', url: '' };
+                              }
+                              sheets[index] = { ...sheets[index], url: e.target.value };
+                              setFormData({
+                                ...formData,
+                                googleSheets: sheets,
+                                sheetUrl: index === 0 ? e.target.value : formData.sheetUrl
+                              });
+                            }}
+                            placeholder="https://docs.google.com/spreadsheets/d/..."
+                            className="w-full bg-slate-50 border border-emerald-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-600 font-mono text-[11px]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -2726,76 +2907,122 @@ export const ClientRenewalsView: React.FC = () => {
             {/* TAB 4: الشيت والاشتراك وقنوات التواصل (Overview) */}
             {dossierActiveTab === 'overview' && (
               <div className="space-y-4 animate-in fade-in">
-                {/* 📗 GOOGLE SHEET HERO CARD (طلب المستخدم: لينك الشيت لسهولة الوصول ليه للتيم) */}
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs">
-                        <FileSpreadsheet className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-black text-emerald-950">
-                          {currentDossierClient.sheetTitle || 'شيت متابعة العميل (Google Sheet)'}
-                        </h4>
-                        <p className="text-[11px] text-emerald-800/80 font-medium">
-                          رابط الشيت المعتمد لمتابعة المهام والبيانات الخاصة بالعميل
-                        </p>
-                      </div>
-                    </div>
+                {/* 📗 GOOGLE SHEET HERO CARD (طلب المستخدم: لينك الشيتات لسهولة الوصول ليها للتيم) */}
+                {(() => {
+                  const sheetsList = (currentDossierClient.googleSheets && currentDossierClient.googleSheets.length > 0)
+                    ? currentDossierClient.googleSheets.filter(s => s.url || s.title)
+                    : (currentDossierClient.sheetUrl ? [{ id: 'sheet-1', title: currentDossierClient.sheetTitle || 'شيت متابعة العميل (Google Sheet)', url: currentDossierClient.sheetUrl }] : []);
 
-                    <button
-                      type="button"
-                      onClick={e => handleOpenEditSheet(e, currentDossierClient)}
-                      className="px-2.5 py-1 text-[11px] font-bold bg-white text-emerald-800 hover:bg-emerald-100/80 border border-emerald-200 rounded-lg transition-all cursor-pointer shadow-2xs"
-                    >
-                      تعديل الرابط ✏️
-                    </button>
-                  </div>
+                  return (
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-2xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs">
+                            <FileSpreadsheet className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs sm:text-sm font-black text-emerald-950 flex items-center gap-2">
+                              <span>شيتات وجداول جوجل للمتابعة (Google Sheets)</span>
+                              {sheetsList.length > 0 && (
+                                <span className="text-[10px] bg-emerald-200 text-emerald-950 font-black px-2 py-0.5 rounded-full">
+                                  {sheetsList.length} شيت
+                                </span>
+                              )}
+                            </h4>
+                            <p className="text-[11px] text-emerald-800/80 font-medium">
+                              روابط الشيتات المعتمدة لسهولة وصول التيم ومتابعة كافة المهام والبيانات
+                            </p>
+                          </div>
+                        </div>
 
-                  {currentDossierClient.sheetUrl ? (
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-                      <a
-                        href={currentDossierClient.sheetUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.01]"
-                      >
-                        <FileSpreadsheet className="w-4 h-4" />
-                        <span>فتح شيت جوجل في نافذة جديدة (Google Sheets) ↗</span>
-                      </a>
-
-                      <button
-                        type="button"
-                        onClick={e => handleCopySheetLink(e, currentDossierClient)}
-                        className="py-2.5 px-4 bg-white hover:bg-emerald-100/70 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                        title="نسخ الرابط"
-                      >
-                        {copiedSheetId === currentDossierClient.id ? (
-                          <>
-                            <Check className="w-4 h-4 text-emerald-600" />
-                            <span>تم النسخ ✅</span>
-                          </>
+                        {isManager ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(currentDossierClient)}
+                            className="px-2.5 py-1 text-[11px] font-bold bg-white text-emerald-800 hover:bg-emerald-100/80 border border-emerald-200 rounded-lg transition-all cursor-pointer shadow-2xs flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>إدارة الشيتات ✏️</span>
+                          </button>
                         ) : (
-                          <>
-                            <Copy className="w-4 h-4 text-emerald-700" />
-                            <span>نسخ الرابط</span>
-                          </>
+                          <button
+                            type="button"
+                            onClick={e => handleOpenEditSheet(e, currentDossierClient)}
+                            className="px-2.5 py-1 text-[11px] font-bold bg-white text-emerald-800 hover:bg-emerald-100/80 border border-emerald-200 rounded-lg transition-all cursor-pointer shadow-2xs"
+                          >
+                            تعديل الرابط ✏️
+                          </button>
                         )}
-                      </button>
+                      </div>
+
+                      {sheetsList.length > 0 ? (
+                        <div className="space-y-2 pt-1">
+                          {sheetsList.map((sheet, sIdx) => {
+                            const isSheetCopied = copiedSheetId === (currentDossierClient.id + (sheet.url || ''));
+                            return (
+                              <div key={sheet.id || sIdx} className="bg-white/90 p-3 rounded-xl border border-emerald-200 shadow-2xs space-y-2">
+                                <div className="text-xs font-black text-slate-800 flex items-center justify-between">
+                                  <span className="flex items-center gap-1.5 truncate">
+                                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    <span>{sheet.title || `شيت جوجل #${sIdx + 1}`}</span>
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                  {sheet.url ? (
+                                    <a
+                                      href={sheet.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-[1.01]"
+                                    >
+                                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                                      <span>فتح شيت جوجل في نافذة جديدة (Google Sheets) ↗</span>
+                                    </a>
+                                  ) : (
+                                    <span className="flex-1 text-xs text-slate-400 italic py-1">لا يوجد رابط مسجل لهذا الشيت</span>
+                                  )}
+
+                                  {sheet.url && (
+                                    <button
+                                      type="button"
+                                      onClick={e => handleCopySheetLink(e, currentDossierClient, sheet.url)}
+                                      className="py-2 px-3 bg-white hover:bg-emerald-100/70 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                                      title="نسخ الرابط"
+                                    >
+                                      {isSheetCopied ? (
+                                        <>
+                                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                          <span>تم النسخ ✅</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="w-3.5 h-3.5 text-emerald-700" />
+                                          <span>نسخ الرابط</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-white/80 rounded-xl border border-dashed border-emerald-300 text-center space-y-1.5">
+                          <p className="text-xs font-bold text-slate-600">لا يوجد رابط شيت مسجل لهذا العميل بعد.</p>
+                          <button
+                            type="button"
+                            onClick={e => isManager ? handleOpenEdit(currentDossierClient) : handleOpenEditSheet(e, currentDossierClient)}
+                            className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold cursor-pointer"
+                          >
+                            + إضافة رابط شيت جوجل الآن
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="p-3 bg-white/80 rounded-xl border border-dashed border-emerald-300 text-center space-y-1.5">
-                      <p className="text-xs font-bold text-slate-600">لا يوجد رابط شيت مسجل لهذا العميل بعد.</p>
-                      <button
-                        type="button"
-                        onClick={e => handleOpenEditSheet(e, currentDossierClient)}
-                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold cursor-pointer"
-                      >
-                        + إضافة رابط شيت جوجل الآن
-                      </button>
-                    </div>
-                  )}
-                </div>
+                  );
+                })()}
 
                 {/* تفاصيل العميل والاشتراك */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
@@ -2804,10 +3031,31 @@ export const ClientRenewalsView: React.FC = () => {
                     <div className="font-black text-slate-900 mt-0.5">{currentDossierClient.serviceName}</div>
                   </div>
 
+                  {/* حقل سعر العقد (Contract Price) - يظهر للأدمن فقط ومخفي تماماً عن واجهة التيم */}
+                  {isManager && (
+                    <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200">
+                      <div className="text-[10px] text-amber-800 font-bold flex items-center gap-1">
+                        <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                        <span>سعر العقد (للأدمن فقط):</span>
+                      </div>
+                      <div className="font-mono font-black text-amber-950 text-sm mt-0.5">
+                        {currentDossierClient.amount.toLocaleString()} {currentDossierClient.currency}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                    <div className="text-[10px] text-slate-500 font-bold">قيمة وتكرار الاشتراك:</div>
-                    <div className="font-black text-emerald-700 mt-0.5">
-                      {currentDossierClient.amount.toLocaleString()} {currentDossierClient.currency} / {currentDossierClient.planCycle}
+                    <div className="text-[10px] text-slate-500 font-bold">دورة الاشتراك والتجديد:</div>
+                    <div className="font-black text-slate-900 mt-0.5">
+                      {currentDossierClient.planCycle}
+                    </div>
+                  </div>
+
+                  {/* طلب المستخدم: تاريخ البدء وتاريخ التجديد */}
+                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                    <div className="text-[10px] text-slate-500 font-bold">تاريخ البدء:</div>
+                    <div className="font-mono font-black text-slate-900 mt-0.5">
+                      {currentDossierClient.startDate || currentDossierClient.createdAt?.split('T')[0] || '—'}
                     </div>
                   </div>
 
@@ -2830,7 +3078,7 @@ export const ClientRenewalsView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 sm:col-span-2">
                     <div className="text-[10px] text-slate-500 font-bold">مسؤول المتابعة بالتيم:</div>
                     <div className="font-black text-indigo-700 mt-0.5">
                       {currentDossierClient.managedBy || 'هدير سعيد'}

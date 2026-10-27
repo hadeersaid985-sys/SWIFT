@@ -15,6 +15,7 @@ import {
   HeartHandshake
 } from 'lucide-react';
 import { ClientRenewal } from '../../types/crm';
+import { useCRM } from '../../context/CRMContext';
 
 interface WhatsAppRenewalModalProps {
   client: ClientRenewal | null;
@@ -23,6 +24,7 @@ interface WhatsAppRenewalModalProps {
 
 export const WhatsAppRenewalModal: React.FC<WhatsAppRenewalModalProps> = ({ client, onClose }) => {
   if (!client) return null;
+  const { isManager } = useCRM();
 
   const [templateType, setTemplateType] = useState<'early' | 'due_today' | 'thank_you'>('early');
   const [copied, setCopied] = useState(false);
@@ -37,8 +39,7 @@ export const WhatsAppRenewalModal: React.FC<WhatsAppRenewalModalProps> = ({ clie
 
 نود تذكير سيادتكم بلطف باقتراب موعد استحقاق تجديد اشتراك:
 📌 باقة: ${client.serviceName}
-💰 القيمة: ${client.amount.toLocaleString()} ${client.currency} (${client.planCycle})
-📅 تاريخ التجديد: ${client.renewalDate}
+${isManager ? `💰 القيمة: ${client.amount.toLocaleString()} ${client.currency} (${client.planCycle})\n` : `🔄 دورة الاشتراك: ${client.planCycle}\n`}📅 تاريخ التجديد: ${client.renewalDate}
 
 يسعدنا تأكيد استمرار الخدمة لضمان استقرار العمليات دون انقطاع. في حال الرغبة بالتجديد يرجى التكرم بتأكيدنا لنرسل لكم بيانات التحويل المباشرة.
 
@@ -49,8 +50,7 @@ export const WhatsAppRenewalModal: React.FC<WhatsAppRenewalModalProps> = ({ clie
 
 نود إحاطة عنايتكم الكريمة بأن موعد تجديد اشتراككم مستحق اليوم:
 📌 الخدمة: ${client.serviceName}
-💰 المبلغ المستحق: ${client.amount.toLocaleString()} ${client.currency}
-📅 تاريخ اليوم: ${client.renewalDate}
+${isManager ? `💰 المبلغ المستحق: ${client.amount.toLocaleString()} ${client.currency}\n` : `🔄 دورة الاشتراك: ${client.planCycle}\n`}📅 تاريخ اليوم: ${client.renewalDate}
 
 حرصاً على استمرار السيرفرات والخدمات دون توقف، نرجو التكرم بالتأكيد وإتمام السداد.
 
@@ -60,8 +60,7 @@ export const WhatsAppRenewalModal: React.FC<WhatsAppRenewalModalProps> = ({ clie
 
 تم بحمد الله استلام وتأكيد سداد اشتراك باقة:
 ✅ ${client.serviceName}
-قيمة: ${client.amount.toLocaleString()} ${client.currency}
-
+${isManager ? `قيمة: ${client.amount.toLocaleString()} ${client.currency}\n` : `دورة: ${client.planCycle}\n`}
 تم تمديد وتفعيل الاشتراك بنجاح حتى موعده القادم. 
 نسعد دائماً بخدمتكم ونتطلع لتحقيق أعلى مستويات النجاح معكم! 🌟
 
@@ -142,10 +141,12 @@ export const WhatsAppRenewalModal: React.FC<WhatsAppRenewalModalProps> = ({ clie
               <Calendar className="w-4 h-4 text-blue-600" />
               <span>موعد التجديد: <strong className="text-slate-800 font-mono">{client.renewalDate}</strong></span>
             </div>
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-amber-600" />
-              <span>المبلغ: <strong className="text-amber-700 font-bold">{client.amount.toLocaleString()} {client.currency}</strong></span>
-            </div>
+            {isManager && (
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-amber-600" />
+                <span>سعر العقد: <strong className="text-amber-700 font-bold">{client.amount.toLocaleString()} {client.currency}</strong></span>
+              </div>
+            )}
           </div>
 
           {/* Template Choice Buttons */}

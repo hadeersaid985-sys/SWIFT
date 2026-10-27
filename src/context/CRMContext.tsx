@@ -399,12 +399,12 @@ export const ensureValidBrandConfig = (b: any): BrandConfig => {
 
 export const TEAM_ALIASES: Record<string, string[]> = {
   'user-eman': ['user-eman', 'sm-104', 'eman', 'eman ashraf', 'eman_ashraf', 'ايمان', 'إيمان', 'ايمان اشرف', 'إيمان أشرف'],
-  'user-amira': ['user-amira', 'sm-110', 'amira', 'amira2', 'اميرة', 'أميرة'],
-  'user-aya': ['user-aya', 'sm-103', 'aya', 'aya gaber', 'aya_gaber', 'اية', 'آية', 'اية جابر', 'آية جابر'],
+  'user-amira': ['user-amira', 'sm-110', 'amira', 'amira2', 'اميرة', 'أميرة', 'اميره'],
+  'user-aya': ['user-aya', 'sm-103', 'aya', 'aya gaber', 'aya_gaber', 'اية', 'آية', 'ايه', 'اية جابر', 'آية جابر'],
   'user-maibel': ['user-maibel', 'sm-105', 'maibel', 'maibel emad', 'مايبل', 'ميبل', 'مايبل عماد'],
-  'user-mariam': ['user-mariam', 'sm-106', 'mariam', 'مريم', 'mariam web developer', 'mariam developer'],
+  'user-mariam': ['user-mariam', 'sm-106', 'mariam', 'مريم'],
   'user-yomna': ['user-yomna', 'sm-107', 'yomna', 'يمنى', 'يمنا'],
-  'user-islam': ['user-islam', 'sm-108', 'islam', 'إسلام', 'اسلام', 'islam video editor', 'video editor'],
+  'user-islam': ['user-islam', 'sm-108', 'sm-111', 'islam', 'إسلام', 'اسلام'],
   'user-roaa': ['user-roaa', 'sm-109', 'roaa', 'roaa_hetemy', 'رؤى', 'رؤى حتيمي', 'روءة', 'روءا'],
   'user-1': ['user-1', 'user-admin', 'hadeer', 'hadeer.admin', 'هدير', 'هدير سعيد', 'admin', 'المدير']
 };
@@ -429,16 +429,16 @@ export const getCanonicalUserId = (val?: string | null): string => {
     }
   }
 
-  // Pass 3: Token/word match (clean exactly equals one of the words, never loose substring)
+  // Pass 3: Exact token match (clean exactly equals one of the words, never loose substring)
   for (const [canonId, aliases] of Object.entries(TEAM_ALIASES)) {
     for (const a of aliases) {
       const cleanA = a.toLowerCase().replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[\-_.]/g, ' ').replace(/\s+/g, ' ').trim();
       const wordsA = cleanA.split(/\s+/);
       const wordsClean = clean.split(/\s+/);
-      if (wordsClean.length === 1 && wordsA.includes(wordsClean[0])) {
+      if (wordsClean.length === 1 && wordsA.includes(wordsClean[0]) && wordsClean[0].length >= 3) {
         return canonId;
       }
-      if (wordsA.length === 1 && wordsClean.includes(wordsA[0])) {
+      if (wordsA.length === 1 && wordsClean.includes(wordsA[0]) && wordsA[0].length >= 3) {
         return canonId;
       }
     }
@@ -552,19 +552,18 @@ export const isUserMentionedInTask = (task: Task, user?: TeamMember | null): boo
           const cleanAlias = alias.toLowerCase();
           if (
             cContent.includes(`@${cleanAlias}`) ||
-            cContent.includes(`@${cleanAlias.replace(/\s+/g, '_')}`) ||
-            cContent.includes(cleanAlias)
+            cContent.includes(`@${cleanAlias.replace(/\s+/g, '_')}`)
           ) {
             return true;
           }
         }
       }
       if (
-        (uname && (cContent.includes(`@${uname}`) || cContent.includes(uname))) ||
-        (name && (cContent.includes(`@${name}`) || cContent.includes(name.replace(/\s+/g, '_')))) ||
-        (firstName && firstName.length >= 3 && (cContent.includes(`@${firstName}`) || cContent.includes(firstName))) ||
+        (uname && (cContent.includes(`@${uname}`) || cContent.includes(`@${uname.replace(/_/g, ' ')}`))) ||
+        (name && (cContent.includes(`@${name}`) || cContent.includes(`@${name.replace(/\s+/g, '_')}`))) ||
+        (firstName && firstName.length >= 3 && cContent.includes(`@${firstName}`)) ||
         (code && cContent.includes(`@${code}`)) ||
-        (uid && cContent.includes(uid))
+        (uid && cContent.includes(`@${uid}`))
       ) {
         return true;
       }
@@ -631,8 +630,13 @@ export const matchUserCredentials = (
 
   // Match Amira specifically (Amira, Amira2, SM-110, Arabic أميرة)
   const isAmiraUser =
-    (cleanUser === 'amira' || cleanUser === 'amira2' || cleanUser === 'sm-110' || cleanUser === 'sm-107' || normInput === 'اميرة' || normInput === 'اميره') &&
-    (memberUsername === 'amira' || memberUsername === 'amira2' || memberCode === 'sm-110' || memberCode === 'sm-107' || normName === 'اميرة' || normName === 'أميرة');
+    (cleanUser === 'amira' || cleanUser === 'amira2' || cleanUser === 'sm-110' || normInput === 'اميرة' || normInput === 'اميره') &&
+    (memberUsername === 'amira' || memberUsername === 'amira2' || memberCode === 'sm-110' || normName === 'اميرة' || normName === 'أميرة');
+
+  // Match Islam specifically (Islam, SM-108, SM-111, Arabic إسلام / اسلام)
+  const isIslamUser =
+    (cleanUser === 'islam' || cleanUser === 'sm-108' || cleanUser === 'sm-111' || normInput === 'اسلام' || normInput === 'إسلام') &&
+    (memberUsername === 'islam' || memberCode === 'sm-108' || memberCode === 'sm-111' || normName === 'اسلام' || normName === 'إسلام');
 
   // Strictly exact user match - NEVER use loose substring normName.includes(normInput) which confuses Islam with Mariam!
   const isUserMatch =
@@ -646,6 +650,7 @@ export const matchUserCredentials = (
     normFirstName === normInput ||
     isEmanUser ||
     isAmiraUser ||
+    isIslamUser ||
     (cleanUser === 'admin' && (member.accessLevel === 'admin' || member.id === 'user-1'));
 
   if (!isUserMatch) return false;
@@ -659,6 +664,7 @@ export const matchUserCredentials = (
     cleanPass === 'Admin@Swift2026' ||
     cleanPass === 'admin' ||
     (isAmiraUser && (cleanPass === 'Sw!ftC4gc4i#D6T' || cleanPass === 'Sw!ftbKMPddC@CL' || cleanPass.toLowerCase() === 'sw!ftc4gc4i#d6t' || cleanPass.toLowerCase() === 'sw!ftbkmpddc@cl')) ||
+    (isIslamUser && (cleanPass === 'Sw!ftIHaiQ$Cka6' || cleanPass === 'Sw!ftiHaiQ$Cka6' || cleanPass.toLowerCase() === 'sw!ftihaiq$cka6')) ||
     (member.accessLevel === 'admin' && (cleanPass === '8899' || cleanPass === 'Admin@Swift2026')) ||
     (isEmanUser && (cleanPass === 'Eman@Swift27526' || cleanPass.toLowerCase() === 'eman@swift27526')) ||
     cleanPass === 'User@Swift2026';
@@ -825,16 +831,36 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [team, setTeam] = useState<TeamMember[]>(() => {
     try {
+      const deletedIds = new Set<string>(['user-mariam', 'user-1793016396281']);
+      const savedDeleted = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`);
+      if (savedDeleted) {
+        try {
+          const parsedDel = JSON.parse(savedDeleted);
+          if (Array.isArray(parsedDel)) {
+            parsedDel.forEach((id: string) => deletedIds.add(id));
+          }
+        } catch {}
+      }
+
       const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}team`);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const OLD_DEMO_USERNAMES = new Set(['ahmed.sherif', 'sara.marketing', 'tariq.tech', 'mona.support', 'karim.finance']);
-          const filteredParsed = parsed.filter((m: any) => !OLD_DEMO_USERNAMES.has((m.username || '').toLowerCase()));
+          const filteredParsed = parsed.filter((m: any) => {
+            const uname = (m.username || '').toLowerCase();
+            const id = m.id || '';
+            if (OLD_DEMO_USERNAMES.has(uname)) return false;
+            if (deletedIds.has(id) || deletedIds.has(uname)) return false;
+            return true;
+          });
           const existingIds = new Set(filteredParsed.map((m: any) => m.id));
           const existingUsernames = new Set(filteredParsed.map((m: any) => (m.username || '').toLowerCase()));
           const missingMembers = INITIAL_TEAM.filter(
-            initM => !existingIds.has(initM.id) && !existingUsernames.has(initM.username.toLowerCase())
+            initM => !existingIds.has(initM.id) &&
+                     !existingUsernames.has(initM.username.toLowerCase()) &&
+                     !deletedIds.has(initM.id) &&
+                     !deletedIds.has(initM.username.toLowerCase())
           );
           const merged = filteredParsed.map((m: any) => {
             const initM = INITIAL_TEAM.find(
@@ -849,18 +875,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               username: m.username || initM.username
             } : { ...m, salaryCurrency: salCurr };
 
-            // Explicitly separate and preserve Mariam and Islam
-            if (memberObj.id === 'user-mariam') {
-              memberObj.name = 'Mariam';
-              memberObj.role = 'Web Developer';
-              memberObj.department = 'التطوير والتقنية';
-              memberObj.username = 'Mariam';
-              memberObj.employeeCode = 'SM-106';
-            } else if (memberObj.id === 'user-islam') {
+            if (memberObj.id === 'user-islam' || (memberObj.username || '').toLowerCase() === 'islam') {
               memberObj.name = 'Islam';
               memberObj.role = 'Video Editor';
               memberObj.username = 'Islam';
               memberObj.employeeCode = 'SM-108';
+              memberObj.isAccountActive = true;
             }
 
             return memberObj;
@@ -869,7 +889,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
     } catch {}
-    return INITIAL_TEAM;
+    return INITIAL_TEAM.filter(m => m.id !== 'user-mariam' && (m.username || '').toLowerCase() !== 'mariam');
   });
 
   const [emails, setEmails] = useState<EmailMessage[]>(() => {
@@ -1786,14 +1806,50 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return clientRenewals;
     }
     if (!currentUser) return [];
+
+    const currentUid = (currentUser.id || '').trim().toLowerCase();
+    const currentName = (currentUser.name || '').trim().toLowerCase();
+    const currentUsername = (currentUser.username || '').trim().toLowerCase();
+    const currentCode = (currentUser.employeeCode || '').trim().toLowerCase();
+    const userCanon = getCanonicalUserId(currentUser.id) || getCanonicalUserId(currentUser.username) || getCanonicalUserId(currentUser.name);
+    const userAliases = (userCanon && TEAM_ALIASES[userCanon]) ? TEAM_ALIASES[userCanon].map(a => a.toLowerCase().trim()) : [];
+
+    const normalizeAr = (s: string) => (s || '').replace(/[إأآا]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').trim().toLowerCase();
+    const normName = normalizeAr(currentName);
+    const normUsername = normalizeAr(currentUsername);
+
     return clientRenewals
-      .filter(c =>
-        Boolean(
-          c.assignedTeamMemberIds?.includes(currentUser.id) ||
-            c.managedBy === currentUser.name ||
-            c.managedBy === currentUser.id
-        )
-      )
+      .filter(c => {
+        // 1. Explicit ID in assignedTeamMemberIds
+        if (Array.isArray(c.assignedTeamMemberIds)) {
+          for (const mId of c.assignedTeamMemberIds) {
+            const cleanM = (mId || '').trim().toLowerCase();
+            if (cleanM === currentUid || cleanM === currentCode || cleanM === currentUsername) return true;
+            if (userCanon && getCanonicalUserId(cleanM) === userCanon) return true;
+          }
+        }
+
+        // 2. ManagedBy matches name or alias (e.g. "اميره" vs "Amira", "Aya", "هدير", etc.)
+        if (c.managedBy) {
+          const cleanMgr = c.managedBy.trim().toLowerCase();
+          const normMgr = normalizeAr(cleanMgr);
+          if (cleanMgr === currentUid || cleanMgr === currentName || cleanMgr === currentUsername) return true;
+          if (normMgr === normName || normMgr === normUsername) return true;
+          if (userCanon && getCanonicalUserId(cleanMgr) === userCanon) return true;
+          if (userAliases.some(alias => cleanMgr === alias || normMgr === normalizeAr(alias))) return true;
+        }
+
+        // 3. Mentions in project description, notes, or clientNotes
+        const textToCheck = `${c.projectDescription || ''} ${c.notes || ''}`.toLowerCase();
+        const normText = normalizeAr(textToCheck);
+        if (userCanon && userAliases.some(alias => textToCheck.includes(alias) || normText.includes(normalizeAr(alias)))) {
+          return true;
+        }
+        if (normName && normName.length >= 3 && normText.includes(normName)) return true;
+        if (currentUsername && textToCheck.includes(currentUsername)) return true;
+
+        return false;
+      })
       .map(client => ({
         ...client,
         // تأمين الملفات في طبقة البيانات: إخفاء أي ملف لم يصرح الأدمن لهذا الموظف بالوصول إليه
@@ -1801,7 +1857,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (!file.allowedTeamMemberIds || file.allowedTeamMemberIds.length === 0) {
             return true; // متاح لموظفي هذا العميل افتراضياً
           }
-          return file.allowedTeamMemberIds.includes(currentUser.id);
+          return file.allowedTeamMemberIds.includes(currentUser.id) ||
+                 (userCanon && file.allowedTeamMemberIds.some(fId => getCanonicalUserId(fId) === userCanon));
         })
       }));
   }, [clientRenewals, isUserAdminOrRoot, currentUser]);
@@ -2611,21 +2668,51 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteTeamMember = (id: string) => {
+    try {
+      const savedDeleted = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`);
+      const delList: string[] = savedDeleted ? JSON.parse(savedDeleted) : [];
+      if (!delList.includes(id)) {
+        delList.push(id);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`, JSON.stringify(delList));
+      }
+    } catch {}
+
     setTeam(prev => {
       const updated = prev.filter(m => m.id !== id);
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
       return updated;
     });
+
+    try {
+      fetch(`/api/team/${id}`, { method: 'DELETE' }).catch(() => {});
+    } catch {}
+
     logActivity('team', 'حذف موظف من الفريق', `تم حذف الموظف من المنظومة بنجاح`);
   };
 
   const deleteTeamMembers = (ids: string[]) => {
     // Keep admin protected
+    try {
+      const savedDeleted = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`);
+      const delList: string[] = savedDeleted ? JSON.parse(savedDeleted) : [];
+      ids.forEach(id => {
+        if (!delList.includes(id)) delList.push(id);
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`, JSON.stringify(delList));
+    } catch {}
+
     setTeam(prev => {
       const updated = prev.filter(m => !ids.includes(m.id) || m.id === adminUserId);
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
       return updated;
     });
+
+    ids.forEach(id => {
+      try {
+        fetch(`/api/team/${id}`, { method: 'DELETE' }).catch(() => {});
+      } catch {}
+    });
+
     logActivity('team', 'حذف أعضاء من الفريق', `تم حذف ${ids.length} عضو من الفريق`);
   };
 
@@ -2966,11 +3053,28 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 return prev;
               });
             }
+          }
+
+          if (payload.type === 'TEAM_MUTATION' || payload.type === 'FULL_SYNC') {
             if (Array.isArray(payload.team) && payload.team.length > 0) {
               setTeam(prev => {
-                if (prev.length !== payload.team.length) {
+                if (JSON.stringify(prev) !== JSON.stringify(payload.team)) {
                   isSyncingFromServerRef.current = true;
+                  safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(payload.team));
                   return payload.team;
+                }
+                return prev;
+              });
+            }
+          }
+
+          if (payload.type === 'RENEWAL_MUTATION' || payload.type === 'FULL_SYNC') {
+            if (Array.isArray(payload.clientRenewals)) {
+              setClientRenewals(prev => {
+                if (JSON.stringify(prev) !== JSON.stringify(payload.clientRenewals)) {
+                  isSyncingFromServerRef.current = true;
+                  safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(payload.clientRenewals));
+                  return payload.clientRenewals;
                 }
                 return prev;
               });
@@ -3012,6 +3116,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           if (Array.isArray(serverData.team) && serverData.team.length > 0) {
             setTeam(serverData.team);
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(serverData.team));
+          }
+          if (Array.isArray(serverData.clientRenewals)) {
+            setClientRenewals(serverData.clientRenewals);
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(serverData.clientRenewals));
           }
           if (Array.isArray(serverData.notifications) && serverData.notifications.length > 0) {
             setNotifications(serverData.notifications);
@@ -3066,13 +3175,14 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             brandConfig,
             reports,
             activities,
-            notifications
+            notifications,
+            clientRenewals
           })
         });
       } catch (e) {}
     }, 800);
     return () => clearTimeout(timer);
-  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications, currentUser]);
+  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications, clientRenewals, currentUser]);
 
   // Real-time polling & window focus listener to guarantee fresh tasks across all devices
   useEffect(() => {
@@ -3124,7 +3234,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setTeam(prev => {
               if (prev.length !== serverData.team.length) {
                 isSyncingFromServerRef.current = true;
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(serverData.team));
                 return serverData.team;
+              }
+              return prev;
+            });
+          }
+          if (serverData && Array.isArray(serverData.clientRenewals)) {
+            setClientRenewals(prev => {
+              if (JSON.stringify(prev) !== JSON.stringify(serverData.clientRenewals)) {
+                isSyncingFromServerRef.current = true;
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(serverData.clientRenewals));
+                return serverData.clientRenewals;
               }
               return prev;
             });

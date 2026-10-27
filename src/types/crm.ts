@@ -318,6 +318,7 @@ export interface ClientRenewal {
   amount: number;
   currency: string; // e.g. "ر.س", "د.ك", "$"
   renewalDate: string; // YYYY-MM-DD
+  startDate?: string; // تاريخ بدء التعاقد / تاريخ البداية
   status: RenewalStatus;
   firstSubscribedAt?: string; // تاريخ وساعة أول اشتراك (e.g. "2024-01-10 14:00")
   totalRenewalsCount?: number; // عدد مرات التجديد

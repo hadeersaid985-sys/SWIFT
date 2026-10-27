@@ -221,6 +221,37 @@ async function startServer() {
     }
   });
 
+  // Atomic Team Member Deletion (Instant sync and persistence across refreshes)
+  app.delete('/api/team/:id', (req, res) => {
+    try {
+      const memberId = req.params.id;
+      if (!memberId) return res.status(400).json({ error: 'memberId required' });
+
+      const current = readCurrentData();
+      const teamList: any[] = current.team || [];
+      current.team = teamList.filter((m: any) => m.id !== memberId && m.id !== 'user-1');
+
+      const deletedSet = new Set(current.deletedTeamMemberIds || []);
+      deletedSet.add(memberId);
+      current.deletedTeamMemberIds = Array.from(deletedSet);
+
+      saveData(current);
+      console.log(`[SWIFTMYND] Team member permanently deleted: ${memberId}`);
+
+      broadcastLiveSync({
+        type: 'TEAM_MUTATION',
+        team: current.team,
+        deletedTeamMemberIds: current.deletedTeamMemberIds,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, memberId, remaining: current.team.length });
+    } catch (err) {
+      console.error('Error deleting team member:', err);
+      return res.status(500).json({ error: 'Failed to delete team member' });
+    }
+  });
+
   // Atomic Task Creation or Update (Instant sync between Manager & Employee devices)
   app.post('/api/tasks', (req, res) => {
     try {
@@ -495,16 +526,19 @@ async function startServer() {
       (incoming.notifications || []).forEach((n: any) => notifMap.set(n.id, n));
       const mergedNotifications = Array.from(notifMap.values()).slice(0, 150);
 
-      // Smart merge team: union by ID
-      const teamMap = new Map<string, any>();
-      (currentData.team || []).forEach((m: any) => teamMap.set(m.id, m));
-      (incoming.team || []).forEach((m: any) => {
-        const existing = teamMap.get(m.id);
-        teamMap.set(m.id, existing ? { ...existing, ...m } : m);
-      });
-      const mergedTeam = Array.from(teamMap.values());
+      // Smart merge team: incoming team array from admin represents active team members.
+      const deletedMemberIds = new Set([
+        ...((currentData.deletedTeamMemberIds || [])),
+        ...((incoming.deletedTeamMemberIds || []))
+      ]);
+      let mergedTeam = currentData.team || [];
+      if (Array.isArray(incoming.team)) {
+        mergedTeam = incoming.team.filter((m: any) => !deletedMemberIds.has(m.id));
+      } else {
+        mergedTeam = mergedTeam.filter((m: any) => !deletedMemberIds.has(m.id));
+      }
 
-      // Smart merge client renewals
+      // Smart merge client renewals: incoming clientRenewals from admin take precedence
       let mergedRenewals = currentData.clientRenewals || [];
       if (Array.isArray(incoming.clientRenewals)) {
         mergedRenewals = incoming.clientRenewals;
@@ -515,7 +549,8 @@ async function startServer() {
         ...incoming,
         tasks: mergedTasks,
         notifications: mergedNotifications,
-        team: mergedTeam.length > 0 ? mergedTeam : currentData.team,
+        team: mergedTeam,
+        deletedTeamMemberIds: Array.from(deletedMemberIds),
         clientRenewals: mergedRenewals,
         deletedTasks: Array.from(deletedTaskIds).map(id => ({ id }))
       };

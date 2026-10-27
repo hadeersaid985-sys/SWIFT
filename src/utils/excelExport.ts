@@ -4,24 +4,32 @@ import { ClientRenewal, Task, TeamMember } from '../types/crm';
 /**
  * Export Client Renewals & Dossiers to Excel (.xlsx)
  */
-export const exportClientsToExcel = (clients: ClientRenewal[]) => {
-  const data = clients.map((c, index) => ({
-    'م': index + 1,
-    'اسم العميل': c.clientName,
-    'الشركة / الجهة': c.company || '-',
-    'رقم الهاتف': c.phone || '-',
-    'البريد الإلكتروني': c.email || '-',
-    'اسم باقة الخدمة': c.serviceName,
-    'قيمة الاشتراك': c.amount,
-    'العملة': c.currency,
-    'دورة السداد': c.planCycle,
-    'تاريخ البدء': c.firstSubscribedAt || c.createdAt || '-',
-    'تاريخ التجديد المستحق': c.renewalDate,
-    'حالة الاشتراك': c.status === 'active' ? 'ساري' : c.status === 'renewing_soon' ? 'مستحق قريباً' : c.status === 'overdue' ? 'متأخر' : c.status === 'renewed' ? 'تم التجديد' : 'ملغي',
-    'المسؤول عن المتابعة': c.managedBy || 'هدير سعيد',
-    'رابط شيت المتابعة': c.sheetUrl || '-',
-    'ملاحظات': c.notes || '-'
-  }));
+export const exportClientsToExcel = (clients: ClientRenewal[], isManager: boolean = false) => {
+  const data = clients.map((c, index) => {
+    const row: Record<string, any> = {
+      'م': index + 1,
+      'اسم العميل': c.clientName,
+      'الشركة / الجهة': c.company || '-',
+      'رقم الهاتف': c.phone || '-',
+      'البريد الإلكتروني': c.email || '-',
+      'اسم باقة الخدمة': c.serviceName,
+    };
+
+    if (isManager) {
+      row['سعر العقد (قيمة الاشتراك)'] = c.amount;
+      row['العملة'] = c.currency;
+    }
+
+    row['دورة السداد'] = c.planCycle;
+    row['تاريخ البدء'] = c.startDate || c.firstSubscribedAt || c.createdAt || '-';
+    row['تاريخ التجديد المستحق'] = c.renewalDate;
+    row['حالة الاشتراك'] = c.status === 'active' ? 'ساري' : c.status === 'renewing_soon' ? 'مستحق قريباً' : c.status === 'overdue' ? 'متأخر' : c.status === 'renewed' ? 'تم التجديد' : 'ملغي';
+    row['المسؤول عن المتابعة'] = c.managedBy || 'هدير سعيد';
+    row['رابط شيت المتابعة'] = c.sheetUrl || (c.googleSheets && c.googleSheets[0]?.url) || '-';
+    row['ملاحظات'] = c.notes || '-';
+
+    return row;
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(data);
   // Set RTL on sheet

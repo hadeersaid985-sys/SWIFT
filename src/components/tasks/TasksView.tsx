@@ -1341,7 +1341,7 @@ export const TasksView: React.FC = () => {
               ? (filterMember === 'all' ? team : team.filter(m => m.id === filterMember))
               : team.filter(m => m.id === currentUser.id)
             ).map(member => {
-              const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member) || isUserMentionedInTask(t, member));
+              const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member));
               const completedCount = memberTasks.filter(t => t.status === 'completed').length;
               const isCurrentMemberOpen = quickAddColumn === member.id;
 

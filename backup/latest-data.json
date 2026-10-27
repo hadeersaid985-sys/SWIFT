@@ -189,44 +189,19 @@
       "bankIban": "SA39200000091827461927"
     },
     {
-      "name": "Mariam ",
-      "employeeCode": "SM-110",
-      "role": "Web develper",
-      "department": "التطوير والتقنية",
-      "email": "",
-      "secondaryEmail": "",
-      "phone": "",
-      "whatsappNumber": "",
-      "username": "Mariam ",
-      "password": "Sw!ft5J8U%VgqiN",
-      "accessLevel": "member",
-      "isAccountActive": true,
-      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      "status": "online",
-      "socialAccounts": {
-        "linkedin": "",
-        "slack": "",
-        "whatsapp": "",
-        "github": ""
-      },
-      "id": "user-1793016396281",
-      "salaryCurrency": "ج.م",
-      "joinedDate": "2026-10-26"
-    },
-    {
-      "id": "user-1793025675186",
-      "employeeCode": "SM-111",
+      "id": "user-islam",
+      "employeeCode": "SM-108",
       "name": "Islam",
-      "role": "Islam",
-      "department": "التطوير والتقنية",
+      "role": "Video Editor",
+      "department": "المبيعات",
       "email": "Islam@swiftmynd.com",
-      "phone": "+966 50 000 0000",
-      "whatsappNumber": "+966 50 000 0000",
+      "phone": "201055945337",
+      "whatsappNumber": "201055945337",
       "username": "Islam",
-      "password": "Sw!ftiHaiQ$Cka6",
+      "password": "Sw!ftIHaiQ$Cka6",
       "accessLevel": "member",
       "isAccountActive": true,
-      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
       "status": "online",
       "joinedDate": "2026-10-26",
       "salary": 7500,
@@ -234,37 +209,7 @@
       "allowances": 700,
       "contractType": "دوام كامل",
       "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA84200000011827461926",
-      "secondaryEmail": "",
-      "socialAccounts": {
-        "linkedin": "",
-        "slack": "",
-        "whatsapp": "",
-        "github": ""
-      }
-    },
-    {
-      "id": "user-mariam",
-      "employeeCode": "SM-106",
-      "name": "Mariam",
-      "role": "Web Developer",
-      "department": "التطوير والتقنية",
-      "email": "Mariam@swiftmynd.com",
-      "phone": "201091910719",
-      "whatsappNumber": "201091910719",
-      "username": "Mariam",
-      "password": "Sw!ft5J8U%VgqiN",
-      "accessLevel": "member",
-      "isAccountActive": true,
-      "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-      "status": "online",
-      "joinedDate": "2023-09-01",
-      "salary": 7800,
-      "salaryCurrency": "ج.م",
-      "allowances": 900,
-      "contractType": "دوام كامل",
-      "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA63200000081827461924"
+      "bankIban": "SA84200000011827461926"
     }
   ],
   "tasks": [
@@ -859,7 +804,7 @@
       ],
       "timerStartedAt": 1793025174674,
       "estimatedHours": 2,
-      "assignedToId": "user-1793016178916"
+      "assignedToId": "user-islam"
     },
     {
       "startDate": "2026-10-26",
@@ -998,7 +943,7 @@
       "dueTime": "18:00",
       "mentionedUserIds": [],
       "createdAt": "2026-10-26",
-      "assignedToId": "user-1793025497733",
+      "assignedToId": "user-islam",
       "startDate": "2026-10-26",
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
       "isPrivate": false,
@@ -1012,26 +957,6 @@
       "dueDate": "2026-10-26",
       "category": "إداري",
       "comments": []
-    },
-    {
-      "dueTime": "18:00",
-      "status": "todo",
-      "timeLogs": [],
-      "assignedToId": "user-1793025675186",
-      "mentionedUserIds": [],
-      "subtasks": [],
-      "priority": "medium",
-      "title": "فيديوهات",
-      "isPrivate": false,
-      "category": "إداري",
-      "id": "task-1793025844602",
-      "comments": [],
-      "updatedAt": "2026-10-26T14:44:04.603Z",
-      "estimatedHours": 2,
-      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
-      "createdAt": "2026-10-26",
-      "dueDate": "2026-10-26",
-      "startDate": "2026-10-26"
     }
   ],
   "leads": [
@@ -1230,6 +1155,14 @@
           "size": "1.4 MB",
           "type": "pdf",
           "allowedTeamMemberIds": []
+        }
+      ],
+      "startDate": "2026-10-26",
+      "googleSheets": [
+        {
+          "id": "sheet-gx-1",
+          "title": "gxpway",
+          "url": "https://docs.google.com/spreadsheets/d/1tt3BDSaNEgZa5wCf7PGHTbhrr9irsIDN08K_izNKTNI/edit?gid=1314647522#gid=1314647522"
         }
       ]
     }
@@ -2184,5 +2117,9 @@
       "notes": "تراخيص إيميلات الفريق"
     }
   ],
-  "monthlyPayrolls": []
+  "monthlyPayrolls": [],
+  "deletedTeamMemberIds": [
+    "user-mariam",
+    "user-1793016396281"
+  ]
 }
