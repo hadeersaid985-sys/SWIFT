@@ -1537,239 +1537,164 @@ export const INITIAL_MARKETING_BOARDS: MarketingBoard[] = [
 // Initial Client Renewals (مواعيد وتفاصيل كل اكونت من ساعات اشترك وجدد معانا والتنبيهات بـ 4 أيام - للأدمن فقط)
 export const INITIAL_CLIENT_RENEWALS: ClientRenewal[] = [
   {
-    id: 'ren-1',
-    clientName: 'عبدالعزيز العتيبي',
-    company: 'شركة الأفق للاستشارات والتقنية (الكويت)',
-    projectDescription: 'استضافة وسيرفرات سويفت كلاود مع ربط 2 دومين ونقل أنظمة ظاهرلي جيو وظاهرلي سوشيال ميديا للهوست، وتأمين شهادات SSL وبوابات الدفع الإلكتروني k-net.',
-    phone: '+965 99 881 234',
-    whatsappNumber: '+96599881234',
-    email: 'al.otaibi@alofuq-kw.com',
-    serviceName: 'استضافة وسيرفرات سويفت (2 سيستم + 2 دومين)',
-    planCycle: 'سنوي',
-    amount: 3200,
-    currency: 'ج.م',
-    renewalDate: '2026-10-22', // متبقي يومين (تنبيه 4 أيام نشط!)
-    status: 'renewing_soon',
-    firstSubscribedAt: '2024-10-22 11:30', // تاريخ وساعة أول اشتراك
-    totalRenewalsCount: 2,
-    lastPaymentDate: '2025-10-22',
-    notes: 'تنبيه عاجل: متبقي يومان على التجديد. تم رفع ملفات السيستمين على الهوست بنجاح، بانتظار تأكيد تجديد السيرفر والدومين.',
-    managedBy: 'أحمد الشريف',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/1A-AlofuqTech-Kuwait-2026/edit?usp=sharing',
-    sheetTitle: 'شيت متابعة سيرفرات وهندسة الأفق (الكويت)',
-    contractNumber: 'CNT-KW-2024-88',
-    createdAt: '2024-10-22',
-    swiftRequests: [
-      'تفعيل باقة 2 دومين وربط شهادات SSL',
-      'نقل ملفات ظاهرلي جيو وظاهرلي سوشيال ميديا للهوست',
-      'إضافة بوابات الدفع k-net'
+    "clientName": "عمر",
+    "company": "الدرب",
+    "projectDescription": "",
+    "phone": "",
+    "whatsappNumber": "",
+    "email": "",
+    "serviceName": "باقة السيو",
+    "planCycle": "شهري",
+    "amount": 0,
+    "currency": "ج.م",
+    "renewalDate": "2026-11-06",
+    "status": "renewing_soon",
+    "notes": "",
+    "managedBy": "هدير سعيد",
+    "assignedTeamMemberIds": [
+      "user-1",
+      "user-amira",
+      "user-eman",
+      "user-yomna",
+      "user-aya",
+      "user-roaa"
     ],
-    renewalHistory: [
-      { id: 'rh-1', date: '2024-10-22 11:30', cycle: 'الاشتراك التأسيسي', amount: 3200, receiptNumber: 'REC-2024-101', note: 'بدء الاشتراك وحجز السيرفر والدومينات' },
-      { id: 'rh-2', date: '2025-10-22 14:15', cycle: 'تجديد سنوي (السنة الثانية)', amount: 3200, receiptNumber: 'REC-2025-342', note: 'تجديد السيرفر وترقية مساحة التخزين' }
-    ],
-    assignedTeamMemberIds: ['user-1', 'user-2'], // خاص بأحمد الشريف
-    onboardingStage: 'تسليم ومتابعة مستمرة',
-    folderFiles: [
-      { id: 'doc-1', name: 'عقد_استضافة_سيرفرات_الأفق_2024.pdf', category: 'عقد', size: '2.4 MB', type: 'application/pdf', uploadedAt: '2024-10-22', uploadedBy: 'أحمد الشريف', allowedTeamMemberIds: ['user-1', 'user-2'] },
-      { id: 'doc-2', name: 'سند_قبض_وسداد_الاشتراك_التأسيسي.pdf', category: 'فاتورة', size: '640 KB', type: 'application/pdf', uploadedAt: '2024-10-22', uploadedBy: 'هدير سعيد', allowedTeamMemberIds: ['user-1'] },
-      { id: 'doc-3', name: 'بريف_التهيئة_ونقل_2_سيستم_سويفت.docx', category: 'بريف فني', size: '1.1 MB', type: 'application/vnd.openxmlformats', uploadedAt: '2025-02-15', uploadedBy: 'طارق القحطاني', allowedTeamMemberIds: ['user-1', 'user-2'] }
-    ],
-    clientNotes: [
-      { id: 'note-1', text: 'تم نقل ملفات ظاهرلي جيو بنجاح وتجهيز الدومين الثاني والتأكد من شهادة SSL.', authorName: 'طارق القحطاني', date: '2026-10-20' },
-      { id: 'note-2', text: 'تواصل مع العميل لتأكيد موعد التجديد، طلب إرسال فاتورة جديدة بصيغة PDF.', authorName: 'أحمد الشريف', date: '2026-10-22' }
-    ]
+    "id": "ren-1793024696154",
+    "createdAt": "2026-10-26",
+    "folderFiles": []
   },
   {
-    id: 'ren-2',
-    clientName: 'سعود المنصور',
-    company: 'مؤسسة إعمار الخليج للمقاولات والتطوير',
-    projectDescription: 'إدارة باقة الظهور في محركات بحث الذكاء الاصطناعي (GEO) وتحسين محركات البحث SEO واستهداف الكلمات المفتاحية في قطاع المقاولات والتطوير العقاري بالسوق السعودي.',
-    phone: '+966 55 443 2190',
-    whatsappNumber: '+966554432190',
-    email: 's.mansour@eamar-khaleej.com',
-    serviceName: 'باقة ظهور الذكاء الاصطناعي GEO + تحسين محركات البحث SEO',
-    planCycle: 'شهري',
-    amount: 1850,
-    currency: 'ج.م',
-    renewalDate: '2026-10-23', // متبقي 3 أيام (تنبيه 4 أيام نشط!)
-    status: 'renewing_soon',
-    firstSubscribedAt: '2025-01-15 09:45',
-    totalRenewalsCount: 9,
-    lastPaymentDate: '2026-09-23',
-    notes: 'متبقي 3 أيام على التجديد الشهري. حققنا له ظهور قوي على بحث ChatGPT وPerplexity في السوق السعودي.',
-    managedBy: 'سارة المنصوري',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/1B-EamarKhaleej-GEO-Keywords/edit?usp=sharing',
-    sheetTitle: 'شيت الكلمات المفتاحية وتقارير GEO لإعمار الخليج',
-    contractNumber: 'CNT-SA-2025-114',
-    createdAt: '2025-01-15',
-    swiftRequests: [
-      'تحديث كلمات مفتاحية في ChatGPT وPerplexity',
-      'إرسال تقرير الظهور الأسبوعي على واتساب'
+    "clientName": "ا/ محمد الخميس",
+    "company": "ساوث كوست",
+    "projectDescription": "",
+    "phone": "",
+    "whatsappNumber": "",
+    "email": "",
+    "serviceName": "باقة سيو ",
+    "planCycle": "شهري",
+    "amount": 0,
+    "currency": "ج.م",
+    "renewalDate": "2026-11-18",
+    "status": "renewing_soon",
+    "notes": "",
+    "managedBy": "هدير سعيد",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1sP-P6xSXhAFLCipLoi508Jh2QsEqR8HAxUlsadx1wTg/edit?gid=0#gid=0",
+    "assignedTeamMemberIds": [
+      "user-amira",
+      "user-eman",
+      "user-yomna",
+      "user-1",
+      "user-aya"
     ],
-    renewalHistory: [
-      { id: 'rh-201', date: '2026-07-23 10:00', cycle: 'تجديد شهري يوليو', amount: 1850, receiptNumber: 'REC-2026-701', note: 'سداد تحويل بنكي فوري' },
-      { id: 'rh-202', date: '2026-08-23 11:20', cycle: 'تجديد شهري أغسطس', amount: 1850, receiptNumber: 'REC-2026-815', note: 'سداد مدى إلكتروني' },
-      { id: 'rh-203', date: '2026-09-23 16:45', cycle: 'تجديد شهري سبتمبر', amount: 1850, receiptNumber: 'REC-2026-928', note: 'سداد فيزا تجارية' }
-    ],
-    assignedTeamMemberIds: ['user-1', 'user-3'], // خاص بسارة المنصوري
-    onboardingStage: 'تسليم ومتابعة مستمرة',
-    folderFiles: [
-      { id: 'doc-4', name: 'عقد_باقة_GEO_وSEO_الشهري.pdf', category: 'عقد', size: '1.8 MB', type: 'application/pdf', uploadedAt: '2025-01-15', uploadedBy: 'هدير سعيد', allowedTeamMemberIds: ['user-1', 'user-3'] },
-      { id: 'doc-5', name: 'تقرير_تحليل_الكلمات_المفتاحية_والظهور.xlsx', category: 'بريف فني', size: '890 KB', type: 'application/vnd.ms-excel', uploadedAt: '2026-10-15', uploadedBy: 'سارة المنصوري', allowedTeamMemberIds: ['user-1', 'user-3'] }
-    ],
-    clientNotes: [
-      { id: 'note-3', text: 'العميل مهتم جداً بزيادة الكلمات المستهدفة في الرياض وجدة، تم تحديث الشيت ومشاركته مع فريق الماركيتنج.', authorName: 'سارة المنصوري', date: '2026-10-21' }
-    ]
+    "id": "ren-1793024639515",
+    "createdAt": "2026-10-26",
+    "folderFiles": []
   },
   {
-    id: 'ren-3',
-    clientName: 'فهد الدوسري',
-    company: 'مجموعة الدوسري للتجارة والتوريدات',
-    projectDescription: 'تهيئة وتدريب موظفي الشركة على سيستم CRM لإدارة خطوط المبيعات، وتوسيع تراخيص الموظفين وربط الفوترة الإلكترونية مع نظام هيئة الزكاة.',
-    phone: '+966 50 771 9922',
-    whatsappNumber: '+966507719922',
-    email: 'fahad@aldosari-group.com',
-    serviceName: 'اشتراك سنوي في سيستم CRM وإدارة المبيعات والتيم',
-    planCycle: 'سنوي',
-    amount: 4900,
-    currency: 'ج.م',
-    renewalDate: '2026-10-24', // متبقي 4 أيام بالضبط (تنبيه 4 أيام نشط!)
-    status: 'renewing_soon',
-    firstSubscribedAt: '2024-10-24 16:20',
-    totalRenewalsCount: 2,
-    lastPaymentDate: '2025-10-24',
-    notes: 'متبقي 4 أيام على التجديد السنوي. تواصل المدير لتأكيد إصدار فاتورة التجديد وتحديث عدد تراخيص الموظفين.',
-    managedBy: 'Mariam',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/1C-AldosariGroup-CRM-Sales-Tracking/edit?usp=sharing',
-    sheetTitle: 'شيت إعداد وتدريب مستخدمي CRM مجموعة الدوسري',
-    contractNumber: 'CNT-SA-2024-309',
-    createdAt: '2024-10-24',
-    swiftRequests: [
-      'ترقية عدد مستخدمي النظام من 10 إلى 25 موظف',
-      'ربط الفوترة الإلكترونية مع نظام هيئة الزكاة'
+    "clientName": "ا/اسلام",
+    "company": "جولدن",
+    "projectDescription": "",
+    "phone": "",
+    "whatsappNumber": "",
+    "email": "",
+    "serviceName": "باقة سيو ",
+    "planCycle": "سنوي",
+    "amount": 2500,
+    "currency": "ج.م",
+    "renewalDate": "2026-11-18",
+    "status": "renewing_soon",
+    "notes": "",
+    "managedBy": "هدير سعيد",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1FT-TV50lOvk_gFCZmUBTa0bPitAZrdpMA6tq_7I90fs/edit?gid=0#gid=0",
+    "sheetTitle": "جولدن",
+    "assignedTeamMemberIds": [
+      "user-1",
+      "user-aya",
+      "user-yomna",
+      "user-eman",
+      "user-amira"
     ],
-    renewalHistory: [
-      { id: 'rh-301', date: '2024-10-24 16:20', cycle: 'الاشتراك التأسيسي', amount: 4900, receiptNumber: 'REC-2024-188', note: 'تفعيل تراخيص سويفت سيلز' },
-      { id: 'rh-302', date: '2025-10-24 13:00', cycle: 'التجديد السنوي الثاني', amount: 4900, receiptNumber: 'REC-2025-412', note: 'تجديد التراخيص والصيانة' }
-    ],
-    assignedTeamMemberIds: ['user-1', 'user-mariam'], // خاص بمريم
-    onboardingStage: 'تسليم ومتابعة مستمرة',
-    folderFiles: [
-      { id: 'doc-6', name: 'عقد_تراخيص_CRM_مجموعة_الدوسري.pdf', category: 'عقد', size: '2.1 MB', type: 'application/pdf', uploadedAt: '2024-10-24', uploadedBy: 'هدير سعيد', allowedTeamMemberIds: ['user-1', 'user-mariam'] },
-      { id: 'doc-7', name: 'خطة_تدريب_فريق_المبيعات_سويفت.docx', category: 'بريف فني', size: '950 KB', type: 'application/vnd.openxmlformats', uploadedAt: '2024-11-01', uploadedBy: 'Mariam', allowedTeamMemberIds: ['user-1', 'user-mariam'] }
-    ]
+    "id": "ren-1793024552370",
+    "createdAt": "2026-10-26",
+    "folderFiles": []
   },
   {
-    id: 'ren-4',
-    clientName: 'خالد ناصر الجاسم',
-    company: 'متجر دريم هوم (Dream Home Store)',
-    projectDescription: 'استضافة وتطوير متجر دريم هوم الإلكتروني، تقديم الدعم الفني والصيانة الدورية وتثبيت بلاجن الشحن السريع وتحديثات ووكومرس.',
-    phone: '+966 54 321 0000',
-    whatsappNumber: '+966543210000',
-    email: 'khaled@dreamhome-sa.com',
-    serviceName: 'استضافة متجر إلكتروني ودعم فني وصيانة شهرية',
-    planCycle: 'شهري',
-    amount: 1200,
-    currency: 'ج.م',
-    renewalDate: '2026-11-18', // ساري (أكثر من 4 أيام)
-    status: 'active',
-    firstSubscribedAt: '2025-05-18 12:00',
-    totalRenewalsCount: 6,
-    lastPaymentDate: '2026-10-18',
-    notes: 'الاشتراك ساري وحالة السيرفر ممتازة.',
-    managedBy: 'Yomna',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/1D-DreamHome-Store-Hosting-Ops/edit?usp=sharing',
-    sheetTitle: 'شيت مهام وتحديثات متجر دريم هوم',
-    contractNumber: 'CNT-SA-2025-055',
-    createdAt: '2025-05-18',
-    swiftRequests: ['بلاجن سويفت للشحن السريع وتتبع الطلبات'],
-    renewalHistory: [
-      { id: 'rh-401', date: '2026-09-18 10:15', cycle: 'تجديد شهري سبتمبر', amount: 1200, receiptNumber: 'REC-2026-904', note: 'سداد بطاقة ائتمانية' },
-      { id: 'rh-402', date: '2026-10-18 09:30', cycle: 'تجديد شهري أكتوبر', amount: 1200, receiptNumber: 'REC-2026-1018', note: 'سداد إلكتروني مباشر' }
+    "clientName": "دكتور عماد",
+    "company": "الكشفيه ",
+    "projectDescription": "باقة سيو 20 مقاله",
+    "phone": "",
+    "whatsappNumber": "",
+    "email": "",
+    "serviceName": "باقة سيو 20 مقاله",
+    "planCycle": "شهري",
+    "amount": 0,
+    "currency": "ج.م",
+    "renewalDate": "2026-11-27",
+    "status": "renewing_soon",
+    "notes": "",
+    "managedBy": "اميره",
+    "assignedTeamMemberIds": [
+      "user-1",
+      "user-amira",
+      "user-yomna",
+      "user-roaa",
+      "user-aya"
     ],
-    assignedTeamMemberIds: ['user-1', 'user-yomna'], // خاص بيمنى
-    onboardingStage: 'تسليم ومتابعة مستمرة',
-    folderFiles: [
-      { id: 'doc-8', name: 'عقد_استضافة_ودعم_فني_دريم_هوم.pdf', category: 'عقد', size: '1.4 MB', type: 'application/pdf', uploadedAt: '2025-05-18', uploadedBy: 'هدير سعيد', allowedTeamMemberIds: ['user-1', 'user-yomna'] },
-      { id: 'doc-9', name: 'تقرير_سرعة_المتجر_وتحديثات_الـ_Plugins.pdf', category: 'بريف فني', size: '720 KB', type: 'application/pdf', uploadedAt: '2026-10-10', uploadedBy: 'Yomna', allowedTeamMemberIds: ['user-1', 'user-yomna'] }
-    ]
+    "id": "ren-1793024486658",
+    "createdAt": "2026-10-26",
+    "folderFiles": []
   },
   {
-    id: 'ren-5',
-    clientName: 'جاسم الصباح',
-    company: 'مكتب الصباح العقاري والتسويق الدولي (الكويت)',
-    projectDescription: 'تطوير وتشغيل نظام إدارة العقارات السحابي مع إطلاق وإدارة حملات الميديا بايينج الترويجية على سناب شات وإنستغرام برابط دومين مخصص.',
-    phone: '+965 66 112 345',
-    whatsappNumber: '+96566112345',
-    email: 'jassim@alsabah-realestate.kw',
-    serviceName: 'نظام إدارة العقارات السحابي + حملات السوشيال ميديا',
-    planCycle: 'نصف سنوي',
-    amount: 5500,
-    currency: 'ج.م',
-    renewalDate: '2026-12-15', // ساري
-    status: 'active',
-    firstSubscribedAt: '2025-06-15 15:10',
-    totalRenewalsCount: 3,
-    lastPaymentDate: '2026-06-15',
-    notes: 'تم تجديد العقد نصف السنوي بنجاح مع إضافة خدمة الحملات الترويجية.',
-    managedBy: 'Islam',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/1E-Alsabah-RealEstate-Campaigns/edit?usp=sharing',
-    sheetTitle: 'شيت حملات وعقارات مكتب الصباح (الكويت)',
-    contractNumber: 'CNT-KW-2025-192',
-    createdAt: '2025-06-15',
-    swiftRequests: ['ربط دومين الكويت المباشر مع صفحة الهبوط السريعة'],
-    renewalHistory: [
-      { id: 'rh-501', date: '2025-06-15 15:10', cycle: 'الاشتراك التأسيسي نصف السنوي', amount: 5500, receiptNumber: 'REC-2025-615', note: 'تفعيل السيرفر ونظام العقارات' },
-      { id: 'rh-502', date: '2025-12-15 11:00', cycle: 'تجديد نصف سنوي ثاني', amount: 5500, receiptNumber: 'REC-2025-1215', note: 'إضافة باقة إعلانات سناب شات وإنستغرام' },
-      { id: 'rh-503', date: '2026-06-15 14:00', cycle: 'تجديد نصف سنوي ثالث', amount: 5500, receiptNumber: 'REC-2026-615', note: 'ترقية نظام تتبع العملاء' }
+    "clientName": "موقع gx",
+    "company": "gxp way",
+    "projectDescription": "باقة سيو 20 مقاله ",
+    "phone": "",
+    "whatsappNumber": "",
+    "email": "",
+    "serviceName": "باقة سيو 20 مقاله",
+    "planCycle": "شهري",
+    "amount": 0,
+    "currency": "ج.م",
+    "renewalDate": "2026-10-27",
+    "status": "renewing_soon",
+    "notes": "https://docs.google.com/spreadsheets/d/1tt3BDSaNEgZa5wCf7PGHTbhrr9irsIDN08K_izNKTNI/edit?gid=1314647522#gid=1314647522",
+    "managedBy": "اميره",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1tt3BDSaNEgZa5wCf7PGHTbhrr9irsIDN08K_izNKTNI/edit?gid=1314647522#gid=1314647522",
+    "sheetTitle": "gxpway",
+    "assignedTeamMemberIds": [
+      "user-1",
+      "user-aya",
+      "user-amira",
+      "user-eman",
+      "user-yomna",
+      "user-roaa"
     ],
-    assignedTeamMemberIds: ['user-1', 'user-islam'], // خاص بإسلام
-    onboardingStage: 'تسليم ومتابعة مستمرة',
-    folderFiles: [
-      { id: 'doc-10', name: 'عقد_نظام_العقارات_والحملات_الإعلانية.pdf', category: 'عقد', size: '2.0 MB', type: 'application/pdf', uploadedAt: '2025-06-15', uploadedBy: 'هدير سعيد', allowedTeamMemberIds: ['user-1', 'user-islam'] },
-      { id: 'doc-11', name: 'فيديوهات_وتصاميم_الحملة_العقارية.zip', category: 'ملفات تصميم', size: '18.4 MB', type: 'application/zip', uploadedAt: '2026-09-01', uploadedBy: 'Islam', allowedTeamMemberIds: ['user-1', 'user-islam'] }
-    ]
-  },
-  {
-    id: 'ren-6',
-    clientName: 'م. أحمد كمال',
-    company: 'مكتب كمال للهندسة والتصميم',
-    projectDescription: 'نظام إدارة وتتبع مشاريع وتاسكات المكتب الهندسي ومتابعة المخططات ومواعيد التسليم مع التيم وتوثيق مراجعات الاستشاري.',
-    phone: '+20 10 998 7766',
-    whatsappNumber: '+20109987766',
-    email: 'ahmed@kamal-engineering.com',
-    serviceName: 'اشتراك نظام المهام ومتابعة المشاريع السحابية',
-    planCycle: 'ربع سنوي',
-    amount: 1600,
-    currency: 'ج.م',
-    renewalDate: '2026-10-15', // متأخر 5 أيام
-    status: 'overdue',
-    firstSubscribedAt: '2025-01-15 11:00',
-    totalRenewalsCount: 4,
-    lastPaymentDate: '2026-07-15',
-    notes: 'متأخر عن موعد التجديد، يرجى الاتصال والتذكير بالسداد.',
-    managedBy: 'Rawan',
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/1F-KamalEngineering-Projects-Tasks/edit?usp=sharing',
-    sheetTitle: 'شيت مشاريع وتاسكات مكتب كمال للهندسة',
-    contractNumber: 'CNT-EG-2025-072',
-    createdAt: '2025-01-15',
-    swiftRequests: ['طلب تمديد مهلة السداد وتفعيل إشعار واتساب التلقائي'],
-    renewalHistory: [
-      { id: 'rh-601', date: '2026-01-15 11:00', cycle: 'الربع الأول 2026', amount: 1600, receiptNumber: 'REC-2026-115', note: 'سداد تحويل بنكي' },
-      { id: 'rh-602', date: '2026-04-15 10:30', cycle: 'الربع الثاني 2026', amount: 1600, receiptNumber: 'REC-2026-415', note: 'سداد إلكتروني' },
-      { id: 'rh-603', date: '2026-07-15 12:00', cycle: 'الربع الثالث 2026', amount: 1600, receiptNumber: 'REC-2026-715', note: 'سداد فودافون كاش ومطابقة بالسعودي' }
+    "id": "ren-1793022923682",
+    "createdAt": "2026-10-26",
+    "folderFiles": [
+      {
+        "id": "doc-1793022955994",
+        "uploadedAt": "2026-10-26",
+        "uploadedBy": "هدير سعيد",
+        "name": "شيت العميل",
+        "category": "بريف فني",
+        "url": "https://docs.google.com/spreadsheets/d/1tt3BDSaNEgZa5wCf7PGHTbhrr9irsIDN08K_izNKTNI/edit?gid=1314647522#gid=1314647522",
+        "size": "1.4 MB",
+        "type": "pdf",
+        "allowedTeamMemberIds": []
+      }
     ],
-    assignedTeamMemberIds: ['user-1', 'user-rawan'], // خاص بروان
-    onboardingStage: 'تسليم ومتابعة مستمرة',
-    folderFiles: [
-      { id: 'doc-12', name: 'عقد_نظام_إدارة_المشاريع_الهندسية.pdf', category: 'عقد', size: '1.6 MB', type: 'application/pdf', uploadedAt: '2025-01-15', uploadedBy: 'هدير سعيد', allowedTeamMemberIds: ['user-1', 'user-rawan'] },
-      { id: 'doc-13', name: 'مخطط_سير_العمل_وتوزيع_المهام.pdf', category: 'بريف فني', size: '820 KB', type: 'application/pdf', uploadedAt: '2025-02-01', uploadedBy: 'Rawan', allowedTeamMemberIds: ['user-1', 'user-rawan'] }
+    "startDate": "2026-10-26",
+    "googleSheets": [
+      {
+        "id": "sheet-gx-1",
+        "title": "gxpway",
+        "url": "https://docs.google.com/spreadsheets/d/1tt3BDSaNEgZa5wCf7PGHTbhrr9irsIDN08K_izNKTNI/edit?gid=1314647522#gid=1314647522"
+      }
     ]
   }
 ];
 
-// تسجيلات ميتنج العملاء المهمين (VIP Google Meet Recordings)
 export const INITIAL_MEETING_RECORDINGS: MeetingRecording[] = [
   {
     id: 'rec-1',

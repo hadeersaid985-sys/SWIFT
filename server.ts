@@ -47,19 +47,35 @@ async function startServer() {
     }
   }
 
+  const MOCK_DEMO_CLIENT_IDS = new Set(['ren-1', 'ren-2', 'ren-3', 'ren-4', 'ren-5', 'ren-6']);
+  const MOCK_DEMO_CLIENT_NAMES = new Set(['جاسم الصباح', 'عبدالعزيز العتيبي', 'سعود المنصور', 'فهد الدوسري', 'خالد ناصر الجاسم', 'م. أحمد كمال']);
+
+  function cleanClientRenewals(list: any[]): any[] {
+    if (!Array.isArray(list)) return [];
+    return list.filter((r: any) => {
+      if (r && r.id && MOCK_DEMO_CLIENT_IDS.has(r.id)) return false;
+      const name = (r?.clientName || '').trim();
+      if (MOCK_DEMO_CLIENT_NAMES.has(name)) return false;
+      return true;
+    });
+  }
+
   // Safe file reader with fallback
   function readCurrentData(): any {
     try {
+      let parsed: any = {};
       if (fs.existsSync(DATA_FILE)) {
         const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-        return JSON.parse(raw);
-      }
-      if (fs.existsSync(LATEST_FILE)) {
+        parsed = JSON.parse(raw);
+      } else if (fs.existsSync(LATEST_FILE)) {
         const raw = fs.readFileSync(LATEST_FILE, 'utf-8');
-        const parsed = JSON.parse(raw);
+        parsed = JSON.parse(raw);
         fs.writeFileSync(DATA_FILE, JSON.stringify(parsed, null, 2), 'utf-8');
-        return parsed;
       }
+      if (Array.isArray(parsed.clientRenewals)) {
+        parsed.clientRenewals = cleanClientRenewals(parsed.clientRenewals);
+      }
+      return parsed;
     } catch (e) {
       console.error('[SWIFTMYND] Error reading data store:', e);
     }
@@ -163,16 +179,18 @@ async function startServer() {
       const current = readCurrentData();
 
       if (Array.isArray(fullList)) {
-        current.clientRenewals = fullList;
+        current.clientRenewals = cleanClientRenewals(fullList);
       } else if (renewal && renewal.id) {
-        const existing: any[] = current.clientRenewals || [];
-        const idx = existing.findIndex(r => r.id === renewal.id);
-        if (idx >= 0) {
-          existing[idx] = { ...existing[idx], ...renewal };
-        } else {
-          existing.unshift(renewal);
+        if (!MOCK_DEMO_CLIENT_IDS.has(renewal.id) && !MOCK_DEMO_CLIENT_NAMES.has((renewal.clientName || '').trim())) {
+          const existing: any[] = cleanClientRenewals(current.clientRenewals || []);
+          const idx = existing.findIndex(r => r.id === renewal.id);
+          if (idx >= 0) {
+            existing[idx] = { ...existing[idx], ...renewal };
+          } else {
+            existing.unshift(renewal);
+          }
+          current.clientRenewals = existing;
         }
-        current.clientRenewals = existing;
       } else {
         return res.status(400).json({ error: 'renewal or clientRenewals array required' });
       }
@@ -539,9 +557,9 @@ async function startServer() {
       }
 
       // Smart merge client renewals: incoming clientRenewals from admin take precedence
-      let mergedRenewals = currentData.clientRenewals || [];
+      let mergedRenewals = cleanClientRenewals(currentData.clientRenewals || []);
       if (Array.isArray(incoming.clientRenewals)) {
-        mergedRenewals = incoming.clientRenewals;
+        mergedRenewals = cleanClientRenewals(incoming.clientRenewals);
       }
 
       const merged = {

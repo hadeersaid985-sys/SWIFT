@@ -1004,6 +1004,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [activeMarketingBoardId, setActiveMarketingBoardId] = useState<string>('board-marketing-overview');
 
+  // Identifiers of mock demo clients that must never appear in production
+  const MOCK_DEMO_CLIENT_IDS = new Set(['ren-1', 'ren-2', 'ren-3', 'ren-4', 'ren-5', 'ren-6']);
+  const MOCK_DEMO_CLIENT_NAMES = new Set(['جاسم الصباح', 'عبدالعزيز العتيبي', 'سعود المنصور', 'فهد الدوسري', 'خالد ناصر الجاسم', 'م. أحمد كمال']);
+
+  const isMockDemoClient = (item: any) => {
+    if (!item) return true;
+    if (item.id && MOCK_DEMO_CLIENT_IDS.has(item.id)) return true;
+    const name = (item.clientName || '').trim();
+    if (MOCK_DEMO_CLIENT_NAMES.has(name)) return true;
+    return false;
+  };
+
   // Client Renewals Tracker & 4-Day Notification (مواعيد تجديد اشتراكات العملاء)
   const [clientRenewals, setClientRenewals] = useState<ClientRenewal[]>(() => {
     try {
@@ -1011,29 +1023,35 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (saved) {
         const parsed: ClientRenewal[] = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          return parsed.map(p => {
-            const initMatch = INITIAL_CLIENT_RENEWALS.find(i => i.id === p.id);
-            const curr = (p.currency === 'ر.س' || !p.currency) ? 'ج.م' : p.currency;
-            return {
-              ...initMatch,
-              ...p,
-              currency: curr,
-              projectDescription: p.projectDescription || initMatch?.projectDescription || '',
-              assignedTeamMemberIds: (p.assignedTeamMemberIds && p.assignedTeamMemberIds.length > 0)
-                ? p.assignedTeamMemberIds
-                : (initMatch?.assignedTeamMemberIds || ['user-1']),
-              folderFiles: (p.folderFiles && p.folderFiles.length > 0)
-                ? p.folderFiles
-                : (initMatch?.folderFiles || []),
-              sheetUrl: p.sheetUrl || initMatch?.sheetUrl,
-              sheetTitle: p.sheetTitle || initMatch?.sheetTitle,
-              contractNumber: p.contractNumber || initMatch?.contractNumber
-            };
-          });
+          const cleanList = parsed.filter(p => !isMockDemoClient(p));
+          if (cleanList.length > 0) {
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(cleanList));
+            return cleanList.map(p => {
+              const initMatch = INITIAL_CLIENT_RENEWALS.find(i => i.id === p.id);
+              const curr = (p.currency === 'ر.س' || !p.currency) ? 'ج.م' : p.currency;
+              return {
+                ...initMatch,
+                ...p,
+                currency: curr,
+                projectDescription: p.projectDescription || initMatch?.projectDescription || '',
+                assignedTeamMemberIds: (p.assignedTeamMemberIds && p.assignedTeamMemberIds.length > 0)
+                  ? p.assignedTeamMemberIds
+                  : (initMatch?.assignedTeamMemberIds || ['user-1']),
+                folderFiles: (p.folderFiles && p.folderFiles.length > 0)
+                  ? p.folderFiles
+                  : (initMatch?.folderFiles || []),
+                sheetUrl: p.sheetUrl || initMatch?.sheetUrl,
+                sheetTitle: p.sheetTitle || initMatch?.sheetTitle,
+                contractNumber: p.contractNumber || initMatch?.contractNumber
+              };
+            });
+          }
         }
       }
     } catch {}
-    return INITIAL_CLIENT_RENEWALS;
+    const initialClean = INITIAL_CLIENT_RENEWALS.filter(p => !isMockDemoClient(p));
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(initialClean));
+    return initialClean;
   });
 
   // Sync to safeStorage
@@ -1820,6 +1838,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return clientRenewals
       .filter(c => {
+        // Exclude any mock demo client
+        if (isMockDemoClient(c)) return false;
+
         // 1. Explicit ID in assignedTeamMemberIds
         if (Array.isArray(c.assignedTeamMemberIds)) {
           for (const mId of c.assignedTeamMemberIds) {
@@ -1839,14 +1860,13 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (userAliases.some(alias => cleanMgr === alias || normMgr === normalizeAr(alias))) return true;
         }
 
-        // 3. Mentions in project description, notes, or clientNotes
+        // 3. Mentions in project description or notes (must be explicit @ mention)
         const textToCheck = `${c.projectDescription || ''} ${c.notes || ''}`.toLowerCase();
-        const normText = normalizeAr(textToCheck);
-        if (userCanon && userAliases.some(alias => textToCheck.includes(alias) || normText.includes(normalizeAr(alias)))) {
-          return true;
+        for (const alias of userAliases) {
+          if (textToCheck.includes(`@${alias}`) || textToCheck.includes(`@ ${alias}`)) return true;
         }
-        if (normName && normName.length >= 3 && normText.includes(normName)) return true;
-        if (currentUsername && textToCheck.includes(currentUsername)) return true;
+        if (currentUsername && (textToCheck.includes(`@${currentUsername}`) || textToCheck.includes(`@ ${currentUsername}`))) return true;
+        if (currentCode && (textToCheck.includes(`@${currentCode}`) || textToCheck.includes(`@ ${currentCode}`))) return true;
 
         return false;
       })
@@ -3241,11 +3261,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
           }
           if (serverData && Array.isArray(serverData.clientRenewals)) {
+            const cleanRenewals = serverData.clientRenewals.filter((r: any) => !isMockDemoClient(r));
             setClientRenewals(prev => {
-              if (JSON.stringify(prev) !== JSON.stringify(serverData.clientRenewals)) {
+              if (JSON.stringify(prev) !== JSON.stringify(cleanRenewals)) {
                 isSyncingFromServerRef.current = true;
-                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(serverData.clientRenewals));
-                return serverData.clientRenewals;
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(cleanRenewals));
+                return cleanRenewals;
               }
               return prev;
             });
