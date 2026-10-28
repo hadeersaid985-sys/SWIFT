@@ -57,7 +57,10 @@ import {
   onDeletedTasksSnapshot,
   onNotificationsSnapshot,
   saveNotificationToFirestore,
-  seedInitialTasksIfEmpty
+  seedInitialTasksIfEmpty,
+  saveClientRenewalToFirestore,
+  deleteClientRenewalFromFirestore,
+  onClientRenewalsSnapshot
 } from '../firebase';
 
 interface DeadlineStatus {
@@ -1737,26 +1740,126 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Client Renewals Methods
   const addClientRenewal = (renewalData: Omit<ClientRenewal, 'id' | 'createdAt'>) => {
+    lastLocalMutationTimeRef.current = Date.now();
+    const assignedIds = (renewalData.assignedTeamMemberIds && renewalData.assignedTeamMemberIds.length > 0)
+      ? Array.from(new Set(['all', ...renewalData.assignedTeamMemberIds]))
+      : ['all', ...team.map(m => m.id)];
+
+    let validSheets = renewalData.googleSheets || [];
+    if (validSheets.length === 0 && renewalData.sheetUrl) {
+      validSheets = [{ id: 'sheet-' + Date.now(), title: renewalData.sheetTitle || 'شيت المتابعة', url: renewalData.sheetUrl }];
+    } else if (validSheets.length > 0 && !renewalData.sheetUrl && validSheets[0]?.url) {
+      renewalData.sheetUrl = validSheets[0].url;
+      renewalData.sheetTitle = validSheets[0].title;
+    }
+
     const newRen: ClientRenewal = {
       ...renewalData,
       id: 'ren-' + Date.now(),
+      assignedTeamMemberIds: assignedIds,
+      googleSheets: validSheets,
       createdAt: new Date().toISOString().split('T')[0]
     };
-    setClientRenewals(prev => [newRen, ...prev]);
+
+    setClientRenewals(prev => {
+      const next = [newRen, ...prev.filter(r => r.id !== newRen.id)];
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+
     logActivity('deal', 'إضافة موعد تجديد اشتراك عميل', `${newRen.clientName} - ${newRen.serviceName}`);
+
+    // Instant multi-device server sync & SSE broadcast
+    try {
+      fetch('/api/renewals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ renewal: newRen })
+      }).catch(err => console.warn('[CRM] Renewal sync notice:', err));
+    } catch {}
+
+    saveClientRenewalToFirestore(newRen);
   };
 
   const updateClientRenewal = (id: string, updates: Partial<ClientRenewal>) => {
-    setClientRenewals(prev => prev.map(r => (r.id === id ? { ...r, ...updates } : r)));
+    lastLocalMutationTimeRef.current = Date.now();
+    let updatedObj: ClientRenewal | null = null;
+
+    setClientRenewals(prev => {
+      const next = prev.map(r => {
+        if (r.id !== id) return r;
+
+        let mergedSheets = updates.googleSheets !== undefined ? updates.googleSheets : r.googleSheets;
+        let sheetUrl = updates.sheetUrl !== undefined ? updates.sheetUrl : r.sheetUrl;
+        let sheetTitle = updates.sheetTitle !== undefined ? updates.sheetTitle : r.sheetTitle;
+
+        if (updates.googleSheets && updates.googleSheets.length > 0) {
+          const first = updates.googleSheets.find(s => s.url);
+          if (first) {
+            sheetUrl = first.url;
+            sheetTitle = first.title;
+          }
+        } else if (updates.sheetUrl) {
+          if (!mergedSheets || mergedSheets.length === 0) {
+            mergedSheets = [{ id: 'sheet-1', title: sheetTitle || 'شيت المتابعة', url: updates.sheetUrl }];
+          } else {
+            mergedSheets = mergedSheets.map((s, idx) =>
+              idx === 0 ? { ...s, url: updates.sheetUrl || '', title: sheetTitle || s.title } : s
+            );
+          }
+        }
+
+        const fresh: ClientRenewal = {
+          ...r,
+          ...updates,
+          sheetUrl,
+          sheetTitle,
+          googleSheets: mergedSheets
+        };
+        updatedObj = fresh;
+        return fresh;
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+
+    if (updatedObj) {
+      try {
+        fetch('/api/renewals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ renewal: updatedObj })
+        }).catch(() => {});
+      } catch {}
+      saveClientRenewalToFirestore(updatedObj);
+    }
   };
 
   const deleteClientRenewal = (id: string) => {
-    setClientRenewals(prev => prev.filter(r => r.id !== id));
+    lastLocalMutationTimeRef.current = Date.now();
+    setClientRenewals(prev => {
+      const next = prev.filter(r => r.id !== id);
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+
+    try {
+      fetch('/api/renewals/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ renewalId: id })
+      }).catch(() => {});
+    } catch {}
+
+    deleteClientRenewalFromFirestore(id);
   };
 
   const markRenewalCompleted = (id: string) => {
-    setClientRenewals(prev =>
-      prev.map(r => {
+    lastLocalMutationTimeRef.current = Date.now();
+    let updatedRen: ClientRenewal | null = null;
+
+    setClientRenewals(prev => {
+      const next = prev.map(r => {
         if (r.id !== id) return r;
         const oldDate = new Date(r.renewalDate);
         if (r.planCycle === 'شهري') oldDate.setMonth(oldDate.getMonth() + 1);
@@ -1767,18 +1870,34 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const newDateStr = oldDate.toISOString().split('T')[0];
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
         logActivity('deal', 'تم تجديد الاشتراك بنجاح 🏆', `${r.clientName}: تم تجديد ${r.serviceName} حتى ${newDateStr}`);
-        return {
+        const fresh: ClientRenewal = {
           ...r,
           renewalDate: newDateStr,
           status: 'renewed',
           lastPaymentDate: new Date().toISOString().split('T')[0]
         };
-      })
-    );
+        updatedRen = fresh;
+        return fresh;
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+
+    if (updatedRen) {
+      try {
+        fetch('/api/renewals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ renewal: updatedRen })
+        }).catch(() => {});
+      } catch {}
+      saveClientRenewalToFirestore(updatedRen);
+    }
   };
 
   // Suspended Contracts Methods (العقود الموقوفة وتوثيق سبب الإيقاف)
   const suspendClientContract = (id: string, reason: string, notes?: string, category?: string) => {
+    lastLocalMutationTimeRef.current = Date.now();
     const target = clientRenewals.find(r => r.id === id);
     if (!target) return;
     const nowStr = new Date().toISOString().split('T')[0];
@@ -1796,6 +1915,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
       return next;
     });
+    try {
+      fetch('/api/renewals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ renewal: updated })
+      }).catch(() => {});
+    } catch {}
+    saveClientRenewalToFirestore(updated);
+
     logActivity('deal', 'إيقاف عقد عميل مؤقتاً ⏸️', `${target.clientName} (${target.company}) - سبب الإيقاف: ${reason}`);
     setNotifications(prev => [
       {
@@ -1812,6 +1940,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const reactivateClientContract = (id: string) => {
+    lastLocalMutationTimeRef.current = Date.now();
     const target = clientRenewals.find(r => r.id === id);
     if (!target) return;
     const todayStr = new Date().toISOString().split('T')[0];
@@ -1825,28 +1954,52 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
       return next;
     });
+    try {
+      fetch('/api/renewals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ renewal: updated })
+      }).catch(() => {});
+    } catch {}
+    saveClientRenewalToFirestore(updated);
+
     logActivity('deal', 'إعادة تفعيل عقد عميل ▶️', `تمت إعادة تفعيل عقد ${target.clientName} بنجاح`);
     confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
   };
 
   const updateSuspensionReason = (id: string, reason: string, notes?: string, category?: string) => {
+    lastLocalMutationTimeRef.current = Date.now();
+    let updatedObj: ClientRenewal | null = null;
     setClientRenewals(prev => {
       const next = prev.map(r => {
         if (r.id !== id) return r;
-        return {
+        const fresh = {
           ...r,
           suspensionReason: reason,
           suspensionNotes: notes !== undefined ? notes : r.suspensionNotes,
           suspensionCategory: category ? (category as any) : r.suspensionCategory
         };
+        updatedObj = fresh;
+        return fresh;
       });
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
       return next;
     });
+    if (updatedObj) {
+      try {
+        fetch('/api/renewals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ renewal: updatedObj })
+        }).catch(() => {});
+      } catch {}
+      saveClientRenewalToFirestore(updatedObj);
+    }
     logActivity('deal', 'تحديث سبب إيقاف العقد ✏️', `تم تحديث سبب إيقاف العقد: ${reason}`);
   };
 
   const addSuspendedContract = (data: Omit<ClientRenewal, 'id' | 'createdAt' | 'status'> & { suspensionReason: string; notes?: string; suspensionCategory?: string }) => {
+    lastLocalMutationTimeRef.current = Date.now();
     const nowStr = new Date().toISOString().split('T')[0];
     const newRen: ClientRenewal = {
       ...data,
@@ -1864,6 +2017,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
       return next;
     });
+    try {
+      fetch('/api/renewals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ renewal: newRen })
+      }).catch(() => {});
+    } catch {}
+    saveClientRenewalToFirestore(newRen);
+
     logActivity('deal', 'تسجيل عقد موقوف جديد', `${newRen.clientName} (${newRen.company}) - السبب: ${data.suspensionReason}`);
   };
 
@@ -1871,82 +2033,166 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return (clientRenewals || []).filter(r => r.status === 'suspended');
   }, [clientRenewals]);
 
-
   // Client Folder Files & Documents (إدارة مجلد ومستندات كل عميل)
   const addClientFile = (clientId: string, fileData: Omit<ClientFileDocument, 'id' | 'uploadedAt'>) => {
+    lastLocalMutationTimeRef.current = Date.now();
     const newDoc: ClientFileDocument = {
       id: 'doc-' + Date.now(),
       uploadedAt: new Date().toISOString().split('T')[0],
       uploadedBy: currentUser.name,
       ...fileData
     };
-    setClientRenewals(prev =>
-      prev.map(c => {
+    let updatedClient: ClientRenewal | null = null;
+    setClientRenewals(prev => {
+      const next = prev.map(c => {
         if (c.id === clientId) {
           const folderFiles = c.folderFiles ? [newDoc, ...c.folderFiles] : [newDoc];
-          return { ...c, folderFiles };
+          const fresh = { ...c, folderFiles };
+          updatedClient = fresh;
+          return fresh;
         }
         return c;
-      })
-    );
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+
+    if (updatedClient) {
+      try {
+        fetch('/api/renewals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ renewal: updatedClient })
+        }).catch(() => {});
+      } catch {}
+      saveClientRenewalToFirestore(updatedClient);
+    }
     logActivity('team', 'إضافة ملف لمجلد العميل', `أضاف ${currentUser.name} ملف (${fileData.name}) لمجلد العميل`);
   };
 
   const deleteClientFile = (clientId: string, fileId: string) => {
-    setClientRenewals(prev =>
-      prev.map(c => {
+    lastLocalMutationTimeRef.current = Date.now();
+    let updatedClient: ClientRenewal | null = null;
+    setClientRenewals(prev => {
+      const next = prev.map(c => {
         if (c.id === clientId && c.folderFiles) {
-          return { ...c, folderFiles: c.folderFiles.filter(f => f.id !== fileId) };
+          const fresh = { ...c, folderFiles: c.folderFiles.filter(f => f.id !== fileId) };
+          updatedClient = fresh;
+          return fresh;
         }
         return c;
-      })
-    );
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+
+    if (updatedClient) {
+      try {
+        fetch('/api/renewals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ renewal: updatedClient })
+        }).catch(() => {});
+      } catch {}
+      saveClientRenewalToFirestore(updatedClient);
+    }
   };
 
   const updateClientFilePermissions = (clientId: string, fileId: string, allowedTeamMemberIds: string[]) => {
-    setClientRenewals(prev =>
-      prev.map(c => {
+    lastLocalMutationTimeRef.current = Date.now();
+    let updatedClient: ClientRenewal | null = null;
+    setClientRenewals(prev => {
+      const next = prev.map(c => {
         if (c.id === clientId && c.folderFiles) {
-          return {
+          const fresh = {
             ...c,
             folderFiles: c.folderFiles.map(f =>
               f.id === fileId ? { ...f, allowedTeamMemberIds } : f
             )
           };
+          updatedClient = fresh;
+          return fresh;
         }
         return c;
-      })
-    );
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+
+    if (updatedClient) {
+      try {
+        fetch('/api/renewals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ renewal: updatedClient })
+        }).catch(() => {});
+      } catch {}
+      saveClientRenewalToFirestore(updatedClient);
+    }
     logActivity('team', 'تعديل صلاحيات ملف للعميل', `قام ${currentUser.name} بتحديث صلاحيات وصول الموظفين لمستند بالعميل`);
   };
 
   const addClientNote = (clientId: string, text: string) => {
+    lastLocalMutationTimeRef.current = Date.now();
     const newNote: ClientDossierNote = {
       id: 'note-' + Date.now(),
       text,
       authorName: currentUser.name,
       date: new Date().toLocaleDateString('ar-SA') + ' ' + new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
     };
-    setClientRenewals(prev =>
-      prev.map(c => {
+    let updatedClient: ClientRenewal | null = null;
+    setClientRenewals(prev => {
+      const next = prev.map(c => {
         if (c.id === clientId) {
           const clientNotes = c.clientNotes ? [newNote, ...c.clientNotes] : [newNote];
-          return { ...c, clientNotes };
+          const fresh = { ...c, clientNotes };
+          updatedClient = fresh;
+          return fresh;
         }
         return c;
-      })
-    );
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+
+    if (updatedClient) {
+      try {
+        fetch('/api/renewals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ renewal: updatedClient })
+        }).catch(() => {});
+      } catch {}
+      saveClientRenewalToFirestore(updatedClient);
+    }
   };
 
   const assignClientTeam = (clientId: string, memberIds: string[]) => {
-    setClientRenewals(prev =>
-      prev.map(c => {
+    lastLocalMutationTimeRef.current = Date.now();
+    let updatedClient: ClientRenewal | null = null;
+    setClientRenewals(prev => {
+      const next = prev.map(c => {
         if (c.id === clientId) {
-          return { ...c, assignedTeamMemberIds: memberIds };
+          const fresh = { ...c, assignedTeamMemberIds: memberIds };
+          updatedClient = fresh;
+          return fresh;
         }
         return c;
-      })
-    );
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(next));
+      return next;
+    });
+
+    if (updatedClient) {
+      try {
+        fetch('/api/renewals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ renewal: updatedClient })
+        }).catch(() => {});
+      } catch {}
+      saveClientRenewalToFirestore(updatedClient);
+    }
     logActivity('team', 'تعديل فريق العميل', `تم تحديث أعضاء الفريق المسؤولين عن متابعة العميل`);
   };
 
@@ -2095,16 +2341,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Exclude any mock demo client
         if (isMockDemoClient(c)) return false;
 
-        // 1. Explicit ID in assignedTeamMemberIds
+        // 1. If assignedTeamMemberIds is empty, undefined, or contains 'all', client is visible to the entire team!
+        if (!c.assignedTeamMemberIds || c.assignedTeamMemberIds.length === 0 || c.assignedTeamMemberIds.includes('all')) {
+          return true;
+        }
+
+        // 2. Explicit ID in assignedTeamMemberIds
         if (Array.isArray(c.assignedTeamMemberIds)) {
           for (const mId of c.assignedTeamMemberIds) {
             const cleanM = (mId || '').trim().toLowerCase();
+            if (cleanM === 'all') return true;
             if (cleanM === currentUid || cleanM === currentCode || cleanM === currentUsername) return true;
             if (userCanon && getCanonicalUserId(cleanM) === userCanon) return true;
           }
         }
 
-        // 2. ManagedBy matches name or alias (e.g. "اميره" vs "Amira", "Aya", "هدير", etc.)
+        // 3. ManagedBy matches name or alias (e.g. "اميره" vs "Amira", "Aya", "هدير", etc.)
         if (c.managedBy) {
           const cleanMgr = c.managedBy.trim().toLowerCase();
           const normMgr = normalizeAr(cleanMgr);
@@ -2114,7 +2366,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (userAliases.some(alias => cleanMgr === alias || normMgr === normalizeAr(alias))) return true;
         }
 
-        // 3. Mentions in project description or notes (must be explicit @ mention)
+        // 4. Mentions in project description or notes (must be explicit @ mention)
         const textToCheck = `${c.projectDescription || ''} ${c.notes || ''}`.toLowerCase();
         for (const alias of userAliases) {
           if (textToCheck.includes(`@${alias}`) || textToCheck.includes(`@ ${alias}`)) return true;
@@ -2126,10 +2378,10 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
       .map(client => ({
         ...client,
-        // تأمين الملفات في طبقة البيانات: إخفاء أي ملف لم يصرح الأدمن لهذا الموظف بالوصول إليه
+        // تأمين الملفات في طبقة البيانات: إتاحة الملفات العامة لجميع الموظفين المصرح لهم برؤية العميل
         folderFiles: (client.folderFiles || []).filter(file => {
-          if (!file.allowedTeamMemberIds || file.allowedTeamMemberIds.length === 0) {
-            return true; // متاح لموظفي هذا العميل افتراضياً
+          if (!file.allowedTeamMemberIds || file.allowedTeamMemberIds.length === 0 || file.allowedTeamMemberIds.includes('all')) {
+            return true;
           }
           return file.allowedTeamMemberIds.includes(currentUser.id) ||
                  (userCanon && file.allowedTeamMemberIds.some(fId => getCanonicalUserId(fId) === userCanon));
@@ -3389,6 +3641,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let unsubscribeTasks: (() => void) | null = null;
     let unsubscribeDeleted: (() => void) | null = null;
     let unsubscribeNotifications: (() => void) | null = null;
+    let unsubscribeRenewals: (() => void) | null = null;
 
     try {
       unsubscribeTasks = onTasksSnapshot(remoteTasks => {
@@ -3430,6 +3683,20 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           });
         }
       });
+
+      unsubscribeRenewals = onClientRenewalsSnapshot(remoteRenewals => {
+        if (Array.isArray(remoteRenewals) && remoteRenewals.length > 0) {
+          if (Date.now() - lastLocalMutationTimeRef.current < 2000) return;
+          const cleanRemote = remoteRenewals.filter(r => !isMockDemoClient(r));
+          setClientRenewals(prev => {
+            const map = new Map(prev.map(r => [r.id, r]));
+            cleanRemote.forEach(r => map.set(r.id, { ...(map.get(r.id) || {}), ...r }));
+            const merged = Array.from(map.values());
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      });
     } catch (err) {
       console.warn('[Firebase] Snapshot registration notice:', err);
     }
@@ -3438,6 +3705,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (unsubscribeTasks) unsubscribeTasks();
       if (unsubscribeDeleted) unsubscribeDeleted();
       if (unsubscribeNotifications) unsubscribeNotifications();
+      if (unsubscribeRenewals) unsubscribeRenewals();
     };
   }, []);
 

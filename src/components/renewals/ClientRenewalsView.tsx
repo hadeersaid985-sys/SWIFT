@@ -104,6 +104,19 @@ export const ClientRenewalsView: React.FC = () => {
   const [selectedTeamMemberIdsForClient, setSelectedTeamMemberIdsForClient] = useState<string[]>([]);
 
   const [editingSheetClient, setEditingSheetClient] = useState<ClientRenewal | null>(null);
+  const [sheetModalTab, setSheetModalTab] = useState<'sheets' | 'upload_file'>('sheets');
+  const [modalSheets, setModalSheets] = useState<{ id: string; title: string; url: string }[]>([]);
+  const [uploadedFileItem, setUploadedFileItem] = useState<{
+    name: string;
+    category: 'عقد' | 'فاتورة' | 'بريف فني' | 'عرض سعر' | 'ملفات تصميم' | 'أخرى';
+    url: string;
+    size: string;
+  }>({
+    name: '',
+    category: 'بريف فني',
+    url: '',
+    size: ''
+  });
   const [sheetUrlInput, setSheetUrlInput] = useState('');
   const [sheetTitleInput, setSheetTitleInput] = useState('');
   const [clientNoteInput, setClientNoteInput] = useState('');
@@ -249,19 +262,26 @@ export const ClientRenewalsView: React.FC = () => {
 
     const validSheets = (formData.googleSheets || []).filter(s => s.url.trim() || s.title.trim());
     const primarySheet = validSheets[0];
+    const assignedIds = (!formData.assignedTeamMemberIds || formData.assignedTeamMemberIds.length === 0)
+      ? ['all', ...team.map(m => m.id)]
+      : formData.assignedTeamMemberIds;
+
     const payload = {
       ...formData,
       sheetUrl: primarySheet?.url || formData.sheetUrl || '',
       sheetTitle: primarySheet?.title || formData.sheetTitle || '',
-      googleSheets: validSheets
+      googleSheets: validSheets,
+      assignedTeamMemberIds: assignedIds
     };
 
     if (editingRenewal) {
       updateClientRenewal(editingRenewal.id, payload);
       setEditingRenewal(null);
+      showToast('تم تحديث بيانات العميل واشتراكه بنجاح ✅');
     } else {
       addClientRenewal(payload);
       setShowAddModal(false);
+      showToast('تمت إضافة العميل ومشاركته مع كامل التيم بنجاح 🎉');
     }
 
     setFormData({
@@ -276,16 +296,43 @@ export const ClientRenewalsView: React.FC = () => {
       amount: 2500,
       currency: 'ج.م',
       startDate: new Date().toISOString().split('T')[0],
-      renewalDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: 'renewing_soon',
+      renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'active',
       notes: '',
-      managedBy: 'هدير سعيد',
+      managedBy: currentUser.name || 'هدير سعيد',
       sheetUrl: '',
       sheetTitle: '',
       googleSheets: [{ id: 'sheet-1', title: '', url: '' }],
-      contractNumber: '',
-      assignedTeamMemberIds: []
+      contractNumber: `SWIFT-${Math.floor(1000 + Math.random() * 9000)}`,
+      assignedTeamMemberIds: ['all', ...team.map(m => m.id)]
     });
+  };
+
+  const handleOpenCreateModal = () => {
+    setEditingRenewal(null);
+    setFormData({
+      clientName: '',
+      company: '',
+      projectDescription: '',
+      phone: '',
+      whatsappNumber: '',
+      email: '',
+      serviceName: 'استضافة وسيرفرات سويفت (2 سيستم + 2 دومين)',
+      planCycle: 'سنوي',
+      amount: 2500,
+      currency: 'ج.م',
+      startDate: new Date().toISOString().split('T')[0],
+      renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'active',
+      notes: '',
+      managedBy: currentUser.name || 'هدير سعيد',
+      sheetUrl: '',
+      sheetTitle: '',
+      googleSheets: [{ id: 'sheet-1', title: '', url: '' }],
+      contractNumber: `SWIFT-${Math.floor(1000 + Math.random() * 9000)}`,
+      assignedTeamMemberIds: ['all', ...team.map(m => m.id)] // يظهر لكامل التيم افتراضياً
+    });
+    setShowAddModal(true);
   };
 
   const handleOpenEdit = (ren: ClientRenewal) => {
@@ -396,20 +443,34 @@ export const ClientRenewalsView: React.FC = () => {
     setTimeout(() => setCopiedSheetId(null), 2500);
   };
 
-  // Open quick sheet edit modal
-  const handleOpenEditSheet = (e: React.MouseEvent, client: ClientRenewal) => {
+  // Open quick sheet and file manager modal (يدعم شيتات جوجل ورفع الملفات لكامل التيم)
+  const handleOpenEditSheet = (e: React.MouseEvent, client: ClientRenewal, initialTab: 'sheets' | 'upload_file' = 'sheets') => {
     e.stopPropagation();
     setEditingSheetClient(client);
-    setSheetUrlInput(client.sheetUrl || '');
-    setSheetTitleInput(client.sheetTitle || `شيت متابعة ${client.clientName} (${client.company})`);
+    setSheetModalTab(initialTab);
+    const existing = (client.googleSheets && client.googleSheets.length > 0)
+      ? client.googleSheets.map(s => ({ ...s }))
+      : (client.sheetUrl ? [{ id: 'sheet-1', title: client.sheetTitle || `شيت متابعة ${client.clientName}`, url: client.sheetUrl }] : [{ id: 'sheet-1', title: `شيت متابعة ${client.clientName}`, url: '' }]);
+    setModalSheets(existing);
+    setSheetUrlInput(existing[0]?.url || '');
+    setSheetTitleInput(existing[0]?.title || `شيت متابعة ${client.clientName}`);
+    setUploadedFileItem({
+      name: '',
+      category: 'بريف فني',
+      url: '',
+      size: ''
+    });
   };
 
-  // Save quick sheet edit
+  // Save sheets and sync with team in real time
   const handleSaveSheetLink = () => {
     if (!editingSheetClient) return;
-    const updates = {
-      sheetUrl: sheetUrlInput.trim() || undefined,
-      sheetTitle: sheetTitleInput.trim() || undefined
+    const validSheets = modalSheets.filter(s => s.url.trim() || s.title.trim());
+    const primary = validSheets[0];
+    const updates: Partial<ClientRenewal> = {
+      googleSheets: validSheets,
+      sheetUrl: primary?.url || '',
+      sheetTitle: primary?.title || ''
     };
     updateClientRenewal(editingSheetClient.id, updates);
     if (selectedClientForDossier && selectedClientForDossier.id === editingSheetClient.id) {
@@ -419,7 +480,55 @@ export const ClientRenewalsView: React.FC = () => {
       });
     }
     setEditingSheetClient(null);
-    showToast('تم حفظ وتحديث رابط الشيت بنجاح! 📗');
+    showToast('تم حفظ وتحديث شيتات جوجل ومشاركتها مع التيم بنجاح! 📗');
+  };
+
+  // File upload input change
+  const handleFileSelectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64Url = reader.result as string;
+      const sizeStr = file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.round(file.size / 1024)} KB`;
+      setUploadedFileItem(prev => ({
+        ...prev,
+        name: prev.name || file.name,
+        url: base64Url,
+        size: sizeStr
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Submit direct file upload
+  const handleSaveUploadedFile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSheetClient) return;
+    if (!uploadedFileItem.name.trim() || !uploadedFileItem.url) {
+      showToast('يرجى اختيار ملف وكتابة اسمه أولاً');
+      return;
+    }
+    const ext = uploadedFileItem.name.split('.').pop()?.toLowerCase() || '';
+    const fileType = ext === 'pdf' ? 'pdf' : (ext === 'xlsx' || ext === 'xls') ? 'excel' : 'image';
+    addClientFile(editingSheetClient.id, {
+      name: uploadedFileItem.name.trim(),
+      category: uploadedFileItem.category,
+      url: uploadedFileItem.url,
+      size: uploadedFileItem.size || '1.2 MB',
+      type: fileType,
+      uploadedBy: currentUser.name,
+      allowedTeamMemberIds: [] // متاح لكامل أعضاء الفريق
+    });
+    showToast(`تم رفع الملف (${uploadedFileItem.name}) ومشاركته مع كامل التيم بنجاح! 📁`);
+    setUploadedFileItem({
+      name: '',
+      category: 'بريف فني',
+      url: '',
+      size: ''
+    });
   };
 
   // Compose WhatsApp message link
@@ -521,10 +630,7 @@ export const ClientRenewalsView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           {/* 1. ➕ إضافة من فوق */}
           <button
-            onClick={() => {
-              setEditingRenewal(null);
-              setShowAddModal(true);
-            }}
+            onClick={handleOpenCreateModal}
             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer text-xs"
             title="إضافة عميل وموعد تجديد جديد"
           >
@@ -722,10 +828,7 @@ export const ClientRenewalsView: React.FC = () => {
 
               {isManager && (
                 <button
-                  onClick={() => {
-                    setEditingRenewal(null);
-                    setShowAddModal(true);
-                  }}
+                  onClick={handleOpenCreateModal}
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer text-xs shrink-0 self-start sm:self-auto"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -957,25 +1060,26 @@ export const ClientRenewalsView: React.FC = () => {
                                   </span>
                                 )}
                               </span>
-                              {isManager ? (
+                              <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenEdit(client)}
-                                  className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer flex items-center gap-0.5"
+                                  onClick={e => handleOpenEditSheet(e, client, 'sheets')}
+                                  className="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 underline cursor-pointer flex items-center gap-0.5 bg-white/70 px-1.5 py-0.5 rounded-md border border-emerald-200"
                                   title="إدارة أو إضافة شيتات أخرى لهذا العميل"
                                 >
                                   <Plus className="w-3 h-3" />
-                                  <span>{sheetsList.length > 0 ? 'تعديل / + شيت' : '+ إضافة شيت'}</span>
+                                  <span>{sheetsList.length > 0 ? 'تعديل / + شيت' : '+ شيت'}</span>
                                 </button>
-                              ) : (
                                 <button
                                   type="button"
-                                  onClick={e => handleOpenEditSheet(e, client)}
-                                  className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline cursor-pointer"
+                                  onClick={e => handleOpenEditSheet(e, client, 'upload_file')}
+                                  className="text-[10px] font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer flex items-center gap-0.5 bg-white/70 px-1.5 py-0.5 rounded-md border border-amber-200"
+                                  title="رفع فايل أو مستند مباشر للعميل"
                                 >
-                                  {client.sheetUrl ? 'تعديل الرابط ✏️' : '+ إضافة رابط'}
+                                  <Upload className="w-3 h-3" />
+                                  <span>+ رفع فايل 📎</span>
                                 </button>
-                              )}
+                              </div>
                             </div>
 
                             {sheetsList.length > 0 ? (
@@ -1026,7 +1130,7 @@ export const ClientRenewalsView: React.FC = () => {
                             ) : (
                               <button
                                 type="button"
-                                onClick={e => isManager ? handleOpenEdit(client) : handleOpenEditSheet(e, client)}
+                                onClick={e => handleOpenEditSheet(e, client, 'sheets')}
                                 className="w-full py-2 px-3 bg-white hover:bg-emerald-100/50 border border-dashed border-emerald-300 rounded-lg text-xs font-bold text-emerald-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
                               >
                                 <Plus className="w-3.5 h-3.5" />
@@ -1036,6 +1140,52 @@ export const ClientRenewalsView: React.FC = () => {
                           </div>
                         );
                       })()}
+
+                      {/* 📁 UPLOADED FILES LIST ON CARD */}
+                      {client.folderFiles && client.folderFiles.length > 0 && (
+                        <div className="mt-2.5 bg-amber-50/80 border border-amber-200/90 rounded-xl p-2.5 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-extrabold text-amber-950 flex items-center gap-1.5">
+                              <Paperclip className="w-3.5 h-3.5 text-amber-700" />
+                              <span>المستندات والملفات المرفوعة:</span>
+                              <span className="text-[10px] bg-amber-200 text-amber-950 font-black px-1.5 py-0.2 rounded-full">
+                                {client.folderFiles.length} ملف
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={e => handleOpenEditSheet(e, client, 'upload_file')}
+                              className="text-[10px] font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer flex items-center gap-0.5"
+                            >
+                              <Upload className="w-3 h-3" />
+                              <span>+ رفع فايل</span>
+                            </button>
+                          </div>
+                          <div className="space-y-1 max-h-24 overflow-y-auto pr-0.5">
+                            {client.folderFiles.map(file => (
+                              <div key={file.id} className="bg-white/90 px-2 py-1.5 rounded-lg border border-amber-200 text-xs flex items-center justify-between gap-1.5">
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <FileText className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                  <span className="font-bold text-slate-800 truncate" title={file.name}>{file.name}</span>
+                                  <span className="text-[9px] bg-amber-100 text-amber-900 px-1 py-0.2 rounded shrink-0">{file.category}</span>
+                                </div>
+                                {file.url && file.url !== '#' && (
+                                  <a
+                                    href={file.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download={file.name}
+                                    className="p-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded text-[10px] font-bold flex items-center gap-0.5 shrink-0"
+                                    title="تحميل / فتح الملف"
+                                  >
+                                    <Download className="w-3 h-3" />
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Contact Bar: WhatsApp + Call + Email */}
                       <div className="mt-3 flex items-center gap-1.5 flex-wrap">
@@ -2201,22 +2351,47 @@ export const ClientRenewalsView: React.FC = () => {
 
               {/* اختيار أعضاء التيم المصرح لهم برؤية هذا العميل */}
               <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <label className="block text-xs font-black text-slate-800 flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-purple-600" />
                     <span>من يظهر له هذا العميل في التيم؟ (صلاحيات الرؤية)</span>
                   </label>
-                  <span className="text-[10px] bg-purple-50 text-purple-800 px-2 py-0.5 rounded-md font-bold">
-                    الأدمن يرى الكل 🔒
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignedTeamMemberIds: ['all', ...team.map(m => m.id)] })}
+                      className="text-[10px] bg-purple-100 hover:bg-purple-200 text-purple-900 px-2 py-0.5 rounded-lg font-black transition-colors cursor-pointer"
+                    >
+                      تحديد الكل (يظهر للتيم كامل) ✅
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assignedTeamMemberIds: [] })}
+                      className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded-lg font-bold transition-colors cursor-pointer"
+                    >
+                      الأدمن فقط
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-2 bg-purple-50/80 rounded-xl border border-purple-200 text-[11px] text-purple-950 font-bold flex items-center justify-between">
+                  <span>
+                    {(!formData.assignedTeamMemberIds || formData.assignedTeamMemberIds.length === 0 || formData.assignedTeamMemberIds.includes('all') || formData.assignedTeamMemberIds.length >= team.length)
+                      ? '🌐 متاح لكافة أعضاء التيم: العميل والشيت والملفات ستظهر لجميع موظفي الفريق فوراً.'
+                      : `👤 متاح لـ (${formData.assignedTeamMemberIds.length}) من الموظفين المحددين بالأسفل + الأدمن.`}
+                  </span>
+                  <span className="text-[10px] bg-purple-200 text-purple-900 px-1.5 py-0.2 rounded font-black">
+                    مزامنة فورية
                   </span>
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-200">
                   {team.map(m => {
-                    const isChecked = (formData.assignedTeamMemberIds || []).includes(m.id);
+                    const isChecked = (formData.assignedTeamMemberIds || []).includes(m.id) || (formData.assignedTeamMemberIds || []).includes('all');
                     return (
                       <label
                         key={m.id}
-                        className={`flex items-center gap-2 p-1.5 rounded-lg border text-xs cursor-pointer ${
+                        className={`flex items-center gap-2 p-1.5 rounded-lg border text-xs cursor-pointer transition-all ${
                           isChecked ? 'bg-purple-50 border-purple-300 font-bold text-purple-950' : 'bg-white border-slate-200 text-slate-700'
                         }`}
                       >
@@ -2224,10 +2399,14 @@ export const ClientRenewalsView: React.FC = () => {
                           type="checkbox"
                           checked={isChecked}
                           onChange={e => {
-                            const cur = formData.assignedTeamMemberIds || [];
+                            let cur = formData.assignedTeamMemberIds || [];
+                            // If it currently has 'all', expand it to all ids first
+                            if (cur.includes('all')) {
+                              cur = team.map(member => member.id);
+                            }
                             const updated = e.target.checked
                               ? [...cur, m.id]
-                              : cur.filter(id => id !== m.id);
+                              : cur.filter(id => id !== m.id && id !== 'all');
                             setFormData({ ...formData, assignedTeamMemberIds: updated });
                           }}
                           className="w-3.5 h-3.5 text-purple-600 rounded cursor-pointer"
@@ -3287,7 +3466,7 @@ export const ClientRenewalsView: React.FC = () => {
         </div>
       )}
 
-      {/* ================= MODAL: تعديل سريع لرابط شيت جوجل ================= */}
+      {/* ================= MODAL: إدارة شيتات جوجل ورفع الملفات والمستندات للتيم ================= */}
       {editingSheetClient && (
         <div
           onClick={() => setEditingSheetClient(null)}
@@ -3295,14 +3474,22 @@ export const ClientRenewalsView: React.FC = () => {
         >
           <div
             onClick={e => e.stopPropagation()}
-            className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+            className="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-200 space-y-4 cursor-default max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-sm font-black text-slate-900">
-                  ربط وتعديل شيت جوجل (Google Sheet)
-                </h3>
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                  <FileSpreadsheet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">
+                    إدارة شيتات المتابعة والمستندات (للتيم) 📗📎
+                  </h3>
+                  <div className="text-[11px] text-slate-500">
+                    العميل: <strong className="text-slate-900">{editingSheetClient.clientName}</strong> ({editingSheetClient.company})
+                  </div>
+                </div>
               </div>
               <button
                 onClick={() => setEditingSheetClient(null)}
@@ -3312,54 +3499,297 @@ export const ClientRenewalsView: React.FC = () => {
               </button>
             </div>
 
-            <div className="text-xs text-slate-500">
-              العميل: <strong className="text-slate-900">{editingSheetClient.clientName}</strong> ({editingSheetClient.company})
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">اسم / عنوان الشيت:</label>
-                <input
-                  type="text"
-                  value={sheetTitleInput}
-                  onChange={e => setSheetTitleInput(e.target.value)}
-                  placeholder="مثال: شيت متابعة استضافة وسيرفرات العميل"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">رابط شيت جوجل (Google Sheet URL):</label>
-                <input
-                  type="url"
-                  value={sheetUrlInput}
-                  onChange={e => setSheetUrlInput(e.target.value)}
-                  placeholder="https://docs.google.com/spreadsheets/d/..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 font-mono text-[11px]"
-                />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  تأكد من إمكانية وصول التيم لرابط الشيت للمشاركة والتحرير (Share: Anyone with link can view/edit).
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold gap-1">
               <button
                 type="button"
-                onClick={() => setEditingSheetClient(null)}
-                className="px-3.5 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                onClick={() => setSheetModalTab('sheets')}
+                className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  sheetModalTab === 'sheets'
+                    ? 'bg-emerald-600 text-white shadow-2xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                إلغاء
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>شيتات جوجل (Google Sheets)</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${sheetModalTab === 'sheets' ? 'bg-emerald-800 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                  {modalSheets.length}
+                </span>
               </button>
+
               <button
                 type="button"
-                onClick={handleSaveSheetLink}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs flex items-center gap-1.5"
+                onClick={() => setSheetModalTab('upload_file')}
+                className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  sheetModalTab === 'upload_file'
+                    ? 'bg-amber-600 text-white shadow-2xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <Check className="w-3.5 h-3.5" />
-                <span>حفظ وتحديث الرابط</span>
+                <Upload className="w-3.5 h-3.5" />
+                <span>رفع فايل أو مستند مباشر 📎</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${sheetModalTab === 'upload_file' ? 'bg-amber-800 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                  {editingSheetClient.folderFiles?.length || 0}
+                </span>
               </button>
             </div>
+
+            {/* TAB 1: GOOGLE SHEETS */}
+            {sheetModalTab === 'sheets' && (
+              <div className="space-y-3.5 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    <span>روابط شيتات المتابعة المتاحة للتيم:</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalSheets(prev => [
+                        ...prev,
+                        { id: `sheet-${Date.now()}`, title: `شيت متابعة ${prev.length + 1}`, url: '' }
+                      ]);
+                    }}
+                    className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ إضافة شيت آخر</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2.5 max-h-[45vh] overflow-y-auto pr-0.5">
+                  {modalSheets.map((sheet, idx) => (
+                    <div key={sheet.id || idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                        <span className="flex items-center gap-1 text-emerald-800 font-extrabold">
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>شيت #{idx + 1}</span>
+                        </span>
+                        {modalSheets.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setModalSheets(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="text-rose-500 hover:text-rose-700 text-[10px] font-bold flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>حذف</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-0.5">اسم الشيت:</label>
+                        <input
+                          type="text"
+                          value={sheet.title}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setModalSheets(prev => prev.map((s, i) => i === idx ? { ...s, title: val } : s));
+                          }}
+                          placeholder="مثال: شيت متابعة السيرفرات والمواقع، شيت السوشيال ميديا"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-0.5">رابط شيت جوجل (Google Sheet URL):</label>
+                        <input
+                          type="url"
+                          value={sheet.url}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setModalSheets(prev => prev.map((s, i) => i === idx ? { ...s, url: val } : s));
+                          }}
+                          placeholder="https://docs.google.com/spreadsheets/d/..."
+                          className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-mono text-[11px]"
+                        />
+                      </div>
+
+                      {sheet.url && (
+                        <div className="flex items-center gap-2 pt-1">
+                          <a
+                            href={sheet.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>معاينة وفتح الشيت في نافذة جديدة ↗</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-900 leading-relaxed">
+                  💡 <strong>ملاحظة المزامنة الفورية:</strong> أي شيت يتم حفظه هنا يتم تسجيله في قاعدة البيانات ويسمع فوراً لكافة أعضاء التيم بدون أي تأخير.
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setEditingSheetClient(null)}
+                    className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveSheetLink}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs flex items-center gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>حفظ وتعميم الشيتات على التيم</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: DIRECT FILE UPLOAD */}
+            {sheetModalTab === 'upload_file' && (
+              <div className="space-y-4 animate-in fade-in">
+                <form onSubmit={handleSaveUploadedFile} className="bg-amber-50/80 p-3.5 rounded-2xl border-2 border-dashed border-amber-300 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                      <Upload className="w-4 h-4 text-amber-600" />
+                      <span>رفع فايل جديد (PDF, Excel, Word, صورة):</span>
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">اختر الملف من جهازك: *</label>
+                    <input
+                      type="file"
+                      required={!uploadedFileItem.url}
+                      accept=".pdf,.xlsx,.xls,.doc,.docx,.png,.jpg,.jpeg,.csv,.txt"
+                      onChange={handleFileSelectChange}
+                      className="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-white hover:file:bg-amber-700 cursor-pointer bg-white p-2 rounded-xl border border-slate-200"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">اسم الفايل: *</label>
+                      <input
+                        type="text"
+                        required
+                        value={uploadedFileItem.name}
+                        onChange={e => setUploadedFileItem(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="مثال: عقد استضافة السيرفرات 2026.pdf"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">تصنيف المستند:</label>
+                      <select
+                        value={uploadedFileItem.category}
+                        onChange={e => setUploadedFileItem(prev => ({ ...prev, category: e.target.value as any }))}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500 cursor-pointer"
+                      >
+                        <option value="بريف فني">بريف فني</option>
+                        <option value="عقد">عقد</option>
+                        <option value="فاتورة">فاتورة</option>
+                        <option value="عرض سعر">عرض سعر</option>
+                        <option value="ملفات تصميم">ملفات تصميم</option>
+                        <option value="أخرى">أخرى</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-black rounded-xl cursor-pointer shadow-xs flex items-center justify-center gap-1.5 transition-all hover:scale-[1.01]"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>رفع وحفظ الملف لكامل التيم الآن 📤</span>
+                  </button>
+                </form>
+
+                {/* List of currently uploaded files */}
+                <div className="space-y-2">
+                  <div className="text-xs font-black text-slate-800 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Folder className="w-3.5 h-3.5 text-amber-600" />
+                      <span>الملفات المرفوعة حالياً لهذا العميل:</span>
+                    </span>
+                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                      {editingSheetClient.folderFiles?.length || 0} ملف
+                    </span>
+                  </div>
+
+                  {(!editingSheetClient.folderFiles || editingSheetClient.folderFiles.length === 0) ? (
+                    <div className="p-4 text-center bg-slate-50 rounded-xl border border-slate-200 text-slate-400 text-xs">
+                      لا توجد ملفات أو مستندات مرفوعة لهذا العميل حتى الآن.
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {editingSheetClient.folderFiles.map(file => (
+                        <div
+                          key={file.id}
+                          className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <FileText className="w-4 h-4 text-amber-600 shrink-0" />
+                            <div className="truncate">
+                              <span className="font-bold text-slate-900 block truncate">{file.name}</span>
+                              <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                                <span>{file.category}</span>
+                                {file.size && <span>• {file.size}</span>}
+                                {file.uploadedBy && <span>• {file.uploadedBy}</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            {file.url && file.url !== '#' && (
+                              <a
+                                href={file.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                download={file.name}
+                                className="px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+                              >
+                                <Download className="w-3 h-3 text-amber-600" />
+                                <span>تحميل</span>
+                              </a>
+                            )}
+                            {isManager && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`هل تريد حذف ملف ${file.name}؟`)) {
+                                    deleteClientFile(editingSheetClient.id, file.id);
+                                    showToast('تم حذف الملف 🗑️');
+                                  }
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded-lg"
+                                title="حذف الملف"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setEditingSheetClient(null)}
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    إغلاق
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

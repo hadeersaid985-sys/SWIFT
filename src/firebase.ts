@@ -14,7 +14,7 @@ import {
   getDocFromServer
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { Task, AppNotification } from './types/crm';
+import { Task, AppNotification, ClientRenewal } from './types/crm';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -39,6 +39,7 @@ testConnection();
 const TASKS_COLLECTION = 'tasks';
 const DELETED_TASKS_COLLECTION = 'deletedTasks';
 const NOTIFICATIONS_COLLECTION = 'notifications';
+const CLIENT_RENEWALS_COLLECTION = 'clientRenewals';
 
 /**
  * Save / Update a task in Firestore in real-time
@@ -245,5 +246,62 @@ export async function seedInitialTasksIfEmpty(initialTasks: Task[]): Promise<voi
     }
   } catch (err) {
     console.warn('[Firebase] Seeding check notice:', err);
+  }
+}
+
+/**
+ * Save / Update a ClientRenewal in Firestore in real-time
+ */
+export async function saveClientRenewalToFirestore(renewal: ClientRenewal): Promise<void> {
+  if (!renewal || !renewal.id) return;
+  try {
+    const renRef = doc(db, CLIENT_RENEWALS_COLLECTION, renewal.id);
+    const cleanPayload: any = { ...renewal };
+    Object.keys(cleanPayload).forEach(key => {
+      if (cleanPayload[key] === undefined) {
+        delete cleanPayload[key];
+      }
+    });
+    cleanPayload.updatedAt = new Date().toISOString();
+    await setDoc(renRef, cleanPayload, { merge: true });
+  } catch (error) {
+    console.error('[Firebase] Error saving client renewal to Firestore:', error);
+  }
+}
+
+/**
+ * Delete a ClientRenewal in Firestore
+ */
+export async function deleteClientRenewalFromFirestore(renewalId: string): Promise<void> {
+  if (!renewalId) return;
+  try {
+    const renRef = doc(db, CLIENT_RENEWALS_COLLECTION, renewalId);
+    await deleteDoc(renRef);
+  } catch (error) {
+    console.error('[Firebase] Error deleting client renewal from Firestore:', error);
+  }
+}
+
+/**
+ * Real-time listener for ClientRenewals across all devices
+ */
+export function onClientRenewalsSnapshot(onUpdate: (renewals: ClientRenewal[]) => void) {
+  try {
+    const q = collection(db, CLIENT_RENEWALS_COLLECTION);
+    return onSnapshot(
+      q,
+      snapshot => {
+        const list: ClientRenewal[] = [];
+        snapshot.forEach(docSnap => {
+          list.push(docSnap.data() as ClientRenewal);
+        });
+        if (list.length > 0) {
+          onUpdate(list);
+        }
+      },
+      err => console.warn('[Firebase] Client renewals notice:', err)
+    );
+  } catch {
+    return () => {};
   }
 }
