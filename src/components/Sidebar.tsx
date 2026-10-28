@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import {
   Home,
-  FileSpreadsheet,
+  Inbox,
   BarChart2,
-  Users,
-  Cpu,
+  PieChart,
+  Bot,
+  Paperclip,
   MoreHorizontal,
   Search,
   ChevronDown,
+  ChevronUp,
   ChevronLeft,
   ChevronRight,
   Briefcase,
@@ -28,17 +30,9 @@ import {
   PanelRightOpen,
   Sliders,
   Clock,
-  Bell,
   Sparkles,
-  ShieldAlert,
   UserCheck,
-  ShieldCheck,
-  RotateCcw,
   Server,
-  UploadCloud,
-  AtSign,
-  Timer,
-  Lock,
   Settings,
   Camera,
   LogOut,
@@ -48,11 +42,13 @@ import {
   Wallet,
   Percent,
   Lightbulb,
-  X
+  X,
+  Folder,
+  Layers,
+  AtSign
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../context/CRMContext';
 import { useChat } from '../context/ChatContext';
-import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 
 export interface SidebarProps {
   isMobileOpen?: boolean;
@@ -66,30 +62,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
     setActiveTab,
     unreadEmailsCount,
     tasks,
-    getDeadlineStatus,
     currentUser,
     setIsBrandModalOpen,
     isManager,
     renewalsDueSoonCount,
-    clientRenewals,
-    visibleClients,
     suspendedContracts,
-    impersonateUser,
-    returnToAdmin,
-    team,
-    setIsAdminPinModalOpen,
-    setIsGitHubModalOpen,
-    visibleLeads,
-    isSalesUser,
-    logoutUser
+    logoutUser,
+    setIsGitHubModalOpen
   } = useCRM();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [salesOpen, setSalesOpen] = useState(true);
   const [activitiesOpen, setActivitiesOpen] = useState(true);
   const [inventoryOpen, setInventoryOpen] = useState(false);
-  const [supportOpen, setSupportOpen] = useState(false);
-  const [integrationsOpen, setIntegrationsOpen] = useState(false);
+  const [financeOpen, setFinanceOpen] = useState(false);
+  const [marketingOpen, setMarketingOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState('');
 
   // Visible tasks for the current user in sidebar
@@ -97,1480 +84,1097 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
     ? tasks
     : tasks.filter(t => !t.isPrivate && ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentionedInTask(t, currentUser)));
 
-  const mentionedTasksCount = isManager
-    ? tasks.filter(t => isUserMentionedInTask(t, currentUser)).length
-    : tasks.filter(t => !t.isPrivate && isUserMentionedInTask(t, currentUser)).length;
-
-  // Check overdue tasks for current user
-  const overdueCount = userVisibleTasks.filter(t => {
-    const st = getDeadlineStatus(t.dueDate, t.dueTime, t.status);
-    return st.isOverdue;
-  }).length;
-
   const pendingTasksCount = userVisibleTasks.filter(t => t.status !== 'completed').length;
+
+  // Search filter helper
+  const matchesSearch = (text: string) => {
+    if (!sidebarSearch.trim()) return true;
+    return text.toLowerCase().includes(sidebarSearch.trim().toLowerCase());
+  };
+
+  const handleSelectTab = (tab: any) => {
+    setActiveTab(tab);
+    onCloseMobile?.();
+  };
 
   return (
     <>
+      {/* ================= DESKTOP SIDEBAR ================= */}
       <aside
-        className={`hidden md:flex bg-[#172033] text-slate-300 border-l border-slate-800 shrink-0 transition-all duration-300 flex-col z-30 ${
+        className={`hidden md:flex bg-[#223458] text-[#cbd5e1] border-l border-[#2d456f] shrink-0 transition-all duration-300 flex-col z-30 select-none ${
           isCollapsed ? 'w-16' : 'w-64'
         }`}
       >
-      {/* Sidebar Header: Brand & Collapse Toggle & Logo Change */}
-      <div className="h-14 border-b border-slate-800 flex items-center justify-between px-3 text-white">
-        {!isCollapsed ? (
-          <div className="flex items-center gap-2 min-w-0">
-            <SwiftMyndLogo
-              variant="full"
-              size="md"
-              isDark={true}
-              onClick={() => setActiveTab(isManager ? 'home' : 'tasks')}
-              className="overflow-hidden"
-            />
-            <button
-              onClick={() => setIsBrandModalOpen(true)}
-              className="flex items-center gap-1 px-1.5 py-1 rounded-md bg-slate-800/90 hover:bg-blue-600 text-blue-300 hover:text-white border border-slate-700 hover:border-blue-500 transition-all cursor-pointer shrink-0 text-[10px] font-bold shadow-2xs"
-              title="تغيير اللوجو والشعار مباشرة من الواجهة الرئيسية"
-            >
-              <Camera className="w-3 h-3 text-blue-400" />
-              <span>تغيير</span>
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-1 mx-auto">
-            <SwiftMyndLogo
-              variant="icon"
-              size="sm"
-              isDark={true}
-              onClick={() => setIsCollapsed(false)}
-              className="mx-auto"
-            />
-            <button
-              onClick={() => setIsBrandModalOpen(true)}
-              className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white transition-colors cursor-pointer"
-              title="تغيير اللوجو"
-            >
-              <Camera className="w-3 h-3" />
-            </button>
-          </div>
-        )}
-
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors cursor-pointer"
-          title={isCollapsed ? 'توسيع القائمة' : 'تصغير القائمة'}
-        >
-          {isCollapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
-        </button>
-      </div>
-
-      {/* User Status Header */}
-      {!isCollapsed && (
-        <div className="p-3 border-b border-slate-800 bg-slate-900/40">
-          <div className="flex items-center gap-2.5">
-            <div className="relative shrink-0">
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-8 h-8 rounded-full border border-slate-700 object-cover"
-              />
-              <span className="w-2 h-2 rounded-full bg-emerald-500 absolute bottom-0 right-0 ring-1 ring-slate-900" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="font-semibold text-slate-100 text-xs truncate">{currentUser.name}</div>
-              <div className="text-[10px] text-slate-400 truncate">{currentUser.role || (isManager ? 'مدير المنظومة' : 'عضو الفريق')}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Navigation Scrollable Body */}
-      <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1 text-xs font-medium scrollbar-thin">
-        {/* ================= IF EMPLOYEE: ONLY SHOW TASKS, TIMER, MENTIONS, AND WORK ================= */}
-        {!isManager ? (
-          <div className="space-y-1.5 pt-1">
-            <div className="px-2 py-1 flex items-center justify-between text-[11px] font-black text-slate-300 tracking-wide">
-              <span>مهام العمل والمتابعة</span>
-              <span className="text-[9px] bg-slate-800 text-blue-300 border border-slate-700 px-1.5 py-0.2 rounded font-mono">
-                {currentUser.name}
-              </span>
-            </div>
-
-            {/* Accordion: أنشطة (مطابق لطلب وصورة المستخدم بالتمام) */}
-            <div className="pt-0.5">
-              {!isCollapsed ? (
-                <div className="w-full text-right flex items-center justify-between px-2.5 py-1.5 text-slate-300 text-xs font-bold bg-slate-800/40 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <CheckSquare className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>أنشطة</span>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-              ) : (
-                <div className="h-px bg-slate-800 my-1" />
-              )}
-
-              <div className="space-y-0.5 pr-1 mt-1">
-                {/* 1. تاسكات الفريق والتايمر */}
-                <button
-                  onClick={() => setActiveTab('tasks')}
-                  className={`w-full text-right flex items-center px-3 py-2 rounded-lg transition-all cursor-pointer ${
-                    activeTab === 'tasks'
-                      ? 'bg-blue-600 text-white font-extrabold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80 hover:text-white'
-                  }`}
-                  title="تاسكات الفريق والتايمر ومواعيدها"
-                >
-                  <div className="flex items-center gap-2">
-                    <CheckSquare className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                    {!isCollapsed && <span className="font-bold">تاسكات الفريق والتايمر</span>}
-                  </div>
-                </button>
-
-                {/* 2. مهام معمول لي فيها منشن (@) */}
-                <button
-                  onClick={() => setActiveTab('tasks')}
-                  className={`w-full text-right flex items-center justify-between px-3 py-1.5 rounded-lg transition-all cursor-pointer text-xs ${
-                    activeTab === 'tasks' && mentionedTasksCount > 0
-                      ? 'text-blue-300 hover:bg-slate-800/80'
-                      : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                  }`}
-                  title="المهام المعمول لي فيها منشن (@)"
-                >
-                  <div className="flex items-center gap-2">
-                    <AtSign className="w-3.5 h-3.5 shrink-0 text-indigo-400" />
-                    {!isCollapsed && <span>مهام منشن لي (@)</span>}
-                  </div>
-                  {!isCollapsed && (
-                    <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-1.5 py-0.2 rounded-full font-mono font-bold">
-                      {mentionedTasksCount}
-                    </span>
-                  )}
-                </button>
-
-                {/* 3. الاجتماعات */}
-                <button
-                  onClick={() => setActiveTab('meetings')}
-                  className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                    activeTab === 'meetings' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                  }`}
-                  title="الاجتماعات"
-                >
-                  <Calendar className="w-3.5 h-3.5 shrink-0 text-blue-400" />
-                  {!isCollapsed && <span>الاجتماعات</span>}
-                </button>
-
-                {/* 4. المكالمات */}
-                <button
-                  onClick={() => setActiveTab('calls')}
-                  className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                    activeTab === 'calls' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                  }`}
-                  title="المكالمات"
-                >
-                  <PhoneCall className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                  {!isCollapsed && <span>المكالمات</span>}
-                </button>
-              </div>
-            </div>
-
-            {/* بريد الفريق (Mail) مع البادج [1] */}
-            <button
-              onClick={() => setActiveTab('mail')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'mail' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="بريد الفريق (Mail)"
-            >
-              <div className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 shrink-0 text-cyan-400" />
-                {!isCollapsed && <span>بريد الفريق (Mail)</span>}
-              </div>
-              {!isCollapsed && (
-                <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.2 rounded-full font-bold font-mono">
-                  1
-                </span>
-              )}
-            </button>
-
-            {/* دردشة وتواصل الفريق (Team Chat) */}
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'chat'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="دردشة وتواصل فريق العمل (Team Chat)"
-            >
-              <div className="flex items-center gap-2.5">
-                <MessagesSquare className="w-4 h-4 shrink-0 text-amber-400" />
-                {!isCollapsed && <span>دردشة الفريق (Chat)</span>}
-              </div>
-              {!isCollapsed && unreadChatCount > 0 && (
-                <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded-full font-bold font-mono animate-pulse">
-                  {unreadChatCount}
-                </span>
-              )}
-            </button>
-
-            {/* ملفات العملاء والشيتات (متاحة للتيم لسهولة وصول الفريق لملف كل عميل وشيت جوجل الخاص به) */}
-            <button
-              onClick={() => setActiveTab('renewals')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'renewals'
-                  ? 'bg-blue-600 text-white font-extrabold shadow-md'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="ملفات العملاء وشيتات المتابعة (Google Sheets)"
-            >
-              <div className="flex items-center gap-2.5">
-                <FileSpreadsheet className="w-4 h-4 shrink-0 text-emerald-400" />
-                {!isCollapsed && <span>ملفات العملاء والشيتات</span>}
-              </div>
-              {!isCollapsed && (
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.2 rounded font-bold font-mono">
-                  {visibleClients.length} عميل
-                </span>
-              )}
-            </button>
-
-            {/* العملاء المحتملون (خاص بالسيلز والمبيعات - مثل مايبل Maibel - وتظهر فقط الليدز المعينة لها) */}
-            {isSalesUser && (
-              <button
-                onClick={() => setActiveTab('leads')}
-                className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'leads'
-                    ? 'bg-purple-600 text-white font-extrabold shadow-md'
-                    : 'text-purple-300 hover:bg-slate-800/80 hover:text-white'
-                }`}
-                title="العملاء المحتملون المخصصون لك للمتابعة والتفاوض"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Building2 className="w-4 h-4 shrink-0 text-purple-400" />
-                  {!isCollapsed && <span>العملاء المحتملون (المبيعات)</span>}
-                </div>
-                {!isCollapsed && (
-                  <span className="text-[10px] bg-purple-500/25 text-purple-200 border border-purple-400/40 px-1.5 py-0.2 rounded font-bold font-mono">
-                    {visibleLeads.length} عميل
-                  </span>
-                )}
-              </button>
-            )}
-
-            {/* الملف الشخصي وتعديل الحساب (الاسم، الصورة، الباسورد) */}
-            <div className="pt-2 border-t border-slate-800/80">
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-xl transition-all cursor-pointer border ${
-                  activeTab === 'profile'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-md border-blue-400 ring-1 ring-blue-300/40'
-                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-white border-slate-700/60'
-                }`}
-                title="الملف الشخصي: تعديل الاسم، صورة البروفايل، وكلمة المرور"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-5 h-5 rounded-full object-cover border border-cyan-400 shrink-0"
-                  />
-                  {!isCollapsed && (
-                    <div className="truncate">
-                      <div className="font-extrabold truncate text-xs text-white">{currentUser.name}</div>
-                      <div className="text-[10px] text-cyan-300 truncate font-semibold">تعديل البروفايل والباسورد ⚙️</div>
-                    </div>
-                  )}
-                </div>
-                {!isCollapsed && (
-                  <span className="text-[9px] bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 px-1.5 py-0.5 rounded font-bold shrink-0">
-                    تعديل
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* ================= IF ADMIN: SHOW EVERYTHING (الادمن عنده كل حاجة) ================= */
-          <>
-            {/* Item 1: الرئيسية */}
-            <button
-              onClick={() => setActiveTab('home')}
-              className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'home'
-                  ? 'bg-blue-600 text-white font-bold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="الرئيسية"
-            >
-              <Home className="w-4 h-4 shrink-0" />
-              {!isCollapsed && <span>الرئيسية</span>}
-            </button>
-
-            {/* إعدادات المنظومة */}
-            <button
-              onClick={() => setActiveTab('system_settings')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'system_settings'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="إعدادات المنظومة: الشعار، الاسم، الألوان، والتخصيص"
-            >
-              <div className="flex items-center gap-2.5">
-                <Sliders className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>إعدادات المنظومة</span>}
-              </div>
-            </button>
-
-            {/* التسويق والحملات */}
-            <button
-              onClick={() => setActiveTab('marketing')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'marketing'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="لوحة التسويق والحملات"
-            >
-              <div className="flex items-center gap-2.5">
-                <Megaphone className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>التسويق والحملات</span>}
-              </div>
-            </button>
-
-            {/* أفكار التسويق والملاحظات */}
-            <button
-              onClick={() => setActiveTab('marketing_ideas')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'marketing_ideas'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="أفكار التسويق والملاحظات الاستراتيجية"
-            >
-              <div className="flex items-center gap-2.5">
-                <Lightbulb className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>أفكار التسويق والملاحظات</span>}
-              </div>
-            </button>
-
-            {/* ملفات العملاء والاشتراكات */}
-            <button
-              onClick={() => setActiveTab('renewals')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'renewals'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="ملفات العملاء والاشتراكات ومواعيد التجديد"
-            >
-              <div className="flex items-center gap-2.5">
-                <Clock className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>ملفات العملاء والاشتراكات</span>}
-              </div>
-              {!isCollapsed && renewalsDueSoonCount > 0 && (
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono font-bold">
-                  {renewalsDueSoonCount} مستحق
-                </span>
-              )}
-            </button>
-
-            {/* العقود الموقوفة */}
-            <button
-              onClick={() => setActiveTab('suspended_contracts')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'suspended_contracts'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="العقود الموقوفة وتوثيق الأسباب وإعادة التفعيل"
-            >
-              <div className="flex items-center gap-2.5">
-                <PauseCircle className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>العقود الموقوفة</span>}
-              </div>
-              {!isCollapsed && suspendedContracts.length > 0 && (
-                <span className="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.5 rounded font-mono">
-                  {suspendedContracts.length}
-                </span>
-              )}
-            </button>
-
-            {/* نقل الأنظمة والاستضافة */}
-            <button
-              onClick={() => setActiveTab('host_migration')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'host_migration'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="نقل الأنظمة وإدارة الاستضافة والدومينات"
-            >
-              <div className="flex items-center gap-2.5">
-                <Server className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>نقل الأنظمة والاستضافة</span>}
-              </div>
-            </button>
-
-            {/* التقارير */}
-            <button
-              onClick={() => setActiveTab('reports')}
-              className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'reports'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="التقارير"
-            >
-              <FileSpreadsheet className="w-4 h-4 shrink-0 text-slate-400" />
-              {!isCollapsed && <span>التقارير</span>}
-            </button>
-
-            {/* التحليلات */}
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'analytics'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="التحليلات"
-            >
-              <BarChart2 className="w-4 h-4 shrink-0 text-slate-400" />
-              {!isCollapsed && <span>التحليلات</span>}
-            </button>
-
-            {/* فريق العمل */}
-            <button
-              onClick={() => setActiveTab('team')}
-              className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'team'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="فريق العمل والموظفين"
-            >
-              <Users className="w-4 h-4 shrink-0 text-slate-400" />
-              {!isCollapsed && <span>فريق العمل (الموظفين)</span>}
-            </button>
-
-            {/* المنظومة المالية والمصروفات */}
-            <button
-              onClick={() => setActiveTab('finance')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'finance'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="المنظومة المالية: المصروفات، المدفوعات، مرتبات الموظفين، والعقود وباقي دفع العملاء"
-            >
-              <div className="flex items-center gap-2.5">
-                <Wallet className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>المنظومة المالية والمصروفات</span>}
-              </div>
-            </button>
-
-            {/* عمولات المبيعات */}
-            <button
-              onClick={() => setActiveTab('sales_commissions')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'sales_commissions'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="عمولات فريق المبيعات لكل شهر منفصل"
-            >
-              <div className="flex items-center gap-2.5">
-                <Percent className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>عمولات المبيعات</span>}
-              </div>
-            </button>
-
-            {/* سجل الحضور والرواتب */}
-            <button
-              onClick={() => setActiveTab('payroll')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'payroll' || activeTab === 'salaries'
-                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="سجل الحضور والرواتب"
-            >
-              <div className="flex items-center gap-2.5">
-                <DollarSign className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span>سجل الحضور والرواتب</span>}
-              </div>
-            </button>
-
-            {/* Item 8: MCP */}
-            <button
-              onClick={() => setActiveTab('mcp')}
-              className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-                activeTab === 'mcp'
-                  ? 'bg-blue-600 text-white font-bold shadow-xs'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-              title="MCP"
-            >
-              <Cpu className="w-4 h-4 shrink-0 text-amber-400" />
-              {!isCollapsed && <span className="font-bold">MCP</span>}
-            </button>
-
-            {/* Separator / Workspace label */}
-            {!isCollapsed && (
-              <div className="pt-2 pb-1 border-t border-slate-800/80 mt-2">
-                <div className="flex items-center justify-between px-2 py-1 text-[11px] text-slate-400">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-amber-600 text-white flex items-center justify-center font-bold text-[10px]">
-                      مف
-                    </span>
-                    <span className="truncate">مساحة فريق CRM</span>
-                  </div>
-                  <MoreHorizontal className="w-3.5 h-3.5 text-slate-500" />
-                </div>
-
-                {/* Inline search */}
-                <div className="relative mt-1 px-1">
-                  <input
-                    type="text"
-                    value={sidebarSearch}
-                    onChange={e => setSidebarSearch(e.target.value)}
-                    placeholder="بحث سريع..."
-                    className="w-full bg-slate-800/70 text-slate-200 placeholder-slate-500 text-[11px] rounded-md pr-7 pl-2 py-1 border border-slate-700/60 focus:outline-none focus:border-blue-500"
-                  />
-                  <Search className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-2" />
-                </div>
-              </div>
-            )}
-
-        {/* Accordion 1: المبيعات */}
-        <div className="pt-1">
+        {/* Top Header: In RTL: Blue Logo + Zoho CRM ▾ on the right, Collapse button on the left */}
+        <div className="h-14 border-b border-[#2d456f] flex items-center justify-between px-3 text-white">
           {!isCollapsed ? (
-            <button
-              onClick={() => setSalesOpen(!salesOpen)}
-              className="w-full text-right flex items-center justify-between px-2.5 py-1.5 text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <Briefcase className="w-3.5 h-3.5 text-blue-400" />
-                <span>المبيعات</span>
-              </div>
-              {salesOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-            </button>
-          ) : (
-            <div className="h-px bg-slate-800 my-1" />
-          )}
-
-          {(!isCollapsed ? salesOpen : true) && (
-            <div className="space-y-0.5 pr-2">
-              <button
-                onClick={() => setActiveTab('leads')}
-                className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'leads' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="العملاء المحتملون"
+            <div className="flex items-center justify-between w-full">
+              {/* Right side: Blue Logo + Zoho CRM ▾ */}
+              <div
+                onClick={() => isManager && setIsBrandModalOpen(true)}
+                className="flex items-center gap-2 cursor-pointer group"
+                title={isManager ? "إعدادات وهوية المنظومة" : "Zoho CRM"}
               >
-                <Building2 className="w-3.5 h-3.5 shrink-0" />
-                {!isCollapsed && <span>العملاء المحتملون</span>}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('contacts')}
-                className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'contacts' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="جهات اتصال"
-              >
-                <Contact className="w-3.5 h-3.5 shrink-0" />
-                {!isCollapsed && <span>جهات اتصال</span>}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('accounts')}
-                className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'accounts' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="الحسابات"
-              >
-                <Building2 className="w-3.5 h-3.5 shrink-0" />
-                {!isCollapsed && <span>الحسابات</span>}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('deals')}
-                className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'deals' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="صفقات"
-              >
-                <DollarSign className="w-3.5 h-3.5 shrink-0" />
-                {!isCollapsed && <span>صفقات</span>}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('forecasts')}
-                className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'forecasts' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="التنبؤات"
-              >
-                <TrendingUp className="w-3.5 h-3.5 shrink-0" />
-                {!isCollapsed && <span>التنبؤات</span>}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('campaigns')}
-                className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'campaigns' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="الحملات"
-              >
-                <Megaphone className="w-3.5 h-3.5 shrink-0" />
-                {!isCollapsed && <span>الحملات</span>}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Accordion 2: أنشطة (المهام، الاجتماعات، المكالمات) */}
-        <div className="pt-1">
-          {!isCollapsed ? (
-            <button
-              onClick={() => setActivitiesOpen(!activitiesOpen)}
-              className="w-full text-right flex items-center justify-between px-2.5 py-1.5 text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <CheckSquare className="w-3.5 h-3.5 text-emerald-400" />
-                <span>أنشطة</span>
-              </div>
-              {activitiesOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-            </button>
-          ) : (
-            <div className="h-px bg-slate-800 my-1" />
-          )}
-
-          {(!isCollapsed ? activitiesOpen : true) && (
-            <div className="space-y-0.5 pr-2">
-              <button
-                onClick={() => setActiveTab('tasks')}
-                className={`w-full text-right flex items-center px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'tasks' ? 'bg-blue-600 text-white font-bold' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="مهام وتاسكات الفريق ومؤقت العمل"
-              >
-                <div className="flex items-center gap-2">
-                  <CheckSquare className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                  {!isCollapsed && <span>تاسكات الفريق والتايمر</span>}
+                <div className="w-7 h-7 rounded-lg bg-[#2563eb] hover:bg-blue-600 flex items-center justify-center text-white shadow-xs transition-colors shrink-0">
+                  <Layers className="w-4 h-4 text-white" />
                 </div>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('meetings')}
-                className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'meetings' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="الاجتماعات"
-              >
-                <Calendar className="w-3.5 h-3.5 shrink-0" />
-                {!isCollapsed && <span>الاجتماعات</span>}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('calls')}
-                className={`w-full text-right flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                  activeTab === 'calls' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-                title="المكالمات"
-              >
-                <PhoneCall className="w-3.5 h-3.5 shrink-0" />
-                {!isCollapsed && <span>المكالمات</span>}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* بريد الفريق (SwiftMail) */}
-        <div className="pt-1">
-          <button
-            onClick={() => setActiveTab('mail')}
-            className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-              activeTab === 'mail'
-                ? 'bg-blue-600 text-white font-bold shadow-xs'
-                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-            }`}
-            title="بريد الفريق (SwiftMail)"
-          >
-            <div className="flex items-center gap-2.5">
-              <Mail className="w-4 h-4 shrink-0 text-cyan-400" />
-              {!isCollapsed && <span>بريد الفريق (Mail)</span>}
-            </div>
-            {!isCollapsed && unreadEmailsCount > 0 && (
-              <span className="text-[10px] bg-blue-500 text-white px-1.5 py-0.2 rounded-full font-bold">
-                {unreadEmailsCount}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* دردشة وتواصل الفريق (Team Chat) */}
-        <div className="pt-0.5">
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-              activeTab === 'chat'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md'
-                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-            }`}
-            title="دردشة وتواصل فريق العمل (Team Chat)"
-          >
-            <div className="flex items-center gap-2.5">
-              <MessagesSquare className="w-4 h-4 shrink-0 text-amber-400" />
-              {!isCollapsed && <span>دردشة الفريق (Chat)</span>}
-            </div>
-            {!isCollapsed && unreadChatCount > 0 && (
-              <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded-full font-bold font-mono animate-pulse">
-                {unreadChatCount}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Additional Sections */}
-        <div className="pt-2 border-t border-slate-800/80 space-y-0.5">
-          <button
-            onClick={() => setActiveTab('inventory')}
-            className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
-              activeTab === 'inventory' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-            }`}
-            title="المخزون"
-          >
-            <Package className="w-3.5 h-3.5 shrink-0" />
-            {!isCollapsed && <span>المخزون</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('support')}
-            className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
-              activeTab === 'support' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-            }`}
-            title="الدعم"
-          >
-            <Headphones className="w-3.5 h-3.5 shrink-0" />
-            {!isCollapsed && <span>الدعم والتذاكر</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('integrations')}
-            className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs transition-colors cursor-pointer ${
-              activeTab === 'integrations' ? 'bg-blue-600/40 text-blue-200 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-            }`}
-            title="عمليات التكامل"
-          >
-            <Boxes className="w-3.5 h-3.5 shrink-0" />
-            {!isCollapsed && <span>عمليات التكامل</span>}
-          </button>
-
-          {/* سكشن إعدادات السيستم الشاملة (اللوجو، الاسم، الألوان، فافيكون FAVICON) للأدمن فقط */}
-          {isManager && (
-            <div className="pt-2 mt-2 border-t border-slate-800/80 space-y-1.5">
-              {!isCollapsed && (
-                <div className="px-2 py-0.5 text-[10px] font-extrabold text-blue-400 flex items-center justify-between">
-                  <span>إعدادات السيستم الشاملة</span>
-                  <span className="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-400/30 px-1 rounded font-bold">
-                    أدمن 🔒
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-sm tracking-wide text-white group-hover:text-blue-200 transition-colors">
+                    Zoho CRM
                   </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-[#9bb0cb] group-hover:text-white transition-colors" />
                 </div>
-              )}
+              </div>
 
-              {/* زر التوجيه لصفحة إعدادات السيستم الشاملة */}
+              {/* Left side: Collapse Icon */}
               <button
-                onClick={() => setActiveTab('system_settings')}
-                className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer border ${
-                  activeTab === 'system_settings'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-md border-blue-400 ring-1 ring-blue-300/40'
-                    : 'bg-slate-800/90 hover:bg-slate-800 text-blue-200 hover:text-white border-slate-700/80'
-                }`}
-                title="إعدادات السيستم: تعديل اللوجو، الاسم، ألوان المنظومة، وأيقونة FAVICON"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="text-[#9bb0cb] hover:text-white p-1 rounded hover:bg-[#2d456f]/60 transition-colors cursor-pointer"
+                title="تصغير القائمة"
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Sliders className="w-4 h-4 shrink-0 text-blue-400" />
-                  {!isCollapsed && (
-                    <div className="truncate">
-                      <div className="font-extrabold truncate">إعدادات السيستم واللوجو</div>
-                      <div className="text-[10px] text-slate-400 truncate">الاسم، الألوان، Favicon</div>
-                    </div>
-                  )}
-                </div>
-                {!isCollapsed && (
-                  <span className="text-[9px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded font-bold shrink-0">
-                    فتح ←
-                  </span>
-                )}
+                <PanelRightClose className="w-4 h-4" />
               </button>
-
-              {/* زر تعديل اللوجو والاسم السريع */}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 mx-auto py-1">
               <button
-                onClick={() => setIsBrandModalOpen(true)}
-                className="w-full text-right flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] bg-slate-900/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer border border-slate-800"
-                title="نافذة تعديل سريعة للشعار والاسم"
+                onClick={() => setIsCollapsed(false)}
+                className="w-8 h-8 rounded-lg bg-[#2563eb] hover:bg-blue-600 flex items-center justify-center text-white shadow-xs cursor-pointer transition-colors"
+                title="توسيع القائمة"
               >
-                <div className="flex items-center gap-2">
-                  <Settings className="w-3.5 h-3.5 text-slate-400" />
-                  {!isCollapsed && <span>تعديل اللوجو والشعار سريعاً</span>}
-                </div>
-                {!isCollapsed && <span className="text-[10px] text-slate-500">نافذة ⚙️</span>}
+                <Layers className="w-4 h-4 text-white" />
               </button>
-
-              {/* زر تصدير واستيراد أحدث نسخة من GitHub */}
               <button
-                onClick={() => setIsGitHubModalOpen(true)}
-                className="w-full text-right flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] bg-slate-900/90 hover:bg-slate-800 text-cyan-300 hover:text-white transition-colors cursor-pointer border border-cyan-500/20"
-                title="تصدير واستيراد أحدث نسخة عبر GitHub لحماية البيانات من المسح"
+                onClick={() => setIsCollapsed(false)}
+                className="text-[#9bb0cb] hover:text-white p-1 rounded hover:bg-[#2d456f]/60 transition-colors cursor-pointer"
+                title="توسيع القائمة"
               >
-                <div className="flex items-center gap-2">
-                  <FolderGit2 className="w-3.5 h-3.5 text-cyan-400" />
-                  {!isCollapsed && <span>تصدير واستيراد GitHub</span>}
-                </div>
-                {!isCollapsed && <span className="text-[9px] bg-cyan-500/20 text-cyan-300 px-1 rounded font-bold">حفظ الداتا</span>}
-              </button>
-
-              {/* زر الملف الشخصي للمدير */}
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`w-full text-right flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] transition-colors cursor-pointer border ${
-                  activeTab === 'profile'
-                    ? 'bg-blue-600 text-white font-bold border-blue-400'
-                    : 'bg-slate-900/40 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-800'
-                }`}
-                title="الملف الشخصي: تعديل الاسم، صورة البروفايل، وكلمة المرور"
-              >
-                <div className="flex items-center gap-2">
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-4 h-4 rounded-full object-cover border border-cyan-400"
-                  />
-                  {!isCollapsed && <span>الملف الشخصي والباسورد</span>}
-                </div>
-                {!isCollapsed && <span className="text-[10px] text-slate-500">👤</span>}
+                <PanelRightOpen className="w-4 h-4" />
               </button>
             </div>
           )}
-
-          {/* زر تسجيل الخروج والعودة للرئيسية مباشرة */}
-          <div className="pt-2 border-t border-slate-800/80">
-            <button
-              onClick={() => {
-                try {
-                  if (typeof window !== 'undefined' && window.history) {
-                    window.history.replaceState({}, '', '/');
-                  }
-                } catch (e) {}
-                logoutUser();
-              }}
-              className="w-full text-right flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-rose-300 hover:text-white hover:bg-rose-950/60 transition-colors cursor-pointer border border-rose-900/30"
-              title="تسجيل الخروج والعودة للرئيسية مباشرة"
-            >
-              <div className="flex items-center gap-2">
-                <LogOut className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                {!isCollapsed && <span>تسجيل الخروج</span>}
-              </div>
-              {!isCollapsed && <span className="text-[10px] text-rose-400/80">الرئيسية</span>}
-            </button>
-          </div>
         </div>
-        </>
-      )}
-      </div>
-    </aside>
 
-    {/* Mobile Drawer (Visible only when isMobileOpen is true on mobile) */}
-    {isMobileOpen && (
-      <div className="fixed inset-0 z-50 md:hidden flex justify-end">
-        {/* Backdrop */}
-        <div
-          onClick={onCloseMobile}
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in"
-        />
-
-        {/* Drawer Panel */}
-        <aside className="relative w-72 sm:w-80 max-w-[85vw] h-full bg-[#172033] text-slate-300 z-50 shadow-2xl flex flex-col border-l border-slate-800 animate-in slide-in-from-right duration-200">
-          {/* Header */}
-          <div className="h-14 border-b border-slate-800 flex items-center justify-between px-3.5 text-white shrink-0">
-            <SwiftMyndLogo
-              variant="horizontal"
-              size="sm"
-              isDark={true}
-              onClick={() => {
-                setActiveTab(isManager ? 'home' : 'tasks');
-                onCloseMobile?.();
-              }}
-            />
-            <button
-              type="button"
-              onClick={onCloseMobile}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-              title="إغلاق القائمة"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* User Profile Card */}
-          <div className="p-3 border-b border-slate-800/80 bg-slate-900/70 shrink-0">
-            <div className="flex items-center gap-2.5">
+        {/* User Mini Profile Header (When not collapsed) */}
+        {!isCollapsed && (
+          <div className="px-3 py-2 border-b border-[#2d456f] bg-[#1a2b4c]/60 flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
               <div className="relative shrink-0">
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
-                  className="w-10 h-10 rounded-full border border-blue-400/40 object-cover"
+                  className="w-7 h-7 rounded-full border border-[#2d456f] object-cover"
                 />
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-900 absolute bottom-0 right-0" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400 absolute bottom-0 right-0 ring-1 ring-[#223458]" />
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="font-extrabold text-slate-100 truncate text-sm">{currentUser.name}</div>
-                <div className="text-[11px] text-blue-400 font-medium truncate">
-                  {currentUser.role || (isManager ? 'المدير العام' : 'عضو الفريق')}
-                </div>
+              <div className="min-w-0">
+                <div className="font-bold text-white text-xs truncate">{currentUser.name}</div>
+                <div className="text-[10px] text-[#9bb0cb] truncate">{currentUser.role || (isManager ? 'مدير عام النظام' : 'عضو الفريق')}</div>
               </div>
-              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md font-mono shrink-0">
-                {currentUser.employeeCode}
-              </span>
             </div>
+            {isManager && (
+              <button
+                onClick={() => setIsBrandModalOpen(true)}
+                className="p-1 rounded text-[#9bb0cb] hover:text-white hover:bg-[#2d456f] transition-colors cursor-pointer"
+                title="تغيير الشعار"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Scrollable Navigation Body */}
+        <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1 text-xs font-medium scrollbar-thin">
+
+          {/* ================= TOP DIRECT ITEMS (Colored outline icons) ================= */}
+          <div className="space-y-0.5">
+            {/* 1. الرئيسية (Soft Cyan #38bdf8) */}
+            {matchesSearch('الرئيسية') && (
+              <button
+                onClick={() => handleSelectTab(isManager ? 'home' : 'tasks')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'home'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
+                }`}
+                title="الرئيسية"
+              >
+                <Home className={`w-4 h-4 shrink-0 ${activeTab === 'home' ? 'text-white' : 'text-[#38bdf8]'}`} />
+                {!isCollapsed && <span>الرئيسية</span>}
+              </button>
+            )}
+
+            {/* 2. قائمة انتظار العمل (Orange #fb923c) */}
+            {matchesSearch('قائمة انتظار العمل') && (
+              <button
+                onClick={() => handleSelectTab('tasks')}
+                className={`w-full text-right flex items-center justify-between px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'tasks'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
+                }`}
+                title="قائمة انتظار العمل"
+              >
+                <div className="flex items-center gap-3">
+                  <Inbox className={`w-4 h-4 shrink-0 ${activeTab === 'tasks' ? 'text-white' : 'text-[#fb923c]'}`} />
+                  {!isCollapsed && <span>قائمة انتظار العمل</span>}
+                </div>
+                {!isCollapsed && pendingTasksCount > 0 && (
+                  <span className="text-[10px] bg-[#fb923c]/20 text-[#fb923c] px-1.5 py-0.2 rounded font-mono font-bold">
+                    {pendingTasksCount}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* 3. التقارير (Rose #f43f5e) */}
+            {matchesSearch('التقارير') && (
+              <button
+                onClick={() => handleSelectTab('reports')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'reports'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
+                }`}
+                title="التقارير"
+              >
+                <BarChart2 className={`w-4 h-4 shrink-0 ${activeTab === 'reports' ? 'text-white' : 'text-[#f43f5e]'}`} />
+                {!isCollapsed && <span>التقارير</span>}
+              </button>
+            )}
+
+            {/* 4. التحليلات (Violet #c084fc) */}
+            {matchesSearch('التحليلات') && (
+              <button
+                onClick={() => handleSelectTab('analytics')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'analytics'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
+                }`}
+                title="التحليلات"
+              >
+                <PieChart className={`w-4 h-4 shrink-0 ${activeTab === 'analytics' ? 'text-white' : 'text-[#c084fc]'}`} />
+                {!isCollapsed && <span>التحليلات</span>}
+              </button>
+            )}
+
+            {/* 5. العاملون (Amber #fbbf24) */}
+            {matchesSearch('العاملون') && (
+              <button
+                onClick={() => handleSelectTab('team')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'team'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
+                }`}
+                title="العاملون"
+              >
+                <Bot className={`w-4 h-4 shrink-0 ${activeTab === 'team' ? 'text-white' : 'text-[#fbbf24]'}`} />
+                {!isCollapsed && <span>العاملون</span>}
+              </button>
+            )}
+
+            {/* 6. MCP (Bright Yellow #facc15) */}
+            {matchesSearch('mcp') && (
+              <button
+                onClick={() => handleSelectTab('mcp')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'mcp'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
+                }`}
+                title="MCP"
+              >
+                <Paperclip className={`w-4 h-4 shrink-0 ${activeTab === 'mcp' ? 'text-white' : 'text-[#facc15]'}`} />
+                {!isCollapsed && <span>MCP</span>}
+              </button>
+            )}
           </div>
 
-          {/* Mobile Scrollable Navigation Links */}
-          <div className="flex-1 overflow-y-auto py-2.5 px-3 space-y-1 text-xs font-medium scrollbar-thin">
-            {!isManager ? (
-              <div className="space-y-1">
-                <div className="px-2 py-1 text-[11px] font-black text-slate-400">
-                  مهام العمل والمتابعة
+          {/* ================= WORKSPACE BAR & SEARCH ================= */}
+          {!isCollapsed && (
+            <div className="pt-2 pb-1 border-t border-[#2d456f] mt-2">
+              {/* Workspace Header: In RTL: Orange [مف] + title ▾ on the right, More ••• on the left */}
+              <div className="flex items-center justify-between px-2 py-1 text-xs text-[#cbd5e1]">
+                <div className="flex items-center gap-2 cursor-pointer hover:text-white">
+                  <span className="w-6 h-6 rounded bg-[#ea580c] text-white flex items-center justify-center font-bold text-[11px] shadow-xs shrink-0">
+                    مف
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-white">مساحة فريق CRM</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                  </div>
                 </div>
 
                 <button
-                  onClick={() => {
-                    setActiveTab('tasks');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'tasks'
-                      ? 'bg-blue-600 text-white font-extrabold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
+                  type="button"
+                  onClick={() => setIsBrandModalOpen(true)}
+                  className="text-[#9bb0cb] hover:text-white p-1 rounded cursor-pointer hover:bg-[#2b416a]/60"
+                  title="خيارات مساحة العمل"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <CheckSquare className="w-4 h-4 text-emerald-400" />
-                    <span className="font-bold">تاسكات الفريق والتايمر</span>
-                  </div>
-                  {pendingTasksCount > 0 && (
-                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full font-mono font-bold">
-                      {pendingTasksCount}
-                    </span>
-                  )}
+                  <MoreHorizontal className="w-4 h-4" />
                 </button>
+              </div>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('tasks');
-                    onCloseMobile?.();
-                  }}
-                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <AtSign className="w-4 h-4 text-indigo-400" />
-                    <span>مهام منشن لي (@)</span>
-                  </div>
-                  {mentionedTasksCount > 0 && (
-                    <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full font-mono font-bold">
-                      {mentionedTasksCount}
-                    </span>
-                  )}
-                </button>
+              {/* Dark Search Box with Magnifying Glass on the right in RTL */}
+              <div className="relative mt-2 px-1">
+                <input
+                  type="text"
+                  value={sidebarSearch}
+                  onChange={e => setSidebarSearch(e.target.value)}
+                  placeholder="بحث"
+                  className="w-full bg-[#182642] text-slate-200 placeholder-[#7990b5] text-xs rounded pr-8 pl-3 py-1.5 border border-[#2d456f] focus:outline-none focus:border-blue-400"
+                />
+                <Search className="w-3.5 h-3.5 text-[#7990b5] absolute right-3 top-2.5 pointer-events-none" />
+              </div>
+            </div>
+          )}
 
-                <button
-                  onClick={() => {
-                    setActiveTab('mail');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'mail'
-                      ? 'bg-blue-600 text-white font-extrabold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Mail className="w-4 h-4 text-cyan-400" />
-                    <span>بريد الفريق (Mail)</span>
-                  </div>
-                  {unreadEmailsCount > 0 && (
-                    <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-bold font-mono">
-                      {unreadEmailsCount}
-                    </span>
-                  )}
-                </button>
+          {/* ================= ACCORDION 1: المبيعات ================= */}
+          <div className="pt-1">
+            {!isCollapsed ? (
+              <button
+                onClick={() => setSalesOpen(!salesOpen)}
+                className="w-full text-right flex items-center justify-between px-2.5 py-1.5 text-[#e2e8f0] hover:text-white text-xs font-bold cursor-pointer rounded hover:bg-[#2b416a]/50"
+              >
+                <div className="flex items-center gap-2">
+                  <Folder className="w-3.5 h-3.5 text-[#3b82f6] fill-[#3b82f6] shrink-0" />
+                  <span>المبيعات</span>
+                </div>
+                {salesOpen ? <ChevronUp className="w-3.5 h-3.5 text-[#9bb0cb]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#9bb0cb]" />}
+              </button>
+            ) : (
+              <div className="h-px bg-[#2d456f] my-1" />
+            )}
 
-                <button
-                  onClick={() => {
-                    setActiveTab('chat');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'chat'
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <MessagesSquare className="w-4 h-4 text-amber-400" />
-                    <span>دردشة الفريق (Chat)</span>
-                  </div>
-                  {unreadChatCount > 0 && (
-                    <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded-full font-bold font-mono animate-pulse">
-                      {unreadChatCount}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('renewals');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'renewals'
-                      ? 'bg-blue-600 text-white font-extrabold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                    <span>ملفات العملاء والشيتات</span>
-                  </div>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full font-mono font-bold">
-                    {visibleClients.length} عميل
-                  </span>
-                </button>
-
-                {isSalesUser && (
+            {(!isCollapsed ? salesOpen : true) && (
+              <div className="space-y-0.5 pr-2 mt-0.5">
+                {/* العملاء المحتملون */}
+                {matchesSearch('العملاء المحتملون') && (
                   <button
-                    onClick={() => {
-                      setActiveTab('leads');
-                      onCloseMobile?.();
-                    }}
-                    className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    onClick={() => handleSelectTab('leads')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
                       activeTab === 'leads'
-                        ? 'bg-purple-600 text-white font-extrabold shadow-md'
-                        : 'text-purple-300 hover:bg-slate-800/80'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
                     }`}
+                    title="العملاء المحتملون"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Building2 className="w-4 h-4 text-purple-400" />
-                      <span>العملاء المحتملون (المبيعات)</span>
-                    </div>
-                    <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded font-mono font-bold">
-                      {visibleLeads.length}
-                    </span>
+                    <Building2 className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'leads' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>العملاء المحتملون</span>}
                   </button>
                 )}
 
-                <button
-                  onClick={() => {
-                    setActiveTab('meetings');
-                    onCloseMobile?.();
-                  }}
-                  className="w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 cursor-pointer"
-                >
-                  <Calendar className="w-4 h-4 text-blue-400" />
-                  <span>الاجتماعات والمواعيد</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('calls');
-                    onCloseMobile?.();
-                  }}
-                  className="w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 cursor-pointer"
-                >
-                  <PhoneCall className="w-4 h-4 text-emerald-400" />
-                  <span>سجل المكالمات</span>
-                </button>
-
-                <div className="pt-2 border-t border-slate-800/80">
+                {/* جهات اتصال */}
+                {matchesSearch('جهات اتصال') && (
                   <button
-                    onClick={() => {
-                      setActiveTab('profile');
-                      onCloseMobile?.();
-                    }}
-                    className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer border ${
-                      activeTab === 'profile'
-                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-md border-blue-400'
-                        : 'bg-slate-800/80 text-slate-200 border-slate-700/60'
+                    onClick={() => handleSelectTab('contacts')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'contacts'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
                     }`}
+                    title="جهات اتصال"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <UserCheck className="w-4 h-4 text-cyan-400" />
-                      <div>
-                        <div className="font-extrabold text-xs">الملف الشخصي</div>
-                        <div className="text-[10px] text-cyan-300">الاسم، الصورة، الباسورد</div>
-                      </div>
-                    </div>
-                    <span className="text-[10px] bg-cyan-500/20 text-cyan-200 px-1.5 py-0.5 rounded font-bold">
-                      تعديل ⚙️
-                    </span>
+                    <Contact className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'contacts' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>جهات اتصال</span>}
                   </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <div className="px-2 py-1 text-[11px] font-black text-slate-400">
-                  أقسام المنظومة (لوحة الأدمن)
-                </div>
+                )}
 
-                <button
-                  onClick={() => {
-                    setActiveTab('home');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'home' ? 'bg-blue-600 text-white font-bold shadow-md' : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <Home className="w-4 h-4" />
-                  <span>الرئيسية</span>
-                </button>
+                {/* الحسابات */}
+                {matchesSearch('الحسابات') && (
+                  <button
+                    onClick={() => handleSelectTab('accounts')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'accounts'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="الحسابات"
+                  >
+                    <Building2 className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'accounts' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>الحسابات</span>}
+                  </button>
+                )}
 
-                <button
-                  onClick={() => {
-                    setActiveTab('tasks');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'tasks' ? 'bg-blue-600 text-white font-bold shadow-md' : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <CheckSquare className="w-4 h-4 text-emerald-400" />
-                    <span>تاسكات الفريق والتايمر</span>
-                  </div>
-                </button>
+                {/* صفقات */}
+                {matchesSearch('صفقات') && (
+                  <button
+                    onClick={() => handleSelectTab('deals')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'deals'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="صفقات"
+                  >
+                    <Briefcase className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'deals' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>صفقات</span>}
+                  </button>
+                )}
 
-                <button
-                  onClick={() => {
-                    setActiveTab('marketing');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'marketing'
-                      ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Megaphone className="w-4 h-4 text-amber-400" />
-                    <span>التسويق والحملات</span>
-                  </div>
-                  <span className="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded">
-                    بورد
-                  </span>
-                </button>
+                {/* التنبؤات */}
+                {matchesSearch('التنبؤات') && (
+                  <button
+                    onClick={() => handleSelectTab('forecasts')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'forecasts'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="التنبؤات"
+                  >
+                    <TrendingUp className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'forecasts' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>التنبؤات</span>}
+                  </button>
+                )}
 
-                <button
-                  onClick={() => {
-                    setActiveTab('marketing_ideas');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'marketing_ideas'
-                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Lightbulb className="w-4 h-4 text-amber-300" />
-                    <span>أفكار التسويق وتدويناتي</span>
-                  </div>
-                  <span className="text-[9px] bg-purple-500/20 text-purple-300 font-bold px-1.5 py-0.5 rounded">
-                    أفكاري
-                  </span>
-                </button>
+                {/* المستندات */}
+                {matchesSearch('المستندات') && (
+                  <button
+                    onClick={() => handleSelectTab('documents')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'documents'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="المستندات"
+                  >
+                    <FileText className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'documents' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>المستندات</span>}
+                  </button>
+                )}
 
-                <button
-                  onClick={() => {
-                    setActiveTab('renewals');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'renewals'
-                      ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white font-bold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Clock className="w-4 h-4 text-rose-400" />
-                    <span>تجديد اشتراكات العملاء</span>
-                  </div>
-                  {renewalsDueSoonCount > 0 && (
-                    <span className="text-[9px] bg-rose-500 text-white font-black px-1.5 py-0.5 rounded animate-pulse">
-                      🚨 {renewalsDueSoonCount}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('suspended_contracts');
-                    onCloseMobile?.();
-                  }}
-                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <PauseCircle className="w-4 h-4 text-amber-400" />
-                    <span>عقود موقفه</span>
-                  </div>
-                  <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
-                    {suspendedContracts.length}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('host_migration');
-                    onCloseMobile?.();
-                  }}
-                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Server className="w-4 h-4 text-indigo-400" />
-                    <span>نقل 2 سيستم للهوست</span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('team');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'team' ? 'bg-blue-600 text-white font-bold shadow-md' : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Users className="w-4 h-4 text-blue-400" />
-                    <span>فريق العمل (الموظفين)</span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('finance');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'finance'
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Wallet className="w-4 h-4 text-emerald-400" />
-                    <span>المالية والمصروفات</span>
-                  </div>
-                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded">
-                    شامل
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('sales_commissions');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'sales_commissions'
-                      ? 'bg-gradient-to-r from-cyan-600 to-blue-700 text-white font-bold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Percent className="w-4 h-4 text-cyan-400" />
-                    <span>عمولات المبيعات</span>
-                  </div>
-                  <span className="text-[9px] bg-cyan-500/20 text-cyan-300 font-bold px-1.5 py-0.5 rounded">
-                    شهري
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('payroll');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'payroll' || activeTab === 'salaries'
-                      ? 'bg-slate-700 text-white font-bold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <DollarSign className="w-4 h-4 text-slate-400" />
-                    <span>سجل الحضور والرواتب</span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('reports');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer ${
-                    activeTab === 'reports' ? 'bg-blue-600 text-white font-bold' : ''
-                  }`}
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-blue-400" />
-                  <span>التقارير</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('analytics');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer ${
-                    activeTab === 'analytics' ? 'bg-blue-600 text-white font-bold' : ''
-                  }`}
-                >
-                  <BarChart2 className="w-4 h-4 text-indigo-400" />
-                  <span>التحليلات</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('mail');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer ${
-                    activeTab === 'mail' ? 'bg-blue-600 text-white font-bold' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Mail className="w-4 h-4 text-cyan-400" />
-                    <span>بريد الفريق (Mail)</span>
-                  </div>
-                  {unreadEmailsCount > 0 && (
-                    <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-bold">
-                      {unreadEmailsCount}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('chat');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'chat'
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold shadow-md'
-                      : 'text-slate-200 hover:bg-slate-800/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <MessagesSquare className="w-4 h-4 text-amber-400" />
-                    <span>دردشة الفريق (Chat)</span>
-                  </div>
-                  {unreadChatCount > 0 && (
-                    <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded-full font-bold font-mono animate-pulse">
-                      {unreadChatCount}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('system_settings');
-                    onCloseMobile?.();
-                  }}
-                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer border ${
-                    activeTab === 'system_settings'
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-md border-blue-400'
-                      : 'bg-slate-800/80 text-blue-200 border-slate-700/80'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Sliders className="w-4 h-4 text-blue-400" />
-                    <span>إعدادات السيستم واللوجو</span>
-                  </div>
-                  <span className="text-[9px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded font-bold">
-                    فتح ←
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setIsBrandModalOpen(true);
-                    onCloseMobile?.();
-                  }}
-                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-slate-900/60 hover:bg-slate-800 text-slate-300 cursor-pointer border border-slate-800"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Camera className="w-4 h-4 text-slate-400" />
-                    <span>تغيير اللوجو والشعار سريعاً</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400">نافذة ⚙️</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setIsGitHubModalOpen(true);
-                    onCloseMobile?.();
-                  }}
-                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-slate-900/60 hover:bg-slate-800 text-cyan-300 cursor-pointer border border-cyan-800/30"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <FolderGit2 className="w-4 h-4 text-cyan-400" />
-                    <span>تصدير واستيراد GitHub</span>
-                  </div>
-                  <span className="text-[9px] bg-cyan-900/40 text-cyan-200 px-1 rounded">حفظ</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveTab('profile');
-                    onCloseMobile?.();
-                  }}
-                  className="w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer"
-                >
-                  <UserCheck className="w-4 h-4 text-cyan-400" />
-                  <span>الملف الشخصي والباسورد 👤</span>
-                </button>
+                {/* الحملات */}
+                {matchesSearch('الحملات') && (
+                  <button
+                    onClick={() => handleSelectTab('campaigns')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'campaigns'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="الحملات"
+                  >
+                    <Megaphone className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'campaigns' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>الحملات</span>}
+                  </button>
+                )}
               </div>
             )}
           </div>
 
-          {/* Footer with Logout */}
-          <div className="p-3 border-t border-slate-800 bg-slate-900/80 shrink-0 flex items-center justify-between">
-            <button
-              onClick={() => {
-                onCloseMobile?.();
-                try {
-                  if (typeof window !== 'undefined' && window.history) {
-                    window.history.replaceState({}, '', '/');
-                  }
-                } catch (e) {}
-                logoutUser();
-              }}
-              className="flex items-center gap-1.5 text-xs text-rose-300 hover:text-white font-bold py-1.5 px-3 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 transition-colors cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5 text-rose-400" />
-              <span>تسجيل الخروج</span>
-            </button>
-            <span className="text-[10px] text-slate-500 font-mono">
-              SwiftMynd CRM
-            </span>
+          {/* ================= ACCORDION 2: أنشطة (Exact match to reference image) ================= */}
+          <div className="pt-1">
+            {!isCollapsed ? (
+              <button
+                onClick={() => setActivitiesOpen(!activitiesOpen)}
+                className="w-full text-right flex items-center justify-between px-2.5 py-1.5 text-[#e2e8f0] hover:text-white text-xs font-bold cursor-pointer rounded hover:bg-[#2b416a]/50"
+              >
+                <div className="flex items-center gap-2">
+                  <Folder className="w-3.5 h-3.5 text-[#3b82f6] fill-[#3b82f6] shrink-0" />
+                  <span>أنشطة</span>
+                </div>
+                {activitiesOpen ? <ChevronUp className="w-3.5 h-3.5 text-[#9bb0cb]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#9bb0cb]" />}
+              </button>
+            ) : (
+              <div className="h-px bg-[#2d456f] my-1" />
+            )}
+
+            {(!isCollapsed ? activitiesOpen : true) && (
+              <div className="space-y-0.5 pr-2 mt-0.5">
+                {/* المهام (Exact highlighted active container from image) */}
+                {matchesSearch('المهام') && (
+                  <button
+                    onClick={() => handleSelectTab('tasks')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'tasks'
+                        ? 'bg-[#2f4874] text-white font-bold shadow-xs'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="المهام"
+                  >
+                    <CheckSquare className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'tasks' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>المهام</span>}
+                  </button>
+                )}
+
+                {/* الاجتماعات */}
+                {matchesSearch('الاجتماعات') && (
+                  <button
+                    onClick={() => handleSelectTab('meetings')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'meetings'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="الاجتماعات"
+                  >
+                    <Calendar className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'meetings' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>الاجتماعات</span>}
+                  </button>
+                )}
+
+                {/* المكالمات */}
+                {matchesSearch('المكالمات') && (
+                  <button
+                    onClick={() => handleSelectTab('calls')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'calls'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="المكالمات"
+                  >
+                    <PhoneCall className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'calls' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>المكالمات</span>}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-        </aside>
-      </div>
-    )}
-  </>
+
+          {/* ================= ACCORDION 3: المخزون ================= */}
+          <div className="pt-1">
+            {!isCollapsed ? (
+              <button
+                onClick={() => setInventoryOpen(!inventoryOpen)}
+                className="w-full text-right flex items-center justify-between px-2.5 py-1.5 text-[#e2e8f0] hover:text-white text-xs font-bold cursor-pointer rounded hover:bg-[#2b416a]/50"
+              >
+                <div className="flex items-center gap-2">
+                  <Folder className="w-3.5 h-3.5 text-[#3b82f6] fill-[#3b82f6] shrink-0" />
+                  <span>المخزون</span>
+                </div>
+                {inventoryOpen ? <ChevronUp className="w-3.5 h-3.5 text-[#9bb0cb]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#9bb0cb]" />}
+              </button>
+            ) : (
+              <div className="h-px bg-[#2d456f] my-1" />
+            )}
+
+            {(!isCollapsed ? inventoryOpen : true) && (
+              <div className="space-y-0.5 pr-2 mt-0.5">
+                {matchesSearch('المنتجات') && (
+                  <button
+                    onClick={() => handleSelectTab('inventory')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'inventory'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="المنتجات"
+                  >
+                    <Package className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'inventory' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>المنتجات</span>}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ================= ACCORDION 4: المالية والعقود ================= */}
+          <div className="pt-1">
+            {!isCollapsed ? (
+              <button
+                onClick={() => setFinanceOpen(!financeOpen)}
+                className="w-full text-right flex items-center justify-between px-2.5 py-1.5 text-[#e2e8f0] hover:text-white text-xs font-bold cursor-pointer rounded hover:bg-[#2b416a]/50"
+              >
+                <div className="flex items-center gap-2">
+                  <Folder className="w-3.5 h-3.5 text-[#3b82f6] fill-[#3b82f6] shrink-0" />
+                  <span>المالية والعقود</span>
+                </div>
+                {financeOpen ? <ChevronUp className="w-3.5 h-3.5 text-[#9bb0cb]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#9bb0cb]" />}
+              </button>
+            ) : (
+              <div className="h-px bg-[#2d456f] my-1" />
+            )}
+
+            {(!isCollapsed ? financeOpen : true) && (
+              <div className="space-y-0.5 pr-2 mt-0.5">
+                {/* المنظومة المالية */}
+                {matchesSearch('المنظومة المالية') && (
+                  <button
+                    onClick={() => handleSelectTab('finance')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'finance'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="المنظومة المالية والمصروفات"
+                  >
+                    <Wallet className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'finance' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>المنظومة المالية والمصروفات</span>}
+                  </button>
+                )}
+
+                {/* عمولات المبيعات */}
+                {matchesSearch('عمولات المبيعات') && (
+                  <button
+                    onClick={() => handleSelectTab('sales_commissions')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'sales_commissions'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="عمولات المبيعات"
+                  >
+                    <Percent className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'sales_commissions' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>عمولات المبيعات</span>}
+                  </button>
+                )}
+
+                {/* ملفات العملاء والاشتراكات */}
+                {matchesSearch('ملفات العملاء') && (
+                  <button
+                    onClick={() => handleSelectTab('renewals')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'renewals'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="ملفات العملاء وتجديد الاشتراكات"
+                  >
+                    <Clock className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'renewals' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>ملفات العملاء والاشتراكات</span>}
+                  </button>
+                )}
+
+                {/* العقود الموقوفة */}
+                {matchesSearch('العقود الموقوفة') && (
+                  <button
+                    onClick={() => handleSelectTab('suspended_contracts')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'suspended_contracts'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="العقود الموقوفة"
+                  >
+                    <PauseCircle className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'suspended_contracts' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>العقود الموقوفة</span>}
+                  </button>
+                )}
+
+                {/* سجل الحضور والرواتب */}
+                {matchesSearch('الرواتب') && (
+                  <button
+                    onClick={() => handleSelectTab('payroll')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'payroll' || activeTab === 'salaries'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="سجل الحضور والرواتب"
+                  >
+                    <DollarSign className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'payroll' || activeTab === 'salaries' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>سجل الرواتب والحضور</span>}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ================= ACCORDION 5: التسويق والتطوير ================= */}
+          <div className="pt-1">
+            {!isCollapsed ? (
+              <button
+                onClick={() => setMarketingOpen(!marketingOpen)}
+                className="w-full text-right flex items-center justify-between px-2.5 py-1.5 text-[#e2e8f0] hover:text-white text-xs font-bold cursor-pointer rounded hover:bg-[#2b416a]/50"
+              >
+                <div className="flex items-center gap-2">
+                  <Folder className="w-3.5 h-3.5 text-[#3b82f6] fill-[#3b82f6] shrink-0" />
+                  <span>التسويق والتطوير</span>
+                </div>
+                {marketingOpen ? <ChevronUp className="w-3.5 h-3.5 text-[#9bb0cb]" /> : <ChevronDown className="w-3.5 h-3.5 text-[#9bb0cb]" />}
+              </button>
+            ) : (
+              <div className="h-px bg-[#2d456f] my-1" />
+            )}
+
+            {(!isCollapsed ? marketingOpen : true) && (
+              <div className="space-y-0.5 pr-2 mt-0.5">
+                {/* لوحة التسويق */}
+                {matchesSearch('التسويق') && (
+                  <button
+                    onClick={() => handleSelectTab('marketing')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'marketing'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="لوحة التسويق والحملات"
+                  >
+                    <Megaphone className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'marketing' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>لوحة التسويق</span>}
+                  </button>
+                )}
+
+                {/* أفكار التسويق */}
+                {matchesSearch('أفكار') && (
+                  <button
+                    onClick={() => handleSelectTab('marketing_ideas')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'marketing_ideas'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="أفكار التسويق والملاحظات"
+                  >
+                    <Lightbulb className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'marketing_ideas' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>أفكار التسويق</span>}
+                  </button>
+                )}
+
+                {/* نقل الأنظمة والاستضافة */}
+                {matchesSearch('نقل') && (
+                  <button
+                    onClick={() => handleSelectTab('host_migration')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'host_migration'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="نقل الأنظمة والاستضافة"
+                  >
+                    <Server className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'host_migration' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>نقل الأنظمة والهوست</span>}
+                  </button>
+                )}
+
+                {/* إعدادات المنظومة */}
+                {matchesSearch('إعدادات') && (
+                  <button
+                    onClick={() => handleSelectTab('system_settings')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      activeTab === 'system_settings'
+                        ? 'bg-[#2f4874] text-white font-bold'
+                        : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                    }`}
+                    title="إعدادات المنظومة"
+                  >
+                    <Sliders className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'system_settings' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>إعدادات المنظومة</span>}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ================= COMMUNICATION & QUICK ACTIONS ================= */}
+          <div className="pt-2 border-t border-[#2d456f] space-y-0.5">
+            {/* Mail */}
+            {matchesSearch('بريد') && (
+              <button
+                onClick={() => handleSelectTab('mail')}
+                className={`w-full text-right flex items-center justify-between px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'mail'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                }`}
+                title="بريد الفريق"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Mail className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'mail' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                  {!isCollapsed && <span>بريد الفريق</span>}
+                </div>
+                {!isCollapsed && unreadEmailsCount > 0 && (
+                  <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.2 rounded font-bold font-mono">
+                    {unreadEmailsCount}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Chat */}
+            {matchesSearch('دردشة') && (
+              <button
+                onClick={() => handleSelectTab('chat')}
+                className={`w-full text-right flex items-center justify-between px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'chat'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                }`}
+                title="دردشة وتواصل الفريق"
+              >
+                <div className="flex items-center gap-2.5">
+                  <MessagesSquare className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'chat' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                  {!isCollapsed && <span>دردشة الفريق</span>}
+                </div>
+                {!isCollapsed && unreadChatCount > 0 && (
+                  <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded font-bold font-mono animate-pulse">
+                    {unreadChatCount}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* GitHub Backup */}
+            {isManager && (
+              <button
+                onClick={() => setIsGitHubModalOpen(true)}
+                className="w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs text-[#9bb0cb] hover:text-white hover:bg-[#2b416a]/60 transition-colors cursor-pointer"
+                title="تصدير واستيراد GitHub"
+              >
+                <FolderGit2 className="w-3.5 h-3.5 text-[#9bb0cb] shrink-0" />
+                {!isCollapsed && <span>مزامنة GitHub</span>}
+              </button>
+            )}
+
+            {/* Profile */}
+            <button
+              onClick={() => handleSelectTab('profile')}
+              className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                activeTab === 'profile'
+                  ? 'bg-[#2f4874] text-white font-bold'
+                  : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+              }`}
+              title="الملف الشخصي"
+            >
+              <UserCheck className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'profile' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+              {!isCollapsed && <span>الملف الشخصي</span>}
+            </button>
+          </div>
+        </div>
+
+        {/* Footer: Logout */}
+        <div className="p-2 border-t border-[#2d456f] bg-[#1a2b4c]/70 flex items-center justify-between text-xs">
+          <button
+            onClick={() => {
+              try {
+                if (typeof window !== 'undefined' && window.history) {
+                  window.history.replaceState({}, '', '/');
+                }
+              } catch (e) {}
+              logoutUser();
+            }}
+            className="flex items-center gap-2 text-rose-300 hover:text-rose-100 transition-colors cursor-pointer px-2 py-1 rounded hover:bg-rose-950/40"
+            title="تسجيل الخروج"
+          >
+            <LogOut className="w-3.5 h-3.5 text-rose-400" />
+            {!isCollapsed && <span>تسجيل الخروج</span>}
+          </button>
+          {!isCollapsed && (
+            <span className="text-[10px] text-[#7990b5] font-mono">v2.4</span>
+          )}
+        </div>
+      </aside>
+
+      {/* ================= MOBILE DRAWER ================= */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex justify-end">
+          {/* Backdrop */}
+          <div
+            onClick={onCloseMobile}
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in"
+          />
+
+          {/* Drawer Panel in matching Zoho Navy style */}
+          <aside className="relative w-72 sm:w-80 max-w-[85vw] h-full bg-[#223458] text-[#cbd5e1] z-50 shadow-2xl flex flex-col border-l border-[#2d456f] animate-in slide-in-from-right duration-200">
+            {/* Header */}
+            <div className="h-14 border-b border-[#2d456f] flex items-center justify-between px-3.5 text-white shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-[#2563eb] flex items-center justify-center text-white shadow-xs">
+                  <Layers className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-bold text-sm text-white">Zoho CRM</span>
+              </div>
+              <button
+                type="button"
+                onClick={onCloseMobile}
+                className="p-1.5 rounded-lg text-[#9bb0cb] hover:text-white hover:bg-[#2d456f] transition-colors cursor-pointer"
+                title="إغلاق القائمة"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* User Profile Card */}
+            <div className="p-3 border-b border-[#2d456f] bg-[#1a2b4c]/70 shrink-0 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="relative shrink-0">
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-9 h-9 rounded-full border border-[#2d456f] object-cover"
+                  />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 absolute bottom-0 right-0 ring-1 ring-[#223458]" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-white text-xs truncate">{currentUser.name}</div>
+                  <div className="text-[10px] text-[#9bb0cb] truncate">
+                    {currentUser.role || (isManager ? 'مدير عام النظام' : 'عضو الفريق')}
+                  </div>
+                </div>
+              </div>
+              <span className="w-6 h-6 rounded bg-[#ea580c] text-white flex items-center justify-center font-bold text-[10px]">
+                مف
+              </span>
+            </div>
+
+            {/* Mobile Scrollable Links */}
+            <div className="flex-1 overflow-y-auto py-2.5 px-3 space-y-1 text-xs font-medium scrollbar-thin">
+              {/* Direct Items */}
+              <button
+                onClick={() => handleSelectTab(isManager ? 'home' : 'tasks')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'home'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                }`}
+              >
+                <Home className="w-4 h-4 text-[#38bdf8]" />
+                <span>الرئيسية</span>
+              </button>
+
+              <button
+                onClick={() => handleSelectTab('tasks')}
+                className={`w-full text-right flex items-center justify-between px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'tasks'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Inbox className="w-4 h-4 text-[#fb923c]" />
+                  <span>قائمة انتظار العمل</span>
+                </div>
+                {pendingTasksCount > 0 && (
+                  <span className="text-[10px] bg-[#fb923c]/20 text-[#fb923c] px-1.5 py-0.2 rounded font-mono font-bold">
+                    {pendingTasksCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => handleSelectTab('reports')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'reports' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                }`}
+              >
+                <BarChart2 className="w-4 h-4 text-[#f43f5e]" />
+                <span>التقارير</span>
+              </button>
+
+              <button
+                onClick={() => handleSelectTab('analytics')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'analytics' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                }`}
+              >
+                <PieChart className="w-4 h-4 text-[#c084fc]" />
+                <span>التحليلات</span>
+              </button>
+
+              <button
+                onClick={() => handleSelectTab('team')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'team' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                }`}
+              >
+                <Bot className="w-4 h-4 text-[#fbbf24]" />
+                <span>العاملون</span>
+              </button>
+
+              <button
+                onClick={() => handleSelectTab('mcp')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'mcp' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                }`}
+              >
+                <Paperclip className="w-4 h-4 text-[#facc15]" />
+                <span>MCP</span>
+              </button>
+
+              {/* Folders in mobile */}
+              <div className="pt-2 border-t border-[#2d456f] space-y-1">
+                <div className="px-2 py-1 text-[11px] font-bold text-white flex items-center gap-2">
+                  <Folder className="w-3.5 h-3.5 text-[#3b82f6] fill-[#3b82f6]" />
+                  <span>المبيعات</span>
+                </div>
+                <div className="space-y-0.5 pr-2">
+                  <button
+                    onClick={() => handleSelectTab('leads')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'leads' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>العملاء المحتملون</span>
+                  </button>
+                  <button
+                    onClick={() => handleSelectTab('contacts')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'contacts' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <Contact className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>جهات اتصال</span>
+                  </button>
+                  <button
+                    onClick={() => handleSelectTab('deals')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'deals' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <Briefcase className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>صفقات</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-[#2d456f] space-y-1">
+                <div className="px-2 py-1 text-[11px] font-bold text-white flex items-center gap-2">
+                  <Folder className="w-3.5 h-3.5 text-[#3b82f6] fill-[#3b82f6]" />
+                  <span>أنشطة</span>
+                </div>
+                <div className="space-y-0.5 pr-2">
+                  <button
+                    onClick={() => handleSelectTab('tasks')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'tasks' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <CheckSquare className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>المهام</span>
+                  </button>
+                  <button
+                    onClick={() => handleSelectTab('meetings')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'meetings' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>الاجتماعات</span>
+                  </button>
+                  <button
+                    onClick={() => handleSelectTab('calls')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'calls' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <PhoneCall className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>المكالمات</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* المالية */}
+              <div className="pt-2 border-t border-[#2d456f] space-y-1">
+                <div className="px-2 py-1 text-[11px] font-bold text-white flex items-center gap-2">
+                  <Folder className="w-3.5 h-3.5 text-[#3b82f6] fill-[#3b82f6]" />
+                  <span>المالية والعقود</span>
+                </div>
+                <div className="space-y-0.5 pr-2">
+                  <button
+                    onClick={() => handleSelectTab('finance')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'finance' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <Wallet className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>المنظومة المالية والمصروفات</span>
+                  </button>
+                  <button
+                    onClick={() => handleSelectTab('sales_commissions')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'sales_commissions' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <Percent className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>عمولات المبيعات</span>
+                  </button>
+                  <button
+                    onClick={() => handleSelectTab('renewals')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'renewals' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>ملفات العملاء والاشتراكات</span>
+                  </button>
+                  <button
+                    onClick={() => handleSelectTab('payroll')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'payroll' || activeTab === 'salaries' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <DollarSign className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>الرواتب والحضور</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Chat & Mail */}
+              <div className="pt-2 border-t border-[#2d456f] space-y-1">
+                <button
+                  onClick={() => handleSelectTab('mail')}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2 rounded text-xs ${
+                    activeTab === 'mail' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="w-4 h-4 text-[#9bb0cb]" />
+                    <span>بريد الفريق</span>
+                  </div>
+                  {unreadEmailsCount > 0 && (
+                    <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.2 rounded font-bold font-mono">
+                      {unreadEmailsCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleSelectTab('chat')}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2 rounded text-xs ${
+                    activeTab === 'chat' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <MessagesSquare className="w-4 h-4 text-[#9bb0cb]" />
+                    <span>دردشة الفريق</span>
+                  </div>
+                  {unreadChatCount > 0 && (
+                    <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded font-bold font-mono animate-pulse">
+                      {unreadChatCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleSelectTab('profile')}
+                  className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded text-xs ${
+                    activeTab === 'profile' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4 text-[#9bb0cb]" />
+                  <span>الملف الشخصي والباسورد</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Footer */}
+            <div className="p-3 border-t border-[#2d456f] bg-[#1a2b4c]/80 shrink-0 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  onCloseMobile?.();
+                  try {
+                    if (typeof window !== 'undefined' && window.history) {
+                      window.history.replaceState({}, '', '/');
+                    }
+                  } catch (e) {}
+                  logoutUser();
+                }}
+                className="flex items-center gap-1.5 text-xs text-rose-300 hover:text-white font-bold py-1.5 px-3 rounded bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                <span>تسجيل الخروج</span>
+              </button>
+              <span className="text-[10px] text-[#9bb0cb] font-mono">
+                Zoho CRM
+              </span>
+            </div>
+          </aside>
+        </div>
+      )}
+    </>
   );
 };
