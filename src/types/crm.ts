@@ -376,6 +376,8 @@ export interface ClientRenewal {
   }[];
   // NEW: فريق العمل المصرح لهم برؤية ومتابعة العميل (وكله بيظهر للادمن)
   assignedTeamMemberIds?: string[];
+  // NEW: منشن فريق العمل لمتابعة العميل وملفاته
+  mentionedTeamMemberIds?: string[];
   // NEW: مجلد الملفات والمستندات الخاص بالعميل
   folderFiles?: ClientFileDocument[];
   // NEW: سجل الملاحظات والتعاملات

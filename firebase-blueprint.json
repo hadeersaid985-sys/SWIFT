@@ -52,6 +52,14 @@
     "/notifications/{notifId}": {
       "schema": "Notification",
       "description": "Notifications collection for team members"
+    },
+    "/teamMembers/{memberId}": {
+      "schema": "TeamMember",
+      "description": "Team members collection storing credentials, passwords, and profile details"
+    },
+    "/clientRenewals/{renewalId}": {
+      "schema": "ClientRenewal",
+      "description": "Client renewals, subscriptions, and assigned team members"
     }
   }
 }

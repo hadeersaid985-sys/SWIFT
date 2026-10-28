@@ -60,7 +60,11 @@ import {
   seedInitialTasksIfEmpty,
   saveClientRenewalToFirestore,
   deleteClientRenewalFromFirestore,
-  onClientRenewalsSnapshot
+  onClientRenewalsSnapshot,
+  saveTeamMemberToFirestore,
+  saveTeamPasswordToFirestore,
+  onTeamMembersSnapshot,
+  seedInitialTeamIfEmpty
 } from '../firebase';
 import { resolveActiveTab, normalizeTabName } from '../utils/navigationState';
 
@@ -1879,8 +1883,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addClientRenewal = (renewalData: Omit<ClientRenewal, 'id' | 'createdAt'>) => {
     lastLocalMutationTimeRef.current = Date.now();
     const assignedIds = (renewalData.assignedTeamMemberIds && renewalData.assignedTeamMemberIds.length > 0)
-      ? Array.from(new Set(['all', ...renewalData.assignedTeamMemberIds]))
-      : ['all', ...team.map(m => m.id)];
+      ? renewalData.assignedTeamMemberIds.filter(id => id !== 'all')
+      : team.map(m => m.id);
 
     let validSheets = renewalData.googleSheets || [];
     if (validSheets.length === 0 && renewalData.sheetUrl) {
@@ -2478,46 +2482,62 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Exclude any mock demo client
         if (isMockDemoClient(c)) return false;
 
-        // 1. If assignedTeamMemberIds is empty, undefined, or contains 'all', client is visible to the entire team!
-        if (!c.assignedTeamMemberIds || c.assignedTeamMemberIds.length === 0 || c.assignedTeamMemberIds.includes('all')) {
-          return true;
-        }
-
-        // 2. Explicit ID in assignedTeamMemberIds
-        if (Array.isArray(c.assignedTeamMemberIds)) {
+        // An employee ONLY sees a client if they are explicitly assigned, mentioned, or managing the client!
+        // 1. Explicit ID in assignedTeamMemberIds
+        let isDirectlyAssigned = false;
+        if (Array.isArray(c.assignedTeamMemberIds) && c.assignedTeamMemberIds.length > 0) {
           for (const mId of c.assignedTeamMemberIds) {
             const cleanM = (mId || '').trim().toLowerCase();
-            if (cleanM === 'all') return true;
-            if (cleanM === currentUid || cleanM === currentCode || cleanM === currentUsername) return true;
-            if (userCanon && getCanonicalUserId(cleanM) === userCanon) return true;
+            if (cleanM === currentUid || cleanM === currentCode || cleanM === currentUsername) {
+              isDirectlyAssigned = true;
+              break;
+            }
+            if (userCanon && getCanonicalUserId(cleanM) === userCanon) {
+              isDirectlyAssigned = true;
+              break;
+            }
+          }
+        }
+
+        // 2. Explicit ID in mentionedTeamMemberIds
+        let isDirectlyMentioned = false;
+        if (Array.isArray(c.mentionedTeamMemberIds) && c.mentionedTeamMemberIds.length > 0) {
+          for (const mId of c.mentionedTeamMemberIds) {
+            const cleanM = (mId || '').trim().toLowerCase();
+            if (cleanM === currentUid || cleanM === currentCode || cleanM === currentUsername) {
+              isDirectlyMentioned = true;
+              break;
+            }
+            if (userCanon && getCanonicalUserId(cleanM) === userCanon) {
+              isDirectlyMentioned = true;
+              break;
+            }
           }
         }
 
         // 3. ManagedBy matches name or alias (e.g. "اميره" vs "Amira", "Aya", "هدير", etc.)
+        let isManagerOfClient = false;
         if (c.managedBy) {
           const cleanMgr = c.managedBy.trim().toLowerCase();
           const normMgr = normalizeAr(cleanMgr);
-          if (cleanMgr === currentUid || cleanMgr === currentName || cleanMgr === currentUsername) return true;
-          if (normMgr === normName || normMgr === normUsername) return true;
-          if (userCanon && getCanonicalUserId(cleanMgr) === userCanon) return true;
-          if (userAliases.some(alias => cleanMgr === alias || normMgr === normalizeAr(alias))) return true;
+          if (cleanMgr === currentUid || cleanMgr === currentName || cleanMgr === currentUsername) isManagerOfClient = true;
+          else if (normMgr === normName || normMgr === normUsername) isManagerOfClient = true;
+          else if (userCanon && getCanonicalUserId(cleanMgr) === userCanon) isManagerOfClient = true;
+          else if (userAliases.some(alias => cleanMgr === alias || normMgr === normalizeAr(alias))) isManagerOfClient = true;
         }
 
-        // 4. Mentions in project description or notes (must be explicit @ mention)
-        const textToCheck = `${c.projectDescription || ''} ${c.notes || ''}`.toLowerCase();
-        for (const alias of userAliases) {
-          if (textToCheck.includes(`@${alias}`) || textToCheck.includes(`@ ${alias}`)) return true;
+        // Strict isolation: if employee was unmentioned or unassigned, they cannot see the client!
+        if (!isDirectlyAssigned && !isDirectlyMentioned && !isManagerOfClient) {
+          return false;
         }
-        if (currentUsername && (textToCheck.includes(`@${currentUsername}`) || textToCheck.includes(`@ ${currentUsername}`))) return true;
-        if (currentCode && (textToCheck.includes(`@${currentCode}`) || textToCheck.includes(`@ ${currentCode}`))) return true;
 
-        return false;
+        return true;
       })
       .map(client => ({
         ...client,
-        // تأمين الملفات في طبقة البيانات: إتاحة الملفات العامة لجميع الموظفين المصرح لهم برؤية العميل
+        // تأمين الملفات في طبقة البيانات: إتاحة الملفات المصرح بها لهذا الموظف فقط
         folderFiles: (client.folderFiles || []).filter(file => {
-          if (!file.allowedTeamMemberIds || file.allowedTeamMemberIds.length === 0 || file.allowedTeamMemberIds.includes('all')) {
+          if (!file.allowedTeamMemberIds || file.allowedTeamMemberIds.length === 0) {
             return true;
           }
           return file.allowedTeamMemberIds.includes(currentUser.id) ||
@@ -3371,12 +3391,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
       return updated;
     });
+    // Sync to Firestore
+    saveTeamMemberToFirestore(newMember);
     logActivity('team', 'انضمام عضو جديد للفريق', `${newMember.name} - ${newMember.role}`);
   };
 
   const updateTeamMember = (id: string, updates: Partial<TeamMember>) => {
+    let fullUpdatedMember: TeamMember | null = null;
     setTeam(prev => {
-      const updated = prev.map(m => (m.id === id ? { ...m, ...updates } : m));
+      const updated = prev.map(m => {
+        if (m.id === id) {
+          const fresh = { ...m, ...updates };
+          fullUpdatedMember = fresh;
+          return fresh;
+        }
+        return m;
+      });
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
       return updated;
     });
@@ -3398,6 +3428,14 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(updated));
         return updated;
       });
+    }
+
+    // Immediately persist directly to Firestore Database with the new password
+    if (fullUpdatedMember) {
+      saveTeamMemberToFirestore(fullUpdatedMember);
+    }
+    if (updates.password) {
+      saveTeamPasswordToFirestore(id, updates.password);
     }
 
     // Immediately persist profile updates to backend server so it never reverts on reload or sync
@@ -3433,7 +3471,10 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateUserCredentials = (memberId: string, updates: Partial<TeamMember>) => {
     updateTeamMember(memberId, updates);
-    logActivity('team', 'تحديث بيانات الحساب والوصول', `تم تعديل بيانات الدخول والأرقام للموظف`);
+    if (updates.password) {
+      saveTeamPasswordToFirestore(memberId, updates.password);
+    }
+    logActivity('team', 'تحديث بيانات الحساب والوصول', `تم تعديل بيانات الدخول والأرقام للموظف وحفظ كلمة المرور في الداتا بيز`);
   };
 
   const deleteTeamMember = (id: string) => {
@@ -3779,8 +3820,29 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let unsubscribeDeleted: (() => void) | null = null;
     let unsubscribeNotifications: (() => void) | null = null;
     let unsubscribeRenewals: (() => void) | null = null;
+    let unsubscribeTeam: (() => void) | null = null;
 
     try {
+      // Seed initial team if Firestore collection is empty
+      seedInitialTeamIfEmpty(team);
+
+      unsubscribeTeam = onTeamMembersSnapshot(remoteTeam => {
+        if (Array.isArray(remoteTeam) && remoteTeam.length > 0) {
+          setTeam(prev => {
+            const memberMap = new Map(prev.map(m => [m.id, m]));
+            remoteTeam.forEach(m => {
+              if (m && m.id) {
+                const existing = memberMap.get(m.id);
+                memberMap.set(m.id, { ...(existing || {}), ...m });
+              }
+            });
+            const merged = Array.from(memberMap.values());
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      });
+
       unsubscribeTasks = onTasksSnapshot(remoteTasks => {
         if (Array.isArray(remoteTasks)) {
           if (remoteTasks.length === 0 && tasks.length > 0) {
@@ -3843,6 +3905,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (unsubscribeDeleted) unsubscribeDeleted();
       if (unsubscribeNotifications) unsubscribeNotifications();
       if (unsubscribeRenewals) unsubscribeRenewals();
+      if (unsubscribeTeam) unsubscribeTeam();
     };
   }, []);
 

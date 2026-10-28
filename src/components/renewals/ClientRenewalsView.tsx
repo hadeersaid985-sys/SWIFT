@@ -192,12 +192,12 @@ export const ClientRenewalsView: React.FC = () => {
   };
 
 
-  // Active pool: Admin sees all clientRenewals; non-admin employee sees visibleClients
-  const activeClientsPool = visibleClients || clientRenewals;
+  // Active pool: Admin sees all clientRenewals; non-admin employee sees visibleClients strictly
+  const activeClientsPool = isManager ? clientRenewals : visibleClients;
 
-  // Active client being viewed in the dossier modal (always synced with latest state)
+  // Active client being viewed in the dossier modal (strictly hidden if unmentioned or unassigned)
   const currentDossierClient = selectedClientForDossier
-    ? (visibleClients || clientRenewals).find(c => c.id === selectedClientForDossier.id) || selectedClientForDossier
+    ? (activeClientsPool.find(c => c.id === selectedClientForDossier.id) || (isManager ? selectedClientForDossier : null))
     : null;
 
   // Form state
@@ -399,17 +399,30 @@ export const ClientRenewalsView: React.FC = () => {
     setDossierActiveTab('folder');
   };
 
-  // Toggle Team Member visibility for client
+  // Toggle Team Member visibility for client (إسناد أو إلغاء منشن العميل والمجلد)
   const handleToggleTeamVisibility = (memberId: string) => {
     if (!currentDossierClient) return;
-    const currentList = currentDossierClient.assignedTeamMemberIds || [];
-    const updated = currentList.includes(memberId)
-      ? currentList.filter(id => id !== memberId)
-      : [...currentList, memberId];
+    let baseList = (currentDossierClient.assignedTeamMemberIds || []).filter(id => id !== 'all');
+    if (currentDossierClient.assignedTeamMemberIds?.includes('all')) {
+      baseList = team.map(m => m.id);
+    }
+    const isRemoving = baseList.includes(memberId);
+    const updated = isRemoving
+      ? baseList.filter(id => id !== memberId)
+      : [...baseList, memberId];
+
+    // If removing, also remove member from mentionedTeamMemberIds
+    const updatedMentions = isRemoving
+      ? (currentDossierClient.mentionedTeamMemberIds || []).filter(id => id !== memberId)
+      : (currentDossierClient.mentionedTeamMemberIds || []);
 
     setSelectedTeamMemberIdsForClient(updated);
+    updateClientRenewal(currentDossierClient.id, {
+      assignedTeamMemberIds: updated,
+      mentionedTeamMemberIds: updatedMentions
+    });
     assignClientTeam(currentDossierClient.id, updated);
-    showToast('تم تحديث صلاحيات ظهور العميل في التيم بنجاح ✅');
+    showToast(isRemoving ? 'تم إلغاء منشن وتعيين العميل وإخفاء الملفات ومواعيد التجديد عنه فوراً 🔒' : 'تم إضافة الموظف لمنشن وتعيين العميل بنجاح ✅');
   };
 
   // Add Document to Client Folder

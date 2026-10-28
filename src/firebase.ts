@@ -14,7 +14,7 @@ import {
   getDocFromServer
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { Task, AppNotification, ClientRenewal, ChatMessage } from './types/crm';
+import { Task, AppNotification, ClientRenewal, ChatMessage, TeamMember } from './types/crm';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -389,5 +389,102 @@ export async function seedInitialChatMessagesIfEmpty(initialMsgs: ChatMessage[])
     }
   } catch (err) {
     console.warn('[Firebase] Chat messages seeding check notice:', err);
+  }
+}
+
+const TEAM_COLLECTION = 'teamMembers';
+
+/**
+ * Save / Update a Team Member in Firestore database in real-time
+ */
+export async function saveTeamMemberToFirestore(member: TeamMember): Promise<void> {
+  if (!member || !member.id) return;
+  try {
+    const memberRef = doc(db, TEAM_COLLECTION, member.id);
+    const cleanPayload: any = { ...member };
+    Object.keys(cleanPayload).forEach(key => {
+      if (cleanPayload[key] === undefined) {
+        delete cleanPayload[key];
+      }
+    });
+    cleanPayload.updatedAt = new Date().toISOString();
+    await setDoc(memberRef, cleanPayload, { merge: true });
+    console.log(`[Firebase] Team member ${member.name} (${member.id}) saved to Firestore successfully with updated password`);
+  } catch (error) {
+    console.error('[Firebase] Error saving team member to Firestore:', error);
+  }
+}
+
+/**
+ * Specifically save new password to Firestore database
+ */
+export async function saveTeamPasswordToFirestore(memberId: string, newPassword: string): Promise<void> {
+  if (!memberId || !newPassword) return;
+  try {
+    const memberRef = doc(db, TEAM_COLLECTION, memberId);
+    await setDoc(
+      memberRef,
+      {
+        id: memberId,
+        password: newPassword.trim(),
+        passwordUpdatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      { merge: true }
+    );
+    console.log(`[Firebase] Password updated in Firestore database for member: ${memberId}`);
+  } catch (error) {
+    console.error('[Firebase] Error saving new password to Firestore:', error);
+  }
+}
+
+/**
+ * Real-time listener for Team Members and Passwords across all devices
+ */
+export function onTeamMembersSnapshot(onUpdate: (team: TeamMember[]) => void) {
+  try {
+    const q = collection(db, TEAM_COLLECTION);
+    return onSnapshot(
+      q,
+      snapshot => {
+        const list: TeamMember[] = [];
+        snapshot.forEach(docSnap => {
+          list.push(docSnap.data() as TeamMember);
+        });
+        if (list.length > 0) {
+          onUpdate(list);
+        }
+      },
+      err => console.warn('[Firebase] Team members notice:', err)
+    );
+  } catch {
+    return () => {};
+  }
+}
+
+/**
+ * Seed initial team members to Firestore if collection is empty
+ */
+export async function seedInitialTeamIfEmpty(initialTeam: TeamMember[]): Promise<void> {
+  try {
+    const colRef = collection(db, TEAM_COLLECTION);
+    const snap = await getDocs(colRef);
+    if (snap.empty && Array.isArray(initialTeam) && initialTeam.length > 0) {
+      console.log('[Firebase] Seeding initial team members to Firestore...');
+      const batch = writeBatch(db);
+      initialTeam.forEach(m => {
+        const mRef = doc(db, TEAM_COLLECTION, m.id);
+        const clean: any = { ...m };
+        Object.keys(clean).forEach(k => {
+          if (clean[k] === undefined) delete clean[k];
+        });
+        clean.updatedAt = new Date().toISOString();
+        batch.set(mRef, clean);
+      });
+      await batch.commit();
+      console.log('[Firebase] Seeded team members to Firestore successfully!');
+    }
+  } catch (err) {
+    console.warn('[Firebase] Team seeding check notice:', err);
   }
 }
