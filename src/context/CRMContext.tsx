@@ -214,6 +214,7 @@ interface CRMContextType {
   renewalsDueSoonCount: number;
   visibleLeads: Lead[]; // كل الليدز للأدمن، والموكلين للموظف
   isSalesUser: boolean; // هل المستخدم في قسم المبيعات أو أدمن
+  leadsDueFollowUpTodayCount: number; // عدد العملاء المحتملين المستحق متابعتهم اليوم أو متأخرين
 
   // Suspended Contracts (العقود الموقوفة وتوثيق سبب الإيقاف لكل عميل)
   suspendedContracts: ClientRenewal[];
@@ -1547,6 +1548,53 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const renDate = new Date(r.renewalDate).getTime();
     const diff = Math.ceil((renDate - today) / (1000 * 60 * 60 * 24));
     return diff <= 4 && diff >= 0;
+  }).length;
+
+  // Automated Follow-up Reminder & Notification generator for Leads
+  useEffect(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    leads.forEach(lead => {
+      if (!lead.followUpDate || lead.status === 'صفقة ناجحة (Won)' || lead.status === 'غير مؤهل') return;
+      const parts = lead.followUpDate.split('-');
+      if (parts.length < 3) return;
+      const target = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+      const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+
+      // If follow-up date is today or overdue
+      if (diffDays <= 0) {
+        const notifId = `notif-lead-followup-${lead.id}-${lead.followUpDate}`;
+        setNotifications(prev => {
+          if (prev.some(n => n.id === notifId)) return prev;
+          const statusText = diffDays === 0 ? 'اليوم!' : `متأخر بـ ${Math.abs(diffDays)} يوم!`;
+          return [
+            {
+              id: notifId,
+              title: `🔔 موعد متابعة العميل: ${lead.name} (${lead.company})`,
+              message: `حان موعد متابعة العميل المحتمل ${statusText} (تاريخ المتابعة: ${lead.followUpDate}${lead.followUpTime ? ` الساعة ${lead.followUpTime}` : ''}). رقم الهاتف: ${lead.phone}. تواصل معه الآن لمتابعة قراره بخصوص التعاقد.`,
+              timestamp: 'الآن',
+              type: 'lead',
+              isRead: false,
+              linkTab: 'leads'
+            },
+            ...prev
+          ];
+        });
+      }
+    });
+  }, [leads]);
+
+  // Count leads due for follow-up today or overdue
+  const leadsDueFollowUpTodayCount = leads.filter(l => {
+    if (!l.followUpDate || l.status === 'صفقة ناجحة (Won)' || l.status === 'غير مؤهل') return false;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const parts = l.followUpDate.split('-');
+    if (parts.length < 3) return false;
+    const target = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+    const diff = Math.round((target - today) / (1000 * 60 * 60 * 24));
+    return diff <= 0;
   }).length;
 
   // Marketing Board Methods
@@ -4180,6 +4228,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         renewalsDueSoonCount,
         visibleLeads,
         isSalesUser,
+        leadsDueFollowUpTodayCount,
         suspendedContracts,
         suspendClientContract,
         reactivateClientContract,

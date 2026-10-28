@@ -160,6 +160,9 @@ export interface Lead {
   negotiationsHistory?: string; // ملخص المفاوضات
   negotiationEntries?: LeadNegotiationEntry[]; // سجل التفاوضات وجولاتها
   notes?: string;
+  followUpDate?: string; // تاريخ متابعة العميل القادمة (YYYY-MM-DD)
+  followUpTime?: string; // وقت المتابعة المحدد (HH:mm)
+  followUpNotes?: string; // ملاحظات وتوجيهات متابعة العميل
   sheetUrl?: string; // رابط شيت العميل أو ملف إكسيل / جوجل شيت
   sheetTitle?: string; // عنوان الشيت (e.g. "شيت بيانات ومكالمات العميل")
   folderFiles?: ClientFileDocument[]; // ملفات وشيتات مرفقة بمجلد العميل المحتمل

@@ -988,6 +988,9 @@ export const INITIAL_LEADS: Lead[] = [
       }
     ],
     notes: 'يبحثون عن أتمتة لجميع فروعهم الـ 14 مع تتبع فوري لمواعيد التسليم.',
+    followUpDate: formatDate(0), // موعد المتابعة اليوم! 🔔
+    followUpTime: '13:00',
+    followUpNotes: 'الاتصال الهاتفي النهائي لمناقشة تعديل شروط الدفع وتوقيع العقد المبدئي.',
     createdAt: formatDate(-3)
   },
   {
@@ -1021,6 +1024,9 @@ export const INITIAL_LEADS: Lead[] = [
       }
     ],
     notes: 'تحتاج لربط برامج العيادات مع نظام إدارة مهام الأطباء ومواعيد الزيارات.',
+    followUpDate: formatDate(0), // موعد المتابعة اليوم!
+    followUpTime: '15:30',
+    followUpNotes: 'متابعة قرار مجلس الإدارة ومناقشة تفاصيل الربط التقني.',
     createdAt: formatDate(0)
   },
   {
@@ -1054,6 +1060,9 @@ export const INITIAL_LEADS: Lead[] = [
       }
     ],
     notes: 'طلب إعادة الاتصال بعد دراسة الميزانية السنوية الجديدة للشركة.',
+    followUpDate: formatDate(1), // غداً
+    followUpTime: '11:00',
+    followUpNotes: 'مكالمة هاتفية للمتابعة بعد مراجعة الإدارة المالية للميزانية.',
     createdAt: formatDate(-2)
   },
   {
