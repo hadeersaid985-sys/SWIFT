@@ -251,21 +251,21 @@ const AppContent: React.FC = () => {
 
         {/* 4-Day Renewal Alert Proactive Notification Banner for Admin */}
         {isManager && renewalsDueSoonCount > 0 && effectiveTab !== 'renewals' && (
-          <div className="bg-gradient-to-r from-rose-600 via-amber-600 to-rose-700 text-white px-3 sm:px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] sm:text-xs font-bold shadow-md shrink-0 z-30 animate-in slide-in-from-top">
+          <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-medium shrink-0 z-30">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="p-1 bg-white/20 rounded-md animate-pulse shrink-0">
-                <BellRing className="w-4 h-4 text-yellow-200" />
+              <span className="p-1 bg-amber-100 rounded text-amber-800 shrink-0">
+                <BellRing className="w-3.5 h-3.5" />
               </span>
               <span className="leading-snug">
-                🚨 تنبيه عاجل (قبل 4 أيام): يوجد <strong className="underline text-yellow-200">{renewalsDueSoonCount} اشتراكات عملاء</strong> موعد تجديدها مستحق خلال 4 أيام أو أقل!
+                تنبيه تجديد اشتراكات: يوجد <strong className="font-bold text-amber-950 underline">{renewalsDueSoonCount} اشتراكات</strong> موعد تجديدها مستحق خلال 4 أيام أو أقل.
               </span>
             </div>
 
             <button
               onClick={() => setActiveTab('renewals')}
-              className="bg-white hover:bg-amber-50 text-rose-950 px-3 py-1 rounded-lg text-[11px] font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 hover:scale-102 self-start sm:self-auto"
+              className="bg-amber-800 hover:bg-amber-900 text-white px-3 py-1 rounded text-xs font-semibold transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
             >
-              <span>متابعة التجديدات فوراً ←</span>
+              متابعة التجديدات ←
             </button>
           </div>
         )}

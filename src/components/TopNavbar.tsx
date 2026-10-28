@@ -270,16 +270,16 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
 
       {/* Left Side: Tools & Actions */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-        {/* Search Input Pill */}
+        {/* Search Input */}
         <div className="relative hidden md:block w-52 lg:w-72 xl:w-80">
           <input
             type="text"
             value={topSearch}
             onChange={e => setTopSearch(e.target.value)}
-            placeholder="البحث عن السجلات"
-            className="w-full bg-slate-100/80 hover:bg-slate-100 text-slate-700 placeholder-slate-400 text-xs rounded-full pr-8 pl-4 py-1.5 border border-transparent focus:border-blue-400 focus:bg-white focus:outline-none transition-all"
+            placeholder="البحث في السجلات والبيانات..."
+            className="w-full bg-slate-50 hover:bg-slate-100/70 text-slate-800 placeholder-slate-400 text-xs rounded-lg pr-8 pl-4 py-1.5 border border-slate-200 focus:border-blue-600 focus:bg-white focus:outline-none transition-all"
           />
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5" />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2" />
         </div>
 
         {/* Mobile Single + Button */}
@@ -420,12 +420,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                         setActiveTab('marketing');
                         setShowAddMenu(false);
                       }}
-                      className="w-full text-right px-3 py-2 hover:bg-amber-50/70 flex items-center gap-2 text-slate-700 cursor-pointer"
+                      className="w-full text-right px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
                     >
-                      <Megaphone className="w-4 h-4 text-amber-600" />
+                      <Megaphone className="w-4 h-4 text-slate-600" />
                       <div>
-                        <div className="font-bold text-amber-900">كارت أو حملة ماركيتنج (الأدمن) 🔒</div>
-                        <div className="text-[10px] text-slate-400">GEO AI، استقطاب الكويت، وسوشيال ميديا</div>
+                        <div className="font-bold text-slate-800">حملة تسويقية جديدة</div>
+                        <div className="text-[10px] text-slate-400">حملات الاستقطاب والتسويق الإلكتروني</div>
                       </div>
                     </button>
                     <button
@@ -433,12 +433,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                         setActiveTab('renewals');
                         setShowAddMenu(false);
                       }}
-                      className="w-full text-right px-3 py-2 hover:bg-rose-50/70 flex items-center gap-2 text-slate-700 cursor-pointer"
+                      className="w-full text-right px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
                     >
-                      <Clock className="w-4 h-4 text-rose-600" />
+                      <Clock className="w-4 h-4 text-slate-600" />
                       <div>
-                        <div className="font-bold text-rose-900">موعد تجديد اشتراك عميل 🚨</div>
-                        <div className="text-[10px] text-slate-400">تنبيه مسبق بـ 4 أيام وسداد الفواتير</div>
+                        <div className="font-bold text-slate-800">موعد تجديد اشتراك عميل</div>
+                        <div className="text-[10px] text-slate-400">متابعة مواعيد التجديد وسداد الفواتير</div>
                       </div>
                     </button>
                     <button
@@ -504,11 +504,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                         setActiveTab('marketing');
                         setShowEditMenu(false);
                       }}
-                      className="w-full text-right px-3 py-2 hover:bg-amber-50/70 flex items-center gap-2 text-slate-800 cursor-pointer"
+                      className="w-full text-right px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-800 cursor-pointer"
                     >
-                      <Megaphone className="w-4 h-4 text-amber-600" />
+                      <Megaphone className="w-4 h-4 text-slate-600" />
                       <div>
-                        <div className="font-bold text-amber-900">لوحة الماركيتنج والمخطط والتاسكات (الأدمن) 🔒</div>
+                        <div className="font-bold text-slate-800">لوحة التسويق والحملات</div>
                         <div className="text-[10px] text-slate-400">تعديل بوردات التسويق، المحتوى، والخطط</div>
                       </div>
                     </button>
@@ -517,11 +517,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                         setActiveTab('renewals');
                         setShowEditMenu(false);
                       }}
-                      className="w-full text-right px-3 py-2 hover:bg-rose-50/70 flex items-center gap-2 text-slate-800 cursor-pointer"
+                      className="w-full text-right px-3 py-2 hover:bg-slate-50 flex items-center gap-2 text-slate-800 cursor-pointer"
                     >
-                      <Clock className="w-4 h-4 text-rose-600" />
+                      <Clock className="w-4 h-4 text-slate-600" />
                       <div>
-                        <div className="font-bold text-rose-900">مواعيد تجديد العملاء وتنبيهات الـ 4 أيام 🚨</div>
+                        <div className="font-bold text-slate-800">مواعيد تجديد اشتراكات العملاء</div>
                         <div className="text-[10px] text-slate-400">تعديل الاشتراكات وتجديد العقود والسداد</div>
                       </div>
                     </button>
@@ -734,36 +734,25 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         )}
       </div>
 
-        {/* Zia / AI Icon (Manager only) */}
-        {isManagerUser && (
-          <button
-            onClick={() => setActiveTab('mcp')}
-            className="hidden lg:flex text-slate-500 hover:text-blue-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer text-xs font-bold items-center gap-0.5 shrink-0"
-            title="مساعد الذكاء الاصطناعي Zia / MCP"
-          >
-            <span className="text-amber-500 text-sm font-black">Zia</span>
-          </button>
-        )}
-
         {/* Calendar Icon */}
         <button
           onClick={() => setActiveTab('meetings')}
           className="hidden lg:flex text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
-          title="التقويم"
+          title="التقويم والاجتماعات"
         >
           <Calendar className="w-4 h-4" />
         </button>
 
-        {/* Daily Digest Button (موجز المهام اليومي للموظف) */}
+        {/* Daily Digest Button (موجز المهام اليومي) */}
         <button
           onClick={() => setIsDailyDigestOpen(true)}
-          className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 text-slate-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100/90 border border-amber-200/90 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
-          title="موجز المهام اليومي (Daily Digest) - المهام المتأخرة والمجدولة لليوم"
+          className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
+          title="موجز المهام اليومي - المهام المتأخرة والمجدولة لليوم"
         >
           <Sun className="w-3.5 h-3.5 text-amber-600" />
-          <span>موجز اليوم 📋</span>
+          <span>موجز اليوم</span>
           {(digestOverdueCount + digestTodayCount) > 0 && (
-            <span className="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full min-w-4 text-center">
+            <span className="bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.2 rounded min-w-4 text-center">
               {digestOverdueCount + digestTodayCount}
             </span>
           )}
@@ -888,14 +877,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           <Store className="w-4 h-4" />
         </button>
 
-        {/* Prominent Direct Change Logo Button (Desktop only) */}
+        {/* Customization & Brand Settings */}
         <button
           onClick={() => setIsBrandModalOpen(true)}
-          className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
-          title="تغيير اللوجو والشعار وهوية المنظومة فوراً"
+          className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
+          title="تخصيص الهوية والشعار"
         >
-          <ImageIcon className="w-3.5 h-3.5" />
-          <span>تغيير اللوجو 🖼️</span>
+          <Camera className="w-3.5 h-3.5 text-slate-500" />
+          <span>تخصيص الهوية</span>
         </button>
 
         {/* Settings Menu Dropdown (Accessible directly from main interface on desktop) */}

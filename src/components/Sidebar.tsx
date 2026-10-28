@@ -164,52 +164,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
         </button>
       </div>
 
-      {/* Role Badge & Quick Switch Helper for User Testing */}
+      {/* User Status Header */}
       {!isCollapsed && (
-        <div className="p-2 border-b border-slate-800/80 bg-slate-900/40">
-          {isManager ? (
-            <div className="bg-gradient-to-r from-blue-900/60 to-indigo-900/60 border border-blue-500/30 rounded-xl p-2 text-[11px] space-y-1.5">
-              <div className="flex items-center justify-between text-blue-200 font-bold">
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                  <span>وضع الأدمن (المدير العام)</span>
-                </span>
-                <span className="bg-blue-600 text-white text-[9px] px-1.5 py-0.2 rounded font-mono font-bold">
-                  كامل الصلاحيات
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 leading-tight">
-                لديك وصول شامل: الماركيتنج، تجديد العملاء، الصفقات، التقارير والفريق.
-              </p>
-              <button
-                onClick={() => {
-                  const emp = team.find(m => m.id !== 'user-1' && m.accessLevel !== 'admin');
-                  if (emp) impersonateUser(emp.id);
-                }}
-                className="w-full text-center py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg text-[10px] font-bold transition-all cursor-pointer border border-amber-500/20"
-                title="التبديل لحساب موظف للتأكد أن التاسكات فقط تظهر له"
-              >
-                👤 تجربة وضع الموظف (التاسكات بس)
-              </button>
+        <div className="p-3 border-b border-slate-800 bg-slate-900/40">
+          <div className="flex items-center gap-2.5">
+            <div className="relative shrink-0">
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name}
+                className="w-8 h-8 rounded-full border border-slate-700 object-cover"
+              />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 absolute bottom-0 right-0 ring-1 ring-slate-900" />
             </div>
-          ) : (
-            <div className="bg-slate-900/80 border border-slate-700/60 rounded-xl p-2.5 text-xs">
-              <div className="flex items-center gap-2.5">
-                <div className="relative shrink-0">
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-8 h-8 rounded-full border border-blue-400/40 object-cover"
-                  />
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 border border-slate-900 absolute bottom-0 right-0" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold text-slate-100 truncate">{currentUser.name}</div>
-                  <div className="text-[10px] text-blue-400 font-medium truncate">{currentUser.role || 'عضو الفريق'}</div>
-                </div>
-              </div>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-slate-100 text-xs truncate">{currentUser.name}</div>
+              <div className="text-[10px] text-slate-400 truncate">{currentUser.role || (isManager ? 'مدير المنظومة' : 'عضو الفريق')}</div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -436,236 +407,199 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               {!isCollapsed && <span>الرئيسية</span>}
             </button>
 
-            {/* إعدادات السيستم وتغيير اللوجو (مباشرة في الواجهة الرئيسية) */}
+            {/* إعدادات المنظومة */}
             <button
               onClick={() => setActiveTab('system_settings')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer border ${
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'system_settings'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold shadow-md border-blue-400 ring-1 ring-blue-300/40'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-blue-500/20'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="إعدادات المنظومة: تغيير اللوجو، الاسم، الألوان، وأيقونة Favicon"
+              title="إعدادات المنظومة: الشعار، الاسم، الألوان، والتخصيص"
             >
               <div className="flex items-center gap-2.5">
-                <Sliders className="w-4 h-4 shrink-0 text-blue-400" />
-                {!isCollapsed && <span className="font-bold">إعدادات السيستم واللوجو</span>}
+                <Sliders className="w-4 h-4 shrink-0 text-slate-400" />
+                {!isCollapsed && <span>إعدادات المنظومة</span>}
               </div>
-              {!isCollapsed && (
-                <span className="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-400/30 px-1.5 py-0.2 rounded font-bold">
-                  تغيير اللوجو 🖼️
-                </span>
-              )}
             </button>
 
-            {/* Item 2: التسويق والحملات */}
+            {/* التسويق والحملات */}
             <button
               onClick={() => setActiveTab('marketing')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'marketing'
-                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white font-extrabold shadow-md'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border border-amber-500/20'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="لوحة الماركيتنج والمخطط (Planner & Board & Tasks)"
+              title="لوحة التسويق والحملات"
             >
               <div className="flex items-center gap-2.5">
-                <Megaphone className="w-4 h-4 shrink-0 text-amber-400" />
-                {!isCollapsed && <span className="font-bold">التسويق والحملات</span>}
+                <Megaphone className="w-4 h-4 shrink-0 text-slate-400" />
+                {!isCollapsed && <span>التسويق والحملات</span>}
               </div>
-              {!isCollapsed && (
-                <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold px-1.5 py-0.5 rounded">
-                  بورد
-                </span>
-              )}
             </button>
 
-            {/* Item 2.2: أفكار التسويق وتدويناتي */}
+            {/* أفكار التسويق والملاحظات */}
             <button
               onClick={() => setActiveTab('marketing_ideas')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'marketing_ideas'
-                  ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-extrabold shadow-md'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border border-purple-500/20'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="بنك أفكار التسويق وتدويناتي وملاحظاتي المكتوبة"
+              title="أفكار التسويق والملاحظات الاستراتيجية"
             >
               <div className="flex items-center gap-2.5">
-                <Lightbulb className="w-4 h-4 shrink-0 text-amber-300" />
-                {!isCollapsed && <span className="font-bold">أفكار التسويق وتدويناتي</span>}
+                <Lightbulb className="w-4 h-4 shrink-0 text-slate-400" />
+                {!isCollapsed && <span>أفكار التسويق والملاحظات</span>}
               </div>
-              {!isCollapsed && (
-                <span className="text-[9px] bg-purple-500/20 text-purple-300 border border-purple-400/30 font-bold px-1.5 py-0.5 rounded">
-                  أفكاري
-                </span>
-              )}
             </button>
 
-            {/* Item 3: مواعيد تجديد العملاء وتنبيهات الـ 4 أيام */}
+            {/* ملفات العملاء والاشتراكات */}
             <button
               onClick={() => setActiveTab('renewals')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'renewals'
-                  ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white font-extrabold shadow-md'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/30 border border-rose-500/20'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="مواعيد تجديد اشتراكات العملاء وتنبيهات الـ 4 أيام المسبقة"
+              title="ملفات العملاء والاشتراكات ومواعيد التجديد"
             >
               <div className="flex items-center gap-2.5">
-                <Clock className="w-4 h-4 shrink-0 text-rose-400" />
-                {!isCollapsed && <span className="font-bold">ملفات العملاء وتجديد الاشتراكات</span>}
+                <Clock className="w-4 h-4 shrink-0 text-slate-400" />
+                {!isCollapsed && <span>ملفات العملاء والاشتراكات</span>}
               </div>
-              {!isCollapsed && (
-                <span
-                  className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow-2xs ${
-                    renewalsDueSoonCount > 0
-                      ? 'bg-rose-500 text-white animate-pulse'
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  {renewalsDueSoonCount > 0 ? `🚨 ${renewalsDueSoonCount} تجديد` : 'ساري'}
+              {!isCollapsed && renewalsDueSoonCount > 0 && (
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono font-bold">
+                  {renewalsDueSoonCount} مستحق
                 </span>
               )}
             </button>
 
-            {/* Item 3.2: عقود موقفه (مباشرة تحت ملفات العملاء وتجديد الاشتراكات) */}
+            {/* العقود الموقوفة */}
             <button
               onClick={() => setActiveTab('suspended_contracts')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'suspended_contracts'
-                  ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white font-extrabold shadow-md'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/30 border border-amber-500/20'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="عقود موقفه: العملاء المتوقفين وتوثيق سبب الإيقاف مع إمكانية إعادة التفعيل"
+              title="العقود الموقوفة وتوثيق الأسباب وإعادة التفعيل"
             >
               <div className="flex items-center gap-2.5">
-                <PauseCircle className="w-4 h-4 shrink-0 text-amber-400" />
-                {!isCollapsed && <span className="font-bold">عقود موقفه</span>}
+                <PauseCircle className="w-4 h-4 shrink-0 text-slate-400" />
+                {!isCollapsed && <span>العقود الموقوفة</span>}
               </div>
-              {!isCollapsed && (
-                <span className="text-[9px] bg-amber-500/25 text-amber-200 border border-amber-400/30 font-bold px-1.5 py-0.5 rounded shadow-2xs">
-                  {suspendedContracts.length} موقوف
+              {!isCollapsed && suspendedContracts.length > 0 && (
+                <span className="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.5 rounded font-mono">
+                  {suspendedContracts.length}
                 </span>
               )}
             </button>
 
-            {/* Item 3.5: نقل 2 سيستم للهوست و2 دومين وتحميل الملفات */}
+            {/* نقل الأنظمة والاستضافة */}
             <button
               onClick={() => setActiveTab('host_migration')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'host_migration'
-                  ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-extrabold shadow-md'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/30 border border-indigo-500/20'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="نقل 2 سيستم إلى الهوست و2 دومين (ظاهرلي جيو وسوشيال ميديا وتحميل الملفات)"
+              title="نقل الأنظمة وإدارة الاستضافة والدومينات"
             >
               <div className="flex items-center gap-2.5">
-                <Server className="w-4 h-4 shrink-0 text-indigo-400" />
-                {!isCollapsed && <span className="font-bold">نقل 2 سيستم للهوست</span>}
+                <Server className="w-4 h-4 shrink-0 text-slate-400" />
+                {!isCollapsed && <span>نقل الأنظمة والاستضافة</span>}
               </div>
-              {!isCollapsed && (
-                <span className="text-[9px] bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 font-bold px-1.5 py-0.5 rounded">
-                  2 دومين
-                </span>
-              )}
             </button>
 
-
-            {/* Item 5: التقارير */}
+            {/* التقارير */}
             <button
               onClick={() => setActiveTab('reports')}
               className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'reports'
-                  ? 'bg-blue-600 text-white font-bold shadow-xs'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
                   : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
               title="التقارير"
             >
-              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <FileSpreadsheet className="w-4 h-4 shrink-0 text-slate-400" />
               {!isCollapsed && <span>التقارير</span>}
             </button>
 
-            {/* Item 6: التحليلات */}
+            {/* التحليلات */}
             <button
               onClick={() => setActiveTab('analytics')}
               className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'analytics'
-                  ? 'bg-blue-600 text-white font-bold shadow-xs'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
                   : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
               title="التحليلات"
             >
-              <BarChart2 className="w-4 h-4 shrink-0" />
+              <BarChart2 className="w-4 h-4 shrink-0 text-slate-400" />
               {!isCollapsed && <span>التحليلات</span>}
             </button>
 
-            {/* Item 7: فريق العمل (الموظفين) */}
+            {/* فريق العمل */}
             <button
               onClick={() => setActiveTab('team')}
               className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'team'
-                  ? 'bg-blue-600 text-white font-bold shadow-xs'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
                   : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="فريق العمل والموظفين (مع خيار حذف وتعديل الفريق بالكامل)"
+              title="فريق العمل والموظفين"
             >
-              <Users className="w-4 h-4 shrink-0" />
+              <Users className="w-4 h-4 shrink-0 text-slate-400" />
               {!isCollapsed && <span>فريق العمل (الموظفين)</span>}
             </button>
 
-            {/* Item: المالية والمصروفات (المصروفات، المدفوعات، مرتبات الموظفين، والعقود وباقي دفع العملاء) */}
+            {/* المنظومة المالية والمصروفات */}
             <button
               onClick={() => setActiveTab('finance')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer border ${
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'finance'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold shadow-md border-emerald-400 ring-1 ring-emerald-300/40'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-emerald-500/20'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="المنظومة المالية: المصروفات التشغيلية، سجل المدفوعات، مرتبات الموظفين، والعقود وباقي دفع العملاء"
+              title="المنظومة المالية: المصروفات، المدفوعات، مرتبات الموظفين، والعقود وباقي دفع العملاء"
             >
               <div className="flex items-center gap-2.5">
-                <Wallet className="w-4 h-4 shrink-0 text-emerald-400" />
-                {!isCollapsed && <span className="font-bold">المالية والمصروفات</span>}
+                <Wallet className="w-4 h-4 shrink-0 text-slate-400" />
+                {!isCollapsed && <span>المنظومة المالية والمصروفات</span>}
               </div>
-              {!isCollapsed && (
-                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.2 rounded font-bold">
-                  شامل
-                </span>
-              )}
             </button>
 
-            {/* Item: عمولات المبيعات (لكل شهر منفصل) */}
+            {/* عمولات المبيعات */}
             <button
               onClick={() => setActiveTab('sales_commissions')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer border ${
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'sales_commissions'
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-700 text-white font-extrabold shadow-md border-cyan-400 ring-1 ring-cyan-300/40'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-cyan-500/20'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="عمولات تيم السيلز لكل شهر منفصل، متابعة التارجت والصفقات والمدفوعات"
+              title="عمولات فريق المبيعات لكل شهر منفصل"
             >
               <div className="flex items-center gap-2.5">
-                <Percent className="w-4 h-4 shrink-0 text-cyan-400" />
-                {!isCollapsed && <span className="font-bold">عمولات المبيعات</span>}
+                <Percent className="w-4 h-4 shrink-0 text-slate-400" />
+                {!isCollapsed && <span>عمولات المبيعات</span>}
               </div>
-              {!isCollapsed && (
-                <span className="text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 px-1.5 py-0.2 rounded font-bold">
-                  شهري
-                </span>
-              )}
             </button>
 
-            {/* Item: سجل الحضور والرواتب */}
+            {/* سجل الحضور والرواتب */}
             <button
               onClick={() => setActiveTab('payroll')}
-              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer border ${
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'payroll' || activeTab === 'salaries'
-                  ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white font-extrabold shadow-md border-slate-500'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-slate-700/50'
+                  ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
               }`}
-              title="نظام رواتب الموظفين، الحضور والغياب، ومواعيد العمل"
+              title="سجل الحضور والرواتب"
             >
               <div className="flex items-center gap-2.5">
                 <DollarSign className="w-4 h-4 shrink-0 text-slate-400" />
-                {!isCollapsed && <span className="font-bold">سجل الحضور والرواتب</span>}
+                {!isCollapsed && <span>سجل الحضور والرواتب</span>}
               </div>
             </button>
 

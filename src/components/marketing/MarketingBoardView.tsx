@@ -488,11 +488,8 @@ export const MarketingBoardView: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <span>{activeBoard.title}</span>
-                <span className="text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold px-2.5 py-0.5 rounded-full shadow-2xs">
-                  خاص بالأدمن فقط 🔒
-                </span>
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                {activeBoard.title}
               </h1>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
