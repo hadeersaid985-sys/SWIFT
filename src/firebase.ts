@@ -14,7 +14,7 @@ import {
   getDocFromServer
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { Task, AppNotification, ClientRenewal } from './types/crm';
+import { Task, AppNotification, ClientRenewal, ChatMessage } from './types/crm';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -303,5 +303,91 @@ export function onClientRenewalsSnapshot(onUpdate: (renewals: ClientRenewal[]) =
     );
   } catch {
     return () => {};
+  }
+}
+
+const CHAT_MESSAGES_COLLECTION = 'teamChatMessages';
+
+/**
+ * Save / Send a chat message to Firestore in real-time
+ */
+export async function saveChatMessageToFirestore(msg: ChatMessage): Promise<void> {
+  if (!msg || !msg.id) return;
+  try {
+    const msgRef = doc(db, CHAT_MESSAGES_COLLECTION, msg.id);
+    const cleanPayload: any = { ...msg };
+    Object.keys(cleanPayload).forEach(key => {
+      if (cleanPayload[key] === undefined) {
+        delete cleanPayload[key];
+      }
+    });
+    cleanPayload.updatedAt = new Date().toISOString();
+    await setDoc(msgRef, cleanPayload, { merge: true });
+  } catch (error) {
+    console.error('[Firebase] Error saving chat message to Firestore:', error);
+  }
+}
+
+/**
+ * Delete a chat message in Firestore
+ */
+export async function deleteChatMessageFromFirestore(msgId: string): Promise<void> {
+  if (!msgId) return;
+  try {
+    const msgRef = doc(db, CHAT_MESSAGES_COLLECTION, msgId);
+    await deleteDoc(msgRef);
+  } catch (error) {
+    console.error('[Firebase] Error deleting chat message from Firestore:', error);
+  }
+}
+
+/**
+ * Real-time listener for Chat Messages across all team members & devices
+ */
+export function onChatMessagesSnapshot(onUpdate: (messages: ChatMessage[]) => void) {
+  try {
+    const q = collection(db, CHAT_MESSAGES_COLLECTION);
+    return onSnapshot(
+      q,
+      snapshot => {
+        const list: ChatMessage[] = [];
+        snapshot.forEach(docSnap => {
+          list.push(docSnap.data() as ChatMessage);
+        });
+        if (list.length > 0) {
+          // Sort chronologically
+          list.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+          onUpdate(list);
+        }
+      },
+      err => console.warn('[Firebase] Chat messages notice:', err)
+    );
+  } catch {
+    return () => {};
+  }
+}
+
+/**
+ * Seed initial chat messages if Firestore collection is empty
+ */
+export async function seedInitialChatMessagesIfEmpty(initialMsgs: ChatMessage[]): Promise<void> {
+  try {
+    const q = collection(db, CHAT_MESSAGES_COLLECTION);
+    const snap = await getDocs(q);
+    if (snap.empty && initialMsgs && initialMsgs.length > 0) {
+      const batch = writeBatch(db);
+      initialMsgs.forEach(m => {
+        const mRef = doc(db, CHAT_MESSAGES_COLLECTION, m.id);
+        const clean: any = { ...m };
+        Object.keys(clean).forEach(k => {
+          if (clean[k] === undefined) delete clean[k];
+        });
+        batch.set(mRef, clean);
+      });
+      await batch.commit();
+      console.log('[Firebase] Seeded chat messages successfully!');
+    }
+  } catch (err) {
+    console.warn('[Firebase] Chat messages seeding check notice:', err);
   }
 }

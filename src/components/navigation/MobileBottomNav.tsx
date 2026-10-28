@@ -7,9 +7,11 @@ import {
   Menu,
   Home,
   Clock,
-  Megaphone
+  Megaphone,
+  MessagesSquare
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
+import { useChat } from '../../context/ChatContext';
 
 interface MobileBottomNavProps {
   onOpenMenu: () => void;
@@ -17,6 +19,7 @@ interface MobileBottomNavProps {
 }
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, isMenuOpen }) => {
+  const { unreadCount: unreadChatCount } = useChat();
   const {
     activeTab,
     setActiveTab,
@@ -43,6 +46,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
       badgeColor: 'bg-emerald-600'
     },
     {
+      id: 'chat',
+      label: 'الدردشة',
+      icon: MessagesSquare,
+      badge: unreadChatCount > 0 ? unreadChatCount : null,
+      badgeColor: 'bg-rose-600'
+    },
+    {
       id: 'mail',
       label: 'البريد',
       icon: Mail,
@@ -55,13 +65,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
       icon: FileSpreadsheet,
       badge: null,
       badgeColor: 'bg-emerald-600'
-    },
-    {
-      id: 'profile',
-      label: 'حسابي',
-      icon: UserCheck,
-      badge: null,
-      badgeColor: 'bg-blue-600'
     }
   ];
 
@@ -82,18 +85,18 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
       badgeColor: 'bg-emerald-600'
     },
     {
+      id: 'chat',
+      label: 'الدردشة',
+      icon: MessagesSquare,
+      badge: unreadChatCount > 0 ? unreadChatCount : null,
+      badgeColor: 'bg-rose-600'
+    },
+    {
       id: 'renewals',
       label: 'تجديدات',
       icon: Clock,
       badge: renewalsDueSoonCount > 0 ? renewalsDueSoonCount : null,
       badgeColor: 'bg-rose-600'
-    },
-    {
-      id: 'marketing',
-      label: 'ماركيتنج',
-      icon: Megaphone,
-      badge: null,
-      badgeColor: 'bg-amber-600'
     }
   ];
 

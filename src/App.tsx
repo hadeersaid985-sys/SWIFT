@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CRMProvider, useCRM } from './context/CRMContext';
+import { ChatProvider } from './context/ChatContext';
 import { Sidebar } from './components/Sidebar';
 import { TopNavbar } from './components/TopNavbar';
 import { ReportsListView } from './components/reports/ReportsListView';
@@ -7,6 +8,7 @@ import { HomeDashboard } from './components/dashboard/HomeDashboard';
 import { TasksView } from './components/tasks/TasksView';
 import { TeamView } from './components/team/TeamView';
 import { MailView } from './components/mail/MailView';
+import { TeamChatView } from './components/chat/TeamChatView';
 import { DealsView } from './components/deals/DealsView';
 import { LeadsView } from './components/leads/LeadsView';
 import { MeetingsView } from './components/meetings/MeetingsView';
@@ -212,6 +214,7 @@ const AppContent: React.FC = () => {
     'meetings',
     'calls',
     'mail',
+    'chat',
     'profile',
     ...(isSalesUser ? ['leads'] : [])
   ];
@@ -273,7 +276,7 @@ const AppContent: React.FC = () => {
 
         {/* Content Body */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-5 pb-20 md:pb-5">
-          {/* Employee only sees personal tasks, meetings, calls, mail, renewals, and profile */}
+          {/* Employee only sees personal tasks, meetings, calls, mail, renewals, chat, and profile */}
           {!isManager ? (
             <>
               {effectiveTab === 'profile' && <ProfileView />}
@@ -281,9 +284,10 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'meetings' && <MeetingsView />}
               {effectiveTab === 'calls' && <MeetingsView />}
               {effectiveTab === 'mail' && <MailView />}
+              {effectiveTab === 'chat' && <TeamChatView />}
               {effectiveTab === 'leads' && isSalesUser && <LeadsView />}
               {effectiveTab === 'tasks' && <TasksView />}
-              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'tasks', ...(isSalesUser ? ['leads'] : [])].includes(effectiveTab) && (
+              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'chat', 'tasks', ...(isSalesUser ? ['leads'] : [])].includes(effectiveTab) && (
                 <TasksView />
               )}
             </>
@@ -298,6 +302,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'tasks' && <TasksView />}
               {effectiveTab === 'team' && <TeamView />}
               {effectiveTab === 'mail' && <MailView />}
+              {effectiveTab === 'chat' && <TeamChatView />}
               {effectiveTab === 'home' && <HomeDashboard />}
               {effectiveTab === 'analytics' && <AnalyticsView />}
               {effectiveTab === 'deals' && <DealsView />}
@@ -320,7 +325,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'mcp' && <AnalyticsView />}
 
               {/* Fallback for unlisted manager tabs */}
-              {!['profile', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
+              {!['profile', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'chat', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
                 <ReportsListView />
               )}
             </>
@@ -392,9 +397,11 @@ const AppContent: React.FC = () => {
 export default function App() {
   return (
     <CRMProvider>
-      <ErrorBoundary>
-        <AppContent />
-      </ErrorBoundary>
+      <ChatProvider>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+      </ChatProvider>
     </CRMProvider>
   );
 }

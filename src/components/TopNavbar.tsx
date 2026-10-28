@@ -40,9 +40,11 @@ import {
   Palette,
   FolderGit2,
   UserCheck,
+  MessagesSquare,
   Menu
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
+import { useChat } from '../context/ChatContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 import { QuickAttendanceWidget } from './attendance/QuickAttendanceWidget';
 import { WeeklyExecutiveModal } from './reports/WeeklyExecutiveModal';
@@ -54,6 +56,7 @@ interface TopNavbarProps {
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout, onToggleMobileMenu }) => {
+  const { unreadCount: unreadChatCount } = useChat();
   const {
     activeTab,
     setActiveTab,
@@ -394,6 +397,19 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                   <div>
                     <div className="font-bold">رسالة بريد للفريق</div>
                     <div className="text-[10px] text-slate-400">إرسال تنبيه مباشر</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('chat');
+                    setShowAddMenu(false);
+                  }}
+                  className="w-full text-right px-3 py-2 hover:bg-blue-50/60 flex items-center gap-2 text-slate-700 cursor-pointer"
+                >
+                  <MessagesSquare className="w-4 h-4 text-amber-500" />
+                  <div>
+                    <div className="font-bold">محادثة ودردشة الفريق</div>
+                    <div className="text-[10px] text-slate-400">تواصل فوري وقنوات عامة ورسائل خاصة</div>
                   </div>
                 </button>
                 {isManagerUser && (
@@ -749,6 +765,24 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           {(digestOverdueCount + digestTodayCount) > 0 && (
             <span className="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full min-w-4 text-center">
               {digestOverdueCount + digestTodayCount}
+            </span>
+          )}
+        </button>
+
+        {/* Team Chat Quick Button */}
+        <button
+          onClick={() => setActiveTab('chat')}
+          className={`p-1.5 rounded-lg transition-colors cursor-pointer relative shrink-0 ${
+            activeTab === 'chat'
+              ? 'text-blue-600 bg-blue-50 font-bold'
+              : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'
+          }`}
+          title="دردشة وتواصل فريق العمل (Team Chat)"
+        >
+          <MessagesSquare className="w-4 h-4" />
+          {unreadChatCount > 0 && (
+            <span className="min-w-4 h-4 px-1 bg-rose-600 text-white rounded-full absolute -top-1 -right-1 text-[9px] font-black flex items-center justify-center animate-pulse">
+              {unreadChatCount}
             </span>
           )}
         </button>

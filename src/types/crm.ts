@@ -503,4 +503,50 @@ export interface CompanyExpense {
   date: string;
   notes?: string;
 }
+// Team Chat & Direct Messaging (دردشة وتواصل فريق العمل)
+export interface ChatAttachment {
+  id: string;
+  name: string;
+  size: string;
+  type: 'image' | 'file';
+  url: string;
+}
 
+export interface ChatReaction {
+  emoji: string;
+  count: number;
+  userIds: string[];
+}
+
+export interface ChatMessage {
+  id: string;
+  channelId?: string; // e.g. 'general', 'sales', 'tech', 'announcements'
+  recipientId?: string; // 1-on-1 DM recipient user ID
+  senderId: string;
+  senderName: string;
+  senderAvatar: string;
+  senderRole?: string;
+  senderDepartment?: string;
+  text: string;
+  timestamp: string; // ISO string
+  attachments?: ChatAttachment[];
+  reactions?: ChatReaction[];
+  replyTo?: {
+    id: string;
+    senderName: string;
+    text: string;
+  };
+  isPinned?: boolean;
+  readBy?: string[]; // user IDs
+}
+
+export interface ChatChannel {
+  id: string;
+  name: string;
+  description: string;
+  icon?: string;
+  isPrivate?: boolean;
+  department?: string;
+  createdAt: string;
+  createdById?: string;
+}

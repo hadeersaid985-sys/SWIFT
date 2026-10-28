@@ -743,6 +743,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         'meetings',
         'calls',
         'mail',
+        'chat',
         'profile',
         ...(isSales ? ['leads'] : [])
       ];

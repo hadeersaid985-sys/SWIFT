@@ -44,9 +44,11 @@ import {
   LogOut,
   FolderGit2,
   PauseCircle,
+  MessagesSquare,
   X
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../context/CRMContext';
+import { useChat } from '../context/ChatContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 
 export interface SidebarProps {
@@ -55,6 +57,7 @@ export interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile }) => {
+  const { unreadCount: unreadChatCount } = useChat();
   const {
     activeTab,
     setActiveTab,
@@ -312,6 +315,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               {!isCollapsed && (
                 <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.2 rounded-full font-bold font-mono">
                   1
+                </span>
+              )}
+            </button>
+
+            {/* دردشة وتواصل الفريق (Team Chat) */}
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+                activeTab === 'chat'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+              }`}
+              title="دردشة وتواصل فريق العمل (Team Chat)"
+            >
+              <div className="flex items-center gap-2.5">
+                <MessagesSquare className="w-4 h-4 shrink-0 text-amber-400" />
+                {!isCollapsed && <span>دردشة الفريق (Chat)</span>}
+              </div>
+              {!isCollapsed && unreadChatCount > 0 && (
+                <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded-full font-bold font-mono animate-pulse">
+                  {unreadChatCount}
                 </span>
               )}
             </button>
@@ -793,6 +817,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
           </button>
         </div>
 
+        {/* دردشة وتواصل الفريق (Team Chat) */}
+        <div className="pt-0.5">
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+              activeTab === 'chat'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md'
+                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+            }`}
+            title="دردشة وتواصل فريق العمل (Team Chat)"
+          >
+            <div className="flex items-center gap-2.5">
+              <MessagesSquare className="w-4 h-4 shrink-0 text-amber-400" />
+              {!isCollapsed && <span>دردشة الفريق (Chat)</span>}
+            </div>
+            {!isCollapsed && unreadChatCount > 0 && (
+              <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded-full font-bold font-mono animate-pulse">
+                {unreadChatCount}
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Additional Sections */}
         <div className="pt-2 border-t border-slate-800/80 space-y-0.5">
           <button
@@ -1069,6 +1116,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
 
                 <button
                   onClick={() => {
+                    setActiveTab('chat');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'chat'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <MessagesSquare className="w-4 h-4 text-amber-400" />
+                    <span>دردشة الفريق (Chat)</span>
+                  </div>
+                  {unreadChatCount > 0 && (
+                    <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded-full font-bold font-mono animate-pulse">
+                      {unreadChatCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
                     setActiveTab('renewals');
                     onCloseMobile?.();
                   }}
@@ -1338,6 +1407,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                   {unreadEmailsCount > 0 && (
                     <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-bold">
                       {unreadEmailsCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('chat');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'chat'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <MessagesSquare className="w-4 h-4 text-amber-400" />
+                    <span>دردشة الفريق (Chat)</span>
+                  </div>
+                  {unreadChatCount > 0 && (
+                    <span className="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded-full font-bold font-mono animate-pulse">
+                      {unreadChatCount}
                     </span>
                   )}
                 </button>
