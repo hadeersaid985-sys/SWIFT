@@ -62,7 +62,20 @@ export const LeadsView: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterSalesMember, setFilterSalesMember] = useState('all');
   const [filterOnlyDueToday, setFilterOnlyDueToday] = useState(false);
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [viewMode, setViewModeState] = useState<'cards' | 'table'>(() => {
+    try {
+      const saved = localStorage.getItem('swiftmynd_crm_leads_view_mode');
+      if (saved === 'cards' || saved === 'table') return saved;
+    } catch {}
+    return 'cards';
+  });
+
+  const setViewMode = (mode: 'cards' | 'table') => {
+    setViewModeState(mode);
+    try {
+      localStorage.setItem('swiftmynd_crm_leads_view_mode', mode);
+    } catch {}
+  };
 
   // Modal 1: Assign Sales Team Modal (تحديد مين من الموظفين يظهر عندهم العميل)
   const [assignTeamModalLead, setAssignTeamModalLead] = useState<Lead | null>(null);

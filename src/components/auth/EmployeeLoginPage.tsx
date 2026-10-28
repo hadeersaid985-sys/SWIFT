@@ -46,7 +46,9 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
 
       if (typeof window !== 'undefined' && window.history) {
         try {
-          window.history.replaceState({}, '', '/');
+          const url = new URL(window.location.href);
+          url.pathname = '/';
+          window.history.replaceState({}, '', url.toString());
         } catch (err) {
           console.warn('History replaceState error', err);
         }

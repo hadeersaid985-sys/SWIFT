@@ -62,6 +62,7 @@ import {
   deleteClientRenewalFromFirestore,
   onClientRenewalsSnapshot
 } from '../firebase';
+import { resolveActiveTab, normalizeTabName } from '../utils/navigationState';
 
 interface DeadlineStatus {
   label: string;
@@ -731,16 +732,117 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(validUser));
   };
 
-  const [activeTab, setActiveTab] = useState<string>(() => {
+  const [activeTab, setActiveTabState] = useState<string>(() => {
     try {
-      if (currentUser && currentUser.accessLevel !== 'admin' && currentUser.id !== 'user-1') {
-        return 'tasks';
-      }
-      return 'reports';
+      const isUserAdmin = currentUser ? (currentUser.accessLevel === 'admin' || currentUser.accessLevel === 'manager' || currentUser.id === 'user-1') : false;
+      const isSales = currentUser ? (isUserAdmin || currentUser.department?.includes('مبيعات') || currentUser.department?.includes('Sales') || currentUser.role?.includes('مبيعات') || currentUser.role?.includes('Sales') || currentUser.name?.toLowerCase().includes('maibel') || currentUser.username?.toLowerCase().includes('maibel')) : false;
+
+      const allowedEmployeeTabs = [
+        'tasks',
+        'renewals',
+        'meetings',
+        'calls',
+        'mail',
+        'profile',
+        ...(isSales ? ['leads'] : [])
+      ];
+
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const urlTab = urlParams?.get('tab');
+      const hashTab = typeof window !== 'undefined' ? window.location.hash : null;
+      const storedTab = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}active_tab`);
+
+      return resolveActiveTab({
+        urlTab,
+        hashTab,
+        storedTab,
+        isManager: isUserAdmin,
+        allowedTabs: allowedEmployeeTabs,
+        defaultAdminTab: 'reports',
+        defaultEmployeeTab: 'tasks'
+      });
     } catch {
       return 'tasks';
     }
   });
+
+  const setActiveTab = (tab: string) => {
+    const cleanTab = normalizeTabName(tab) || 'home';
+    setActiveTabState(cleanTab);
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}active_tab`, cleanTab);
+
+    if (typeof window !== 'undefined' && window.history) {
+      try {
+        const url = new URL(window.location.href);
+        if (!url.pathname.includes('/login')) {
+          url.searchParams.set('tab', cleanTab);
+          window.history.replaceState({ tab: cleanTab }, '', url.toString());
+        }
+      } catch (e) {
+        console.warn('History replaceState error:', e);
+      }
+    }
+  };
+
+  // Sync activeTab when user navigates using browser back/forward or hash
+  useEffect(() => {
+    const handleUrlChange = () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTab = urlParams.get('tab');
+        const hashTab = window.location.hash;
+        const storedTab = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}active_tab`);
+
+        const isUserAdmin = currentUser.accessLevel === 'admin' || currentUser.accessLevel === 'manager' || currentUser.id === 'user-1';
+        const isSales = isUserAdmin || currentUser.department?.includes('مبيعات') || currentUser.department?.includes('Sales') || currentUser.role?.includes('مبيعات') || currentUser.role?.includes('Sales') || currentUser.name?.toLowerCase().includes('maibel') || currentUser.username?.toLowerCase().includes('maibel');
+        const allowedEmployeeTabs = [
+          'tasks',
+          'renewals',
+          'meetings',
+          'calls',
+          'mail',
+          'profile',
+          ...(isSales ? ['leads'] : [])
+        ];
+
+        const target = resolveActiveTab({
+          urlTab,
+          hashTab,
+          storedTab,
+          isManager: isUserAdmin,
+          allowedTabs: allowedEmployeeTabs,
+          defaultAdminTab: 'reports',
+          defaultEmployeeTab: 'tasks'
+        });
+
+        if (target && target !== activeTab) {
+          setActiveTabState(target);
+          safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}active_tab`, target);
+        }
+      } catch {}
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, [currentUser, activeTab]);
+
+  // Keep URL query param in sync with current activeTab
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.history && activeTab) {
+      try {
+        const url = new URL(window.location.href);
+        if (!url.pathname.includes('/login') && url.searchParams.get('tab') !== activeTab) {
+          url.searchParams.set('tab', activeTab);
+          window.history.replaceState({ tab: activeTab }, '', url.toString());
+        }
+      } catch {}
+    }
+  }, [activeTab]);
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [openQuickModal, setOpenQuickModal] = useState<null | 'task' | 'lead' | 'deal' | 'mail' | 'meeting' | 'member'>(null);
 
@@ -748,16 +850,44 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const validUser = ensureValidUser(user);
     setCurrentUser(validUser);
     setIsAuthenticated(true);
-    const isUserAdmin = validUser.accessLevel === 'admin' || validUser.accessLevel === 'manager' || validUser.id === 'user-1';
-    setActiveTab(isUserAdmin ? 'reports' : 'tasks');
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}user`, JSON.stringify(validUser));
     safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'true');
+
+    const isUserAdmin = validUser.accessLevel === 'admin' || validUser.accessLevel === 'manager' || validUser.id === 'user-1';
+    const isSales = isUserAdmin || validUser.department?.includes('مبيعات') || validUser.department?.includes('Sales') || validUser.role?.includes('مبيعات') || validUser.role?.includes('Sales') || validUser.name?.toLowerCase().includes('maibel') || validUser.username?.toLowerCase().includes('maibel');
+    const allowedEmployeeTabs = [
+      'tasks',
+      'renewals',
+      'meetings',
+      'calls',
+      'mail',
+      'profile',
+      ...(isSales ? ['leads'] : [])
+    ];
+
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlTab = urlParams?.get('tab');
+    const hashTab = typeof window !== 'undefined' ? window.location.hash : null;
+    const storedTab = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}active_tab`);
+
+    const targetTab = resolveActiveTab({
+      urlTab,
+      hashTab,
+      storedTab,
+      isManager: isUserAdmin,
+      allowedTabs: allowedEmployeeTabs,
+      defaultAdminTab: 'reports',
+      defaultEmployeeTab: 'tasks'
+    });
+
+    setActiveTab(targetTab);
   };
 
   const logoutUser = () => {
     setIsAuthenticated(false);
     setCurrentUser(CURRENT_USER);
-    setActiveTab('home');
+    safeStorage.removeItem(`${LOCAL_STORAGE_PREFIX}active_tab`);
+    setActiveTabState('home');
     setIsDailyDigestOpen(false);
     setIsAdminPinModalOpen(false);
     setIsBrandModalOpen(false);
@@ -766,6 +896,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       safeStorage.removeItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`);
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}isAuthenticated`, 'false');
+      if (typeof window !== 'undefined' && window.history) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('tab');
+        url.searchParams.delete('subtab');
+        window.history.replaceState({}, '', url.pathname);
+      }
     } catch {}
   };
 

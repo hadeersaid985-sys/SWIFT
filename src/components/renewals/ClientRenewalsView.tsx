@@ -75,7 +75,34 @@ export const ClientRenewalsView: React.FC = () => {
   } = useCRM();
 
   // Subtabs: 'client_dossiers' (ملفات العملاء والشيتات للتيم), 'renewals_list' (مواعيد التجديد), 'timeline', 'coaching_offers', 'swift_accounts'
-  const [activeRenewalSubTab, setActiveRenewalSubTab] = useState<'client_dossiers' | 'renewals_list' | 'timeline' | 'coaching_offers' | 'swift_accounts'>('client_dossiers');
+  const [activeRenewalSubTab, setActiveRenewalSubTabState] = useState<'client_dossiers' | 'renewals_list' | 'timeline' | 'coaching_offers' | 'swift_accounts'>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        const urlSub = searchParams.get('subtab');
+        if (urlSub && ['client_dossiers', 'renewals_list', 'timeline', 'coaching_offers', 'swift_accounts'].includes(urlSub)) {
+          return urlSub as any;
+        }
+        const saved = localStorage.getItem('swiftmynd_crm_renewals_subtab');
+        if (saved && ['client_dossiers', 'renewals_list', 'timeline', 'coaching_offers', 'swift_accounts'].includes(saved)) {
+          return saved as any;
+        }
+      }
+    } catch {}
+    return 'client_dossiers';
+  });
+
+  const setActiveRenewalSubTab = (tab: 'client_dossiers' | 'renewals_list' | 'timeline' | 'coaching_offers' | 'swift_accounts') => {
+    setActiveRenewalSubTabState(tab);
+    try {
+      localStorage.setItem('swiftmynd_crm_renewals_subtab', tab);
+      if (typeof window !== 'undefined' && window.history) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('subtab', tab);
+        window.history.replaceState({ ...window.history.state, subtab: tab }, '', url.toString());
+      }
+    } catch {}
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'due_soon' | 'active' | 'overdue' | 'renewed'>('all');
   const [employeeFilter, setEmployeeFilter] = useState<string>('all'); // تصفية العملاء حسب كل موظف

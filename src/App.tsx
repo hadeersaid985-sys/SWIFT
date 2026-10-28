@@ -148,7 +148,9 @@ const AppContent: React.FC = () => {
             setShowLoginView(false);
             if (typeof window !== 'undefined' && window.history) {
               try {
-                window.history.replaceState({}, '', '/');
+                const url = new URL(window.location.href);
+                url.pathname = '/';
+                window.history.replaceState({}, '', url.toString());
               } catch (e) {}
             }
           }}
