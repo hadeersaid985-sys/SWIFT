@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   CheckSquare,
   Clock,
@@ -19,6 +19,7 @@ import {
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
 import { SwiftMyndLogo } from '../common/SwiftMyndLogo';
 import { TopPerformerLeaderboard } from './TopPerformerLeaderboard';
+import { DailyTasksWorkReportModal } from '../reports/DailyTasksWorkReportModal';
 
 export const HomeDashboard: React.FC = () => {
   const {
@@ -38,6 +39,7 @@ export const HomeDashboard: React.FC = () => {
     brandConfig
   } = useCRM();
 
+  const [showDailyTasksReportModal, setShowDailyTasksReportModal] = useState(false);
   const currency = brandConfig?.systemCurrency || 'ج.م';
 
   // Role Check
@@ -109,6 +111,14 @@ export const HomeDashboard: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowDailyTasksReportModal(true)}
+            className="flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-900/50 transition-all cursor-pointer hover:scale-102"
+            title="التقرير اليومي لشغل وتاسكات التيم: كل موظف اشتغل ايه ووقت التاسك مجمع باليوم والتاريخ"
+          >
+            <Clock className="w-4 h-4 text-sky-200" />
+            <span>تقرير إنجاز اليوم ⏱️</span>
+          </button>
           <button
             onClick={() => setOpenQuickModal('task')}
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-900/50 transition-all cursor-pointer"
@@ -576,6 +586,13 @@ export const HomeDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Daily Tasks Work Report Modal */}
+      <DailyTasksWorkReportModal
+        isOpen={showDailyTasksReportModal}
+        onClose={() => setShowDailyTasksReportModal(false)}
+        onSelectTask={() => setActiveTab('tasks')}
+      />
     </div>
   );
 };

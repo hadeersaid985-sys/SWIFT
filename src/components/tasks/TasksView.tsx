@@ -51,6 +51,7 @@ import {
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
 import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember } from '../../types/crm';
 import { exportTasksToExcel } from '../../utils/excelExport';
+import { DailyTasksWorkReportModal } from '../reports/DailyTasksWorkReportModal';
 
 export const TasksView: React.FC = () => {
   const {
@@ -82,6 +83,8 @@ export const TasksView: React.FC = () => {
 
   // Tasks Trash Modal state
   const [isTasksTrashModalOpen, setIsTasksTrashModalOpen] = useState(false);
+  // Daily Tasks Work Report Modal state
+  const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
 
   // Role Detection: Is current user Manager / Admin?
   const isManager =
@@ -829,6 +832,17 @@ export const TasksView: React.FC = () => {
               )}
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => setIsDailyReportModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-xl text-xs transition-all cursor-pointer shadow-xs hover:scale-102"
+            title="التقرير اليومي لشغل وتاسكات التيم: كل موظف اشتغل ايه ووقت التاسك مجمع باليوم والتاريخ"
+          >
+            <Clock className="w-4 h-4 text-sky-200" />
+            <span>⏱️ تقرير إنجاز اليوم المجمع</span>
+            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded font-mono">جديد</span>
+          </button>
 
           <button
             type="button"
@@ -2519,18 +2533,29 @@ export const TasksView: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                const firstTaskId = filteredTasks[0]?.id || tasks[0]?.id;
-                if (firstTaskId) {
-                  setManualLogTaskId(firstTaskId);
-                  setManualMemberId(currentUser.id);
-                }
-              }}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shrink-0 shadow-2xs transition-all cursor-pointer text-[11px]"
-            >
-              + إضافة فترة عمل يدوية
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsDailyReportModalOpen(true)}
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-black shadow-2xs transition-all cursor-pointer text-[11px] flex items-center gap-1.5 hover:scale-102"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>التقرير اليومي المجمع 📊</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const firstTaskId = filteredTasks[0]?.id || tasks[0]?.id;
+                  if (firstTaskId) {
+                    setManualLogTaskId(firstTaskId);
+                    setManualMemberId(currentUser.id);
+                  }
+                }}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-2xs transition-all cursor-pointer text-[11px]"
+              >
+                + إضافة فترة عمل يدوية
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
@@ -3952,6 +3977,13 @@ export const TasksView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Daily Tasks Work Report Modal (Consolidated by employee & date) */}
+      <DailyTasksWorkReportModal
+        isOpen={isDailyReportModalOpen}
+        onClose={() => setIsDailyReportModalOpen(false)}
+        onSelectTask={id => setSelectedTaskId(id)}
+      />
 
       {/* Floating Toast Notification */}
       {toastMessage && (

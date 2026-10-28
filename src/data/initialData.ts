@@ -480,6 +480,18 @@ export const INITIAL_TASKS: Task[] = [
         durationMinutes: 120,
         note: 'ربط استمارة العملاء المحتملين مع نظام swiftmynd',
         createdAt: formatDate(-2)
+      },
+      {
+        id: 'log-7b',
+        memberId: 'user-3',
+        memberName: 'سارة المنصوري',
+        startDate: formatDate(0),
+        startTime: '10:15',
+        endDate: formatDate(0),
+        endTime: '12:45',
+        durationMinutes: 150,
+        note: 'تحليل أداء الحملات الإعلانية ومتابعة تكلفة النقرة CPL',
+        createdAt: formatDate(0)
       }
     ],
     subtasks: [
@@ -501,7 +513,7 @@ export const INITIAL_TASKS: Task[] = [
     dueTime: '16:30',
     category: 'دعم',
     estimatedHours: 3,
-    totalLoggedMinutes: 45,
+    totalLoggedMinutes: 125,
     isTimerRunning: false,
     timeLogs: [
       {
@@ -515,6 +527,18 @@ export const INITIAL_TASKS: Task[] = [
         durationMinutes: 45,
         note: 'تجهيز قائمة أرقام الاتصال وقالب رسالة الترحيب عبر واتساب',
         createdAt: formatDate(-1)
+      },
+      {
+        id: 'log-8b',
+        memberId: 'user-5',
+        memberName: 'منى زهران',
+        startDate: formatDate(0),
+        startTime: '11:00',
+        endDate: formatDate(0),
+        endTime: '12:20',
+        durationMinutes: 80,
+        note: 'مكالمة هاتفية مع 4 عملاء وتأكيد رضاهم عن استقرار السيرفرات',
+        createdAt: formatDate(0)
       }
     ],
     subtasks: [

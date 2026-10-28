@@ -114,3 +114,52 @@ export const exportSuspendedContractsToExcel = (clients: ClientRenewal[]) => {
   XLSX.writeFile(workbook, `سويفت-مايند-عقود-موقفة-وأسباب-التوقف-${dateStr}.xlsx`);
 };
 
+export interface DailyWorkReportExportRow {
+  employeeName: string;
+  employeeCode?: string;
+  employeeRole?: string;
+  taskTitle: string;
+  taskCategory?: string;
+  taskStatus?: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  durationFormatted: string;
+  note?: string;
+}
+
+/**
+ * Export Consolidated Daily Tasks & Time Worked Report to Excel (.xlsx)
+ */
+export const exportDailyWorkReportToExcel = (
+  selectedDate: string,
+  records: DailyWorkReportExportRow[],
+  brandName: string = 'سويفت مايند'
+) => {
+  const data = records.map((r, index) => ({
+    'م': index + 1,
+    'اسم الموظف': r.employeeName,
+    'كود الموظف': r.employeeCode || '-',
+    'المسمى الوظيفي': r.employeeRole || '-',
+    'عنوان المهمة': r.taskTitle,
+    'التصنيف': r.taskCategory || '-',
+    'حالة المهمة': r.taskStatus || '-',
+    'تاريخ العمل': r.date,
+    'وقت البدء': r.startTime || '-',
+    'وقت الانتهاء': r.endTime || '-',
+    'المدة بالدقائق': r.durationMinutes,
+    'وقت العمل المستغرق': r.durationFormatted,
+    'ملاحظات فترة العمل والإنجاز': r.note || '-'
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  if (!worksheet['!views']) worksheet['!views'] = [];
+  worksheet['!views'].push({ rightToLeft: true });
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, `تقرير عمل ${selectedDate}`);
+
+  XLSX.writeFile(workbook, `${brandName}-تقرير-إنجاز-المهام-اليومي-${selectedDate}.xlsx`);
+};
+

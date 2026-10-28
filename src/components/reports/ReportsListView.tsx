@@ -22,12 +22,14 @@ import {
   Sparkles,
   Paperclip,
   FileCheck,
-  Eye
+  Eye,
+  Clock
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useCRM } from '../../context/CRMContext';
 import { ReportItem } from '../../types/crm';
 import { WeeklyExecutiveModal } from './WeeklyExecutiveModal';
+import { DailyTasksWorkReportModal } from './DailyTasksWorkReportModal';
 
 export const ReportsListView: React.FC = () => {
   const { reports, addReport, deleteReport, currentUser } = useCRM();
@@ -40,6 +42,7 @@ export const ReportsListView: React.FC = () => {
   const [activeReportModal, setActiveReportModal] = useState<ReportItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [showWeeklyModal, setShowWeeklyModal] = useState<boolean>(false);
+  const [showDailyTasksReportModal, setShowDailyTasksReportModal] = useState<boolean>(false);
 
   // File Upload State
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -330,8 +333,18 @@ export const ReportsListView: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Buttons: رفع تقرير PDF / شيت + تصدير */}
+        {/* Action Buttons: تقرير يومي + تقرير أسبوعي + رفع تقرير PDF / شيت + تصدير */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setShowDailyTasksReportModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-xl shadow-xs transition-all cursor-pointer text-xs hover:scale-102"
+            title="تقرير يومي لشغل وتاسكات التيم: كل موظف اشتغل ايه ووقت التاسك مجمع باليوم والتاريخ"
+          >
+            <Clock className="w-4 h-4 text-sky-200" />
+            <span>⏱️ التقرير اليومي لشغل التيم</span>
+            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded font-mono">جديد</span>
+          </button>
+
           <button
             onClick={() => setShowWeeklyModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer text-xs"
@@ -361,6 +374,35 @@ export const ReportsListView: React.FC = () => {
             <span>تصدير السجل إكسيل</span>
           </button>
         </div>
+      </div>
+
+      {/* Prominent Daily Tasks Work Report Banner */}
+      <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 p-3.5 sm:p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-sky-50 border border-blue-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-xl shadow-xs shrink-0">
+            <Clock className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-black text-slate-900 text-xs sm:text-sm">
+                التقرير اليومي لشغل وتاسكات التيم (مجمع باليوم والتاريخ)
+              </h3>
+              <span className="text-[10px] bg-blue-600 text-white px-2 py-0.2 rounded-full font-bold">
+                مباشر بالدقائق والساعات ⏱️
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 mt-0.5">
+              كشف مجمع لكل موظف: ما هي التاسكات التي اشتغلها اليوم، والوقت المستغرق بالدقائق والساعات، مع تصدير إكسيل ونسخ فوري للواتساب والطباعة الرسمية.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowDailyTasksReportModal(true)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer hover:scale-102 shrink-0 self-start sm:self-auto"
+        >
+          <Clock className="w-4 h-4" />
+          <span>فتح التقرير اليومي المجمع 📋</span>
+        </button>
       </div>
 
       {/* Top Toolbar Bar: Filters & Search */}
@@ -1036,6 +1078,12 @@ export const ReportsListView: React.FC = () => {
       {showWeeklyModal && (
         <WeeklyExecutiveModal onClose={() => setShowWeeklyModal(false)} />
       )}
+
+      {/* Daily Tasks Work Report Modal */}
+      <DailyTasksWorkReportModal
+        isOpen={showDailyTasksReportModal}
+        onClose={() => setShowDailyTasksReportModal(false)}
+      />
     </div>
   );
 };
