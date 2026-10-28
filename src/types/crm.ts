@@ -126,6 +126,20 @@ export interface EmailMessage {
   tag?: 'عاجل' | 'عملاء' | 'داخلي' | 'تقارير';
 }
 
+export interface LeadNegotiationEntry {
+  id: string;
+  date: string;
+  type: string; // 'مكالمة هاتفية' | 'محادثة واتساب' | 'اجتماع زوم' | 'جلسة تفاوض' | 'عرض سعر' | 'أخرى'
+  summary: string;
+  offeredPrice?: number;
+  finalPrice?: number;
+  currency?: string;
+  outcome?: string; // 'موافقة مبدئية' | 'طلب تخفيض' | 'متردد' | 'تم الاتفاق' | 'مرفوض'
+  authorName?: string;
+  authorId?: string;
+  createdAt?: string;
+}
+
 export interface Lead {
   id: string;
   name: string;
@@ -134,11 +148,17 @@ export interface Lead {
   email: string;
   phone: string;
   status: 'جديد' | 'تم التواصل' | 'مهتم' | 'مؤهل' | 'غير مؤهل' | 'صفقة ناجحة (Won)';
-  source: 'الموقع الإلكتروني' | 'إعلان ممول' | 'مؤتمر' | 'إحالة عميل' | 'لينكد إن' | 'شيت إكسيل' | 'Google Sheets';
+  source: string;
+  customSource?: string; // مصدر آخر مخصص تم إدخاله
   leadScore: number;
   assignedToId: string;
-  assignedTeamMemberIds?: string[]; // أعضاء الفريق المسموح لهم برؤية ومتابعة العميل المحتمل
+  assignedTeamMemberIds?: string[]; // موظفو المبيعات المصرح لهم برؤية ومتابعة هذا العميل
   estimatedValue: number;
+  currency?: string; // e.g. "ج.م" (الجنيه المصري) أو "ر.س" أو "$"
+  finalPrice?: number; // السعر النهائي المتفق عليه
+  detailedDescription?: string; // وصف تفصيلي للعميل المحتمل واحتياجاته
+  negotiationsHistory?: string; // ملخص المفاوضات
+  negotiationEntries?: LeadNegotiationEntry[]; // سجل التفاوضات وجولاتها
   notes?: string;
   sheetUrl?: string; // رابط شيت العميل أو ملف إكسيل / جوجل شيت
   sheetTitle?: string; // عنوان الشيت (e.g. "شيت بيانات ومكالمات العميل")

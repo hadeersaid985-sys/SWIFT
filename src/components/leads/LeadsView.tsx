@@ -26,10 +26,17 @@ import {
   FileCheck,
   ExternalLink,
   Shield,
-  Briefcase
+  Briefcase,
+  HelpCircle,
+  Banknote,
+  FileText,
+  BadgePercent,
+  CheckSquare,
+  Square,
+  ChevronDown
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
-import { Lead } from '../../types/crm';
+import { Lead, LeadNegotiationEntry } from '../../types/crm';
 
 export const LeadsView: React.FC = () => {
   const {
@@ -41,18 +48,57 @@ export const LeadsView: React.FC = () => {
     deleteLead,
     updateLead,
     addLead,
+    assignLeadTeamMembers,
+    addLeadNegotiation,
     setOpenQuickModal,
     currentUser,
     isManager,
+    isSalesUser,
     setActiveTab
   } = useCRM();
 
   const [leadSearch, setLeadSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterSalesMember, setFilterSalesMember] = useState('all');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
-  // Interaction Log Modal State (سجل التعاملات والمكالمات مع الأرقام)
+  // Modal 1: Assign Sales Team Modal (تحديد مين من الموظفين يظهر عندهم العميل)
+  const [assignTeamModalLead, setAssignTeamModalLead] = useState<Lead | null>(null);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+
+  // Modal 2: Add Negotiation Entry Modal (تدوين جولة تفاوض وتحديث السعر النهائي)
+  const [addNegotiationLead, setAddNegotiationLead] = useState<Lead | null>(null);
+  const [negotiationForm, setNegotiationForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    type: 'اتصال هاتفي',
+    summary: '',
+    offeredPrice: '',
+    finalPrice: '',
+    currency: 'ج.م',
+    outcome: 'موافقة مبدئية'
+  });
+
+  // Modal 3: Full Lead Edit Modal (تعديل كامل للعميل والوصف والتفاوضات والمصدر)
+  const [editModalLead, setEditModalLead] = useState<Lead | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    company: '',
+    title: '',
+    phone: '',
+    email: '',
+    source: 'إحالة عميل سابق',
+    customSource: '',
+    estimatedValue: 0,
+    finalPrice: 0,
+    currency: 'ج.م',
+    status: 'جديد',
+    leadScore: 85,
+    detailedDescription: '',
+    negotiationsHistory: '',
+    assignedTeamMemberIds: [] as string[]
+  });
+
+  // Modal 4: Interaction Log Modal State (سجل التعاملات والمكالمات مع الأرقام)
   const [logInteractionLead, setLogInteractionLead] = useState<Lead | null>(null);
   const [newInteractionData, setNewInteractionData] = useState({
     type: 'اتصال هاتفي',
@@ -61,35 +107,166 @@ export const LeadsView: React.FC = () => {
     dealingsStatus: 'مهتم جداً'
   });
 
-  // Handoff to Team Modal State (تسليم العميل المحتمل لباقي التيم وتحديد من يظهر له)
+  // Modal 5: Handoff to Team Modal State (تسليم العميل المحتمل لباقي التيم)
   const [handoffModalLead, setHandoffModalLead] = useState<Lead | null>(null);
   const [handoffForm, setHandoffForm] = useState({
     serviceName: 'استضافة وسيرفرات سويفت (2 سيستم + 2 دومين)',
     amount: 2500,
     planCycle: 'سنوي' as 'شهري' | 'ربع سنوي' | 'نصف سنوي' | 'سنوي',
-    currency: 'ر.س',
+    currency: 'ج.م',
     assignedTeamIds: [] as string[],
     onboardingNotes: ''
   });
   const [handoffSuccessNotice, setHandoffSuccessNotice] = useState<string | null>(null);
 
-  // Determine active lead pool (Admins see all leads, employees see visibleLeads)
-  const activeLeadsList = visibleLeads || leads;
+  // Active leads pool: Admins see all, sales reps see visibleLeads (only assigned ones)
+  const activeLeadsList = isManager ? leads : visibleLeads;
 
   // Filter leads
   const filteredLeads = activeLeadsList.filter(l => {
     if (filterStatus !== 'all' && l.status !== filterStatus) return false;
+    if (filterSalesMember !== 'all') {
+      const assigned = l.assignedTeamMemberIds || (l.assignedToId ? [l.assignedToId] : []);
+      if (!assigned.includes(filterSalesMember)) return false;
+    }
     if (leadSearch.trim()) {
       const q = leadSearch.toLowerCase();
       return (
         l.name.toLowerCase().includes(q) ||
         l.company.toLowerCase().includes(q) ||
         l.email.toLowerCase().includes(q) ||
-        l.phone.includes(q)
+        l.phone.includes(q) ||
+        (l.source && l.source.toLowerCase().includes(q)) ||
+        (l.customSource && l.customSource.toLowerCase().includes(q)) ||
+        (l.detailedDescription && l.detailedDescription.toLowerCase().includes(q)) ||
+        (l.negotiationsHistory && l.negotiationsHistory.toLowerCase().includes(q))
       );
     }
     return true;
   });
+
+  // Sales members list for easy assignment
+  const salesTeamMembers = team.filter(
+    m =>
+      m.department === 'المبيعات' ||
+      m.role?.toLowerCase().includes('sales') ||
+      m.role?.toLowerCase().includes('سيلز') ||
+      m.id === 'user-maibel' ||
+      m.id === 'user-1'
+  );
+
+  // Helper to open assign modal
+  const handleOpenAssignModal = (lead: Lead) => {
+    setAssignTeamModalLead(lead);
+    setSelectedMemberIds(lead.assignedTeamMemberIds || (lead.assignedToId ? [lead.assignedToId] : []));
+  };
+
+  // Save assigned team
+  const handleSaveAssignedTeam = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignTeamModalLead) return;
+    assignLeadTeamMembers(assignTeamModalLead.id, selectedMemberIds);
+    updateLead(assignTeamModalLead.id, {
+      assignedToId: selectedMemberIds[0] || currentUser.id,
+      assignedTeamMemberIds: selectedMemberIds
+    });
+    setAssignTeamModalLead(null);
+  };
+
+  // Open negotiation modal
+  const handleOpenNegotiationModal = (lead: Lead) => {
+    setAddNegotiationLead(lead);
+    setNegotiationForm({
+      date: new Date().toISOString().split('T')[0],
+      type: 'اتصال هاتفي',
+      summary: '',
+      offeredPrice: lead.estimatedValue ? String(lead.estimatedValue) : '',
+      finalPrice: lead.finalPrice ? String(lead.finalPrice) : '',
+      currency: lead.currency || 'ج.م',
+      outcome: 'موافقة مبدئية'
+    });
+  };
+
+  // Save negotiation
+  const handleSaveNegotiation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addNegotiationLead || !negotiationForm.summary.trim()) return;
+
+    addLeadNegotiation(addNegotiationLead.id, {
+      date: negotiationForm.date,
+      type: negotiationForm.type,
+      summary: negotiationForm.summary.trim(),
+      offeredPrice: negotiationForm.offeredPrice ? Number(negotiationForm.offeredPrice) : undefined,
+      finalPrice: negotiationForm.finalPrice ? Number(negotiationForm.finalPrice) : undefined,
+      currency: negotiationForm.currency,
+      outcome: negotiationForm.outcome,
+      authorName: currentUser.name,
+      authorId: currentUser.id
+    });
+
+    setAddNegotiationLead(null);
+  };
+
+  // Open Edit Modal
+  const handleOpenEditModal = (lead: Lead) => {
+    setEditModalLead(lead);
+    const isCustom =
+      lead.source !== 'إحالة عميل سابق' &&
+      lead.source !== 'الموقع الإلكتروني' &&
+      lead.source !== 'إعلان ممول' &&
+      lead.source !== 'لينكد إن' &&
+      lead.source !== 'مؤتمر / ملتقى' &&
+      lead.source !== 'محادثة واتساب مباشر' &&
+      lead.source !== 'مكالمة هاتفية واردة' &&
+      lead.source !== 'تيك توك';
+
+    setEditForm({
+      name: lead.name,
+      company: lead.company,
+      title: lead.title || '',
+      phone: lead.phone,
+      email: lead.email || '',
+      source: isCustom ? 'مصدر آخر' : lead.source,
+      customSource: isCustom ? lead.source : (lead.customSource || ''),
+      estimatedValue: lead.estimatedValue || 0,
+      finalPrice: lead.finalPrice || 0,
+      currency: lead.currency || 'ج.م',
+      status: lead.status,
+      leadScore: lead.leadScore || 80,
+      detailedDescription: lead.detailedDescription || '',
+      negotiationsHistory: lead.negotiationsHistory || '',
+      assignedTeamMemberIds: lead.assignedTeamMemberIds || (lead.assignedToId ? [lead.assignedToId] : [])
+    });
+  };
+
+  // Save Full Edit
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editModalLead) return;
+
+    const finalSource = editForm.source === 'مصدر آخر' ? (editForm.customSource.trim() || 'مصدر مخصص') : editForm.source;
+
+    updateLead(editModalLead.id, {
+      name: editForm.name.trim(),
+      company: editForm.company.trim(),
+      title: editForm.title.trim(),
+      phone: editForm.phone.trim(),
+      email: editForm.email.trim(),
+      source: finalSource,
+      customSource: editForm.source === 'مصدر آخر' ? editForm.customSource.trim() : undefined,
+      estimatedValue: Number(editForm.estimatedValue) || 0,
+      finalPrice: editForm.finalPrice ? Number(editForm.finalPrice) : undefined,
+      currency: editForm.currency || 'ج.م',
+      status: editForm.status as any,
+      leadScore: Number(editForm.leadScore) || 80,
+      detailedDescription: editForm.detailedDescription.trim(),
+      negotiationsHistory: editForm.negotiationsHistory.trim(),
+      assignedTeamMemberIds: editForm.assignedTeamMemberIds,
+      assignedToId: editForm.assignedTeamMemberIds[0] || editModalLead.assignedToId
+    });
+
+    setEditModalLead(null);
+  };
 
   // Handle Log Interaction Submit
   const handleSaveInteraction = (e: React.FormEvent) => {
@@ -126,13 +303,16 @@ export const LeadsView: React.FC = () => {
     setHandoffModalLead(lead);
     setHandoffForm({
       serviceName: 'استضافة وسيرفرات سويفت (2 سيستم + 2 دومين)',
-      amount: 2500,
+      amount: lead.finalPrice || lead.estimatedValue || 2500,
       planCycle: 'سنوي',
-      currency: 'ر.س',
-      assignedTeamIds: lead.assignedTeamMemberIds && lead.assignedTeamMemberIds.length > 0
-        ? lead.assignedTeamMemberIds
-        : (lead.assignedToId ? [lead.assignedToId] : []),
-      onboardingNotes: lead.notes ? `ملاحظات العميل من قسم المبيعات: ${lead.notes}` : ''
+      currency: lead.currency || 'ج.م',
+      assignedTeamIds:
+        lead.assignedTeamMemberIds && lead.assignedTeamMemberIds.length > 0
+          ? lead.assignedTeamMemberIds
+          : lead.assignedToId
+          ? [lead.assignedToId]
+          : [],
+      onboardingNotes: lead.notes || lead.detailedDescription ? `وصف العميل واحتياجاته: ${lead.detailedDescription || lead.notes}` : ''
     });
   };
 
@@ -175,110 +355,83 @@ export const LeadsView: React.FC = () => {
       )}
 
       {/* Role Visibility Indicator */}
-      <div className="bg-slate-100 border border-slate-200/80 px-4 py-2.5 rounded-2xl flex items-center justify-between gap-3 text-xs">
+      <div className="bg-slate-100 border border-slate-200/80 px-4 py-2.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-purple-600" />
           <span className="font-bold text-slate-800">
-            {isManager
-              ? 'صلاحيات الأدمن العام 🔒: تظهر جميع العملاء المحتملين لكافة أعضاء الفريق دون حجب.'
-              : `حساب الموظف (${currentUser.name}) 👤: تظهر فقط العملاء والليدز المعينة لك من الإدارة.`}
+            {isManager ? (
+              <>
+                <strong className="text-purple-700 font-black">صلاحيات الإدارة والأدمن 🔒:</strong> تظهر لك جميع العملاء المحتملين، مع إمكانية تحديد أي عميل يظهر لأي موظف في المبيعات (مثل مايبل Maibel).
+              </>
+            ) : (
+              <>
+                <strong className="text-purple-700 font-black">قسم المبيعات ({currentUser.name}) 👤:</strong> تظهر لك فقط العملاء المحتملة المحددة والمكلفة لك من الإدارة (المعلم عليها لك حصراً).
+              </>
+            )}
           </span>
         </div>
-        <span className="text-[11px] font-mono font-bold bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 text-slate-600">
-          المعروض: {filteredLeads.length} من أصل {leads.length}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono font-bold bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 text-slate-600">
+            المعروض: {filteredLeads.length} من أصل {leads.length} عميل محتمل
+          </span>
+        </div>
       </div>
 
-      {/* Top Header: إضافة / تعديل / حذف من الأعلى (اي حاجة في الموقع فيها اضافة او حذف او تعديل من فوق) */}
+      {/* Top Header */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
+          <div className="p-2.5 rounded-2xl bg-purple-50 text-purple-700 border border-purple-200">
             <Building className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                العملاء المحتملون ومسار التسليم للتيم (Sales Leads & Handoff Pipeline)
+                العملاء المحتملون والمبيعات (Sales Leads & Negotiations)
               </h1>
-              <span className="text-[10px] bg-purple-100 text-purple-800 font-extrabold px-2 py-0.5 rounded-full">
+              <span className="text-[10px] bg-purple-100 text-purple-800 font-extrabold px-2.5 py-0.5 rounded-full">
                 {filteredLeads.length} عميل محتمل
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              متابعة عملاء المبيعات، تسجيل التعاملات، وتسليم العميل لباقي التيم (Handoff) مع تحديد صلاحيات الرؤية لكل موظف.
+              متابعة عملاء المبيعات، توثيق جولات التفاوض، تحديد السعر النهائي بالجنيه، وإسناد كل عميل للموظف المصرح له.
             </p>
           </div>
         </div>
 
-        {/* TOP ACTION BAR: إضافة | تعديل | حذف من فوق مباشرة */}
+        {/* TOP ACTION BAR: إضافة عميل محتمل جديد من الأعلى مباشرة */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* 1. ➕ إضافة من فوق */}
           <button
             onClick={() => setOpenQuickModal('lead')}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
-            title="إضافة عميل محتمل جديد برقم التواصل"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-xs transition-all cursor-pointer hover:scale-[1.01]"
+            title="تسجيل عميل محتمل جديد برقم التواصل والمصدر والسعر النهائي"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>+ إضافة عميل محتمل</span>
-          </button>
-
-          {/* 2. ✏️ تسجيل تعامل / تعديل */}
-          <button
-            onClick={() => {
-              if (filteredLeads.length > 0) {
-                setLogInteractionLead(filteredLeads[0]);
-              } else {
-                alert('لا يوجد عملاء محتملون حالياً لتسجيل تعامل معهم.');
-              }
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 transition-all cursor-pointer"
-            title="تسجيل مكالمة أو تعامل مع أول عميل"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-slate-600" />
-            <span className="hidden sm:inline">تسجيل تعامل مع رقم</span>
-          </button>
-
-          {/* 3. 🗑️ حذف من فوق */}
-          <button
-            onClick={() => {
-              const inactive = leads.filter(l => l.status === 'غير مؤهل');
-              if (inactive.length === 0) {
-                alert('لا يوجد عملاء غير مؤهلين للحذف حالياً.');
-                return;
-              }
-              if (confirm(`هل تريد حذف ${inactive.length} عميل غير مؤهل دفعة واحدة؟`)) {
-                inactive.forEach(l => deleteLead(l.id));
-              }
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition-all cursor-pointer"
-            title="حذف العملاء غير المؤهلين دفعة واحدة"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-            <span className="hidden md:inline">حذف غير المؤهلين</span>
+            <span>+ تسجيل عميل محتمل جديد</span>
           </button>
         </div>
       </div>
 
-      {/* Filter, View Switcher & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-bold text-slate-500 ml-1">تصفية الحالات:</span>
-          {['all', 'جديد', 'تم التواصل', 'مهتم', 'مؤهل'].map(st => (
-            <button
-              key={st}
-              onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
-                filterStatus === st
-                  ? 'bg-purple-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {st === 'all' ? 'جميع الحالات' : st}
-            </button>
-          ))}
-        </div>
+      {/* Filter, Sales Member Switcher, View Switcher & Search Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Status Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="font-bold text-slate-500 ml-1">تصفية الحالات:</span>
+            {['all', 'جديد', 'تم التواصل', 'مهتم', 'مؤهل'].map(st => (
+              <button
+                key={st}
+                onClick={() => setFilterStatus(st)}
+                className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                  filterStatus === st
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {st === 'all' ? 'جميع الحالات' : st}
+              </button>
+            ))}
+          </div>
 
-        <div className="flex items-center gap-3">
           {/* View Mode Toggle: Cards vs Table */}
           <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs">
             <button
@@ -298,14 +451,37 @@ export const LeadsView: React.FC = () => {
               جدول تفصيلي 📋
             </button>
           </div>
+        </div>
+
+        {/* Second Filter Row: Filter by Assigned Employee (مين من الموظفين) & Search */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+          {/* Filter by Sales Member (خاص بالأدمن لمعرفة ما يظهر لكل موظف مثل مايبل) */}
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-600 flex items-center gap-1">
+              <Users className="w-3.5 h-3.5 text-purple-600" />
+              <span>عرض عملاء الموظف (مين من الموظفين):</span>
+            </span>
+            <select
+              value={filterSalesMember}
+              onChange={e => setFilterSalesMember(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-800 cursor-pointer focus:outline-none focus:border-purple-500"
+            >
+              <option value="all">كافة الموظفين المصرح لهم</option>
+              {salesTeamMembers.map(m => (
+                <option key={m.id} value={m.id}>
+                  {m.name} ({m.role || 'مبيعات'})
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Search Box */}
-          <div className="relative w-full sm:w-60">
+          <div className="relative w-full sm:w-72">
             <input
               type="text"
               value={leadSearch}
               onChange={e => setLeadSearch(e.target.value)}
-              placeholder="بحث بالاسم، الشركة، أو رقم الهاتف..."
+              placeholder="بحث بالاسم، الشركة، الهاتف، أو الوصف..."
               className="w-full bg-slate-50 pr-8 pl-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:bg-white focus:outline-none focus:border-purple-500 font-sans"
             />
             <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5" />
@@ -313,7 +489,7 @@ export const LeadsView: React.FC = () => {
         </div>
       </div>
 
-      {/* VIEW 1: CARDS WITH PHONE NUMBERS & DEALINGS LOG (وفيها العملاء المحتملين واراقام اتعامل معاهم) */}
+      {/* VIEW 1: CARDS WITH PHONE NUMBERS, DETAILED DESCRIPTION, FINAL PRICE, NEGOTIATIONS & SALES ASSIGNMENTS */}
       {viewMode === 'cards' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredLeads.map(lead => {
@@ -322,41 +498,73 @@ export const LeadsView: React.FC = () => {
               `السلام عليكم أستاذ ${lead.name}، معك فريق عمل سويفت. نتابع بخصوص طلبك لخدماتنا.`
             )}`;
 
+            const currencySymbol = lead.currency || 'ج.م';
+            const assignedMembers = team.filter(m =>
+              (lead.assignedTeamMemberIds || (lead.assignedToId ? [lead.assignedToId] : [])).includes(m.id)
+            );
+
             return (
               <div
                 key={lead.id}
                 className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all p-4 flex flex-col justify-between space-y-3 relative group hover:border-purple-300"
               >
-                {/* Card Header: Name, Score & Status */}
-                <div className="space-y-1">
+                {/* 1. Header: Name, Company, Score & Source Badge */}
+                <div className="space-y-1.5">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h3 className="font-black text-sm text-slate-900 group-hover:text-purple-700 transition-colors">
                         {lead.name}
                       </h3>
                       <div className="text-[11px] text-slate-500 flex items-center gap-1 font-semibold">
-                        <Building className="w-3 h-3 text-slate-400" />
-                        <span>{lead.company}</span>
+                        <Building className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="font-bold text-slate-700">{lead.company}</span>
                         {lead.title && <span className="text-slate-400">({lead.title})</span>}
                       </div>
                     </div>
 
-                    <span
-                      className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                        lead.leadScore >= 80
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : lead.leadScore >= 60
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
-                      title="تقييم احتمالية الإغلاق"
-                    >
-                      {lead.leadScore}% اهتمام
+                    <div className="flex flex-col items-end gap-1">
+                      <span
+                        className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                          lead.leadScore >= 80
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : lead.leadScore >= 60
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                        title="تقييم احتمالية الإغلاق"
+                      >
+                        {lead.leadScore}% اهتمام
+                      </span>
+
+                      {/* Source Badge with support for other custom sources */}
+                      <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md font-bold truncate max-w-[130px]" title={`مصدر العميل: ${lead.customSource || lead.source}`}>
+                        📍 {lead.customSource || lead.source || 'الموقع الإلكتروني'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Pricing & Currency Section (القيمة التقديرية والسعر النهائي بالجنيه) */}
+                <div className="bg-gradient-to-r from-purple-50/60 via-indigo-50/40 to-emerald-50/50 p-2.5 rounded-xl border border-purple-100 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-500 block">القيمة التقديرية:</span>
+                    <span className="font-black text-slate-800 font-mono text-xs">
+                      {lead.estimatedValue ? lead.estimatedValue.toLocaleString() : '0'} {currencySymbol}
+                    </span>
+                  </div>
+
+                  <div className="border-r border-slate-200/80 pr-2">
+                    <span className="text-[10px] font-black text-emerald-700 flex items-center gap-1">
+                      <Banknote className="w-3 h-3 text-emerald-600" />
+                      <span>السعر النهائي:</span>
+                    </span>
+                    <span className="font-black text-emerald-800 font-mono text-xs">
+                      {lead.finalPrice ? `${lead.finalPrice.toLocaleString()} ${currencySymbol}` : <span className="text-[10px] text-slate-400 font-normal">قيد التفاوض</span>}
                     </span>
                   </div>
                 </div>
 
-                {/* Direct Phone & WhatsApp Bar (أرقام اتعاملت معاهم) */}
+                {/* 3. Direct Phone & WhatsApp Bar */}
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
@@ -368,8 +576,7 @@ export const LeadsView: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1">
-                    {/* Direct Call Button */}
+                  <div className="flex items-center gap-2 pt-0.5">
                     <a
                       href={`tel:${lead.phone}`}
                       className="flex-1 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 py-1.5 px-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all"
@@ -379,7 +586,6 @@ export const LeadsView: React.FC = () => {
                       <span>اتصال</span>
                     </a>
 
-                    {/* Direct WhatsApp Button */}
                     <a
                       href={whatsappUrl}
                       target="_blank"
@@ -393,56 +599,100 @@ export const LeadsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Dealings & Notes Log Snippet (سجل التعاملات السابقة) */}
-                <div className="text-xs bg-purple-50/60 p-2.5 rounded-xl border border-purple-100 space-y-1">
+                {/* 4. الوصف التفصيلي للعميل المحتمل (Detailed Description) */}
+                {lead.detailedDescription && (
+                  <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 text-xs space-y-0.5">
+                    <span className="text-[10px] font-black text-slate-600 flex items-center gap-1">
+                      <FileText className="w-3 h-3 text-blue-600" />
+                      <span>الوصف التفصيلي واحتياجات العميل:</span>
+                    </span>
+                    <p className="text-[11px] text-slate-700 leading-relaxed line-clamp-2">
+                      {lead.detailedDescription}
+                    </p>
+                  </div>
+                )}
+
+                {/* 5. سجل التفاوضات والعروض التي تمت (Negotiations Log) */}
+                <div className="text-xs bg-purple-50/70 p-2.5 rounded-xl border border-purple-200/80 space-y-1.5">
                   <div className="flex items-center justify-between text-[10px] font-bold text-purple-900">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3 text-purple-600" />
-                      <span>سجل آخر تعامل مع الرقم:</span>
+                      <span>التفاوضات التي تمت والعروض:</span>
                     </span>
                     <button
-                      onClick={() => setLogInteractionLead(lead)}
-                      className="text-purple-700 hover:text-purple-900 underline font-black cursor-pointer"
+                      onClick={() => handleOpenNegotiationModal(lead)}
+                      className="text-purple-700 hover:text-purple-900 bg-white border border-purple-200 px-2 py-0.5 rounded-md font-black cursor-pointer shadow-2xs hover:bg-purple-50"
                     >
-                      + تدوين تعامل
+                      + تدوين تفاوض
                     </button>
                   </div>
+
                   <p className="text-[11px] text-slate-700 line-clamp-2 leading-relaxed">
-                    {lead.notes || 'تم التواصل وإرسال عرض السعر المبدئي ونموذج إحصائيات باقة الظهور السحابي.'}
+                    {lead.negotiationsHistory || lead.notes || 'تم استلام الطلب وتجهيز عرض السعر الأولي لمناقشته مع العميل.'}
                   </p>
+
+                  {/* Negotiation Entries Count */}
+                  {lead.negotiationEntries && lead.negotiationEntries.length > 0 && (
+                    <div className="text-[10px] text-purple-800 font-bold bg-white/70 px-2 py-0.5 rounded flex items-center justify-between">
+                      <span>عدد جولات التفاوض: {lead.negotiationEntries.length}</span>
+                      <span className="font-normal text-slate-500">
+                        آخر جولة: {lead.negotiationEntries[0].date} ({lead.negotiationEntries[0].type})
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Assigned Team Members for visibility (تحديد من يظهر له من التيم) */}
+                {/* 6. الموظفون المصرح لهم برؤية هذا العميل (مين من الموظفين) */}
                 <div className="flex items-center justify-between text-[11px] bg-slate-50 p-2 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-1.5 text-slate-600 font-bold">
+                  <div className="flex items-center gap-1 text-slate-600 font-bold">
                     <Users className="w-3.5 h-3.5 text-purple-600" />
-                    <span>فريق العمل المصرح له:</span>
+                    <span>مين من الموظفين مصرح له:</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    {lead.assignedTeamMemberIds && lead.assignedTeamMemberIds.length > 0 ? (
+                    {assignedMembers.length > 0 ? (
                       <div className="flex items-center gap-1">
-                        <span className="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
-                          {lead.assignedTeamMemberIds.length} موظفين
-                        </span>
+                        {assignedMembers.slice(0, 2).map(m => (
+                          <span
+                            key={m.id}
+                            className="text-[10px] font-black bg-purple-100 text-purple-900 border border-purple-300 px-2 py-0.5 rounded-md"
+                            title={`مصرح للموظف: ${m.name} (${m.role})`}
+                          >
+                            {m.name}
+                          </span>
+                        ))}
+                        {assignedMembers.length > 2 && (
+                          <span className="text-[10px] font-bold text-slate-500">
+                            +{assignedMembers.length - 2}
+                          </span>
+                        )}
                       </div>
                     ) : (
-                      <span className="text-[10px] text-slate-500 font-bold bg-slate-200/60 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] text-slate-500 font-bold bg-slate-200/60 px-2 py-0.5 rounded-md">
                         الأدمن فقط
                       </span>
                     )}
+
+                    {/* زر سريع لتعديل وتحديد من هم الموظفين المصرح لهم */}
+                    <button
+                      onClick={() => handleOpenAssignModal(lead)}
+                      className="p-1 hover:bg-purple-100 text-purple-700 rounded-md cursor-pointer mr-1"
+                      title="تحديد أو تغيير الموظفين المصرح لهم برؤية العميل (مين من الموظفين)"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Handoff to Team Action or Converted Badge */}
+                {/* 7. Handoff to Team or Converted Badge */}
                 {lead.isConvertedToClient ? (
-                  <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex items-center justify-between gap-2">
+                  <div className="bg-emerald-50 border border-emerald-200 p-2 rounded-xl flex items-center justify-between gap-2">
                     <span className="text-[11px] font-black text-emerald-800 flex items-center gap-1">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span>تم تسليمه للتيم بنجاح كعميل رسمي 🤝</span>
                     </span>
                     <button
                       onClick={() => setActiveTab('renewals')}
-                      className="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg cursor-pointer shrink-0 transition-colors"
+                      className="text-[10px] font-black bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded-lg cursor-pointer shrink-0"
                     >
                       عرض الملف ↗
                     </button>
@@ -458,7 +708,7 @@ export const LeadsView: React.FC = () => {
                   </button>
                 )}
 
-                {/* Card Footer: Status Select & Fast Convert */}
+                {/* 8. Card Footer: Status Select, Edit, and Delete */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-slate-400 font-bold">الحالة:</span>
@@ -478,8 +728,16 @@ export const LeadsView: React.FC = () => {
 
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => convertLeadToDeal(lead.id)}
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[10px] font-black flex items-center gap-1 cursor-pointer transition-colors"
+                      onClick={() => handleOpenEditModal(lead)}
+                      className="p-1.5 hover:bg-purple-50 text-slate-500 hover:text-purple-700 rounded-lg cursor-pointer transition-colors"
+                      title="تعديل تفاصيل العميل والسعر والوصف"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => convertLeadToDeal(lead.id, lead.finalPrice || lead.estimatedValue)}
+                      className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-[10px] font-black flex items-center gap-1 cursor-pointer transition-colors"
                       title="تحويل العميل لصفقة مبيعات مباشرة"
                     >
                       <ArrowRightLeft className="w-3 h-3" />
@@ -492,7 +750,7 @@ export const LeadsView: React.FC = () => {
                           deleteLead(lead.id);
                         }
                       }}
-                      className="p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-md cursor-pointer transition-colors"
+                      className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg cursor-pointer transition-colors"
                       title="حذف"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -513,11 +771,12 @@ export const LeadsView: React.FC = () => {
               <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                 <tr>
                   <th className="py-3.5 px-4">اسم العميل والمسمى</th>
-                  <th className="py-3.5 px-4">الشركة والمؤسسة</th>
-                  <th className="py-3.5 px-4">أرقام التواصل والواتساب</th>
-                  <th className="py-3.5 px-4">سجل آخر تعامل</th>
-                  <th className="py-3.5 px-4">تقييم الاهتمام</th>
+                  <th className="py-3.5 px-4">الشركة والمصدر</th>
+                  <th className="py-3.5 px-4">رقم التواصل والواتساب</th>
                   <th className="py-3.5 px-4">القيمة التقديرية</th>
+                  <th className="py-3.5 px-4">السعر النهائي المتفق عليه</th>
+                  <th className="py-3.5 px-4">الموظف المصرح له (مين من الموظفين)</th>
+                  <th className="py-3.5 px-4">سجل التفاوض والوصف</th>
                   <th className="py-3.5 px-4">الحالة</th>
                   <th className="py-3.5 px-4 text-center">إجراءات</th>
                 </tr>
@@ -528,6 +787,10 @@ export const LeadsView: React.FC = () => {
                   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
                     `السلام عليكم أستاذ ${lead.name}، معك فريق سويفت.`
                   )}`;
+                  const currencySymbol = lead.currency || 'ج.م';
+                  const assignedMembers = team.filter(m =>
+                    (lead.assignedTeamMemberIds || (lead.assignedToId ? [lead.assignedToId] : [])).includes(m.id)
+                  );
 
                   return (
                     <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
@@ -537,9 +800,12 @@ export const LeadsView: React.FC = () => {
                       </td>
 
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                        <div className="font-bold text-slate-800 flex items-center gap-1">
                           <Building className="w-3.5 h-3.5 text-slate-400" />
                           <span>{lead.company}</span>
+                        </div>
+                        <div className="text-[10px] text-purple-700 font-bold">
+                          📍 {lead.customSource || lead.source}
                         </div>
                       </td>
 
@@ -567,30 +833,55 @@ export const LeadsView: React.FC = () => {
                         </div>
                       </td>
 
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="font-bold text-slate-700 font-mono text-xs">
+                          {lead.estimatedValue ? lead.estimatedValue.toLocaleString() : '0'} {currencySymbol}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {lead.finalPrice ? (
+                          <span className="font-black text-emerald-700 font-mono text-xs bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
+                            {lead.finalPrice.toLocaleString()} {currencySymbol}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">قيد التفاوض</span>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-1">
+                          {assignedMembers.length > 0 ? (
+                            assignedMembers.map(m => (
+                              <span
+                                key={m.id}
+                                className="text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200 px-2 py-0.5 rounded"
+                              >
+                                {m.name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-slate-400">الأدمن فقط</span>
+                          )}
+                          <button
+                            onClick={() => handleOpenAssignModal(lead)}
+                            className="p-1 hover:bg-purple-100 text-purple-700 rounded cursor-pointer"
+                            title="تعديل الموظفين المصرح لهم"
+                          >
+                            <UserCheck className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </td>
+
                       <td className="py-3.5 px-4 max-w-xs">
-                        <p className="text-[11px] text-slate-600 line-clamp-2">
-                          {lead.notes || 'تم التواصل ومناقشة تفاصيل الباقة.'}
+                        <p className="text-[11px] text-slate-700 line-clamp-1 font-semibold">
+                          {lead.negotiationsHistory || lead.notes || 'لا يوجد سجل تفاوض'}
                         </p>
-                      </td>
-
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span
-                          className={`font-black text-xs px-2 py-0.5 rounded-full ${
-                            lead.leadScore >= 80
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : lead.leadScore >= 60
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-amber-100 text-amber-700'
-                          }`}
-                        >
-                          {lead.leadScore}%
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-black text-slate-900 text-xs">
-                          {lead.estimatedValue.toLocaleString()} ر.س
-                        </span>
+                        {lead.detailedDescription && (
+                          <p className="text-[10px] text-slate-400 line-clamp-1">
+                            {lead.detailedDescription}
+                          </p>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4 whitespace-nowrap">
@@ -604,33 +895,35 @@ export const LeadsView: React.FC = () => {
                           <option value="مهتم">مهتم</option>
                           <option value="مؤهل">مؤهل</option>
                           <option value="غير مؤهل">غير مؤهل</option>
+                          <option value="صفقة ناجحة (Won)">صفقة ناجحة (Won)</option>
                         </select>
                       </td>
 
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
-                          {lead.isConvertedToClient ? (
-                            <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-lg">
-                              تم التسليم للتيم ✅
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => handleOpenHandoff(lead)}
-                              className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white font-black rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                              title="تسليم العميل لباقي التيم"
-                            >
-                              <Send className="w-3 h-3" />
-                              <span>نقل للتيم 🚀</span>
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleOpenNegotiationModal(lead)}
+                            className="p-1.5 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg cursor-pointer transition-colors"
+                            title="تدوين تفاوض وتحديث السعر النهائي"
+                          >
+                            <Clock className="w-3.5 h-3.5" />
+                          </button>
 
                           <button
-                            onClick={() => convertLeadToDeal(lead.id)}
-                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                            onClick={() => handleOpenEditModal(lead)}
+                            className="p-1.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer transition-colors"
+                            title="تعديل العميل"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => convertLeadToDeal(lead.id, lead.finalPrice || lead.estimatedValue)}
+                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
                             title="تحويل لصفقة مبيعات"
                           >
                             <ArrowRightLeft className="w-3 h-3" />
-                            <span>تحويل لصفقة</span>
+                            <span>تحويل</span>
                           </button>
 
                           <button
@@ -655,7 +948,509 @@ export const LeadsView: React.FC = () => {
         </div>
       )}
 
-      {/* Log Interaction Modal (تدوين مكالمة / تعامل مع رقم العميل) */}
+      {/* ================= MODAL 1: ASSIGN SALES TEAM MEMBERS (مين من الموظفين المصرح لهم) ================= */}
+      {assignTeamModalLead && (
+        <div
+          onClick={() => setAssignTeamModalLead(null)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">
+                    تحديد الموظفين المصرح لهم برؤية هذا العميل
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {assignTeamModalLead.name} ({assignTeamModalLead.company})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAssignTeamModalLead(null)}
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAssignedTeam} className="space-y-4 text-xs">
+              <div className="bg-purple-50 p-3 rounded-2xl border border-purple-200 text-purple-900 space-y-1">
+                <span className="font-black flex items-center gap-1 text-[11px]">
+                  <Shield className="w-3.5 h-3.5 text-purple-600" />
+                  <span>تنبيه الخصوصية والصلاحيات:</span>
+                </span>
+                <p className="text-[11px] leading-relaxed text-purple-800">
+                  الموظفون المبيعات الذين يتم تعليمهم هنا فقط (مثل مايبل Maibel) هم من سيظهر لهم هذا العميل في حساباتهم، ولن يظهر لباقي المبيعات أو الأقسام الأخرى. الأدمن يرى الجميع دائماً 🔒.
+                </p>
+              </div>
+
+              <div className="space-y-2 max-h-56 overflow-y-auto p-1">
+                {team.map(member => {
+                  const isChecked = selectedMemberIds.includes(member.id);
+                  const isSales =
+                    member.department === 'المبيعات' ||
+                    member.role?.toLowerCase().includes('sales') ||
+                    member.role?.toLowerCase().includes('سيلز') ||
+                    member.id === 'user-maibel';
+
+                  return (
+                    <label
+                      key={member.id}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                        isChecked
+                          ? 'bg-purple-50 border-purple-300 text-purple-950 font-bold shadow-2xs'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setSelectedMemberIds(prev => [...prev, member.id]);
+                          } else {
+                            setSelectedMemberIds(prev => prev.filter(id => id !== member.id));
+                          }
+                        }}
+                        className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+                      />
+                      <div className="w-7 h-7 rounded-lg bg-purple-200 text-purple-900 font-black text-xs flex items-center justify-center shrink-0">
+                        {member.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-bold text-slate-900 flex items-center gap-1.5">
+                          <span>{member.name}</span>
+                          {isSales && (
+                            <span className="text-[9px] bg-purple-200 text-purple-900 font-black px-1.5 py-0.2 rounded">
+                              مبيعات
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate">{member.role}</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setAssignTeamModalLead(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  حفظ التعيين وتحديث الصلاحيات
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 2: ADD NEGOTIATION ENTRY & UPDATE FINAL PRICE ================= */}
+      {addNegotiationLead && (
+        <div
+          onClick={() => setAddNegotiationLead(null)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 cursor-default"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                  <Banknote className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">
+                    تدوين جولة تفاوض وتحديث السعر النهائي
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    العميل: {addNegotiationLead.name} ({addNegotiationLead.company})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAddNegotiationLead(null)}
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNegotiation} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">تاريخ التفاوض:</label>
+                  <input
+                    type="date"
+                    required
+                    value={negotiationForm.date}
+                    onChange={e => setNegotiationForm({ ...negotiationForm, date: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">طريقة التفاوض:</label>
+                  <select
+                    value={negotiationForm.type}
+                    onChange={e => setNegotiationForm({ ...negotiationForm, type: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold focus:outline-none cursor-pointer"
+                  >
+                    <option value="اتصال هاتفي">اتصال هاتفي 📞</option>
+                    <option value="محادثة واتساب">محادثة واتساب 💬</option>
+                    <option value="اجتماع زوم / Google Meet">اجتماع زوم / Google Meet 💻</option>
+                    <option value="جلسة تفاوض مباشرة">جلسة تفاوض مباشرة 🤝</option>
+                    <option value="إرسال مسودة عرض سعر">إرسال مسودة عرض سعر 📄</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Pricing row in Egyptian Pounds */}
+              <div className="grid grid-cols-3 gap-2 bg-emerald-50/50 p-3 rounded-2xl border border-emerald-200">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1 text-[11px]">السعر المعروض:</label>
+                  <input
+                    type="number"
+                    value={negotiationForm.offeredPrice}
+                    onChange={e => setNegotiationForm({ ...negotiationForm, offeredPrice: e.target.value })}
+                    placeholder="0"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-black text-emerald-800 mb-1 text-[11px]">السعر النهائي المتفق عليه: *</label>
+                  <input
+                    type="number"
+                    required
+                    value={negotiationForm.finalPrice}
+                    onChange={e => setNegotiationForm({ ...negotiationForm, finalPrice: e.target.value })}
+                    placeholder="مثال: 95000"
+                    className="w-full bg-white border border-emerald-400 rounded-xl px-2.5 py-1.5 text-xs font-mono font-black text-emerald-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1 text-[11px]">العملة:</label>
+                  <select
+                    value={negotiationForm.currency}
+                    onChange={e => setNegotiationForm({ ...negotiationForm, currency: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-bold cursor-pointer"
+                  >
+                    <option value="ج.م">جنيه مصري (ج.م)</option>
+                    <option value="ر.س">ريال سعودي (ر.س)</option>
+                    <option value="$">دولار ($)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">نتيجة جولة التفاوض:</label>
+                <select
+                  value={negotiationForm.outcome}
+                  onChange={e => setNegotiationForm({ ...negotiationForm, outcome: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold cursor-pointer"
+                >
+                  <option value="موافقة مبدئية">موافقة مبدئية وجاري إعداد العقد ✅</option>
+                  <option value="طلب تخفيض">طلب تخفيض إضافي أو تسهيلات سداد 🔄</option>
+                  <option value="تم الاتفاق النهائي">تم الاتفاق النهائي على السعر والشروط 🤝</option>
+                  <option value="متردد / يدرس البدائل">متردد / يدرس البدائل ⏳</option>
+                  <option value="مرفوض">مرفوض بسبب الميزانية ❌</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  تفاصيل وما تم الاتفاق عليه خلال التفاوض: *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={negotiationForm.summary}
+                  onChange={e => setNegotiationForm({ ...negotiationForm, summary: e.target.value })}
+                  placeholder="مثال: ناقشنا باقة الـ 2 سيستم و2 دومين، وطلب خصم 10% مقابل سداد الدفعة كاملة كاش، وتم الاتفاق على 95,000 ج.م..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-500 resize-none font-sans"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setAddNegotiationLead(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer"
+                >
+                  حفظ التفاوض واعتماد السعر النهائي
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 3: FULL LEAD EDIT MODAL ================= */}
+      {editModalLead && (
+        <div
+          onClick={() => setEditModalLead(null)}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900">
+                    تعديل بيانات العميل المحتمل والتفاوضات
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {editModalLead.name} ({editModalLead.company})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditModalLead(null)}
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">اسم العميل *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.name}
+                    onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">اسم الشركة / المؤسسة *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.company}
+                    onChange={e => setEditForm({ ...editForm, company: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">رقم الهاتف *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.phone}
+                    onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-mono dir-ltr"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">البريد الإلكتروني</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Source & Custom Source */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">مصدر العميل</label>
+                  <select
+                    value={editForm.source}
+                    onChange={e => setEditForm({ ...editForm, source: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-medium cursor-pointer"
+                  >
+                    <option value="إحالة عميل سابق">إحالة عميل سابق</option>
+                    <option value="الموقع الإلكتروني">الموقع الإلكتروني</option>
+                    <option value="إعلان ممول">إعلان ممول</option>
+                    <option value="لينكد إن">لينكد إن</option>
+                    <option value="مؤتمر / ملتقى">مؤتمر / ملتقى</option>
+                    <option value="محادثة واتساب مباشر">محادثة واتساب مباشر</option>
+                    <option value="مكالمة هاتفية واردة">مكالمة هاتفية واردة</option>
+                    <option value="تيك توك">تيك توك</option>
+                    <option value="مصدر آخر">مصدر آخر (مخصص)...</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">العملة:</label>
+                  <select
+                    value={editForm.currency}
+                    onChange={e => setEditForm({ ...editForm, currency: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 font-bold cursor-pointer"
+                  >
+                    <option value="ج.م">جنيه مصري (ج.م)</option>
+                    <option value="ر.س">ريال سعودي (ر.س)</option>
+                    <option value="$">دولار ($)</option>
+                  </select>
+                </div>
+              </div>
+
+              {editForm.source === 'مصدر آخر' && (
+                <div className="bg-purple-50 p-2.5 rounded-xl border border-purple-200 space-y-1">
+                  <label className="block font-bold text-purple-900 text-xs">اكتب مصدر العميل المخصص: *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.customSource}
+                    onChange={e => setEditForm({ ...editForm, customSource: e.target.value })}
+                    placeholder="مثال: ترشيح من شريك، تليجرام، استشارة مجانية..."
+                    className="w-full bg-white border border-purple-300 rounded-lg px-2.5 py-1.5 text-xs font-bold"
+                  />
+                </div>
+              )}
+
+              {/* Estimated Value & Final Price in EGP */}
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">القيمة التقديرية ({editForm.currency})</label>
+                  <input
+                    type="number"
+                    value={editForm.estimatedValue}
+                    onChange={e => setEditForm({ ...editForm, estimatedValue: Number(e.target.value) })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-black text-emerald-800 mb-1">السعر النهائي المتفق عليه ({editForm.currency})</label>
+                  <input
+                    type="number"
+                    value={editForm.finalPrice}
+                    onChange={e => setEditForm({ ...editForm, finalPrice: Number(e.target.value) })}
+                    placeholder="0"
+                    className="w-full bg-emerald-50/50 border border-emerald-300 rounded-xl px-2.5 py-1.5 font-mono font-black text-emerald-900"
+                  />
+                </div>
+              </div>
+
+              {/* Detailed Description */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">الوصف التفصيلي للعميل واحتياجاته:</label>
+                <textarea
+                  rows={2}
+                  value={editForm.detailedDescription}
+                  onChange={e => setEditForm({ ...editForm, detailedDescription: e.target.value })}
+                  placeholder="وصف طبيعة النشاط والاحتياجات..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs resize-none"
+                />
+              </div>
+
+              {/* Negotiations History */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">التفاوضات التي تمت والعروض:</label>
+                <textarea
+                  rows={2}
+                  value={editForm.negotiationsHistory}
+                  onChange={e => setEditForm({ ...editForm, negotiationsHistory: e.target.value })}
+                  placeholder="سجل التفاوضات والاتفاقات..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs resize-none"
+                />
+              </div>
+
+              {/* Assigned Sales Team Members (مين من الموظفين) */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+                <label className="block font-black text-slate-900 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-purple-600" />
+                  <span>مين من الموظفين المصرح لهم برؤية هذا العميل:</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto p-1">
+                  {team.map(m => {
+                    const isChecked = editForm.assignedTeamMemberIds.includes(m.id);
+                    return (
+                      <label
+                        key={m.id}
+                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer ${
+                          isChecked ? 'bg-purple-100/70 border-purple-300 font-bold' : 'bg-white border-slate-200'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setEditForm(prev => ({
+                                ...prev,
+                                assignedTeamMemberIds: [...prev.assignedTeamMemberIds, m.id]
+                              }));
+                            } else {
+                              setEditForm(prev => ({
+                                ...prev,
+                                assignedTeamMemberIds: prev.assignedTeamMemberIds.filter(id => id !== m.id)
+                              }));
+                            }
+                          }}
+                          className="w-4 h-4 text-purple-600 rounded"
+                        />
+                        <span className="truncate">{m.name}</span>
+                        {m.id === 'user-maibel' && (
+                          <span className="text-[9px] bg-purple-200 text-purple-900 px-1 rounded">سيلز</span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditModalLead(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  حفظ التعديلات
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 4: LOG CALL / INTERACTION ================= */}
       {logInteractionLead && (
         <div
           onClick={() => setLogInteractionLead(null)}
@@ -722,7 +1517,7 @@ export const LeadsView: React.FC = () => {
                   required
                   value={newInteractionData.summary}
                   onChange={e => setNewInteractionData({ ...newInteractionData, summary: e.target.value })}
-                  placeholder="مثال: تحدثنا هاتفياً وطلب تحليل لموقعه في الكويت، ومهتم بباقة الـ 2 سيستم و2 دومين..."
+                  placeholder="مثال: تحدثنا هاتفياً وطلب تحليل لموقعه، وأكد اهتمامه بالسعر النهائي..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-500 resize-none font-sans"
                 />
               </div>
@@ -757,7 +1552,7 @@ export const LeadsView: React.FC = () => {
         </div>
       )}
 
-      {/* ================= MODAL: تسليم العميل المحتمل لباقي التيم وتحديد من يظهر له ================= */}
+      {/* ================= MODAL 5: HANDOFF TO CLIENT DOSSIER ================= */}
       {handoffModalLead && (
         <div
           onClick={() => setHandoffModalLead(null)}
@@ -767,7 +1562,6 @@ export const LeadsView: React.FC = () => {
             onClick={e => e.stopPropagation()}
             className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] overflow-y-auto cursor-default"
           >
-            {/* Header */}
             <div className="flex items-start justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 text-white shadow-md">
@@ -796,7 +1590,6 @@ export const LeadsView: React.FC = () => {
             </div>
 
             <form onSubmit={handleConfirmHandoff} className="space-y-4 text-xs">
-              {/* Lead Summary Info */}
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 grid grid-cols-2 gap-2 text-[11px]">
                 <div>
                   <span className="text-slate-400 font-bold block">اسم العميل:</span>
@@ -811,14 +1604,15 @@ export const LeadsView: React.FC = () => {
                   <span className="font-mono font-black text-slate-800 dir-ltr text-right">{handoffModalLead.phone}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-bold block">البريد الإلكتروني:</span>
-                  <span className="font-semibold text-slate-700 truncate block">{handoffModalLead.email || 'غير مسجل'}</span>
+                  <span className="text-slate-400 font-bold block">السعر النهائي المتفق عليه:</span>
+                  <span className="font-mono font-black text-emerald-700">
+                    {handoffModalLead.finalPrice ? `${handoffModalLead.finalPrice.toLocaleString()} ${handoffModalLead.currency || 'ج.م'}` : `${handoffModalLead.estimatedValue.toLocaleString()} ${handoffModalLead.currency || 'ج.م'}`}
+                  </span>
                 </div>
               </div>
 
-              {/* Service & Contract Info */}
               <div className="space-y-2">
-                <label className="block font-black text-slate-800">باقة الخدمة والسيرفر المتفق عليها: *</label>
+                <label className="block font-black text-slate-800">باقة الخدمة المتفق عليها: *</label>
                 <input
                   type="text"
                   required
@@ -829,10 +1623,9 @@ export const LeadsView: React.FC = () => {
                 />
               </div>
 
-              {/* Amount & Plan Cycle */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-black text-slate-800 mb-1">قيمة التعاقد (ر.س): *</label>
+                  <label className="block font-black text-slate-800 mb-1">قيمة التعاقد ({handoffForm.currency}): *</label>
                   <input
                     type="number"
                     required
@@ -857,32 +1650,28 @@ export const LeadsView: React.FC = () => {
                 </div>
               </div>
 
-              {/* TEAM ASSIGNMENT & VISIBILITY (طلب المستخدم: اقدر احط كل عميل يظهر لمين في التيم وكله بيظهر للادمن) */}
+              {/* Team Assignment for Handoff */}
               <div className="space-y-2 pt-1 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <label className="block font-black text-slate-900 flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-purple-600" />
-                    <span>من يظهر له هذا العميل في التيم؟ (صلاحيات الرؤية)</span>
+                    <span>فريق العمل المكلّف بمتابعة ملف العميل:</span>
                   </label>
                   <span className="text-[10px] text-purple-700 bg-purple-50 font-bold px-2 py-0.5 rounded-lg border border-purple-200">
                     الأدمن يرى الجميع 🔒
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  حدد أعضاء الفريق المصرح لهم برؤية ملف هذا العميل ومتابعة مهامه وتفاصيله وفولدر مستنداته:
-                </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto p-1 bg-slate-50 rounded-2xl border border-slate-200">
                   {team.map(member => {
                     const isChecked = handoffForm.assignedTeamIds.includes(member.id);
-                    const isAdmin = member.accessLevel === 'admin' || member.id === 'user-1';
 
                     return (
                       <label
                         key={member.id}
-                        className={`flex items-center gap-2.5 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
                           isChecked
-                            ? 'bg-purple-50/80 border-purple-300 text-purple-950 font-bold shadow-2xs'
+                            ? 'bg-purple-100/80 border-purple-300 text-purple-950 font-bold shadow-2xs'
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
                         }`}
                       >
@@ -902,16 +1691,10 @@ export const LeadsView: React.FC = () => {
                               }));
                             }
                           }}
-                          className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+                          className="w-4 h-4 text-purple-600 rounded"
                         />
-                        <div className="w-6 h-6 rounded-lg bg-purple-200 text-purple-900 font-black text-[10px] flex items-center justify-center shrink-0">
-                          {member.name.charAt(0)}
-                        </div>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-bold text-slate-900 flex items-center gap-1">
-                            <span>{member.name}</span>
-                            {isAdmin && <span className="text-[9px] bg-slate-200 text-slate-700 px-1 rounded">أدمن</span>}
-                          </div>
+                          <div className="truncate font-bold text-slate-900">{member.name}</div>
                           <div className="text-[10px] text-slate-500 truncate">{member.role}</div>
                         </div>
                       </label>
@@ -920,21 +1703,19 @@ export const LeadsView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Handoff Notes & Briefing to the rest of the team */}
               <div className="space-y-1">
                 <label className="block font-black text-slate-800">
                   بريف وتوجيهات التسليم لباقي التيم (Handoff Brief):
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={handoffForm.onboardingNotes}
                   onChange={e => setHandoffForm({ ...handoffForm, onboardingNotes: e.target.value })}
-                  placeholder="اكتب تفاصيل الاتفاق، متطلبات العميل، الروابط الأولية، وأي تفاصيل تقنية لتسهيل بدء باقي التيم فوراً..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-500 resize-none font-sans"
+                  placeholder="اكتب تفاصيل الاتفاق والروابط الأولية لبدء باقي التيم فوراً..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs resize-none"
                 />
               </div>
 
-              {/* Modal Actions */}
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"

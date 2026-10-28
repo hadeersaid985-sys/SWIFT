@@ -967,8 +967,26 @@ export const INITIAL_LEADS: Lead[] = [
     status: 'مهتم',
     source: 'لينكد إن',
     leadScore: 88,
-    assignedToId: 'user-2',
+    assignedToId: 'user-maibel',
+    assignedTeamMemberIds: ['user-maibel'], // محدد لمسؤولة المبيعات مايبل Maibel
     estimatedValue: 180000,
+    finalPrice: 165000,
+    currency: 'ج.م',
+    detailedDescription: 'شركة تطوير عقاري وسلاسل إمداد كبرى تبحث عن أتمتة لجميع فروعهم مع ربط نظام المهام والمتابعة اللوجستية وتتبع دقيق للمواعيد.',
+    negotiationsHistory: '[2026-10-25 - اجتماع زوم]: تم تقديم عرض سعر مبدئي بقيمة 180,000 ج.م، وطلب العميل خصماً للتعاقد السنوي، وتم الاتفاق المبدئي على 165,000 ج.م شامل الدعم الفني.',
+    negotiationEntries: [
+      {
+        id: 'neg-1',
+        date: '2026-10-25',
+        type: 'اجتماع زوم',
+        summary: 'مناقشة خطة الربط والدعم الفني وطلب تخفيض السعر للدفعة الأولى',
+        offeredPrice: 180000,
+        finalPrice: 165000,
+        currency: 'ج.م',
+        outcome: 'موافقة مبدئية',
+        authorName: 'Maibel Emad'
+      }
+    ],
     notes: 'يبحثون عن أتمتة لجميع فروعهم الـ 14 مع تتبع فوري لمواعيد التسليم.',
     createdAt: formatDate(-3)
   },
@@ -983,7 +1001,25 @@ export const INITIAL_LEADS: Lead[] = [
     source: 'الموقع الإلكتروني',
     leadScore: 92,
     assignedToId: 'user-1',
+    assignedTeamMemberIds: ['user-1'], // للأدمن فقط (لا تظهر لمايبل)
     estimatedValue: 95000,
+    finalPrice: 90000,
+    currency: 'ج.م',
+    detailedDescription: 'سلسلة عيادات ومراكز طبية تحتاج لربط برامج العيادات مع نظام إدارة مهام الأطباء ومواعيد الزيارات وسيرفرات سحابية خاصة.',
+    negotiationsHistory: '[2026-10-27 - اتصال هاتفي]: تم التحدث مع المديرة التنفيذية وعرض حلول الربط المخصصة، وبانتظار موافقة مجلس الإدارة على السعر النهائي 90,000 ج.م.',
+    negotiationEntries: [
+      {
+        id: 'neg-2',
+        date: '2026-10-27',
+        type: 'اتصال هاتفي',
+        summary: 'مكالمة تمهيدية وتحديد الميزانية الطبية ونطاق العمل',
+        offeredPrice: 95000,
+        finalPrice: 90000,
+        currency: 'ج.م',
+        outcome: 'متردد',
+        authorName: 'هدير سعيد'
+      }
+    ],
     notes: 'تحتاج لربط برامج العيادات مع نظام إدارة مهام الأطباء ومواعيد الزيارات.',
     createdAt: formatDate(0)
   },
@@ -997,8 +1033,26 @@ export const INITIAL_LEADS: Lead[] = [
     status: 'تم التواصل',
     source: 'إعلان ممول',
     leadScore: 65,
-    assignedToId: 'user-2',
+    assignedToId: 'user-maibel',
+    assignedTeamMemberIds: ['user-maibel'], // محدد لمايبل Maibel
     estimatedValue: 240000,
+    finalPrice: 220000,
+    currency: 'ج.م',
+    detailedDescription: 'مؤسسة مقاولات تطلب نظام إدارة عقود ومتابعة المهام الميدانية للمهندسين والمشرفين وربط واتساب فوري.',
+    negotiationsHistory: '[2026-10-26 - محادثة واتساب]: أرسلنا بروشور المنظومة، وطلب إعادة الاتصال بعد دراسة الميزانية السنوية الجديدة للشركة.',
+    negotiationEntries: [
+      {
+        id: 'neg-3',
+        date: '2026-10-26',
+        type: 'محادثة واتساب',
+        summary: 'إرسال عروض الأسعار والبروفايل التعريفي وطلب تحديد جلسة ديمو',
+        offeredPrice: 240000,
+        finalPrice: 220000,
+        currency: 'ج.م',
+        outcome: 'طلب تخفيض',
+        authorName: 'Maibel Emad'
+      }
+    ],
     notes: 'طلب إعادة الاتصال بعد دراسة الميزانية السنوية الجديدة للشركة.',
     createdAt: formatDate(-2)
   },
@@ -1012,8 +1066,26 @@ export const INITIAL_LEADS: Lead[] = [
     status: 'مؤهل',
     source: 'مؤتمر',
     leadScore: 96,
-    assignedToId: 'user-4',
+    assignedToId: 'user-1',
+    assignedTeamMemberIds: ['user-1'], // للأدمن فقط
     estimatedValue: 310000,
+    finalPrice: 295000,
+    currency: 'ج.م',
+    detailedDescription: 'شركة شحن ونقل دولي ترغب في تطبيق سحابي شامل لإدارة العملاء وسيرفرات مؤمنة وربط الـ API مع أنظمة التتبع.',
+    negotiationsHistory: '[2026-10-24 - جلسة تفاوض]: عقد اجتماع في المؤتمر وتقديم عرض فني متكامل، وتم الاتفاق على سعر نهائي 295,000 ج.م بانتظار مسودة العقد.',
+    negotiationEntries: [
+      {
+        id: 'neg-4',
+        date: '2026-10-24',
+        type: 'جلسة تفاوض',
+        summary: 'جلسة تفاوض مباشرة في المؤتمر ومناقشة الدومينات والسيرفرات',
+        offeredPrice: 310000,
+        finalPrice: 295000,
+        currency: 'ج.م',
+        outcome: 'تم الاتفاق',
+        authorName: 'هدير سعيد'
+      }
+    ],
     notes: 'طلبوا تجربة عملية ديمو للربط مع نظام إدارة الأسطول والمخازن.',
     createdAt: formatDate(-5)
   }

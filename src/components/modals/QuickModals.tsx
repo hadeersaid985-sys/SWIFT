@@ -62,10 +62,16 @@ export const QuickModals: React.FC = () => {
   const [leadTitle, setLeadTitle] = useState('');
   const [leadEmail, setLeadEmail] = useState('');
   const [leadPhone, setLeadPhone] = useState('');
-  const [leadValue, setLeadValue] = useState(150000);
-  const [leadSource, setLeadSource] = useState<'الموقع الإلكتروني' | 'إعلان ممول' | 'مؤتمر' | 'إحالة عميل' | 'لينكد إن'>('الموقع الإلكتروني');
+  const [leadValue, setLeadValue] = useState<number | string>(100000);
+  const [leadCurrency, setLeadCurrency] = useState<'ج.م' | 'ر.س' | '$'>('ج.م');
+  const [leadFinalPrice, setLeadFinalPrice] = useState<number | string>('');
+  const [leadSource, setLeadSource] = useState<string>('إحالة عميل سابق');
+  const [leadCustomSource, setLeadCustomSource] = useState<string>('');
+  const [leadDetailedDesc, setLeadDetailedDesc] = useState<string>('');
+  const [leadNegotiations, setLeadNegotiations] = useState<string>('');
   const [leadScore, setLeadScore] = useState(85);
   const [leadNotes, setLeadNotes] = useState('');
+  const [leadAssignedMemberIds, setLeadAssignedMemberIds] = useState<string[]>(['user-maibel']);
 
   // Deal Form State
   const [dealTitle, setDealTitle] = useState('');
@@ -245,20 +251,55 @@ export const QuickModals: React.FC = () => {
     e.preventDefault();
     if (!leadName.trim() || !leadCompany.trim()) return;
 
+    const finalSource = leadSource === 'مصدر آخر' ? (leadCustomSource.trim() || 'مصدر مخصص') : leadSource;
+    const finalAssignees = leadAssignedMemberIds.length > 0 ? leadAssignedMemberIds : [currentUser.id];
+
     addLead({
-      name: leadName,
-      company: leadCompany,
-      title: leadTitle || 'مسؤول المشتريات',
-      email: leadEmail,
-      phone: leadPhone,
+      name: leadName.trim(),
+      company: leadCompany.trim(),
+      title: leadTitle.trim() || 'مسؤول المشتريات والتعاقدات',
+      email: leadEmail.trim(),
+      phone: leadPhone.trim(),
       status: 'جديد',
-      source: leadSource,
+      source: finalSource,
+      customSource: leadSource === 'مصدر آخر' ? leadCustomSource.trim() : undefined,
       leadScore,
-      assignedToId: currentUser.id,
-      estimatedValue: Number(leadValue) || 100000,
-      notes: leadNotes
+      assignedToId: finalAssignees[0] || currentUser.id,
+      assignedTeamMemberIds: finalAssignees,
+      estimatedValue: Number(leadValue) || 0,
+      currency: leadCurrency || 'ج.م',
+      finalPrice: leadFinalPrice ? Number(leadFinalPrice) : undefined,
+      detailedDescription: leadDetailedDesc.trim(),
+      negotiationsHistory: leadNegotiations.trim(),
+      negotiationEntries: leadNegotiations.trim() ? [
+        {
+          id: 'neg-' + Date.now(),
+          date: new Date().toISOString().split('T')[0],
+          type: 'جلسة تفاوض',
+          summary: leadNegotiations.trim(),
+          offeredPrice: Number(leadValue) || 0,
+          finalPrice: leadFinalPrice ? Number(leadFinalPrice) : undefined,
+          currency: leadCurrency || 'ج.م',
+          outcome: 'موافقة مبدئية',
+          authorName: currentUser.name,
+          authorId: currentUser.id
+        }
+      ] : [],
+      notes: leadNotes.trim()
     });
 
+    // Reset Form
+    setLeadName('');
+    setLeadCompany('');
+    setLeadTitle('');
+    setLeadEmail('');
+    setLeadPhone('');
+    setLeadValue(100000);
+    setLeadFinalPrice('');
+    setLeadDetailedDesc('');
+    setLeadNegotiations('');
+    setLeadCustomSource('');
+    setLeadAssignedMemberIds(['user-maibel']);
     setOpenQuickModal(null);
   };
 
@@ -890,15 +931,20 @@ export const QuickModals: React.FC = () => {
 
         {/* MODAL 3: ADD LEAD */}
         {openQuickModal === 'lead' && (
-          <form onSubmit={handleCreateLead} className="space-y-4">
+          <form onSubmit={handleCreateLead} className="space-y-4 max-h-[88vh] overflow-y-auto p-1">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-purple-50 text-purple-600">
+                <div className="p-2 rounded-xl bg-purple-50 text-purple-600 border border-purple-200">
                   <Building className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-extrabold text-slate-900">
-                  تسجيل عميل محتمل جديد (New Lead)
-                </h3>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">
+                    تسجيل عميل محتمل جديد (New Lead)
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    إضافة عميل مبيعات وتحديد الموظف المصرح له برؤيته وتفاصيل التفاوض والسعر النهائي
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
@@ -909,8 +955,9 @@ export const QuickModals: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3.5 text-xs">
+              {/* Row 1: اسم العميل واسم الشركة */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">اسم العميل *</label>
                   <input
@@ -918,8 +965,8 @@ export const QuickModals: React.FC = () => {
                     required
                     value={leadName}
                     onChange={e => setLeadName(e.target.value)}
-                    placeholder="مثال: م. عبدالمحسن القاسم"
-                    className="w-full p-2.5 rounded-xl border border-slate-200"
+                    placeholder="مثال: باك لينك"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500 font-medium"
                   />
                 </div>
                 <div>
@@ -929,13 +976,25 @@ export const QuickModals: React.FC = () => {
                     required
                     value={leadCompany}
                     onChange={e => setLeadCompany(e.target.value)}
-                    placeholder="مثال: شركة التطوير القابضة"
-                    className="w-full p-2.5 rounded-xl border border-slate-200"
+                    placeholder="مثال: اوفر باك لينك"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-purple-500 font-medium"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Row 2: رقم الهاتف والبريد */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">رقم الهاتف *</label>
+                  <input
+                    type="text"
+                    required
+                    value={leadPhone}
+                    onChange={e => setLeadPhone(e.target.value)}
+                    placeholder="201005137224"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono dir-ltr focus:outline-none focus:border-purple-500"
+                  />
+                </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">البريد الإلكتروني</label>
                   <input
@@ -943,49 +1002,212 @@ export const QuickModals: React.FC = () => {
                     value={leadEmail}
                     onChange={e => setLeadEmail(e.target.value)}
                     placeholder="client@company.com"
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">رقم الهاتف</label>
-                  <input
-                    type="text"
-                    value={leadPhone}
-                    onChange={e => setLeadPhone(e.target.value)}
-                    placeholder="+966 50 123 4567"
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono dir-ltr"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono focus:outline-none focus:border-purple-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">القيمة التقديرية المتوقعة (ر.س)</label>
-                  <input
-                    type="number"
-                    value={leadValue}
-                    onChange={e => setLeadValue(Number(e.target.value))}
-                    className="w-full p-2.5 rounded-xl border border-slate-200"
-                  />
-                </div>
+              {/* Row 3: مصدر العميل والقيمة بالجنيه */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">مصدر العميل</label>
                   <select
                     value={leadSource}
-                    onChange={e => setLeadSource(e.target.value as any)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-white"
+                    onChange={e => setLeadSource(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-medium cursor-pointer focus:outline-none focus:border-purple-500"
                   >
+                    <option value="إحالة عميل سابق">إحالة عميل سابق</option>
                     <option value="الموقع الإلكتروني">الموقع الإلكتروني</option>
                     <option value="إعلان ممول">إعلان ممول</option>
                     <option value="لينكد إن">لينكد إن</option>
-                    <option value="مؤتمر">مؤتمر / ملتقى</option>
-                    <option value="إحالة عميل">إحالة عميل سابق</option>
+                    <option value="مؤتمر / ملتقى">مؤتمر / ملتقى</option>
+                    <option value="محادثة واتساب مباشر">محادثة واتساب مباشر</option>
+                    <option value="مكالمة هاتفية واردة">مكالمة هاتفية واردة</option>
+                    <option value="تيك توك">تيك توك</option>
+                    <option value="مصدر آخر">مصدر آخر (مخصص)...</option>
                   </select>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700">القيمة التقديرية المتوقعة</label>
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-purple-700">
+                      <span>العملة:</span>
+                      <select
+                        value={leadCurrency}
+                        onChange={e => setLeadCurrency(e.target.value as any)}
+                        className="bg-purple-50 border border-purple-200 text-purple-800 rounded px-1.5 py-0.5 font-bold cursor-pointer"
+                      >
+                        <option value="ج.م">جنيه مصري (ج.م)</option>
+                        <option value="ر.س">ريال سعودي (ر.س)</option>
+                        <option value="$">دولار ($)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={leadValue}
+                      onChange={e => setLeadValue(e.target.value)}
+                      placeholder="0"
+                      className="w-full p-2.5 pr-3 pl-12 rounded-xl border border-slate-200 font-mono font-bold text-slate-900 focus:outline-none focus:border-purple-500"
+                    />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+                      {leadCurrency}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* إذا تم اختيار مصدر آخر: حقل إدخال المصدر المخصص */}
+              {leadSource === 'مصدر آخر' && (
+                <div className="bg-purple-50/70 p-3 rounded-xl border border-purple-200 space-y-1 animate-in fade-in">
+                  <label className="block font-bold text-purple-900 text-xs">
+                    اكتب المصدر المخصص للعميل: *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={leadCustomSource}
+                    onChange={e => setLeadCustomSource(e.target.value)}
+                    placeholder="مثال: ترشيح من شريك، تليجرام، استشارة مجانية، بحث جوجل..."
+                    className="w-full p-2 rounded-lg bg-white border border-purple-300 text-xs font-bold focus:outline-none focus:border-purple-600"
+                  />
+                </div>
+              )}
+
+              {/* Row 4: السعر النهائي ونسبة الاهتمام */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-emerald-800 mb-1 flex items-center gap-1">
+                    <span>السعر النهائي المتفق عليه (إن وجد)</span>
+                    <span className="text-[10px] text-emerald-600 font-normal">({leadCurrency})</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={leadFinalPrice}
+                      onChange={e => setLeadFinalPrice(e.target.value)}
+                      placeholder="مثال: 95000"
+                      className="w-full p-2.5 pr-3 pl-12 rounded-xl border border-emerald-200 bg-emerald-50/30 text-emerald-900 font-mono font-bold focus:outline-none focus:border-emerald-500"
+                    />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-600">
+                      {leadCurrency}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    تقييم احتمالية الإغلاق والاهتمام ({leadScore}%)
+                  </label>
+                  <input
+                    type="range"
+                    min="10"
+                    max="100"
+                    step="5"
+                    value={leadScore}
+                    onChange={e => setLeadScore(Number(e.target.value))}
+                    className="w-full accent-purple-600 cursor-pointer mt-2"
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: وصف تفصيلي للعميل المحتمل */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">
+                  الوصف التفصيلي للعميل المحتمل واحتياجاته:
+                </label>
+                <textarea
+                  rows={2}
+                  value={leadDetailedDesc}
+                  onChange={e => setLeadDetailedDesc(e.target.value)}
+                  placeholder="اكتب طبيعة نشاط العميل، متطلبات المشروع، المشاكل التي يرغب بحلها، وأي تفاصيل هامة..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs leading-relaxed focus:outline-none focus:border-purple-500 resize-none font-sans"
+                />
+              </div>
+
+              {/* Row 6: التفاوضات التي تمت */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">
+                  التفاوضات التي تمت والعروض المقدمة:
+                </label>
+                <textarea
+                  rows={2}
+                  value={leadNegotiations}
+                  onChange={e => setLeadNegotiations(e.target.value)}
+                  placeholder="سجل المفاوضات: ما تم الاتفاق عليه، العرض المبدئي، الخصومات المتفق عليها، ورد العميل..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs leading-relaxed focus:outline-none focus:border-purple-500 resize-none font-sans"
+                />
+              </div>
+
+              {/* Row 7: تحديد من يظهر له من الموظفين (فريق المبيعات / مين من الموظفين) */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block font-black text-slate-900 flex items-center gap-1.5 text-xs">
+                    <Users className="w-4 h-4 text-purple-600" />
+                    <span>مين من الموظفين المصرح لهم برؤية هذا العميل؟ (فريق المبيعات)</span>
+                  </label>
+                  <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
+                    الأدمن يرى الكل 🔒
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  علّم على موظفي المبيعات المصرح لهم برؤية ومتابعة هذا العميل (لن يظهر لباقي المبيعات أو الأقسام الأخرى):
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1">
+                  {team.map(member => {
+                    const isChecked = leadAssignedMemberIds.includes(member.id);
+                    const isSales =
+                      member.department === 'المبيعات' ||
+                      member.role?.toLowerCase().includes('sales') ||
+                      member.role?.toLowerCase().includes('سيلز') ||
+                      member.id === 'user-maibel';
+
+                    return (
+                      <label
+                        key={member.id}
+                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                          isChecked
+                            ? 'bg-purple-100/70 border-purple-300 text-purple-950 font-bold shadow-2xs'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setLeadAssignedMemberIds(prev => [...prev, member.id]);
+                            } else {
+                              setLeadAssignedMemberIds(prev => prev.filter(id => id !== member.id));
+                            }
+                          }}
+                          className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+                        />
+                        <div className="w-6 h-6 rounded-lg bg-purple-200 text-purple-900 font-black text-[10px] flex items-center justify-center shrink-0">
+                          {member.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-bold text-slate-900 flex items-center gap-1">
+                            <span>{member.name}</span>
+                            {isSales && (
+                              <span className="text-[9px] bg-purple-200 text-purple-900 font-extrabold px-1.5 py-0.2 rounded">
+                                مبيعات
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-500 truncate">{member.role}</div>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setOpenQuickModal(null)}
@@ -995,7 +1217,7 @@ export const QuickModals: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md cursor-pointer transition-all hover:scale-[1.01]"
               >
                 حفظ العميل المحتمل
               </button>

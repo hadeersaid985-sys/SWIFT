@@ -102,6 +102,7 @@ const AppContent: React.FC = () => {
     returnToAdmin,
     brandConfig,
     isManager,
+    isSalesUser,
     renewalsDueSoonCount
   } = useCRM();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -195,7 +196,16 @@ const AppContent: React.FC = () => {
   }, [brandConfig?.customFaviconUrl]);
 
   // Security & Role check: Non-admin employees ONLY see their allowed personal tabs
-  const allowedEmployeeTabs = ['tasks', 'renewals', 'meetings', 'calls', 'mail', 'profile'];
+  // موظف المبيعات (مثل مايبل Maibel) يظهر له قسم العملاء المحتملين 'leads'
+  const allowedEmployeeTabs = [
+    'tasks',
+    'renewals',
+    'meetings',
+    'calls',
+    'mail',
+    'profile',
+    ...(isSalesUser ? ['leads'] : [])
+  ];
   
   // Compute safe effective tab immediately to prevent blank content on role switch
   const effectiveTab = React.useMemo(() => {
@@ -258,8 +268,9 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'meetings' && <MeetingsView />}
               {effectiveTab === 'calls' && <MeetingsView />}
               {effectiveTab === 'mail' && <MailView />}
+              {effectiveTab === 'leads' && isSalesUser && <LeadsView />}
               {effectiveTab === 'tasks' && <TasksView />}
-              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'tasks'].includes(effectiveTab) && (
+              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'tasks', ...(isSalesUser ? ['leads'] : [])].includes(effectiveTab) && (
                 <TasksView />
               )}
             </>

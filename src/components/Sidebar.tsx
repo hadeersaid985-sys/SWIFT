@@ -67,6 +67,8 @@ export const Sidebar: React.FC = () => {
     team,
     setIsAdminPinModalOpen,
     setIsGitHubModalOpen,
+    visibleLeads,
+    isSalesUser,
     logoutUser
   } = useCRM();
 
@@ -327,6 +329,29 @@ export const Sidebar: React.FC = () => {
                 </span>
               )}
             </button>
+
+            {/* العملاء المحتملون (خاص بالسيلز والمبيعات - مثل مايبل Maibel - وتظهر فقط الليدز المعينة لها) */}
+            {isSalesUser && (
+              <button
+                onClick={() => setActiveTab('leads')}
+                className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'leads'
+                    ? 'bg-purple-600 text-white font-extrabold shadow-md'
+                    : 'text-purple-300 hover:bg-slate-800/80 hover:text-white'
+                }`}
+                title="العملاء المحتملون المخصصون لك للمتابعة والتفاوض"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Building2 className="w-4 h-4 shrink-0 text-purple-400" />
+                  {!isCollapsed && <span>العملاء المحتملون (المبيعات)</span>}
+                </div>
+                {!isCollapsed && (
+                  <span className="text-[10px] bg-purple-500/25 text-purple-200 border border-purple-400/40 px-1.5 py-0.2 rounded font-bold font-mono">
+                    {visibleLeads.length} عميل
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* الملف الشخصي وتعديل الحساب (الاسم، الصورة، الباسورد) */}
             <div className="pt-2 border-t border-slate-800/80">

@@ -6,6 +6,7 @@ import {
   TeamMember,
   EmailMessage,
   Lead,
+  LeadNegotiationEntry,
   Deal,
   DealStage,
   Meeting,
@@ -140,6 +141,8 @@ interface CRMContextType {
   addLeadsBulk: (leads: Omit<Lead, 'id' | 'createdAt'>[]) => void;
   updateLead: (id: string, updates: Partial<Lead>) => void;
   deleteLead: (id: string) => void;
+  assignLeadTeamMembers: (leadId: string, memberIds: string[]) => void;
+  addLeadNegotiation: (leadId: string, entry: Omit<LeadNegotiationEntry, 'id' | 'createdAt'>) => void;
   convertLeadToDeal: (leadId: string, dealValue?: number) => void;
 
   // Deals
@@ -210,6 +213,7 @@ interface CRMContextType {
   convertLeadToClientAndHandoff: (leadId: string, data: { serviceName: string; amount: number; planCycle: 'شهري' | 'ربع سنوي' | 'نصف سنوي' | 'سنوي'; currency?: string; assignedTeamIds: string[]; onboardingNotes?: string }) => void;
   renewalsDueSoonCount: number;
   visibleLeads: Lead[]; // كل الليدز للأدمن، والموكلين للموظف
+  isSalesUser: boolean; // هل المستخدم في قسم المبيعات أو أدمن
 
   // Suspended Contracts (العقود الموقوفة وتوثيق سبب الإيقاف لكل عميل)
   suspendedContracts: ClientRenewal[];
@@ -2085,15 +2089,28 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
   }, [clientRenewals, isUserAdminOrRoot, currentUser]);
 
-  const visibleLeads = isUserAdminOrRoot
-    ? leads
-    : leads.filter(l =>
-        Boolean(
-          currentUser &&
-            (l.assignedToId === currentUser.id ||
-              l.assignedTeamMemberIds?.includes(currentUser.id))
-        )
-      );
+  const isSalesUser = Boolean(
+    isUserAdminOrRoot ||
+    (currentUser && (
+      currentUser.department === 'المبيعات' ||
+      currentUser.role?.toLowerCase().includes('sales') ||
+      currentUser.role?.toLowerCase().includes('سيلز') ||
+      currentUser.allowedTabs?.includes('leads')
+    ))
+  );
+
+  const visibleLeads = useMemo(() => {
+    if (isUserAdminOrRoot) return leads;
+    if (!isSalesUser) return []; // لغير موظفي المبيعات، لا تظهر العملاء المحتملة إطلاقاً
+    // لموظفي المبيعات (مثل مايبل Maibel): تظهر فقط العملاء المعلمة أو المعينة لهم من الإدارة
+    return leads.filter(l =>
+      Boolean(
+        currentUser &&
+          (l.assignedToId === currentUser.id ||
+            l.assignedTeamMemberIds?.includes(currentUser.id))
+      )
+    );
+  }, [leads, isUserAdminOrRoot, isSalesUser, currentUser]);
 
   // Sync to safeStorage
   useEffect(() => {
@@ -3133,6 +3150,41 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setLeads(prev => prev.filter(l => l.id !== id));
   };
 
+  const assignLeadTeamMembers = (leadId: string, memberIds: string[]) => {
+    setLeads(prev =>
+      prev.map(l => (l.id === leadId ? { ...l, assignedTeamMemberIds: memberIds } : l))
+    );
+  };
+
+  const addLeadNegotiation = (leadId: string, entryData: Omit<LeadNegotiationEntry, 'id' | 'createdAt'>) => {
+    const newEntry: LeadNegotiationEntry = {
+      ...entryData,
+      id: 'neg-' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    setLeads(prev =>
+      prev.map(l => {
+        if (l.id !== leadId) return l;
+        const currentEntries = l.negotiationEntries || [];
+        const updatedEntries = [newEntry, ...currentEntries];
+        const summaryText = `[${newEntry.date} - ${newEntry.type}]: ${newEntry.summary}${
+          newEntry.finalPrice || newEntry.offeredPrice
+            ? ` (السعر: ${(newEntry.finalPrice || newEntry.offeredPrice)?.toLocaleString()} ${newEntry.currency || l.currency || 'ج.م'})`
+            : ''
+        }`;
+        return {
+          ...l,
+          negotiationEntries: updatedEntries,
+          negotiationsHistory: l.negotiationsHistory
+            ? `${summaryText}\n${l.negotiationsHistory}`
+            : summaryText,
+          finalPrice: newEntry.finalPrice ?? l.finalPrice,
+          currency: newEntry.currency ?? l.currency
+        };
+      })
+    );
+  };
+
   const convertLeadToDeal = (leadId: string, dealValue?: number) => {
     const lead = leads.find(l => l.id === leadId);
     if (!lead) return;
@@ -4083,6 +4135,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addLeadsBulk,
         updateLead,
         deleteLead,
+        assignLeadTeamMembers,
+        addLeadNegotiation,
         convertLeadToDeal,
         deals,
         addDeal,
@@ -4125,6 +4179,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         convertLeadToClientAndHandoff,
         renewalsDueSoonCount,
         visibleLeads,
+        isSalesUser,
         suspendedContracts,
         suspendClientContract,
         reactivateClientContract,
