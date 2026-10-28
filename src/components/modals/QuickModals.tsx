@@ -70,6 +70,11 @@ export const QuickModals: React.FC = () => {
   const [leadDetailedDesc, setLeadDetailedDesc] = useState<string>('');
   const [leadNegotiations, setLeadNegotiations] = useState<string>('');
   const [leadScore, setLeadScore] = useState(85);
+  const [leadFollowUpDate, setLeadFollowUpDate] = useState<string>(() => {
+    return new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  });
+  const [leadFollowUpTime, setLeadFollowUpTime] = useState<string>('11:00');
+  const [leadFollowUpNotes, setLeadFollowUpNotes] = useState<string>('');
   const [leadNotes, setLeadNotes] = useState('');
   const [leadAssignedMemberIds, setLeadAssignedMemberIds] = useState<string[]>(['user-maibel']);
 
@@ -263,7 +268,7 @@ export const QuickModals: React.FC = () => {
       status: 'جديد',
       source: finalSource,
       customSource: leadSource === 'مصدر آخر' ? leadCustomSource.trim() : undefined,
-      leadScore,
+      leadScore: Number(leadScore) || 85,
       assignedToId: finalAssignees[0] || currentUser.id,
       assignedTeamMemberIds: finalAssignees,
       estimatedValue: Number(leadValue) || 0,
@@ -271,6 +276,9 @@ export const QuickModals: React.FC = () => {
       finalPrice: leadFinalPrice ? Number(leadFinalPrice) : undefined,
       detailedDescription: leadDetailedDesc.trim(),
       negotiationsHistory: leadNegotiations.trim(),
+      followUpDate: leadFollowUpDate || undefined,
+      followUpTime: leadFollowUpTime || undefined,
+      followUpNotes: leadFollowUpNotes.trim() || undefined,
       negotiationEntries: leadNegotiations.trim() ? [
         {
           id: 'neg-' + Date.now(),
@@ -298,6 +306,7 @@ export const QuickModals: React.FC = () => {
     setLeadFinalPrice('');
     setLeadDetailedDesc('');
     setLeadNegotiations('');
+    setLeadFollowUpNotes('');
     setLeadCustomSource('');
     setLeadAssignedMemberIds(['user-maibel']);
     setOpenQuickModal(null);
@@ -1098,17 +1107,145 @@ export const QuickModals: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    تقييم احتمالية الإغلاق والاهتمام ({leadScore}%)
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700 flex items-center gap-1">
+                      <span>نسبة الاهتمام بالصفقة (حددها بنفسك): *</span>
+                    </label>
+                    <span className="text-[11px] font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                      {leadScore}%
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={leadScore}
+                      onChange={e => {
+                        const val = Number(e.target.value);
+                        setLeadScore(isNaN(val) ? 0 : Math.min(100, Math.max(0, val)));
+                      }}
+                      placeholder="85"
+                      className="w-full p-2.5 pr-3 pl-10 rounded-xl border border-slate-200 font-mono font-black text-slate-900 focus:outline-none focus:border-purple-500"
+                    />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-purple-600">
+                      %
+                    </span>
+                  </div>
+                  {/* Quick Preset Buttons for interest */}
+                  <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                    <span className="text-[10px] text-slate-400 font-bold">خيارات سريعة:</span>
+                    {[50, 70, 85, 95, 100].map(pct => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setLeadScore(pct)}
+                        className={`text-[10px] px-2 py-0.5 rounded-md font-bold cursor-pointer transition-all ${
+                          leadScore === pct
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-purple-50 text-purple-800 hover:bg-purple-100'
+                        }`}
+                      >
+                        {pct}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* قسم تاريخ متابعة العميل وتنبيه الموعد */}
+              <div className="bg-gradient-to-r from-purple-50/80 via-indigo-50/60 to-purple-50/80 p-3.5 rounded-2xl border border-purple-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-black text-purple-900 text-xs">
+                    <Calendar className="w-4 h-4 text-purple-600" />
+                    <span>تاريخ متابعة العميل القادمة والتنبيه 🔔</span>
+                  </div>
+                  <span className="text-[10px] bg-white text-purple-800 font-bold px-2 py-0.5 rounded-full border border-purple-200">
+                    إشعار تلقائي في يوم الموعد
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 text-[11px]">
+                      تاريخ يوم المتابعة: *
+                    </label>
+                    <input
+                      type="date"
+                      value={leadFollowUpDate}
+                      onChange={e => setLeadFollowUpDate(e.target.value)}
+                      className="w-full p-2 rounded-xl bg-white border border-purple-200 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 text-[11px]">
+                      وقت المتابعة المفضل:
+                    </label>
+                    <input
+                      type="time"
+                      value={leadFollowUpTime}
+                      onChange={e => setLeadFollowUpTime(e.target.value)}
+                      className="w-full p-2 rounded-xl bg-white border border-purple-200 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Presets for Follow-up Date */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] text-slate-500 font-bold">تحديد سريع للموعد:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const today = new Date().toISOString().split('T')[0];
+                      setLeadFollowUpDate(today);
+                    }}
+                    className="text-[10px] px-2 py-0.5 rounded-lg bg-white border border-purple-200 text-purple-800 font-bold hover:bg-purple-100 cursor-pointer shadow-2xs"
+                  >
+                    اليوم ⚡
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+                      setLeadFollowUpDate(tomorrow);
+                    }}
+                    className="text-[10px] px-2 py-0.5 rounded-lg bg-white border border-purple-200 text-purple-800 font-bold hover:bg-purple-100 cursor-pointer shadow-2xs"
+                  >
+                    غداً
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const after2Days = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+                      setLeadFollowUpDate(after2Days);
+                    }}
+                    className="text-[10px] px-2 py-0.5 rounded-lg bg-white border border-purple-200 text-purple-800 font-bold hover:bg-purple-100 cursor-pointer shadow-2xs"
+                  >
+                    بعد يومين
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const afterWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+                      setLeadFollowUpDate(afterWeek);
+                    }}
+                    className="text-[10px] px-2 py-0.5 rounded-lg bg-white border border-purple-200 text-purple-800 font-bold hover:bg-purple-100 cursor-pointer shadow-2xs"
+                  >
+                    بعد أسبوع
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1 text-[11px]">
+                    ملاحظات وتوجيهات موضوع المتابعة:
                   </label>
                   <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    step="5"
-                    value={leadScore}
-                    onChange={e => setLeadScore(Number(e.target.value))}
-                    className="w-full accent-purple-600 cursor-pointer mt-2"
+                    type="text"
+                    value={leadFollowUpNotes}
+                    onChange={e => setLeadFollowUpNotes(e.target.value)}
+                    placeholder="مثال: الاتصال بالسيد لمناقشة تخفيض السعر النهائي أو اعتماد العقد..."
+                    className="w-full p-2 rounded-xl bg-white border border-purple-200 text-xs font-medium focus:outline-none focus:border-purple-600"
                   />
                 </div>
               </div>

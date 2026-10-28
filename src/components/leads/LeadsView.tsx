@@ -51,6 +51,7 @@ export const LeadsView: React.FC = () => {
     assignLeadTeamMembers,
     addLeadNegotiation,
     setOpenQuickModal,
+    leadsDueFollowUpTodayCount,
     currentUser,
     isManager,
     isSalesUser,
@@ -60,6 +61,7 @@ export const LeadsView: React.FC = () => {
   const [leadSearch, setLeadSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterSalesMember, setFilterSalesMember] = useState('all');
+  const [filterOnlyDueToday, setFilterOnlyDueToday] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   // Modal 1: Assign Sales Team Modal (تحديد مين من الموظفين يظهر عندهم العميل)
@@ -95,7 +97,10 @@ export const LeadsView: React.FC = () => {
     leadScore: 85,
     detailedDescription: '',
     negotiationsHistory: '',
-    assignedTeamMemberIds: [] as string[]
+    assignedTeamMemberIds: [] as string[],
+    followUpDate: '',
+    followUpTime: '11:00',
+    followUpNotes: ''
   });
 
   // Modal 4: Interaction Log Modal State (سجل التعاملات والمكالمات مع الأرقام)
@@ -119,6 +124,47 @@ export const LeadsView: React.FC = () => {
   });
   const [handoffSuccessNotice, setHandoffSuccessNotice] = useState<string | null>(null);
 
+  // Helper to check follow-up status for any lead
+  const getFollowUpStatus = (followUpDate?: string) => {
+    if (!followUpDate) return null;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const parts = followUpDate.split('-');
+    if (parts.length < 3) return null;
+    const target = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+    const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return {
+        type: 'overdue' as const,
+        diffDays,
+        text: `⚠️ متأخرة بـ ${Math.abs(diffDays)} يوم!`,
+        badgeClass: 'bg-rose-100 text-rose-800 border-rose-300 font-black animate-pulse'
+      };
+    } else if (diffDays === 0) {
+      return {
+        type: 'today' as const,
+        diffDays: 0,
+        text: '🔔 موعد المتابعة اليوم!',
+        badgeClass: 'bg-amber-100 text-amber-950 border-amber-300 font-black ring-2 ring-amber-400/50 shadow-xs'
+      };
+    } else if (diffDays === 1) {
+      return {
+        type: 'tomorrow' as const,
+        diffDays: 1,
+        text: '⏳ المتابعة غداً',
+        badgeClass: 'bg-blue-100 text-blue-900 border-blue-200 font-bold'
+      };
+    } else {
+      return {
+        type: 'upcoming' as const,
+        diffDays,
+        text: `📅 خلال ${diffDays} أيام (${followUpDate})`,
+        badgeClass: 'bg-slate-100 text-slate-700 border-slate-200 font-medium'
+      };
+    }
+  };
+
   // Active leads pool: Admins see all, sales reps see visibleLeads (only assigned ones)
   const activeLeadsList = isManager ? leads : visibleLeads;
 
@@ -128,6 +174,16 @@ export const LeadsView: React.FC = () => {
     if (filterSalesMember !== 'all') {
       const assigned = l.assignedTeamMemberIds || (l.assignedToId ? [l.assignedToId] : []);
       if (!assigned.includes(filterSalesMember)) return false;
+    }
+    if (filterOnlyDueToday) {
+      if (!l.followUpDate) return false;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const parts = l.followUpDate.split('-');
+      if (parts.length < 3) return false;
+      const target = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getTime();
+      const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) return false;
     }
     if (leadSearch.trim()) {
       const q = leadSearch.toLowerCase();
@@ -139,7 +195,8 @@ export const LeadsView: React.FC = () => {
         (l.source && l.source.toLowerCase().includes(q)) ||
         (l.customSource && l.customSource.toLowerCase().includes(q)) ||
         (l.detailedDescription && l.detailedDescription.toLowerCase().includes(q)) ||
-        (l.negotiationsHistory && l.negotiationsHistory.toLowerCase().includes(q))
+        (l.negotiationsHistory && l.negotiationsHistory.toLowerCase().includes(q)) ||
+        (l.followUpNotes && l.followUpNotes.toLowerCase().includes(q))
       );
     }
     return true;
@@ -232,10 +289,13 @@ export const LeadsView: React.FC = () => {
       finalPrice: lead.finalPrice || 0,
       currency: lead.currency || 'ج.م',
       status: lead.status,
-      leadScore: lead.leadScore || 80,
+      leadScore: lead.leadScore || 85,
       detailedDescription: lead.detailedDescription || '',
       negotiationsHistory: lead.negotiationsHistory || '',
-      assignedTeamMemberIds: lead.assignedTeamMemberIds || (lead.assignedToId ? [lead.assignedToId] : [])
+      assignedTeamMemberIds: lead.assignedTeamMemberIds || (lead.assignedToId ? [lead.assignedToId] : []),
+      followUpDate: lead.followUpDate || '',
+      followUpTime: lead.followUpTime || '11:00',
+      followUpNotes: lead.followUpNotes || ''
     });
   };
 
@@ -258,7 +318,10 @@ export const LeadsView: React.FC = () => {
       finalPrice: editForm.finalPrice ? Number(editForm.finalPrice) : undefined,
       currency: editForm.currency || 'ج.م',
       status: editForm.status as any,
-      leadScore: Number(editForm.leadScore) || 80,
+      leadScore: Number(editForm.leadScore) || 85,
+      followUpDate: editForm.followUpDate ? editForm.followUpDate : undefined,
+      followUpTime: editForm.followUpTime ? editForm.followUpTime : undefined,
+      followUpNotes: editForm.followUpNotes?.trim() || undefined,
       detailedDescription: editForm.detailedDescription.trim(),
       negotiationsHistory: editForm.negotiationsHistory.trim(),
       assignedTeamMemberIds: editForm.assignedTeamMemberIds,
@@ -285,6 +348,7 @@ export const LeadsView: React.FC = () => {
 
     updateLead(logInteractionLead.id, {
       status: newInteractionData.dealingsStatus as any,
+      followUpDate: newInteractionData.nextFollowUp || undefined,
       notes: `[${newEntry.date} - ${newEntry.type}]: ${newEntry.summary}`,
       ...({ dealingsHistory: [newEntry, ...currentNotes] } as any)
     });
@@ -376,6 +440,43 @@ export const LeadsView: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Follow-up Alerts & Notifications Banner (تنبيهات مواعيد متابعة العملاء المحتملين) */}
+      {leadsDueFollowUpTodayCount > 0 && (
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 text-white p-4 rounded-2xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0 border border-white/30">
+              <Calendar className="w-5 h-5 text-white animate-bounce" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-sm sm:text-base">
+                  🔔 تنبيه عاجل: مواعيد متابعة العملاء مستحقة اليوم ({leadsDueFollowUpTodayCount} عميل محتمل)
+                </span>
+                <span className="bg-white text-rose-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-2xs">
+                  تواصل فوري الآن
+                </span>
+              </div>
+              <p className="text-xs text-white/95 mt-0.5 font-medium">
+                حان الموعد المحدد للتواصل الهاتفي أو إرسال عروض الواتساب لهؤلاء العملاء لإتمام التعاقد.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+            <button
+              onClick={() => setFilterOnlyDueToday(!filterOnlyDueToday)}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer shadow-sm ${
+                filterOnlyDueToday
+                  ? 'bg-white text-orange-700 shadow-md ring-2 ring-white/60'
+                  : 'bg-white/20 hover:bg-white text-white hover:text-orange-700 border border-white/40'
+              }`}
+            >
+              {filterOnlyDueToday ? '✓ جاري عرض متابعات اليوم فقط' : 'عرض متابعات اليوم فقط 🎯'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Top Header */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -523,18 +624,21 @@ export const LeadsView: React.FC = () => {
                     </div>
 
                     <div className="flex flex-col items-end gap-1">
-                      <span
-                        className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(lead)}
+                        className={`text-[10px] font-black px-2 py-0.5 rounded-full cursor-pointer hover:opacity-85 transition-opacity flex items-center gap-1 ${
                           lead.leadScore >= 80
                             ? 'bg-emerald-100 text-emerald-800'
                             : lead.leadScore >= 60
                             ? 'bg-blue-100 text-blue-800'
                             : 'bg-amber-100 text-amber-800'
                         }`}
-                        title="تقييم احتمالية الإغلاق"
+                        title="انقر لتعديل نسبة الاهتمام يدوياً بنفسك"
                       >
-                        {lead.leadScore}% اهتمام
-                      </span>
+                        <span>{lead.leadScore}% اهتمام</span>
+                        <Edit3 className="w-2.5 h-2.5 opacity-60" />
+                      </button>
 
                       {/* Source Badge with support for other custom sources */}
                       <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md font-bold truncate max-w-[130px]" title={`مصدر العميل: ${lead.customSource || lead.source}`}>
@@ -598,6 +702,78 @@ export const LeadsView: React.FC = () => {
                     </a>
                   </div>
                 </div>
+
+                {/* 3.5 موعد متابعة العميل والتنبيه الفوري */}
+                {(() => {
+                  const followUp = getFollowUpStatus(lead.followUpDate);
+                  return (
+                    <div
+                      className={`p-2.5 rounded-xl border transition-all text-xs space-y-1.5 ${
+                        followUp?.type === 'today'
+                          ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300 shadow-xs ring-2 ring-amber-400/40'
+                          : followUp?.type === 'overdue'
+                          ? 'bg-rose-50/80 border-rose-300 shadow-xs ring-1 ring-rose-200'
+                          : 'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar
+                            className={`w-3.5 h-3.5 ${
+                              followUp?.type === 'today'
+                                ? 'text-amber-600 animate-bounce'
+                                : followUp?.type === 'overdue'
+                                ? 'text-rose-600'
+                                : 'text-purple-600'
+                            }`}
+                          />
+                          <span className="font-black text-slate-900 text-[11px]">موعد متابعة العميل:</span>
+                        </div>
+                        {followUp ? (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${followUp.badgeClass}`}>
+                            {followUp.text}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-medium">غير محدد</span>
+                        )}
+                      </div>
+
+                      {lead.followUpDate ? (
+                        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/60">
+                          <div className="flex items-center gap-1.5 font-mono font-bold text-slate-900">
+                            <span>{lead.followUpDate}</span>
+                            {lead.followUpTime && (
+                              <span className="text-slate-500 font-normal">({lead.followUpTime})</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(lead)}
+                            className="text-[10px] font-bold text-purple-700 hover:text-purple-900 underline cursor-pointer"
+                          >
+                            تعديل الموعد ✏️
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="pt-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(lead)}
+                            className="w-full py-1 text-center text-[10px] font-bold text-purple-700 bg-purple-50/70 hover:bg-purple-100 rounded-lg border border-dashed border-purple-300 transition-colors cursor-pointer"
+                          >
+                            + تحديد موعد متابعة وتنبيه لهذا العميل
+                          </button>
+                        </div>
+                      )}
+
+                      {lead.followUpNotes && (
+                        <p className="text-[10px] text-slate-600 bg-white/80 p-1.5 rounded-lg border border-slate-200/50 leading-relaxed font-medium">
+                          📌 {lead.followUpNotes}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* 4. الوصف التفصيلي للعميل المحتمل (Detailed Description) */}
                 {lead.detailedDescription && (
@@ -776,6 +952,7 @@ export const LeadsView: React.FC = () => {
                   <th className="py-3.5 px-4">القيمة التقديرية</th>
                   <th className="py-3.5 px-4">السعر النهائي المتفق عليه</th>
                   <th className="py-3.5 px-4">الموظف المصرح له (مين من الموظفين)</th>
+                  <th className="py-3.5 px-4">الاهتمام وموعد المتابعة 🔔</th>
                   <th className="py-3.5 px-4">سجل التفاوض والوصف</th>
                   <th className="py-3.5 px-4">الحالة</th>
                   <th className="py-3.5 px-4 text-center">إجراءات</th>
@@ -870,6 +1047,43 @@ export const LeadsView: React.FC = () => {
                           >
                             <UserCheck className="w-3 h-3" />
                           </button>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="space-y-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(lead)}
+                            className="inline-flex items-center gap-1 text-[10px] font-black bg-purple-100 text-purple-900 px-2 py-0.5 rounded cursor-pointer hover:bg-purple-200"
+                            title="انقر لتعديل نسبة الاهتمام يدوياً بنفسك"
+                          >
+                            <span>{lead.leadScore}% اهتمام</span>
+                            <Edit3 className="w-2.5 h-2.5 opacity-60" />
+                          </button>
+                          {(() => {
+                            const followUp = getFollowUpStatus(lead.followUpDate);
+                            return followUp ? (
+                              <div>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full border block w-fit ${followUp.badgeClass}`}>
+                                  {followUp.text}
+                                </span>
+                                {lead.followUpTime && (
+                                  <span className="text-[9px] text-slate-400 block mt-0.5 font-mono">
+                                    الساعة {lead.followUpTime}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(lead)}
+                                className="text-[10px] text-purple-600 hover:text-purple-800 underline block cursor-pointer"
+                              >
+                                + تحديد موعد متابعة
+                              </button>
+                            );
+                          })()}
                         </div>
                       </td>
 
@@ -1358,6 +1572,164 @@ export const LeadsView: React.FC = () => {
                     onChange={e => setEditForm({ ...editForm, finalPrice: Number(e.target.value) })}
                     placeholder="0"
                     className="w-full bg-emerald-50/50 border border-emerald-300 rounded-xl px-2.5 py-1.5 font-mono font-black text-emerald-900"
+                  />
+                </div>
+              </div>
+
+              {/* نسبة الاهتمام بالصفقة (إدخال يدوي يحدده المستخدم بنفسه) */}
+              <div className="bg-purple-50/70 p-3 rounded-2xl border border-purple-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block font-black text-purple-950 text-xs flex items-center gap-1.5">
+                    <BadgePercent className="w-4 h-4 text-purple-600" />
+                    <span>نسبة الاهتمام بالصفقة (حددها واكتبها بنفسك): *</span>
+                  </label>
+                  <span className="text-[11px] font-black text-purple-800 bg-white border border-purple-200 px-2.5 py-0.5 rounded-full shadow-2xs">
+                    {editForm.leadScore}% اهتمام
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editForm.leadScore}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      setEditForm(prev => ({
+                        ...prev,
+                        leadScore: isNaN(val) ? 0 : Math.min(100, Math.max(0, val))
+                      }));
+                    }}
+                    placeholder="85"
+                    className="w-full bg-white border border-purple-300 rounded-xl px-3 py-2 text-xs font-mono font-black text-slate-900 focus:outline-none focus:border-purple-600 pl-10"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-purple-600">
+                    %
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-500 font-bold">خيارات سريعة للاهتمام:</span>
+                  {[50, 70, 85, 95, 100].map(pct => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setEditForm(prev => ({ ...prev, leadScore: pct }))}
+                      className={`text-[10px] px-2 py-0.5 rounded-md font-bold cursor-pointer transition-all ${
+                        editForm.leadScore === pct
+                          ? 'bg-purple-600 text-white shadow-2xs'
+                          : 'bg-white text-purple-800 border border-purple-200 hover:bg-purple-100'
+                      }`}
+                    >
+                      {pct}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* قسم تاريخ متابعة العميل القادمة والتنبيهات 🔔 */}
+              <div className="bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-purple-50/90 p-3.5 rounded-2xl border border-purple-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-black text-purple-900 text-xs">
+                    <Calendar className="w-4 h-4 text-purple-600" />
+                    <span>تاريخ متابعة العميل القادمة والتنبيه 🔔</span>
+                  </div>
+                  {editForm.followUpDate ? (
+                    (() => {
+                      const followStatus = getFollowUpStatus(editForm.followUpDate);
+                      return followStatus ? (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border ${followStatus.badgeClass}`}>
+                          {followStatus.text}
+                        </span>
+                      ) : null;
+                    })()
+                  ) : (
+                    <span className="text-[10px] bg-white text-purple-800 font-bold px-2 py-0.5 rounded-full border border-purple-200">
+                      إشعار وتنبيه يوم الموعد
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 text-[11px]">
+                      تاريخ يوم المتابعة: *
+                    </label>
+                    <input
+                      type="date"
+                      value={editForm.followUpDate}
+                      onChange={e => setEditForm({ ...editForm, followUpDate: e.target.value })}
+                      className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1 text-[11px]">
+                      وقت المتابعة المفضل:
+                    </label>
+                    <input
+                      type="time"
+                      value={editForm.followUpTime}
+                      onChange={e => setEditForm({ ...editForm, followUpTime: e.target.value })}
+                      className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-purple-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Presets for Follow-up Date */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] text-slate-500 font-bold">تحديد سريع:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const today = new Date().toISOString().split('T')[0];
+                      setEditForm(prev => ({ ...prev, followUpDate: today }));
+                    }}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-purple-200 text-purple-800 font-bold hover:bg-purple-100 cursor-pointer shadow-2xs"
+                  >
+                    اليوم ⚡
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+                      setEditForm(prev => ({ ...prev, followUpDate: tomorrow }));
+                    }}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-purple-200 text-purple-800 font-bold hover:bg-purple-100 cursor-pointer shadow-2xs"
+                  >
+                    غداً
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const after2Days = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+                      setEditForm(prev => ({ ...prev, followUpDate: after2Days }));
+                    }}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-purple-200 text-purple-800 font-bold hover:bg-purple-100 cursor-pointer shadow-2xs"
+                  >
+                    بعد يومين
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const afterWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+                      setEditForm(prev => ({ ...prev, followUpDate: afterWeek }));
+                    }}
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-white border border-purple-200 text-purple-800 font-bold hover:bg-purple-100 cursor-pointer shadow-2xs"
+                  >
+                    بعد أسبوع
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1 text-[11px]">
+                    ملاحظات وتوجيهات موضوع المتابعة:
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.followUpNotes}
+                    onChange={e => setEditForm({ ...editForm, followUpNotes: e.target.value })}
+                    placeholder="مثال: الاتصال بالسيد لمناقشة تخفيض السعر النهائي أو اعتماد العقد..."
+                    className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-purple-600"
                   />
                 </div>
               </div>
