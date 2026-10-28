@@ -552,3 +552,107 @@ export interface ChatChannel {
   createdAt: string;
   createdById?: string;
 }
+
+// ==================== عمولات فريق المبيعات لكل شهر منفصل ====================
+export interface SalesCommissionDeal {
+  id: string;
+  dealId?: string;
+  clientName: string;
+  dealValue: number;
+  currency: string;
+  closedDate: string; // YYYY-MM-DD
+  commissionRate: number; // e.g. 5 (%)
+  commissionAmount: number; // e.g. 1500
+  notes?: string;
+}
+
+export interface MonthlySalesCommissionRecord {
+  id: string;
+  month: string; // YYYY-MM e.g. "2026-10"
+  memberId: string;
+  memberName: string;
+  memberAvatar?: string;
+  monthlyTarget: number; // التارجت الشهري
+  achievedSales: number; // المبيعات المحققة الفعلية
+  achievementRate: number; // نسبة التحقيق %
+  dealsCount: number; // عدد الصفقات المغلقة
+  baseCommissionRate: number; // نسبة العمولة الأساسية %
+  baseCommissionAmount: number; // قيمة العمولة الأساسية
+  targetBonusAmount: number; // بونص تحقيق أو تخطي التارجت
+  customAdjustmentAmount: number; // مكافآت أو تسويات إضافية (+/-)
+  totalCommission: number; // إجمالي العمولة المستحقة
+  currency: string;
+  payoutStatus: 'draft' | 'approved' | 'paid'; // مسودة / معتمد / تم الصرف
+  payoutDate?: string;
+  paymentMethod?: string;
+  notes?: string;
+  deals: SalesCommissionDeal[];
+  updatedAt: string;
+}
+
+// ==================== سيستم العقود والمدفوعات وباقي دفع العملاء ====================
+export interface ClientPaymentEntry {
+  id: string;
+  clientContractId: string;
+  clientName: string;
+  amount: number;
+  currency: string;
+  paymentDate: string; // YYYY-MM-DD
+  paymentMethod: 'تحويل بنكي' | 'فودافون كاش' | 'كاش نقدياً' | 'فيزا / بطاقة' | 'شيك بنكي' | 'أخرى';
+  referenceNumber?: string; // رقم الحوالة / الإيصال
+  receiptUrl?: string;
+  note?: string;
+  receivedBy?: string;
+  createdAt: string;
+}
+
+export interface ClientFinancialContract {
+  id: string;
+  clientId: string;
+  clientName: string;
+  companyName: string;
+  serviceTitle: string; // اسم الخدمة أو الباقة
+  contractTotalValue: number; // إجمالي قيمة التعاقد
+  currency: string;
+  totalPaidAmount: number; // إجمالي المبالغ المدفوعة حتى الآن
+  remainingBalance: number; // المتبقي على العميل (contractTotalValue - totalPaidAmount)
+  contractStartDate: string; // تاريخ بدء العقد
+  contractEndDate?: string; // تاريخ نهاية العقد
+  nextPaymentDueDate?: string; // موعد استحقاق الدفعة القادمة
+  paymentPlan: 'دفعة واحدة' | 'دفعتين' | 'أقساط شهرية' | 'اشتراك ربع سنوي' | 'أخرى';
+  paymentStatus: 'خالص بالكامل' | 'متبقي مبالغ' | 'متأخر في السداد';
+  phone?: string;
+  whatsappNumber?: string;
+  notes?: string;
+  payments: ClientPaymentEntry[];
+  createdAt: string;
+}
+
+// ==================== أفكار الماركيتنج وأفكاري المكتوبة ====================
+export interface MarketingIdea {
+  id: string;
+  title: string;
+  channel: 'فيسبوك وإعلانات' | 'تيك توك وريلز' | 'إنستجرام' | 'جوجل وسيو GEO' | 'إيميل ماركتنج' | 'لينكد إن' | 'مؤتمرات وفعاليات' | 'أخرى';
+  targetAudience: string; // الجمهور المستهدف
+  concept: string; // فكرة المحتوى أو الحملة
+  goal: 'جذب ليدز ومبيعات' | 'وعي بالعلامة التجارية' | 'إطلاق ميزة جديدة' | 'إعادة استهداف العملاء' | 'بناء ثقة';
+  estimatedBudget?: number;
+  currency?: string;
+  status: 'فكرة جديدة' | 'قيد التجهيز والتخطيط' | 'قيد الاختبار' | 'مطبقة وناجحة' | 'مؤجلة';
+  priority: 'urgent' | 'high' | 'medium' | 'low';
+  tags: string[];
+  notes?: string;
+  createdAt: string;
+}
+
+export interface WrittenThoughtNote {
+  id: string;
+  title: string;
+  content: string;
+  category: 'تطوير الشركة' | 'استراتيجية المبيعات' | 'أفكار منتجات وتطوير' | 'كفاءة الفريق والعمل' | 'توسعات وشراكات' | 'ملاحظات سرية';
+  isPinned: boolean;
+  color?: string; // اللون المميز للملاحظة
+  tags: string[];
+  updatedAt: string;
+  createdAt: string;
+}

@@ -27,7 +27,13 @@ import {
   CoachingAlertOffer,
   AttendanceRecord,
   CompanyExpense,
-  MonthlyPayrollRecord
+  MonthlyPayrollRecord,
+  SalesCommissionDeal,
+  MonthlySalesCommissionRecord,
+  ClientPaymentEntry,
+  ClientFinancialContract,
+  MarketingIdea,
+  WrittenThoughtNote
 } from '../types/crm';
 import {
   CURRENT_USER,
@@ -46,7 +52,11 @@ import {
   INITIAL_MARKETING_SCRIPTS,
   INITIAL_COACHING_OFFERS,
   INITIAL_ATTENDANCE,
-  INITIAL_EXPENSES
+  INITIAL_EXPENSES,
+  INITIAL_SALES_COMMISSIONS,
+  INITIAL_FINANCIAL_CONTRACTS,
+  INITIAL_MARKETING_IDEAS,
+  INITIAL_WRITTEN_THOUGHTS
 } from '../data/initialData';
 import {
   saveTaskToFirestore,
@@ -267,6 +277,30 @@ interface CRMContextType {
   updateCompanyExpense: (id: string, updates: Partial<CompanyExpense>) => void;
   deleteCompanyExpense: (id: string) => void;
   setGlobalCurrency: (newCurrency: string, updateExistingTeam?: boolean) => void;
+
+  // عمولات فريق المبيعات لكل شهر منفصل
+  monthlySalesCommissions: MonthlySalesCommissionRecord[];
+  addOrUpdateSalesCommission: (record: MonthlySalesCommissionRecord) => void;
+  markSalesCommissionPayout: (id: string, status: 'draft' | 'approved' | 'paid', payoutDate?: string, paymentMethod?: string) => void;
+  addDealToSalesCommission: (commissionId: string, deal: Omit<SalesCommissionDeal, 'id'>) => void;
+
+  // سيستم العقود والمدفوعات وباقي دفع العملاء
+  clientFinancialContracts: ClientFinancialContract[];
+  recordClientPayment: (contractId: string, payment: Omit<ClientPaymentEntry, 'id' | 'createdAt'>) => void;
+  addClientFinancialContract: (contract: Omit<ClientFinancialContract, 'id' | 'createdAt' | 'payments' | 'remainingBalance'>) => void;
+  updateClientFinancialContract: (id: string, updates: Partial<ClientFinancialContract>) => void;
+  deleteClientFinancialContract: (id: string) => void;
+
+  // أفكار الماركيتنج وأفكاري المكتوبة
+  marketingIdeas: MarketingIdea[];
+  addMarketingIdea: (idea: Omit<MarketingIdea, 'id' | 'createdAt'>) => void;
+  updateMarketingIdea: (id: string, updates: Partial<MarketingIdea>) => void;
+  deleteMarketingIdea: (id: string) => void;
+  writtenThoughts: WrittenThoughtNote[];
+  addWrittenThought: (thought: Omit<WrittenThoughtNote, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateWrittenThought: (id: string, updates: Partial<WrittenThoughtNote>) => void;
+  deleteWrittenThought: (id: string) => void;
+  togglePinThought: (id: string) => void;
 
   // Data Actions & Reset
   resetToDemoData: () => void;
@@ -1641,6 +1675,265 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
     logActivity('team', 'صرف راتب موظف بنجاح 💸', `تم اعتماد وصرف الراتب بطريقة (${paymentMethod})`);
+  };
+
+  // ==================== عمولات فريق المبيعات لكل شهر منفصل ====================
+  const [monthlySalesCommissions, setMonthlySalesCommissions] = useState<MonthlySalesCommissionRecord[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}sales_commissions`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_SALES_COMMISSIONS;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}sales_commissions`, JSON.stringify(monthlySalesCommissions));
+  }, [monthlySalesCommissions]);
+
+  const addOrUpdateSalesCommission = (record: MonthlySalesCommissionRecord) => {
+    setMonthlySalesCommissions(prev => {
+      const idx = prev.findIndex(r => r.id === record.id || (r.memberId === record.memberId && r.month === record.month));
+      if (idx !== -1) {
+        const updated = [...prev];
+        updated[idx] = { ...record, updatedAt: new Date().toISOString() };
+        return updated;
+      }
+      return [{ ...record, updatedAt: new Date().toISOString() }, ...prev];
+    });
+    logActivity('deal', 'تحديث عمولة المبيعات الشهرية', `تم تحديث عمولة ${record.memberName} لشهر ${record.month}`);
+  };
+
+  const markSalesCommissionPayout = (
+    id: string,
+    status: 'draft' | 'approved' | 'paid',
+    payoutDate = new Date().toISOString().split('T')[0],
+    paymentMethod = 'تحويل بنكي'
+  ) => {
+    setMonthlySalesCommissions(prev =>
+      prev.map(c => {
+        if (c.id === id) {
+          return {
+            ...c,
+            payoutStatus: status,
+            payoutDate: status === 'paid' ? payoutDate : c.payoutDate,
+            paymentMethod: status === 'paid' ? paymentMethod : c.paymentMethod,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return c;
+      })
+    );
+    if (status === 'paid') {
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+      logActivity('deal', 'صرف عمولة مبيعات بنجاح 💰', `تم تحويل عمولة مبيعات بطريقة (${paymentMethod})`);
+    } else if (status === 'approved') {
+      logActivity('deal', 'اعتماد عمولة مبيعات', `تم اعتماد كشف عمولة المبيعات رسمياً`);
+    }
+  };
+
+  const addDealToSalesCommission = (commissionId: string, dealData: Omit<SalesCommissionDeal, 'id'>) => {
+    const newDeal: SalesCommissionDeal = {
+      ...dealData,
+      id: 'cd-' + Date.now()
+    };
+    setMonthlySalesCommissions(prev =>
+      prev.map(c => {
+        if (c.id === commissionId) {
+          const updatedDeals = [newDeal, ...(c.deals || [])];
+          const newAchieved = updatedDeals.reduce((sum, d) => sum + (d.dealValue || 0), 0);
+          const newBaseAmount = updatedDeals.reduce((sum, d) => sum + (d.commissionAmount || 0), 0);
+          const newAchRate = c.monthlyTarget > 0 ? (newAchieved / c.monthlyTarget) * 100 : 100;
+          const newTargetBonus = newAchRate >= 100 ? (c.targetBonusAmount || 2000) : 0;
+          const newTotal = newBaseAmount + newTargetBonus + (c.customAdjustmentAmount || 0);
+          return {
+            ...c,
+            deals: updatedDeals,
+            dealsCount: updatedDeals.length,
+            achievedSales: newAchieved,
+            achievementRate: Math.round(newAchRate * 10) / 10,
+            baseCommissionAmount: newBaseAmount,
+            targetBonusAmount: newTargetBonus,
+            totalCommission: newTotal,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return c;
+      })
+    );
+    logActivity('deal', 'إضافة صفقة إلى كشف العمولة', `تمت إضافة صفقة (${dealData.clientName}) بقيمة ${dealData.dealValue.toLocaleString()} ${dealData.currency}`);
+  };
+
+  // ==================== سيستم العقود والمدفوعات وباقي دفع العملاء ====================
+  const [clientFinancialContracts, setClientFinancialContracts] = useState<ClientFinancialContract[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}client_contracts`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_FINANCIAL_CONTRACTS;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_contracts`, JSON.stringify(clientFinancialContracts));
+  }, [clientFinancialContracts]);
+
+  const recordClientPayment = (contractId: string, paymentData: Omit<ClientPaymentEntry, 'id' | 'createdAt'>) => {
+    const newPayment: ClientPaymentEntry = {
+      ...paymentData,
+      id: 'pay-' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+
+    setClientFinancialContracts(prev =>
+      prev.map(contract => {
+        if (contract.id === contractId) {
+          const payments = [...(contract.payments || []), newPayment];
+          const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+          const remaining = Math.max(0, contract.contractTotalValue - totalPaid);
+          const status = remaining <= 0 ? 'خالص بالكامل' : contract.paymentStatus === 'متأخر في السداد' ? 'متأخر في السداد' : 'متبقي مبالغ';
+          return {
+            ...contract,
+            payments,
+            totalPaidAmount: totalPaid,
+            remainingBalance: remaining,
+            paymentStatus: status
+          };
+        }
+        return contract;
+      })
+    );
+    confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
+    logActivity('deal', 'تحصيل دفعة مالية من عميل 💵', `تم استلام ${paymentData.amount.toLocaleString()} ${paymentData.currency} من (${paymentData.clientName})`);
+  };
+
+  const addClientFinancialContract = (contractData: Omit<ClientFinancialContract, 'id' | 'createdAt' | 'payments' | 'remainingBalance'>) => {
+    const newContract: ClientFinancialContract = {
+      ...contractData,
+      id: 'fc-' + Date.now(),
+      remainingBalance: Math.max(0, contractData.contractTotalValue - (contractData.totalPaidAmount || 0)),
+      payments: contractData.totalPaidAmount > 0 ? [
+        {
+          id: 'pay-' + Date.now(),
+          clientContractId: 'fc-' + Date.now(),
+          clientName: contractData.clientName,
+          amount: contractData.totalPaidAmount,
+          currency: contractData.currency,
+          paymentDate: contractData.contractStartDate || new Date().toISOString().split('T')[0],
+          paymentMethod: 'تحويل بنكي',
+          note: 'دفعة مقدمة مسجلة مع إنشاء العقد',
+          receivedBy: currentUser?.name || 'المدير',
+          createdAt: new Date().toISOString()
+        }
+      ] : [],
+      createdAt: new Date().toISOString()
+    };
+    setClientFinancialContracts(prev => [newContract, ...prev]);
+    logActivity('deal', 'إنشاء عقد مالي جديد لعميل', `تم تسجيل عقد ${newContract.clientName} بقيمة ${newContract.contractTotalValue.toLocaleString()} ${newContract.currency}`);
+  };
+
+  const updateClientFinancialContract = (id: string, updates: Partial<ClientFinancialContract>) => {
+    setClientFinancialContracts(prev =>
+      prev.map(c => {
+        if (c.id === id) {
+          const updated = { ...c, ...updates };
+          if (updates.contractTotalValue !== undefined || updates.totalPaidAmount !== undefined) {
+            const totVal = updates.contractTotalValue !== undefined ? updates.contractTotalValue : c.contractTotalValue;
+            const totPaid = updates.totalPaidAmount !== undefined ? updates.totalPaidAmount : c.totalPaidAmount;
+            updated.remainingBalance = Math.max(0, totVal - totPaid);
+            if (updated.remainingBalance <= 0) {
+              updated.paymentStatus = 'خالص بالكامل';
+            }
+          }
+          return updated;
+        }
+        return c;
+      })
+    );
+  };
+
+  const deleteClientFinancialContract = (id: string) => {
+    setClientFinancialContracts(prev => prev.filter(c => c.id !== id));
+  };
+
+  // ==================== أفكار الماركيتنج وأفكاري المكتوبة ====================
+  const [marketingIdeas, setMarketingIdeas] = useState<MarketingIdea[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}marketing_ideas`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_MARKETING_IDEAS;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_ideas`, JSON.stringify(marketingIdeas));
+  }, [marketingIdeas]);
+
+  const addMarketingIdea = (ideaData: Omit<MarketingIdea, 'id' | 'createdAt'>) => {
+    const newIdea: MarketingIdea = {
+      ...ideaData,
+      id: 'midea-' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    setMarketingIdeas(prev => [newIdea, ...prev]);
+    logActivity('deal', 'إضافة فكرة ماركيتنج جديدة 💡', newIdea.title);
+  };
+
+  const updateMarketingIdea = (id: string, updates: Partial<MarketingIdea>) => {
+    setMarketingIdeas(prev => prev.map(i => (i.id === id ? { ...i, ...updates } : i)));
+  };
+
+  const deleteMarketingIdea = (id: string) => {
+    setMarketingIdeas(prev => prev.filter(i => i.id !== id));
+  };
+
+  const [writtenThoughts, setWrittenThoughts] = useState<WrittenThoughtNote[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}written_thoughts`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_WRITTEN_THOUGHTS;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}written_thoughts`, JSON.stringify(writtenThoughts));
+  }, [writtenThoughts]);
+
+  const addWrittenThought = (thoughtData: Omit<WrittenThoughtNote, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newThought: WrittenThoughtNote = {
+      ...thoughtData,
+      id: 'thought-' + Date.now(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setWrittenThoughts(prev => [newThought, ...prev]);
+    logActivity('task', 'تدوين فكرة استراتيجية جديدة 📝', newThought.title);
+  };
+
+  const updateWrittenThought = (id: string, updates: Partial<WrittenThoughtNote>) => {
+    setWrittenThoughts(prev =>
+      prev.map(t => (t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t))
+    );
+  };
+
+  const deleteWrittenThought = (id: string) => {
+    setWrittenThoughts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const togglePinThought = (id: string) => {
+    setWrittenThoughts(prev =>
+      prev.map(t => (t.id === id ? { ...t, isPinned: !t.isPinned, updatedAt: new Date().toISOString() } : t))
+    );
   };
 
   // Check client renewals due within 4 days and notify the admin
@@ -4464,7 +4757,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notifications,
       attendanceRecords,
       companyExpenses,
-      monthlyPayrolls
+      monthlyPayrolls,
+      monthlySalesCommissions,
+      clientFinancialContracts,
+      marketingIdeas,
+      writtenThoughts
     };
     return JSON.stringify(backupData, null, 2);
   };
@@ -4557,6 +4854,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (Array.isArray(data.monthlyPayrolls)) {
         setMonthlyPayrolls(data.monthlyPayrolls);
         safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}monthly_payrolls`, JSON.stringify(data.monthlyPayrolls));
+      }
+      if (Array.isArray(data.monthlySalesCommissions)) {
+        setMonthlySalesCommissions(data.monthlySalesCommissions);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}sales_commissions`, JSON.stringify(data.monthlySalesCommissions));
+      }
+      if (Array.isArray(data.clientFinancialContracts)) {
+        setClientFinancialContracts(data.clientFinancialContracts);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_contracts`, JSON.stringify(data.clientFinancialContracts));
+      }
+      if (Array.isArray(data.marketingIdeas)) {
+        setMarketingIdeas(data.marketingIdeas);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}marketing_ideas`, JSON.stringify(data.marketingIdeas));
+      }
+      if (Array.isArray(data.writtenThoughts)) {
+        setWrittenThoughts(data.writtenThoughts);
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}written_thoughts`, JSON.stringify(data.writtenThoughts));
       }
       if (data.brandConfig && typeof data.brandConfig === 'object') {
         const validBrand = ensureValidBrandConfig(data.brandConfig);
@@ -4726,6 +5039,24 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateCompanyExpense,
         deleteCompanyExpense,
         setGlobalCurrency,
+        monthlySalesCommissions,
+        addOrUpdateSalesCommission,
+        markSalesCommissionPayout,
+        addDealToSalesCommission,
+        clientFinancialContracts,
+        recordClientPayment,
+        addClientFinancialContract,
+        updateClientFinancialContract,
+        deleteClientFinancialContract,
+        marketingIdeas,
+        addMarketingIdea,
+        updateMarketingIdea,
+        deleteMarketingIdea,
+        writtenThoughts,
+        addWrittenThought,
+        updateWrittenThought,
+        deleteWrittenThought,
+        togglePinThought,
         activities,
         notifications,
         markAllNotificationsAsRead,

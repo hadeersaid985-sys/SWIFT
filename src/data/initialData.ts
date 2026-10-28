@@ -14,7 +14,11 @@ import {
   MarketingVideoScript,
   CoachingAlertOffer,
   AttendanceRecord,
-  CompanyExpense
+  CompanyExpense,
+  MonthlySalesCommissionRecord,
+  ClientFinancialContract,
+  MarketingIdea,
+  WrittenThoughtNote
 } from '../types/crm';
 
 // Current logged in user is usually the primary operator
@@ -2147,6 +2151,449 @@ export const INITIAL_EXPENSES: CompanyExpense[] = [
     category: 'سيرفرات وأدوات تقنية',
     date: '2026-10-15',
     notes: 'تراخيص إيميلات الفريق'
+  }
+];
+
+// ==================== بيانات عمولات المبيعات الشهرية المنفصلة ====================
+export const INITIAL_SALES_COMMISSIONS: MonthlySalesCommissionRecord[] = [
+  {
+    id: 'comm-2026-10-maibel',
+    month: '2026-10',
+    memberId: 'user-maibel',
+    memberName: 'Maibel Emad',
+    memberAvatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150&auto=format&fit=crop&q=80',
+    monthlyTarget: 100000,
+    achievedSales: 115000,
+    achievementRate: 115,
+    dealsCount: 4,
+    baseCommissionRate: 5,
+    baseCommissionAmount: 5750,
+    targetBonusAmount: 2000,
+    customAdjustmentAmount: 500,
+    totalCommission: 8250,
+    currency: 'ج.م',
+    payoutStatus: 'approved',
+    payoutDate: '2026-10-30',
+    paymentMethod: 'تحويل بنكي',
+    notes: 'أداء استثنائي وتجاوز التارجت بنسبة 115% - تم اعتماد الصرف',
+    deals: [
+      {
+        id: 'cd-1',
+        dealId: 'deal-101',
+        clientName: 'شركة النخبة للمقاولات والاستثمار',
+        dealValue: 45000,
+        currency: 'ج.م',
+        closedDate: '2026-10-08',
+        commissionRate: 5,
+        commissionAmount: 2250,
+        notes: 'باقة نظام CRM سنوي كامل مع تدريب'
+      },
+      {
+        id: 'cd-2',
+        dealId: 'deal-102',
+        clientName: 'مجموعة المدى الطبية المتخصصة',
+        dealValue: 35000,
+        currency: 'ج.م',
+        closedDate: '2026-10-14',
+        commissionRate: 5,
+        commissionAmount: 1750,
+        notes: 'باقة تسويق وظهور جيو GEO 6 أشهر'
+      },
+      {
+        id: 'cd-3',
+        dealId: 'deal-103',
+        clientName: 'أكاديمية المستقبل للغات',
+        dealValue: 20000,
+        currency: 'ج.م',
+        closedDate: '2026-10-21',
+        commissionRate: 5,
+        commissionAmount: 1000,
+        notes: 'تطوير موقع وتكامل إداري'
+      },
+      {
+        id: 'cd-4',
+        dealId: 'deal-104',
+        clientName: 'مؤسسة الأفق للحلول الرقمية',
+        dealValue: 15000,
+        currency: 'ج.م',
+        closedDate: '2026-10-25',
+        commissionRate: 5,
+        commissionAmount: 750,
+        notes: 'عقد استضافة وسيرفرات وحماية'
+      }
+    ],
+    updatedAt: '2026-10-26T14:30:00Z'
+  },
+  {
+    id: 'comm-2026-09-maibel',
+    month: '2026-09',
+    memberId: 'user-maibel',
+    memberName: 'Maibel Emad',
+    memberAvatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150&auto=format&fit=crop&q=80',
+    monthlyTarget: 90000,
+    achievedSales: 94000,
+    achievementRate: 104.4,
+    dealsCount: 3,
+    baseCommissionRate: 5,
+    baseCommissionAmount: 4700,
+    targetBonusAmount: 1500,
+    customAdjustmentAmount: 0,
+    totalCommission: 6200,
+    currency: 'ج.م',
+    payoutStatus: 'paid',
+    payoutDate: '2026-09-30',
+    paymentMethod: 'تحويل بنكي',
+    notes: 'تم صرف العمولة بالكامل مع راتب شهر سبتمبر',
+    deals: [
+      {
+        id: 'cd-09-1',
+        clientName: 'سلسلة مطاعم الذواقة',
+        dealValue: 40000,
+        currency: 'ج.م',
+        closedDate: '2026-09-12',
+        commissionRate: 5,
+        commissionAmount: 2000,
+        notes: 'نظام إدارة ومتابعة ليدز'
+      },
+      {
+        id: 'cd-09-2',
+        clientName: 'مكتب الرواد للاستشارات القانونية',
+        dealValue: 30000,
+        currency: 'ج.م',
+        closedDate: '2026-09-19',
+        commissionRate: 5,
+        commissionAmount: 1500,
+        notes: 'باقة تسويق سنوية'
+      },
+      {
+        id: 'cd-09-3',
+        clientName: 'تطبيق فاست إكسبريس للشحن',
+        dealValue: 24000,
+        currency: 'ج.م',
+        closedDate: '2026-09-27',
+        commissionRate: 5,
+        commissionAmount: 1200,
+        notes: 'عقد استضافة وحماية دومينات'
+      }
+    ],
+    updatedAt: '2026-09-30T10:00:00Z'
+  },
+  {
+    id: 'comm-2026-11-maibel',
+    month: '2026-11',
+    memberId: 'user-maibel',
+    memberName: 'Maibel Emad',
+    memberAvatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150&auto=format&fit=crop&q=80',
+    monthlyTarget: 120000,
+    achievedSales: 28000,
+    achievementRate: 23.3,
+    dealsCount: 1,
+    baseCommissionRate: 5,
+    baseCommissionAmount: 1400,
+    targetBonusAmount: 0,
+    customAdjustmentAmount: 0,
+    totalCommission: 1400,
+    currency: 'ج.م',
+    payoutStatus: 'draft',
+    notes: 'شهر قادم قيد التنفيذ والمتابعة لصفقات منتصف الشهر',
+    deals: [
+      {
+        id: 'cd-11-1',
+        clientName: 'مجموعة الأندلس التجارية',
+        dealValue: 28000,
+        currency: 'ج.م',
+        closedDate: '2026-11-03',
+        commissionRate: 5,
+        commissionAmount: 1400,
+        notes: 'دفعة مقدمة لعقد سنوي'
+      }
+    ],
+    updatedAt: '2026-11-04T09:00:00Z'
+  }
+];
+
+// ==================== سيستم العقود والمدفوعات وباقي دفع العملاء ====================
+export const INITIAL_FINANCIAL_CONTRACTS: ClientFinancialContract[] = [
+  {
+    id: 'fc-1',
+    clientId: 'client-101',
+    clientName: 'د. يوسف التميمي',
+    companyName: 'مجمع التميمي لطب الأسنان الحديث',
+    serviceTitle: 'باقة سيو جيو الذكية وحملات التواصل المتكاملة',
+    contractTotalValue: 36000,
+    currency: 'ج.م',
+    totalPaidAmount: 24000,
+    remainingBalance: 12000,
+    contractStartDate: '2026-08-01',
+    contractEndDate: '2027-02-01',
+    nextPaymentDueDate: '2026-11-01',
+    paymentPlan: 'أقساط شهرية',
+    paymentStatus: 'متبقي مبالغ',
+    phone: '+201023456789',
+    whatsappNumber: '+201023456789',
+    notes: 'العميل ملتزم جداً، القسط الأخير مستحق أول نوفمبر',
+    payments: [
+      {
+        id: 'pay-1',
+        clientContractId: 'fc-1',
+        clientName: 'د. يوسف التميمي',
+        amount: 12000,
+        currency: 'ج.م',
+        paymentDate: '2026-08-01',
+        paymentMethod: 'تحويل بنكي',
+        referenceNumber: 'TRX-88210',
+        note: 'الدفعة الأولى عند توقيع العقد',
+        receivedBy: 'هدير سعيد',
+        createdAt: '2026-08-01T12:00:00Z'
+      },
+      {
+        id: 'pay-2',
+        clientContractId: 'fc-1',
+        clientName: 'د. يوسف التميمي',
+        amount: 12000,
+        currency: 'ج.م',
+        paymentDate: '2026-09-15',
+        paymentMethod: 'فودافون كاش',
+        referenceNumber: 'VF-392019',
+        note: 'الدفعة الثانية',
+        receivedBy: 'هدير سعيد',
+        createdAt: '2026-09-15T15:20:00Z'
+      }
+    ],
+    createdAt: '2026-08-01T10:00:00Z'
+  },
+  {
+    id: 'fc-2',
+    clientId: 'client-102',
+    clientName: 'م. طارق العريان',
+    companyName: 'العريان هوم للديكور والتصميم الداخلي',
+    serviceTitle: 'منظومة سويفت مايند CRM وإدارة المبيعات والتيم',
+    contractTotalValue: 28000,
+    currency: 'ج.م',
+    totalPaidAmount: 28000,
+    remainingBalance: 0,
+    contractStartDate: '2026-07-15',
+    contractEndDate: '2027-07-15',
+    nextPaymentDueDate: '2027-07-15',
+    paymentPlan: 'دفعة واحدة',
+    paymentStatus: 'خالص بالكامل',
+    phone: '+201198765432',
+    whatsappNumber: '+201198765432',
+    notes: 'تم سداد كامل قيمة العقد السنوي بنجاح',
+    payments: [
+      {
+        id: 'pay-3',
+        clientContractId: 'fc-2',
+        clientName: 'م. طارق العريان',
+        amount: 28000,
+        currency: 'ج.م',
+        paymentDate: '2026-07-15',
+        paymentMethod: 'تحويل بنكي',
+        referenceNumber: 'CIB-902188',
+        note: 'سداد كامل العقد السنوي دفعة واحدة',
+        receivedBy: 'هدير سعيد',
+        createdAt: '2026-07-15T11:00:00Z'
+      }
+    ],
+    createdAt: '2026-07-15T10:00:00Z'
+  },
+  {
+    id: 'fc-3',
+    clientId: 'client-103',
+    clientName: 'أ. هاني عبدالحميد',
+    companyName: 'برستيج لتجارة السيارات المستوردة',
+    serviceTitle: 'حملات إعلانات ممولة مستهدفة مع لاندنج بيج ومتابعة واتساب',
+    contractTotalValue: 40000,
+    currency: 'ج.م',
+    totalPaidAmount: 20000,
+    remainingBalance: 20000,
+    contractStartDate: '2026-09-01',
+    contractEndDate: '2026-12-01',
+    nextPaymentDueDate: '2026-10-25',
+    paymentPlan: 'دفعتين',
+    paymentStatus: 'متأخر في السداد',
+    phone: '+201255544433',
+    whatsappNumber: '+201255544433',
+    notes: 'تنبيه: الدفعة الثانية متأخرة 3 أيام - جاري التواصل معه عبر واتساب',
+    payments: [
+      {
+        id: 'pay-4',
+        clientContractId: 'fc-3',
+        clientName: 'أ. هاني عبدالحميد',
+        amount: 20000,
+        currency: 'ج.م',
+        paymentDate: '2026-09-01',
+        paymentMethod: 'تحويل بنكي',
+        referenceNumber: 'NBE-44129',
+        note: 'مقدم التعاقد 50%',
+        receivedBy: 'هدير سعيد',
+        createdAt: '2026-09-01T14:00:00Z'
+      }
+    ],
+    createdAt: '2026-09-01T10:00:00Z'
+  },
+  {
+    id: 'fc-4',
+    clientId: 'client-104',
+    clientName: 'دكتورة ميادة الشريف',
+    companyName: 'مركز فيولا للتجميل والعناية بالبشرة',
+    serviceTitle: 'إدارة السوشيال ميديا وتصوير 16 ريلز احترافي شهرياً',
+    contractTotalValue: 22000,
+    currency: 'ج.م',
+    totalPaidAmount: 15000,
+    remainingBalance: 7000,
+    contractStartDate: '2026-09-20',
+    contractEndDate: '2026-11-20',
+    nextPaymentDueDate: '2026-11-05',
+    paymentPlan: 'أقساط شهرية',
+    paymentStatus: 'متبقي مبالغ',
+    phone: '+201088776655',
+    whatsappNumber: '+201088776655',
+    notes: 'الدفعة الأخيرة مستحقة في 5 نوفمبر القادم',
+    payments: [
+      {
+        id: 'pay-5',
+        clientContractId: 'fc-4',
+        clientName: 'دكتورة ميادة الشريف',
+        amount: 15000,
+        currency: 'ج.م',
+        paymentDate: '2026-09-20',
+        paymentMethod: 'كاش نقدياً',
+        referenceNumber: 'CASH-REC-109',
+        note: 'دفعة أولى باليد في مقر الشركة',
+        receivedBy: 'هدير سعيد',
+        createdAt: '2026-09-20T16:30:00Z'
+      }
+    ],
+    createdAt: '2026-09-20T12:00:00Z'
+  }
+];
+
+// ==================== بنك أفكار الماركيتنج والحملات ====================
+export const INITIAL_MARKETING_IDEAS: MarketingIdea[] = [
+  {
+    id: 'midea-1',
+    title: 'سلسلة ريلز وتيك توك: "ليه شركتك مش ظاهرة على ChatGPT لما العميل يدور عليك؟" (GEO Marketing)',
+    channel: 'تيك توك وريلز',
+    targetAudience: 'أصحاب الشركات، العيادات، مكاتب المحاماة، ومقدمي الخدمات المميزة',
+    concept: 'فيديو قصير ومباشر مع تجربة حية على الشاشة يكتب فيها الشخص سؤالاً في ChatGPT ويظهر كيف نبرمج اسم شركته ليظهر كأول ترشيح للذكاء الاصطناعي مع إظهار الدليل بالأرقام.',
+    goal: 'جذب ليدز ومبيعات',
+    estimatedBudget: 3500,
+    currency: 'ج.م',
+    status: 'قيد التجهيز والتخطيط',
+    priority: 'urgent',
+    tags: ['ذكاء اصطناعي', 'GEO', 'ريلز', 'تريند'],
+    notes: 'تم كتابة الاسكربت بالكامل وجاري التنسيق مع إسلام لتصوير الشاشة وتجهيز المونتاج السريع',
+    createdAt: '2026-10-18T10:00:00Z'
+  },
+  {
+    id: 'midea-2',
+    title: 'حملة إعلانات ممولة فيسبوك & إنستجرام باستهداف مدراء المبيعات في مصر والخليج',
+    channel: 'فيسبوك وإعلانات',
+    targetAudience: 'مدراء المبيعات والتسويق ورؤساء مجلس الإدارة للشركات من 10 إلى 100 موظف',
+    concept: 'إعلان فيديو يوضح الفوضى الحاصلة في ضياع التارجت والمهام المفقودة في الواتساب، والحل الفوري عبر منصة سويفت مايند لإدارة الموظفين والمهام وحساب ساعات العمل بدقة.',
+    goal: 'جذب ليدز ومبيعات',
+    estimatedBudget: 6000,
+    currency: 'ج.م',
+    status: 'قيد الاختبار',
+    priority: 'high',
+    tags: ['إعلانات ممولة', 'CRM', 'سيلز', 'B2B'],
+    notes: 'اختبار نسختين من الإعلان A/B Testing لمقارنة تكلفة الليد CPL وتجهيز لاندنج بيج مخصصة',
+    createdAt: '2026-10-15T12:00:00Z'
+  },
+  {
+    id: 'midea-3',
+    title: 'دراسة حالة مصورة (Case Study): كيف ضاعفنا مبيعات عميل عيادات الأسنان 3 أضعاف خلال 60 يوماً',
+    channel: 'لينكد إن',
+    targetAudience: 'الأطباء، رواد الأعمال، وأصحاب المراكز الطبية والخدمية الراقية',
+    concept: 'بوست تفصيلي ومقروء بالأرقام والرسوم البيانية يوضح الخطوات الثلاث التي طبقناها مع عميلنا: سيو جيو، تكامل المبيعات، ومتابعة العملاء الفورية عبر سويفت.',
+    goal: 'بناء ثقة',
+    estimatedBudget: 1500,
+    currency: 'ج.م',
+    status: 'مطبقة وناجحة',
+    priority: 'medium',
+    tags: ['دراسة حالة', 'B2B', 'لينكد إن', 'موثوقية'],
+    notes: 'حققت أكثر من 45 ألف وصول وأتت بـ 6 عملاء VIP مباشرة في الرسائل الخاصة',
+    createdAt: '2026-10-05T09:30:00Z'
+  },
+  {
+    id: 'midea-4',
+    title: 'سلسلة إيميلات أوتوميشن ترحيبية وتثقيفية لليدز الجدد (Email Drip Campaign)',
+    channel: 'إيميل ماركتنج',
+    targetAudience: 'كل من يسجل في لاندنج بيج الموقع أو يحمّل الدليل المجاني للظهور في محركات الذكاء الاصطناعي',
+    concept: 'سلسلة مكونة من 5 إيميلات تُرسل كل يومين، تبدأ بالترحيب، ثم تقديم هدية عملية، ثم قصص نجاح، ثم عرض خاص محدود لحجز ميتنج استشاري مجاني مع المدير.',
+    goal: 'إعادة استهداف العملاء',
+    estimatedBudget: 800,
+    currency: 'ج.م',
+    status: 'فكرة جديدة',
+    priority: 'high',
+    tags: ['إيميل', 'أوتوميشن', 'نيرتشرينج'],
+    notes: 'التجهيز للتكامل عبر Brevo / Mailchimp وربطه بالليدز الجديدة تلقائياً',
+    createdAt: '2026-10-24T15:00:00Z'
+  }
+];
+
+// ==================== أفكاري الاستراتيجية والتدوينات المكتوبة ====================
+export const INITIAL_WRITTEN_THOUGHTS: WrittenThoughtNote[] = [
+  {
+    id: 'thought-1',
+    title: 'استراتيجية تسريع إغلاق صفقات السيلز وتطبيق "عربون الحجز الفوري"',
+    content: `ملاحظة هامة جداً لزيادة تحصيل السيولة النقدية:
+1. عند التفاوض مع العميل المتردد، يجب ألا نخرج من الميتنج بدون حجز مبدئي حتى لو بمبلغ رمزي (عربون 15-20%) لتأكيد الجدية.
+2. تزويد فريق السيلز بباقة "العرض السريع": خصم 10% إضافي في حالة السداد خلال 24 ساعة فقط.
+3. ربط عمولة موظف السيلز بسرعة التحصيل (كلما تم التحصيل في الأسبوع الأول زادت العمولة 1%).`,
+    category: 'استراتيجية المبيعات',
+    isPinned: true,
+    color: '#eff6ff',
+    tags: ['سيلز', 'تحصيل كاش', 'استراتيجية', 'بونص'],
+    updatedAt: '2026-10-25T11:00:00Z',
+    createdAt: '2026-10-25T11:00:00Z'
+  },
+  {
+    id: 'thought-2',
+    title: 'خطة إطلاق باقة "GEO Elite" للشركات الكبرى بالخليج (الربع الأول 2027)',
+    content: `فكرة تطوير منتج وخدمة ممتازة:
+- الطلب على خدمات تحسين محركات الذكاء الاصطناعي التوليدي (ChatGPT, Claude, Perplexity) يتضاعف شهرياً.
+- سنبني باقة سنوية بقيمة تبدأ من 50,000 ج.م / 15,000 ر.س تتضمن:
+  * إدراج العلامة التجارية في 15 منصة ذكاء اصطناعي.
+  * إدارة سمعة وتدريب روبوتات المحادثة على اسم الشركة.
+  * لوحة تتبع ومتابعة شهرية مع تقرير تحليلي مصور.
+- الخطوة القادمة: تجهيز برزنتيشن احترافي مع نماذج حية لعملاء كويتيين وسعوديين.`,
+    category: 'أفكار منتجات وتطوير',
+    isPinned: true,
+    color: '#fef3c7',
+    tags: ['تطوير', 'منتج جديد', 'الخليج', 'سيو جيو'],
+    updatedAt: '2026-10-22T16:40:00Z',
+    createdAt: '2026-10-22T16:40:00Z'
+  },
+  {
+    id: 'thought-3',
+    title: 'ملاحظات تحسين كفاءة فريق العمل والانضباط في تتبع التايمر',
+    content: `نقاط إدارية للمتابعة في اجتماع الأحد القادم:
+- التأكد من تشغيل التايمر لكل مهمة بمجرد البدء فيها وعدم الاعتماد على التدوين اليدوي بنهاية اليوم.
+- ربط مكافأة "أفضل موظف للشهر" بأعلى دقة في إنجاز المهام قبل الموعد النهائي Deadline.
+- ضرورة التزام الفريق بكتابة ملخص تفصيلي في خانة تعليقات المهمة عند تسليمها، مع إرفاق الروابط الخاصة بالعميل.`,
+    category: 'كفاءة الفريق والعمل',
+    isPinned: false,
+    color: '#ecfdf5',
+    tags: ['إدارة', 'إنتاجية', 'تايمر', 'تيم'],
+    updatedAt: '2026-10-20T14:15:00Z',
+    createdAt: '2026-10-20T14:15:00Z'
+  },
+  {
+    id: 'thought-4',
+    title: 'تأمين المصروفات التشغيلية والحفاظ على هامش ربح لا يقل عن 55%',
+    content: `قواعد مالية صارمة للإدارة:
+- سقف المصروفات التسويقية لا يجب أن يتجاوز 25% من إجمالي الإيرادات المحصلة.
+- الرواتب والأجور تشكل 20-25% من التدفق النقدي.
+- ترحيل 15% من صافي أرباح كل شهر إلى حساب "احتياطي الطوارئ والتطوير".
+- مراجعة اشتراكات السيرفرات والأدوات المدفوعة كل 3 أشهر لإلغاء أي أداة غير مستخدمة بكثافة.`,
+    category: 'تطوير الشركة',
+    isPinned: false,
+    color: '#fdf2f8',
+    tags: ['مالية', 'أرباح', 'تحكم في المصاريف', 'استدامة'],
+    updatedAt: '2026-10-18T08:00:00Z',
+    createdAt: '2026-10-18T08:00:00Z'
   }
 ];
 

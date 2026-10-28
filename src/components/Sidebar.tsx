@@ -45,6 +45,9 @@ import {
   FolderGit2,
   PauseCircle,
   MessagesSquare,
+  Wallet,
+  Percent,
+  Lightbulb,
   X
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../context/CRMContext';
@@ -454,7 +457,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               )}
             </button>
 
-            {/* Item 2: ماركيتنج الأدمن (Marketing Suite: Board + Planner + Tasks + Inbox) */}
+            {/* Item 2: التسويق والحملات */}
             <button
               onClick={() => setActiveTab('marketing')}
               className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
@@ -462,15 +465,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                   ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white font-extrabold shadow-md'
                   : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border border-amber-500/20'
               }`}
-              title="لوحة الماركيتنج والمخطط (Planner & Board & Tasks - خاص بالأدمن)"
+              title="لوحة الماركيتنج والمخطط (Planner & Board & Tasks)"
             >
               <div className="flex items-center gap-2.5">
                 <Megaphone className="w-4 h-4 shrink-0 text-amber-400" />
-                {!isCollapsed && <span className="font-bold">ماركيتنج الأدمن (Marketing)</span>}
+                {!isCollapsed && <span className="font-bold">التسويق والحملات</span>}
               </div>
               {!isCollapsed && (
-                <span className="text-[9px] bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold px-1.5 py-0.5 rounded shadow-2xs">
-                  أدمن 🔒
+                <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold px-1.5 py-0.5 rounded">
+                  بورد
+                </span>
+              )}
+            </button>
+
+            {/* Item 2.2: أفكار التسويق وتدويناتي */}
+            <button
+              onClick={() => setActiveTab('marketing_ideas')}
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                activeTab === 'marketing_ideas'
+                  ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-extrabold shadow-md'
+                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border border-purple-500/20'
+              }`}
+              title="بنك أفكار التسويق وتدويناتي وملاحظاتي المكتوبة"
+            >
+              <div className="flex items-center gap-2.5">
+                <Lightbulb className="w-4 h-4 shrink-0 text-amber-300" />
+                {!isCollapsed && <span className="font-bold">أفكار التسويق وتدويناتي</span>}
+              </div>
+              {!isCollapsed && (
+                <span className="text-[9px] bg-purple-500/20 text-purple-300 border border-purple-400/30 font-bold px-1.5 py-0.5 rounded">
+                  أفكاري
                 </span>
               )}
             </button>
@@ -587,25 +611,62 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               {!isCollapsed && <span>فريق العمل (الموظفين)</span>}
             </button>
 
-            {/* Item: المرتبات والحضور والأرباح (خاص بالإدارة والأدمن فقط) */}
+            {/* Item: المالية والمصروفات (المصروفات، المدفوعات، مرتبات الموظفين، والعقود وباقي دفع العملاء) */}
+            <button
+              onClick={() => setActiveTab('finance')}
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer border ${
+                activeTab === 'finance'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold shadow-md border-emerald-400 ring-1 ring-emerald-300/40'
+                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-emerald-500/20'
+              }`}
+              title="المنظومة المالية: المصروفات التشغيلية، سجل المدفوعات، مرتبات الموظفين، والعقود وباقي دفع العملاء"
+            >
+              <div className="flex items-center gap-2.5">
+                <Wallet className="w-4 h-4 shrink-0 text-emerald-400" />
+                {!isCollapsed && <span className="font-bold">المالية والمصروفات</span>}
+              </div>
+              {!isCollapsed && (
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.2 rounded font-bold">
+                  شامل
+                </span>
+              )}
+            </button>
+
+            {/* Item: عمولات المبيعات (لكل شهر منفصل) */}
+            <button
+              onClick={() => setActiveTab('sales_commissions')}
+              className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer border ${
+                activeTab === 'sales_commissions'
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-700 text-white font-extrabold shadow-md border-cyan-400 ring-1 ring-cyan-300/40'
+                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-cyan-500/20'
+              }`}
+              title="عمولات تيم السيلز لكل شهر منفصل، متابعة التارجت والصفقات والمدفوعات"
+            >
+              <div className="flex items-center gap-2.5">
+                <Percent className="w-4 h-4 shrink-0 text-cyan-400" />
+                {!isCollapsed && <span className="font-bold">عمولات المبيعات</span>}
+              </div>
+              {!isCollapsed && (
+                <span className="text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 px-1.5 py-0.2 rounded font-bold">
+                  شهري
+                </span>
+              )}
+            </button>
+
+            {/* Item: سجل الحضور والرواتب */}
             <button
               onClick={() => setActiveTab('payroll')}
               className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer border ${
                 activeTab === 'payroll' || activeTab === 'salaries'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold shadow-md border-emerald-400 ring-1 ring-emerald-300/40'
-                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-emerald-500/20'
+                  ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white font-extrabold shadow-md border-slate-500'
+                  : 'text-slate-200 hover:bg-slate-800/90 hover:text-white bg-slate-800/40 border-slate-700/50'
               }`}
-              title="نظام رواتب الموظفين، الحضور والغياب، التأخيرات، ومكسب الشركة (خاص بالأدمن)"
+              title="نظام رواتب الموظفين، الحضور والغياب، ومواعيد العمل"
             >
               <div className="flex items-center gap-2.5">
-                <DollarSign className="w-4 h-4 shrink-0 text-emerald-400" />
-                {!isCollapsed && <span className="font-bold">المرتبات والحضور والأرباح</span>}
+                <DollarSign className="w-4 h-4 shrink-0 text-slate-400" />
+                {!isCollapsed && <span className="font-bold">سجل الحضور والرواتب</span>}
               </div>
-              {!isCollapsed && (
-                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.2 rounded font-bold">
-                  أدمن 🔒
-                </span>
-              )}
             </button>
 
             {/* Item 8: MCP */}
@@ -1272,10 +1333,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                 >
                   <div className="flex items-center gap-2.5">
                     <Megaphone className="w-4 h-4 text-amber-400" />
-                    <span>ماركيتنج الأدمن (Marketing)</span>
+                    <span>التسويق والحملات</span>
                   </div>
-                  <span className="text-[9px] bg-amber-500 text-white font-black px-1.5 py-0.5 rounded">
-                    أدمن 🔒
+                  <span className="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded">
+                    بورد
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('marketing_ideas');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'marketing_ideas'
+                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Lightbulb className="w-4 h-4 text-amber-300" />
+                    <span>أفكار التسويق وتدويناتي</span>
+                  </div>
+                  <span className="text-[9px] bg-purple-500/20 text-purple-300 font-bold px-1.5 py-0.5 rounded">
+                    أفكاري
                   </span>
                 </button>
 
@@ -1347,22 +1428,59 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
 
                 <button
                   onClick={() => {
-                    setActiveTab('payroll');
+                    setActiveTab('finance');
                     onCloseMobile?.();
                   }}
                   className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
-                    activeTab === 'payroll'
+                    activeTab === 'finance'
                       ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold shadow-md'
                       : 'text-slate-200 hover:bg-slate-800/80'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <DollarSign className="w-4 h-4 text-emerald-400" />
-                    <span>المرتبات والحضور والأرباح</span>
+                    <Wallet className="w-4 h-4 text-emerald-400" />
+                    <span>المالية والمصروفات</span>
                   </div>
-                  <span className="text-[9px] bg-emerald-500 text-white font-black px-1.5 py-0.5 rounded">
-                    أدمن 🔒
+                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded">
+                    شامل
                   </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('sales_commissions');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'sales_commissions'
+                      ? 'bg-gradient-to-r from-cyan-600 to-blue-700 text-white font-bold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Percent className="w-4 h-4 text-cyan-400" />
+                    <span>عمولات المبيعات</span>
+                  </div>
+                  <span className="text-[9px] bg-cyan-500/20 text-cyan-300 font-bold px-1.5 py-0.5 rounded">
+                    شهري
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('payroll');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'payroll' || activeTab === 'salaries'
+                      ? 'bg-slate-700 text-white font-bold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <DollarSign className="w-4 h-4 text-slate-400" />
+                    <span>سجل الحضور والرواتب</span>
+                  </div>
                 </button>
 
                 <button

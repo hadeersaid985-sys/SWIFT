@@ -20,6 +20,9 @@ import { SuspendedContractsView } from './components/clients/SuspendedContractsV
 import { HostMigrationView } from './components/host/HostMigrationView';
 import { SystemSettingsView } from './components/settings/SystemSettingsView';
 import { PayrollAttendanceView } from './components/payroll/PayrollAttendanceView';
+import { FinancialSystemView } from './components/finance/FinancialSystemView';
+import { SalesCommissionView } from './components/sales/SalesCommissionView';
+import { MarketingIdeasThoughtsView } from './components/marketing/MarketingIdeasThoughtsView';
 import { QuickModals } from './components/modals/QuickModals';
 import { LoginModal } from './components/auth/LoginModal';
 import { EmployeeLoginPage } from './components/auth/EmployeeLoginPage';
@@ -315,6 +318,9 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'integrations' && <ProjectsView />}
               {effectiveTab === 'system_settings' && <SystemSettingsView />}
               {(effectiveTab === 'payroll' || effectiveTab === 'salaries') && <PayrollAttendanceView />}
+              {effectiveTab === 'finance' && <FinancialSystemView />}
+              {effectiveTab === 'sales_commissions' && <SalesCommissionView />}
+              {effectiveTab === 'marketing_ideas' && <MarketingIdeasThoughtsView />}
 
               {/* Sub-views from Sales menu */}
               {effectiveTab === 'contacts' && <LeadsView />}
@@ -325,7 +331,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'mcp' && <AnalyticsView />}
 
               {/* Fallback for unlisted manager tabs */}
-              {!['profile', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'chat', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
+              {!['profile', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'chat', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'payroll', 'salaries', 'finance', 'sales_commissions', 'marketing_ideas', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
                 <ReportsListView />
               )}
             </>

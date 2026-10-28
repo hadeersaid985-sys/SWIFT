@@ -9,7 +9,10 @@ import {
   Calendar,
   BarChart3,
   FolderKanban,
-  DollarSign
+  DollarSign,
+  Wallet,
+  Percent,
+  Lightbulb
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 
@@ -35,11 +38,28 @@ export const NavigationTabs: React.FC = () => {
     ...(isManager
       ? [
           {
+            id: 'finance',
+            label: 'المالية والمصروفات',
+            icon: Wallet,
+            badge: null
+          },
+          {
+            id: 'sales_commissions',
+            label: 'عمولات المبيعات',
+            icon: Percent,
+            badge: null
+          },
+          {
+            id: 'marketing_ideas',
+            label: 'أفكار التسويق وتدويناتي',
+            icon: Lightbulb,
+            badge: null
+          },
+          {
             id: 'payroll',
-            label: 'المرتبات والحضور والأرباح 💰',
+            label: 'سجل الحضور والرواتب',
             icon: DollarSign,
-            badge: 'للإدارة 🔒',
-            badgeColor: 'bg-emerald-100 text-emerald-800'
+            badge: null
           }
         ]
       : []),

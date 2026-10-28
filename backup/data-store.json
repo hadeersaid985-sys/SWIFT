@@ -46,9 +46,10 @@
       "bio": "مسؤولة إدارة العمليات والمبيعات وتنسيق المهام بين فرق العمل.",
       "socialAccounts": {
         "linkedin": "linkedin.com/in/hadeer-said",
-        "slack": "@hadeer.said",
-        "whatsapp": "+966501234567"
-      }
+        "whatsapp": "+966501234567",
+        "slack": "@hadeer.said"
+      },
+      "updatedAt": "2026-10-28T11:39:52.242Z"
     },
     {
       "id": "user-amira",
@@ -71,7 +72,8 @@
       "allowances": 800,
       "contractType": "دوام كامل",
       "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA98200000088231940120"
+      "bankIban": "SA98200000088231940120",
+      "updatedAt": "2026-10-28T11:39:52.243Z"
     },
     {
       "id": "user-aya",
@@ -94,7 +96,8 @@
       "allowances": 600,
       "contractType": "دوام كامل",
       "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA45200000047281940121"
+      "bankIban": "SA45200000047281940121",
+      "updatedAt": "2026-10-28T11:39:52.243Z"
     },
     {
       "id": "user-eman",
@@ -117,7 +120,8 @@
       "allowances": 1000,
       "contractType": "دوام كامل",
       "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA12200000091827461922"
+      "bankIban": "SA12200000091827461922",
+      "updatedAt": "2026-10-28T11:39:52.243Z"
     },
     {
       "id": "user-maibel",
@@ -140,7 +144,8 @@
       "allowances": 1200,
       "contractType": "دوام كامل",
       "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA77200000031827461923"
+      "bankIban": "SA77200000031827461923",
+      "updatedAt": "2026-10-28T11:39:52.243Z"
     },
     {
       "id": "user-yomna",
@@ -163,7 +168,8 @@
       "allowances": 800,
       "contractType": "دوام كامل",
       "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA91200000021827461925"
+      "bankIban": "SA91200000021827461925",
+      "updatedAt": "2026-10-28T11:39:52.243Z"
     },
     {
       "id": "user-roaa",
@@ -186,7 +192,8 @@
       "allowances": 500,
       "contractType": "دوام كامل",
       "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA39200000091827461927"
+      "bankIban": "SA39200000091827461927",
+      "updatedAt": "2026-10-28T11:39:52.243Z"
     },
     {
       "id": "user-islam",
@@ -209,7 +216,8 @@
       "allowances": 700,
       "contractType": "دوام كامل",
       "workingHours": "8 ساعات يومياً",
-      "bankIban": "SA84200000011827461926"
+      "bankIban": "SA84200000011827461926",
+      "updatedAt": "2026-10-28T11:39:52.243Z"
     }
   ],
   "tasks": [
@@ -2907,7 +2915,7 @@
     "user-1793016396281"
   ],
   "deletedTasks": [],
-  "updatedAt": "2026-10-28T09:04:58.692Z",
+  "updatedAt": "2026-10-28T11:22:54.488Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": []
 }
