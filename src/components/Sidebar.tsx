@@ -105,22 +105,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
           isCollapsed ? 'w-16' : 'w-64'
         }`}
       >
-        {/* Top Header: In RTL: Blue Logo + Zoho CRM ▾ on the right, Collapse button on the left */}
+        {/* Top Header: In RTL: Blue Logo + Swift Mynd CRM ▾ on the right, Collapse button on the left */}
         <div className="h-14 border-b border-[#2d456f] flex items-center justify-between px-3 text-white">
           {!isCollapsed ? (
             <div className="flex items-center justify-between w-full">
-              {/* Right side: Blue Logo + Zoho CRM ▾ */}
+              {/* Right side: Blue Logo + Swift Mynd CRM ▾ */}
               <div
                 onClick={() => isManager && setIsBrandModalOpen(true)}
                 className="flex items-center gap-2 cursor-pointer group"
-                title={isManager ? "إعدادات وهوية المنظومة" : "Zoho CRM"}
+                title={isManager ? "إعدادات وهوية المنظومة" : "Swift Mynd CRM"}
               >
                 <div className="w-7 h-7 rounded-lg bg-[#2563eb] hover:bg-blue-600 flex items-center justify-center text-white shadow-xs transition-colors shrink-0">
                   <Layers className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-sm tracking-wide text-white group-hover:text-blue-200 transition-colors">
-                    Zoho CRM
+                    Swift Mynd CRM
                   </span>
                   <ChevronDown className="w-3.5 h-3.5 text-[#9bb0cb] group-hover:text-white transition-colors" />
                 </div>
@@ -869,7 +869,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
             className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in"
           />
 
-          {/* Drawer Panel in matching Zoho Navy style */}
+          {/* Drawer Panel */}
           <aside className="relative w-72 sm:w-80 max-w-[85vw] h-full bg-[#223458] text-[#cbd5e1] z-50 shadow-2xl flex flex-col border-l border-[#2d456f] animate-in slide-in-from-right duration-200">
             {/* Header */}
             <div className="h-14 border-b border-[#2d456f] flex items-center justify-between px-3.5 text-white shrink-0">
@@ -877,7 +877,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                 <div className="w-7 h-7 rounded-lg bg-[#2563eb] flex items-center justify-center text-white shadow-xs">
                   <Layers className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-bold text-sm text-white">Zoho CRM</span>
+                <span className="font-bold text-sm text-white">Swift Mynd CRM</span>
               </div>
               <button
                 type="button"
@@ -1169,7 +1169,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                 <span>تسجيل الخروج</span>
               </button>
               <span className="text-[10px] text-[#9bb0cb] font-mono">
-                Zoho CRM
+                Swift Mynd CRM
               </span>
             </div>
           </aside>
