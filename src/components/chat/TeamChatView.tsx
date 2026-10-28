@@ -48,6 +48,8 @@ export const TeamChatView: React.FC = () => {
     addReaction,
     deleteMessage,
     createChannel,
+    clearAllMessages,
+    clearCurrentChat,
     unreadPerTarget,
     soundEnabled,
     setSoundEnabled,
@@ -80,6 +82,7 @@ export const TeamChatView: React.FC = () => {
   const [supervisorFilterMemberA, setSupervisorFilterMemberA] = useState<string>('all');
   const [supervisorFilterMemberB, setSupervisorFilterMemberB] = useState<string>('all');
   const [isStartNewChatOpen, setIsStartNewChatOpen] = useState(false);
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -1010,6 +1013,16 @@ export const TeamChatView: React.FC = () => {
                   </select>
                 </div>
               )}
+
+              {isManager && (
+                <button
+                  onClick={() => setShowClearConfirmModal(true)}
+                  className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                  title="تصفير ومسح رسائل الدردشة"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -1017,13 +1030,13 @@ export const TeamChatView: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4">
             {groupedMessages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-3">
-                <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                  <MessageSquare className="w-8 h-8 opacity-80" />
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100/80 text-blue-600 flex items-center justify-center shadow-xs">
+                  <MessageSquare className="w-8 h-8 opacity-90 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-700">لا توجد رسائل سابقة في هذه المحادثة</h3>
-                  <p className="text-xs text-slate-400 mt-1 max-w-sm">
-                    ابدأ المحادثة الآن واكتب أول رسالة لزملائك في الفريق لتنسيق ومتابعة العمل!
+                  <h3 className="text-sm font-bold text-slate-800">الدردشة جاهزة وجديدة تماماً ✨</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
+                    تم مسح كافة رسائل الديمو التجريبية. ابدأ المحادثة الآن واكتب أول رسالة لزملائك في الفريق لتنسيق ومتابعة العمل الحقيقي!
                   </p>
                 </div>
               </div>
@@ -1480,6 +1493,64 @@ export const TeamChatView: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Clear Messages Confirmation */}
+      {showClearConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
+            <div className="p-4 bg-rose-50 border-b border-rose-100 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-rose-700 font-bold text-sm">
+                <Trash2 className="w-4 h-4" />
+                <span>مسح وتصفير سجل الدردشة</span>
+              </div>
+              <button
+                onClick={() => setShowClearConfirmModal(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                هل ترغب في مسح رسائل المحادثة الحالية فقط، أم تصفير سجل الدردشة بالكامل عبر كافة القنوات لبدء تواصل جديد ونظيف مع الفريق؟
+              </p>
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await clearCurrentChat();
+                    setShowClearConfirmModal(false);
+                  }}
+                  className="w-full py-2.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-colors cursor-pointer text-right flex items-center justify-between"
+                >
+                  <span>مسح رسائل هذه المحادثة الحالية فقط</span>
+                  <Trash2 className="w-3.5 h-3.5 opacity-60" />
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await clearAllMessages();
+                    setShowClearConfirmModal(false);
+                  }}
+                  className="w-full py-2.5 px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer text-right flex items-center justify-between shadow-xs"
+                >
+                  <span>مسح كافة الرسائل في كل القنوات والخاص (تصفير شامل)</span>
+                  <Trash2 className="w-3.5 h-3.5 opacity-80" />
+                </button>
+              </div>
+            </div>
+            <div className="p-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirmModal(false)}
+                className="px-4 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200/70 rounded-xl cursor-pointer"
+              >
+                إلغاء
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -5,7 +5,9 @@ import {
   saveChatMessageToFirestore,
   deleteChatMessageFromFirestore,
   onChatMessagesSnapshot,
-  seedInitialChatMessagesIfEmpty
+  seedInitialChatMessagesIfEmpty,
+  purgeDemoChatMessagesFromFirestore,
+  clearAllChatMessagesFromFirestore
 } from '../firebase';
 import { useCRM } from './CRMContext';
 
@@ -27,6 +29,8 @@ interface ChatContextType {
   addReaction: (messageId: string, emoji: string) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
   createChannel: (channel: Omit<ChatChannel, 'createdAt' | 'createdById'>) => void;
+  clearAllMessages: () => Promise<void>;
+  clearCurrentChat: () => Promise<void>;
   unreadCount: number;
   unreadPerTarget: Record<string, number>;
   markAsRead: (targetId: string) => void;
@@ -41,9 +45,26 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-const CHAT_STORAGE_KEY = 'swiftmynd_team_chat_messages_v1';
+const CHAT_STORAGE_KEY = 'swiftmynd_team_chat_messages_v2';
 const CHANNELS_STORAGE_KEY = 'swiftmynd_team_chat_channels_v1';
 const SOUND_STORAGE_KEY = 'swiftmynd_chat_sound_enabled';
+
+// Specific IDs used by the previous demo placeholder messages
+const DEMO_MSG_IDS = new Set([
+  'msg-gen-1', 'msg-gen-2', 'msg-gen-3', 'msg-gen-4',
+  'msg-sal-1', 'msg-sal-2',
+  'msg-tech-1',
+  'msg-ann-1',
+  'dm-1', 'dm-2', 'dm-3', 'dm-4'
+]);
+
+const isDemoMessage = (id: string) =>
+  DEMO_MSG_IDS.has(id) ||
+  id.startsWith('msg-gen-') ||
+  id.startsWith('msg-sal-') ||
+  id.startsWith('msg-tech-') ||
+  id.startsWith('msg-ann-') ||
+  (id.startsWith('dm-') && id.length <= 8);
 
 // Pleasant short tone synthesized with Web Audio API
 const playTone = () => {
@@ -81,16 +102,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return INITIAL_CHAT_CHANNELS;
   });
 
-  // Messages state
+  // Messages state - starts completely fresh without any demo messages
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
+      localStorage.removeItem('swiftmynd_team_chat_messages_v1');
       const saved = localStorage.getItem(CHAT_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter(m => m?.id && !isDemoMessage(m.id));
+        }
       }
     } catch {}
-    return INITIAL_CHAT_MESSAGES;
+    return [];
   });
 
   // Active chat selection
@@ -119,26 +143,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Real-time synchronization with Firestore
   useEffect(() => {
-    // 1. Seed initial messages if empty in Firestore
-    seedInitialChatMessagesIfEmpty(INITIAL_CHAT_MESSAGES);
+    // 1. Purge any legacy demo messages from Firestore and local cache
+    purgeDemoChatMessagesFromFirestore();
+    try {
+      localStorage.removeItem('swiftmynd_team_chat_messages_v1');
+    } catch {}
 
-    // 2. Listen to real-time updates
+    // 2. Listen to real-time updates (ignoring any demo messages)
     const unsubscribe = onChatMessagesSnapshot(remoteMessages => {
-      if (remoteMessages && remoteMessages.length > 0) {
-        setMessages(prev => {
-          // Merge remote with local unique by id
-          const map = new Map<string, ChatMessage>();
-          prev.forEach(m => map.set(m.id, m));
-          remoteMessages.forEach(m => map.set(m.id, m));
-          const merged = Array.from(map.values()).sort(
-            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          );
-          try {
-            localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(merged));
-          } catch {}
-          return merged;
-        });
-      }
+      const cleanMessages = (remoteMessages || [])
+        .filter(m => m?.id && !isDemoMessage(m.id))
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      setMessages(cleanMessages);
+      try {
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(cleanMessages));
+      } catch {}
     });
 
     return () => {
@@ -331,6 +351,32 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveChatType('channel');
   }, [currentUser]);
 
+  // Clear all messages (admin reset)
+  const clearAllMessages = useCallback(async () => {
+    setMessages([]);
+    try {
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify([]));
+    } catch {}
+    await clearAllChatMessagesFromFirestore();
+  }, []);
+
+  // Clear current active channel or DM conversation messages
+  const clearCurrentChat = useCallback(async () => {
+    const toDelete = messages.filter(m =>
+      activeChatType === 'channel'
+        ? m.channelId === activeChatId
+        : !m.channelId &&
+          ((m.senderId === currentUser?.id && m.recipientId === activeChatId) ||
+            (m.senderId === activeChatId && m.recipientId === currentUser?.id))
+    );
+
+    setMessages(prev => prev.filter(m => !toDelete.some(d => d.id === m.id)));
+
+    for (const msg of toDelete) {
+      await deleteChatMessageFromFirestore(msg.id);
+    }
+  }, [messages, activeChatId, activeChatType, currentUser]);
+
   // Active target details for header
   const activeTargetDetails = useMemo(() => {
     if (activeChatType === 'channel') {
@@ -362,6 +408,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     addReaction,
     deleteMessage,
     createChannel,
+    clearAllMessages,
+    clearCurrentChat,
     unreadCount,
     unreadPerTarget,
     markAsRead,

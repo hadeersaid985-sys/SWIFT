@@ -45,9 +45,9 @@
       "bankIban": "SA4420000001234567890123",
       "bio": "مسؤولة إدارة العمليات والمبيعات وتنسيق المهام بين فرق العمل.",
       "socialAccounts": {
-        "linkedin": "linkedin.com/in/hadeer-said",
         "whatsapp": "+966501234567",
-        "slack": "@hadeer.said"
+        "slack": "@hadeer.said",
+        "linkedin": "linkedin.com/in/hadeer-said"
       },
       "updatedAt": "2026-10-28T11:39:52.242Z"
     },
@@ -2915,7 +2915,7 @@
     "user-1793016396281"
   ],
   "deletedTasks": [],
-  "updatedAt": "2026-10-28T11:22:54.488Z",
+  "updatedAt": "2026-10-28T12:06:35.442Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": []
 }

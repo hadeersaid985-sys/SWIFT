@@ -354,11 +354,9 @@ export function onChatMessagesSnapshot(onUpdate: (messages: ChatMessage[]) => vo
         snapshot.forEach(docSnap => {
           list.push(docSnap.data() as ChatMessage);
         });
-        if (list.length > 0) {
-          // Sort chronologically
-          list.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-          onUpdate(list);
-        }
+        // Sort chronologically
+        list.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        onUpdate(list);
       },
       err => console.warn('[Firebase] Chat messages notice:', err)
     );
@@ -372,9 +370,10 @@ export function onChatMessagesSnapshot(onUpdate: (messages: ChatMessage[]) => vo
  */
 export async function seedInitialChatMessagesIfEmpty(initialMsgs: ChatMessage[]): Promise<void> {
   try {
+    if (!initialMsgs || initialMsgs.length === 0) return;
     const q = collection(db, CHAT_MESSAGES_COLLECTION);
     const snap = await getDocs(q);
-    if (snap.empty && initialMsgs && initialMsgs.length > 0) {
+    if (snap.empty) {
       const batch = writeBatch(db);
       initialMsgs.forEach(m => {
         const mRef = doc(db, CHAT_MESSAGES_COLLECTION, m.id);
@@ -389,6 +388,69 @@ export async function seedInitialChatMessagesIfEmpty(initialMsgs: ChatMessage[])
     }
   } catch (err) {
     console.warn('[Firebase] Chat messages seeding check notice:', err);
+  }
+}
+
+/**
+ * Purge any demo chat messages (pre-seeded placeholders) from Firestore
+ */
+export async function purgeDemoChatMessagesFromFirestore(): Promise<void> {
+  try {
+    const q = collection(db, CHAT_MESSAGES_COLLECTION);
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const demoMsgIds = new Set([
+        'msg-gen-1', 'msg-gen-2', 'msg-gen-3', 'msg-gen-4',
+        'msg-sal-1', 'msg-sal-2',
+        'msg-tech-1',
+        'msg-ann-1',
+        'dm-1', 'dm-2', 'dm-3', 'dm-4'
+      ]);
+
+      const batch = writeBatch(db);
+      let count = 0;
+      snap.forEach(docSnap => {
+        const id = docSnap.id;
+        const isDemo =
+          demoMsgIds.has(id) ||
+          id.startsWith('msg-gen-') ||
+          id.startsWith('msg-sal-') ||
+          id.startsWith('msg-tech-') ||
+          id.startsWith('msg-ann-') ||
+          (id.startsWith('dm-') && id.length <= 8);
+
+        if (isDemo) {
+          batch.delete(docSnap.ref);
+          count++;
+        }
+      });
+      if (count > 0) {
+        await batch.commit();
+        console.log(`[Firebase] Purged ${count} demo chat messages from Firestore.`);
+      }
+    }
+  } catch (err) {
+    console.warn('[Firebase] Purge demo chat messages notice:', err);
+  }
+}
+
+/**
+ * Clear all chat messages from Firestore (for Admin chat reset)
+ */
+export async function clearAllChatMessagesFromFirestore(): Promise<void> {
+  try {
+    const q = collection(db, CHAT_MESSAGES_COLLECTION);
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const batch = writeBatch(db);
+      snap.forEach(docSnap => {
+        batch.delete(docSnap.ref);
+      });
+      await batch.commit();
+      console.log('[Firebase] Cleared all chat messages from Firestore.');
+    }
+  } catch (err) {
+    console.warn('[Firebase] Clear all chat messages notice:', err);
   }
 }
 
