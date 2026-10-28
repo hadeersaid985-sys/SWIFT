@@ -746,8 +746,8 @@ export const ClientRenewalsView: React.FC = () => {
       </div>
 
       {/* 5 CORE MODES SWITCHER BAR (ملفات العملاء والشيتات للتيم + مواعيد التجديد وتنبيهات 4 أيام + تاريخ كل اكونت + عروض الكوتشن + طلبات سويفت) */}
-      <div className="bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold flex-wrap gap-1">
+      <div className="bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-2xs overflow-x-auto scrollbar-none">
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold min-w-max gap-1">
           {/* SubTab 1: ملفات العملاء والشيتات (Google Sheets) لسهولة وصول التيم */}
           <button
             onClick={() => setActiveRenewalSubTab('client_dossiers')}

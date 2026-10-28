@@ -43,12 +43,18 @@ import {
   Camera,
   LogOut,
   FolderGit2,
-  PauseCircle
+  PauseCircle,
+  X
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 
-export const Sidebar: React.FC = () => {
+export interface SidebarProps {
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile }) => {
   const {
     activeTab,
     setActiveTab,
@@ -98,11 +104,12 @@ export const Sidebar: React.FC = () => {
   const pendingTasksCount = userVisibleTasks.filter(t => t.status !== 'completed').length;
 
   return (
-    <aside
-      className={`bg-[#172033] text-slate-300 border-l border-slate-800 shrink-0 transition-all duration-300 flex flex-col z-30 ${
-        isCollapsed ? 'w-16' : 'w-64'
-      }`}
-    >
+    <>
+      <aside
+        className={`hidden md:flex bg-[#172033] text-slate-300 border-l border-slate-800 shrink-0 transition-all duration-300 flex-col z-30 ${
+          isCollapsed ? 'w-16' : 'w-64'
+        }`}
+      >
       {/* Sidebar Header: Brand & Collapse Toggle & Logo Change */}
       <div className="h-14 border-b border-slate-800 flex items-center justify-between px-3 text-white">
         {!isCollapsed ? (
@@ -934,5 +941,493 @@ export const Sidebar: React.FC = () => {
       )}
       </div>
     </aside>
+
+    {/* Mobile Drawer (Visible only when isMobileOpen is true on mobile) */}
+    {isMobileOpen && (
+      <div className="fixed inset-0 z-50 md:hidden flex justify-end">
+        {/* Backdrop */}
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in"
+        />
+
+        {/* Drawer Panel */}
+        <aside className="relative w-72 sm:w-80 max-w-[85vw] h-full bg-[#172033] text-slate-300 z-50 shadow-2xl flex flex-col border-l border-slate-800 animate-in slide-in-from-right duration-200">
+          {/* Header */}
+          <div className="h-14 border-b border-slate-800 flex items-center justify-between px-3.5 text-white shrink-0">
+            <SwiftMyndLogo
+              variant="horizontal"
+              size="sm"
+              isDark={true}
+              onClick={() => {
+                setActiveTab(isManager ? 'home' : 'tasks');
+                onCloseMobile?.();
+              }}
+            />
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              title="إغلاق القائمة"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* User Profile Card */}
+          <div className="p-3 border-b border-slate-800/80 bg-slate-900/70 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="relative shrink-0">
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-10 h-10 rounded-full border border-blue-400/40 object-cover"
+                />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-slate-900 absolute bottom-0 right-0" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-extrabold text-slate-100 truncate text-sm">{currentUser.name}</div>
+                <div className="text-[11px] text-blue-400 font-medium truncate">
+                  {currentUser.role || (isManager ? 'المدير العام' : 'عضو الفريق')}
+                </div>
+              </div>
+              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md font-mono shrink-0">
+                {currentUser.employeeCode}
+              </span>
+            </div>
+          </div>
+
+          {/* Mobile Scrollable Navigation Links */}
+          <div className="flex-1 overflow-y-auto py-2.5 px-3 space-y-1 text-xs font-medium scrollbar-thin">
+            {!isManager ? (
+              <div className="space-y-1">
+                <div className="px-2 py-1 text-[11px] font-black text-slate-400">
+                  مهام العمل والمتابعة
+                </div>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('tasks');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'tasks'
+                      ? 'bg-blue-600 text-white font-extrabold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <CheckSquare className="w-4 h-4 text-emerald-400" />
+                    <span className="font-bold">تاسكات الفريق والتايمر</span>
+                  </div>
+                  {pendingTasksCount > 0 && (
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full font-mono font-bold">
+                      {pendingTasksCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('tasks');
+                    onCloseMobile?.();
+                  }}
+                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <AtSign className="w-4 h-4 text-indigo-400" />
+                    <span>مهام منشن لي (@)</span>
+                  </div>
+                  {mentionedTasksCount > 0 && (
+                    <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full font-mono font-bold">
+                      {mentionedTasksCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('mail');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'mail'
+                      ? 'bg-blue-600 text-white font-extrabold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="w-4 h-4 text-cyan-400" />
+                    <span>بريد الفريق (Mail)</span>
+                  </div>
+                  {unreadEmailsCount > 0 && (
+                    <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-bold font-mono">
+                      {unreadEmailsCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('renewals');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'renewals'
+                      ? 'bg-blue-600 text-white font-extrabold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                    <span>ملفات العملاء والشيتات</span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full font-mono font-bold">
+                    {visibleClients.length} عميل
+                  </span>
+                </button>
+
+                {isSalesUser && (
+                  <button
+                    onClick={() => {
+                      setActiveTab('leads');
+                      onCloseMobile?.();
+                    }}
+                    className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                      activeTab === 'leads'
+                        ? 'bg-purple-600 text-white font-extrabold shadow-md'
+                        : 'text-purple-300 hover:bg-slate-800/80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Building2 className="w-4 h-4 text-purple-400" />
+                      <span>العملاء المحتملون (المبيعات)</span>
+                    </div>
+                    <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded font-mono font-bold">
+                      {visibleLeads.length}
+                    </span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setActiveTab('meetings');
+                    onCloseMobile?.();
+                  }}
+                  className="w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 cursor-pointer"
+                >
+                  <Calendar className="w-4 h-4 text-blue-400" />
+                  <span>الاجتماعات والمواعيد</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('calls');
+                    onCloseMobile?.();
+                  }}
+                  className="w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:bg-slate-800/80 cursor-pointer"
+                >
+                  <PhoneCall className="w-4 h-4 text-emerald-400" />
+                  <span>سجل المكالمات</span>
+                </button>
+
+                <div className="pt-2 border-t border-slate-800/80">
+                  <button
+                    onClick={() => {
+                      setActiveTab('profile');
+                      onCloseMobile?.();
+                    }}
+                    className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer border ${
+                      activeTab === 'profile'
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-md border-blue-400'
+                        : 'bg-slate-800/80 text-slate-200 border-slate-700/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <UserCheck className="w-4 h-4 text-cyan-400" />
+                      <div>
+                        <div className="font-extrabold text-xs">الملف الشخصي</div>
+                        <div className="text-[10px] text-cyan-300">الاسم، الصورة، الباسورد</div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] bg-cyan-500/20 text-cyan-200 px-1.5 py-0.5 rounded font-bold">
+                      تعديل ⚙️
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <div className="px-2 py-1 text-[11px] font-black text-slate-400">
+                  أقسام المنظومة (لوحة الأدمن)
+                </div>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('home');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'home' ? 'bg-blue-600 text-white font-bold shadow-md' : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <Home className="w-4 h-4" />
+                  <span>الرئيسية</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('tasks');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'tasks' ? 'bg-blue-600 text-white font-bold shadow-md' : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <CheckSquare className="w-4 h-4 text-emerald-400" />
+                    <span>تاسكات الفريق والتايمر</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('marketing');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'marketing'
+                      ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Megaphone className="w-4 h-4 text-amber-400" />
+                    <span>ماركيتنج الأدمن (Marketing)</span>
+                  </div>
+                  <span className="text-[9px] bg-amber-500 text-white font-black px-1.5 py-0.5 rounded">
+                    أدمن 🔒
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('renewals');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'renewals'
+                      ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white font-bold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="w-4 h-4 text-rose-400" />
+                    <span>تجديد اشتراكات العملاء</span>
+                  </div>
+                  {renewalsDueSoonCount > 0 && (
+                    <span className="text-[9px] bg-rose-500 text-white font-black px-1.5 py-0.5 rounded animate-pulse">
+                      🚨 {renewalsDueSoonCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('suspended_contracts');
+                    onCloseMobile?.();
+                  }}
+                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <PauseCircle className="w-4 h-4 text-amber-400" />
+                    <span>عقود موقفه</span>
+                  </div>
+                  <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
+                    {suspendedContracts.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('host_migration');
+                    onCloseMobile?.();
+                  }}
+                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Server className="w-4 h-4 text-indigo-400" />
+                    <span>نقل 2 سيستم للهوست</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('team');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'team' ? 'bg-blue-600 text-white font-bold shadow-md' : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Users className="w-4 h-4 text-blue-400" />
+                    <span>فريق العمل (الموظفين)</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('payroll');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === 'payroll'
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold shadow-md'
+                      : 'text-slate-200 hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <DollarSign className="w-4 h-4 text-emerald-400" />
+                    <span>المرتبات والحضور والأرباح</span>
+                  </div>
+                  <span className="text-[9px] bg-emerald-500 text-white font-black px-1.5 py-0.5 rounded">
+                    أدمن 🔒
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('reports');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer ${
+                    activeTab === 'reports' ? 'bg-blue-600 text-white font-bold' : ''
+                  }`}
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-blue-400" />
+                  <span>التقارير</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('analytics');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer ${
+                    activeTab === 'analytics' ? 'bg-blue-600 text-white font-bold' : ''
+                  }`}
+                >
+                  <BarChart2 className="w-4 h-4 text-indigo-400" />
+                  <span>التحليلات</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('mail');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer ${
+                    activeTab === 'mail' ? 'bg-blue-600 text-white font-bold' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="w-4 h-4 text-cyan-400" />
+                    <span>بريد الفريق (Mail)</span>
+                  </div>
+                  {unreadEmailsCount > 0 && (
+                    <span className="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full font-bold">
+                      {unreadEmailsCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('system_settings');
+                    onCloseMobile?.();
+                  }}
+                  className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer border ${
+                    activeTab === 'system_settings'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black shadow-md border-blue-400'
+                      : 'bg-slate-800/80 text-blue-200 border-slate-700/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Sliders className="w-4 h-4 text-blue-400" />
+                    <span>إعدادات السيستم واللوجو</span>
+                  </div>
+                  <span className="text-[9px] bg-blue-500/30 text-blue-200 px-1.5 py-0.5 rounded font-bold">
+                    فتح ←
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsBrandModalOpen(true);
+                    onCloseMobile?.();
+                  }}
+                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-slate-900/60 hover:bg-slate-800 text-slate-300 cursor-pointer border border-slate-800"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Camera className="w-4 h-4 text-slate-400" />
+                    <span>تغيير اللوجو والشعار سريعاً</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">نافذة ⚙️</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsGitHubModalOpen(true);
+                    onCloseMobile?.();
+                  }}
+                  className="w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-xs bg-slate-900/60 hover:bg-slate-800 text-cyan-300 cursor-pointer border border-cyan-800/30"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <FolderGit2 className="w-4 h-4 text-cyan-400" />
+                    <span>تصدير واستيراد GitHub</span>
+                  </div>
+                  <span className="text-[9px] bg-cyan-900/40 text-cyan-200 px-1 rounded">حفظ</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('profile');
+                    onCloseMobile?.();
+                  }}
+                  className="w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800/80 cursor-pointer"
+                >
+                  <UserCheck className="w-4 h-4 text-cyan-400" />
+                  <span>الملف الشخصي والباسورد 👤</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Footer with Logout */}
+          <div className="p-3 border-t border-slate-800 bg-slate-900/80 shrink-0 flex items-center justify-between">
+            <button
+              onClick={() => {
+                onCloseMobile?.();
+                try {
+                  if (typeof window !== 'undefined' && window.history) {
+                    window.history.replaceState({}, '', '/');
+                  }
+                } catch (e) {}
+                logoutUser();
+              }}
+              className="flex items-center gap-1.5 text-xs text-rose-300 hover:text-white font-bold py-1.5 px-3 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <span>تسجيل الخروج</span>
+            </button>
+            <span className="text-[10px] text-slate-500 font-mono">
+              SwiftMynd CRM
+            </span>
+          </div>
+        </aside>
+      </div>
+    )}
+  </>
   );
 };

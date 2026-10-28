@@ -104,6 +104,7 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
           <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500" />
 
           {/* Heading */}
+          <div className="text-center mb-6 space-y-2">
             {/* SwiftMynd Official Logo Badge */}
             <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-500/20 overflow-hidden border border-blue-100 bg-[#1e54b7] p-1 transition-transform hover:scale-105">
               <img
@@ -119,6 +120,7 @@ export const EmployeeLoginPage: React.FC<EmployeeLoginPageProps> = ({ onSuccessL
             <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
               بوابة تسجيل دخول موظفي وفريق عمل <span className="font-bold text-blue-600">{brandConfig?.brandName || 'SWIFTMYND'}</span>
             </p>
+          </div>
 
           {/* Status Messages */}
           {errorMsg && (

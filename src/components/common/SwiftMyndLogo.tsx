@@ -233,7 +233,7 @@ export const SwiftMyndLogo: React.FC<SwiftMyndLogoProps> = ({
 
           {/* Badge */}
           {activeBrandConfig.brandBadge && (
-            <span className="text-[9px] bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 text-white font-black px-1.5 py-0.5 rounded-md shadow-2xs shrink-0">
+            <span className="text-[9px] bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 text-white font-black px-1.5 py-0.5 rounded-md shadow-2xs shrink-0 hidden sm:inline-flex">
               {activeBrandConfig.brandBadge}
             </span>
           )}
@@ -243,7 +243,7 @@ export const SwiftMyndLogo: React.FC<SwiftMyndLogoProps> = ({
             <button
               type="button"
               onClick={handleAdminEditClick}
-              className="opacity-0 group-hover:opacity-100 px-1.5 py-0.5 text-blue-500 bg-blue-50/90 hover:bg-blue-100 rounded-md transition-all cursor-pointer shrink-0 text-[10px] font-bold flex items-center gap-0.5 border border-blue-200 shadow-2xs"
+              className="opacity-0 group-hover:opacity-100 px-1.5 py-0.5 text-blue-500 bg-blue-50/90 hover:bg-blue-100 rounded-md transition-all cursor-pointer shrink-0 text-[10px] font-bold flex items-center gap-0.5 border border-blue-200 shadow-2xs hidden sm:flex"
               title="تعديل الشعار والاسم (صلاحية الأدمن)"
             >
               <Edit3 className="w-2.5 h-2.5" />
@@ -254,7 +254,7 @@ export const SwiftMyndLogo: React.FC<SwiftMyndLogoProps> = ({
 
         {showSubtitle && (
           <span
-            className={`text-[9px] font-bold tracking-wider mt-0.5 flex items-center gap-1 ${
+            className={`text-[9px] font-bold tracking-wider mt-0.5 hidden sm:flex items-center gap-1 ${
               isDark ? 'text-blue-300' : 'text-blue-600'
             }`}
           >

@@ -39,7 +39,8 @@ import {
   Image as ImageIcon,
   Palette,
   FolderGit2,
-  UserCheck
+  UserCheck,
+  Menu
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
@@ -49,9 +50,10 @@ import { WeeklyExecutiveModal } from './reports/WeeklyExecutiveModal';
 interface TopNavbarProps {
   onOpenLoginModal?: () => void;
   onLogout?: () => void;
+  onToggleMobileMenu?: () => void;
 }
 
-export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout }) => {
+export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout, onToggleMobileMenu }) => {
   const {
     activeTab,
     setActiveTab,
@@ -221,19 +223,33 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   };
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 shadow-2xs">
+    <header className="h-14 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-40 shadow-2xs">
       {/* Right Side: Swift Logo & Quick Logo Edit & Page Title */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+        {/* Mobile Hamburger Drawer Toggle */}
+        <button
+          type="button"
+          onClick={onToggleMobileMenu}
+          className="p-1.5 -mr-1 text-slate-700 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors md:hidden cursor-pointer shrink-0 relative"
+          aria-label="القائمة الجانبية"
+          title="القائمة الجانبية"
+        >
+          <Menu className="w-5 h-5" />
+          {userUnreadCount > 0 && (
+            <span className="w-2 h-2 rounded-full bg-rose-600 absolute top-1 right-1 ring-2 ring-white animate-pulse" />
+          )}
+        </button>
+
         <SwiftMyndLogo
           variant="horizontal"
           size="sm"
           isDark={false}
           showSubtitle={false}
-          onClick={() => setActiveTab('home')}
+          onClick={() => setActiveTab(isManagerUser ? 'home' : 'tasks')}
         />
         <button
           onClick={() => setIsBrandModalOpen(true)}
-          className="flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+          className="hidden md:flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-2xs shrink-0"
           title="تغيير اللوجو واسم النظام مباشرة من الواجهة الرئيسية"
         >
           <Camera className="w-3 h-3" />
@@ -242,17 +258,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         {getTabTitle(activeTab) ? (
           <>
             <span className="text-slate-300 hidden md:inline">|</span>
-            <h1 className="text-sm font-bold text-slate-800 tracking-tight hidden md:block truncate max-w-xs whitespace-nowrap">
+            <h1 className="text-xs sm:text-sm font-bold text-slate-800 tracking-tight hidden sm:block truncate max-w-[120px] sm:max-w-xs whitespace-nowrap">
               {getTabTitle(activeTab)}
             </h1>
           </>
         ) : null}
       </div>
 
-      {/* Left Side: Tools & Actions (Search pill, +, Zia, Bell, Calendar, Settings, User) */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      {/* Left Side: Tools & Actions */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         {/* Search Input Pill */}
-        <div className="relative hidden md:block w-64 lg:w-80">
+        <div className="relative hidden md:block w-52 lg:w-72 xl:w-80">
           <input
             type="text"
             value={topSearch}
@@ -263,8 +279,22 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5" />
         </div>
 
-        {/* TOP GLOBAL ACTION GROUP: إضافة | تعديل | حذف */}
-        <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/90 shadow-2xs">
+        {/* Mobile Single + Button */}
+        <button
+          type="button"
+          onClick={() => {
+            setShowAddMenu(!showAddMenu);
+            setShowEditMenu(false);
+            setShowDeleteMenu(false);
+          }}
+          className="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold shadow-xs cursor-pointer md:hidden shrink-0"
+          title="إضافة سريعة"
+        >
+          <Plus className="w-4 h-4 stroke-[3]" />
+        </button>
+
+        {/* TOP GLOBAL ACTION GROUP: إضافة | تعديل | حذف (Desktop only) */}
+        <div className="hidden md:flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/90 shadow-2xs shrink-0">
           {/* 1. ➕ إضافة (Add Menu) */}
           <div className="relative" ref={addRef}>
             <button
@@ -692,7 +722,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         {isManagerUser && (
           <button
             onClick={() => setActiveTab('mcp')}
-            className="text-slate-500 hover:text-blue-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer text-xs font-bold flex items-center gap-0.5"
+            className="hidden lg:flex text-slate-500 hover:text-blue-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer text-xs font-bold items-center gap-0.5 shrink-0"
             title="مساعد الذكاء الاصطناعي Zia / MCP"
           >
             <span className="text-amber-500 text-sm font-black">Zia</span>
@@ -702,7 +732,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         {/* Calendar Icon */}
         <button
           onClick={() => setActiveTab('meetings')}
-          className="text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          className="hidden lg:flex text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           title="التقويم"
         >
           <Calendar className="w-4 h-4" />
@@ -711,11 +741,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         {/* Daily Digest Button (موجز المهام اليومي للموظف) */}
         <button
           onClick={() => setIsDailyDigestOpen(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1 text-slate-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100/90 border border-amber-200/90 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
+          className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 text-slate-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100/90 border border-amber-200/90 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
           title="موجز المهام اليومي (Daily Digest) - المهام المتأخرة والمجدولة لليوم"
         >
           <Sun className="w-3.5 h-3.5 text-amber-600" />
-          <span className="hidden md:inline">موجز اليوم 📋</span>
+          <span>موجز اليوم 📋</span>
           {(digestOverdueCount + digestTodayCount) > 0 && (
             <span className="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full min-w-4 text-center">
               {digestOverdueCount + digestTodayCount}
@@ -724,10 +754,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         </button>
 
         {/* Notifications Bell */}
-        <div className="relative" ref={notifRef}>
+        <div className="relative shrink-0" ref={notifRef}>
           <button
             onClick={() => setShowNotifMenu(!showNotifMenu)}
-            className="text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer relative"
+            className="text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer relative shrink-0"
             title="الإشعارات ومواعيد المهام ومنشنات الفريق"
           >
             <Bell className="w-4 h-4" />
@@ -739,7 +769,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           </button>
 
           {showNotifMenu && (
-            <div className="absolute left-0 top-9 w-84 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 p-3 z-50 text-xs animate-in fade-in">
+            <div className="fixed sm:absolute left-2 right-2 sm:right-auto sm:left-0 top-14 sm:top-9 w-auto sm:w-84 max-w-sm bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 p-3 z-50 text-xs animate-in fade-in">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <span className="font-extrabold flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5 text-blue-600" />
@@ -818,24 +848,24 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         {/* Marketplace Store Icon */}
         <button
           onClick={() => setActiveTab('integrations')}
-          className="text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer hidden sm:block"
+          className="text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer hidden xl:block shrink-0"
           title="سوق التطبيقات والربط"
         >
           <Store className="w-4 h-4" />
         </button>
 
-        {/* Prominent Direct Change Logo Button */}
+        {/* Prominent Direct Change Logo Button (Desktop only) */}
         <button
           onClick={() => setIsBrandModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
+          className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
           title="تغيير اللوجو والشعار وهوية المنظومة فوراً"
         >
           <ImageIcon className="w-3.5 h-3.5" />
           <span>تغيير اللوجو 🖼️</span>
         </button>
 
-        {/* Settings Menu Dropdown (Accessible directly from main interface) */}
-        <div className="relative" ref={settingsRef}>
+        {/* Settings Menu Dropdown (Accessible directly from main interface on desktop) */}
+        <div className="relative hidden md:block shrink-0" ref={settingsRef}>
           <button
             onClick={() => {
               setShowSettingsMenu(!showSettingsMenu);
@@ -858,7 +888,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           </button>
 
           {showSettingsMenu && (
-            <div className="absolute left-0 top-10 w-72 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 py-1.5 z-50 text-xs animate-in fade-in">
+            <div className="fixed sm:absolute left-2 right-2 sm:right-auto sm:left-0 top-14 sm:top-10 w-auto sm:w-72 max-w-sm bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 py-1.5 z-50 text-xs animate-in fade-in">
               <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
                 <span className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
                   <Sliders className="w-4 h-4 text-blue-600" />
@@ -982,7 +1012,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         {/* Quick Check-in / Check-out Widget */}
         <QuickAttendanceWidget />
 
-        {/* Role Switcher Pill: Only shown for Admin to test employee view */}
+        {/* Role Switcher Pill: Only shown for Admin on large screens to test employee view */}
         {isManagerUser && (
           <button
             onClick={() => {
@@ -992,20 +1022,20 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                 showToast(`تم التبديل لحساب (${emp.name})`);
               }
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 text-amber-300 hover:bg-slate-700 border border-amber-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 text-amber-300 hover:bg-slate-700 border border-amber-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
             title="تجربة وضع الموظف للتأكد من أن التاسكات فقط تظهر له"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-            <span className="hidden lg:inline">وضع الأدمن 👑</span>
+            <span>وضع الأدمن 👑</span>
             <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-mono font-bold">تجربة الموظف</span>
           </button>
         )}
 
         {/* User Profile Avatar with status dot */}
-        <div className="relative" ref={userRef}>
+        <div className="relative shrink-0" ref={userRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-1.5 p-0.5 rounded-full hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 p-0.5 rounded-full hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer shrink-0"
             title={currentUser.name}
           >
             <div className="relative">
@@ -1019,7 +1049,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           </button>
 
           {showUserMenu && (
-            <div className="absolute left-0 top-9 w-64 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 p-2 z-50 text-xs animate-in fade-in">
+            <div className="fixed sm:absolute left-2 right-2 sm:right-auto sm:left-0 top-14 sm:top-9 w-auto sm:w-64 max-w-xs bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 p-2 z-50 text-xs animate-in fade-in">
               <div className="p-2.5 bg-slate-50/80 rounded-lg border border-slate-100">
                 <div className="flex items-center justify-between">
                   <span className="font-extrabold text-slate-900">{currentUser.name}</span>

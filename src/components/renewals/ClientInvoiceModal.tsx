@@ -72,7 +72,7 @@ export const ClientInvoiceModal: React.FC<ClientInvoiceModalProps> = ({ client, 
         </div>
 
         {/* Printable Invoice Body */}
-        <div id="printable-invoice" className="p-8 sm:p-10 space-y-6 bg-white text-slate-900 print:p-0 print:m-0">
+        <div id="printable-invoice" className="p-4 sm:p-8 space-y-6 bg-white text-slate-900 print:p-0 print:m-0">
           {/* Invoice Header */}
           <div className="flex items-start justify-between pb-6 border-b border-slate-200 gap-4">
             <div>

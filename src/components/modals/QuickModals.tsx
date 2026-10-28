@@ -415,7 +415,7 @@ export const QuickModals: React.FC = () => {
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto cursor-default"
+        className="bg-white rounded-2xl max-w-xl w-full p-4 sm:p-6 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto cursor-default"
       >
         {/* MODAL 1: ADD TASK */}
         {openQuickModal === 'task' && (
