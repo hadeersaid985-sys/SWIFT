@@ -669,6 +669,176 @@ export interface ClientFinancialContract {
   createdAt: string;
 }
 
+// ==================== نظام الحسابات والمالية المتقدم (Advanced Financial System) ====================
+
+// 1. حسابات الخزينة والبنوك والمحافظ
+export interface FinancialAccount {
+  id: string;
+  name: string; // e.g. "خزنة الشركة الرئيسية (الكاش)", "البنك التجاري الدولي CIB", "فودافون كاش / إنستاباي"
+  accountType: 'cash' | 'bank' | 'wallet';
+  accountNumber?: string;
+  currency: string; // "ج.م"
+  openingBalance: number; // الرصيد الافتتاحي المعتمد
+  currentBalance: number; // الرصيد الفعلي الحالي
+  isDefault?: boolean;
+  notes?: string;
+  updatedAt?: string;
+}
+
+// 2. سجل الحركات المالية الموحد (سندات القبض والصرف، الإيرادات والمصروفات والتحويلات)
+export type FinancialTransactionType = 'revenue' | 'expense' | 'transfer';
+export type FinancialTransactionStatus = 'draft' | 'approved' | 'paid' | 'cancelled';
+
+export interface FinancialTransaction {
+  id: string;
+  transactionNumber: string; // e.g. "TRX-2026-001", "REC-104", "PAY-205"
+  type: FinancialTransactionType; // إيراد / مصروف / تحويل داخلي
+  status: FinancialTransactionStatus; // مسودة / معتمدة / مدفوعة / ملغاة
+  category: string; // تصنيف الحركة (مرتبات، إيجار، إيراد عميل، تسويق، سيرفرات...)
+  chartAccountCode?: string; // رمز الحساب في دليل الحسابات
+  amount: number; // المبلغ بالجنيه المصري
+  currency: string; // "ج.م"
+  date: string; // تاريخ إثبات الحركة YYYY-MM-DD
+  dueDate?: string; // تاريخ الاستحقاق
+  paidAt?: string; // تاريخ السداد الفعلي
+  isPaid: boolean; // هل تم الصرف/التحصيل الفعلي (فصل المستحق عن المدفوع)
+  fromAccountId?: string; // الخزنة أو البنك المنصرف منه
+  fromAccountName?: string;
+  toAccountId?: string; // الخزنة أو البنك المودع فيه
+  toAccountName?: string;
+  clientId?: string; // العميل المرتبط إن وجد
+  clientName?: string;
+  companyName?: string;
+  employeeId?: string; // الموظف المرتبط إن وجد
+  employeeName?: string;
+  vendorName?: string; // المورد أو الجهة المستفيدة
+  invoiceId?: string; // الفاتورة المرتبطة
+  contractId?: string; // العقد المرتبط
+  projectId?: string; // المشروع المرتبط
+  projectTitle?: string;
+  taskId?: string; // التاسك المرتبط لحساب التكلفة
+  paymentMethod: 'نقدي' | 'تحويل بنكي' | 'فودافون كاش / إنستاباي' | 'شيك بنكي' | 'فيزا / بطاقة' | 'أخرى';
+  voucherType?: 'receipt' | 'payment' | 'transfer' | 'journal'; // سند قبض / سند صرف / سند تحويل / قيد
+  referenceNumber?: string; // رقم الإيصال أو كود الحوالة البنكية
+  description: string; // البيان والشرح
+  notes?: string;
+  createdById: string;
+  createdByName: string;
+  approvedById?: string;
+  approvedByName?: string;
+  approvedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// 3. الالتزامات والمصروفات المتكررة (الإيجارات والاشتراكات والمرافق)
+export interface RecurringObligation {
+  id: string;
+  title: string; // e.g. "إيجار المقر الإداري", "سيرفرات واستضافة AWS", "اشتراكات الذكاء الاصطناعي"
+  category: 'إيجار ومقر' | 'سيرفرات وأدوات تقنية' | 'اشتراكات برامج' | 'مرافق وكهرباء' | 'تسويق وإعلانات' | 'صيانة ونظافة' | 'أخرى';
+  beneficiary: string; // المورد / الجهة المستفيدة / صاحب العقار
+  periodicAmount: number; // القيمة الدورية بالجنيه المصري
+  currency: string;
+  frequency: 'monthly' | 'quarterly' | 'semi_annual' | 'annual'; // دورية الاستحقاق
+  startDate: string;
+  endDate?: string;
+  nextDueDate: string; // موعد الاستحقاق القادم
+  targetAccountId?: string; // الخزنة أو البنك المتوقع استخدامه للسداد
+  paidThisPeriod: boolean; // هل تم سداد دورة الشهر الحالي
+  paidAmountThisPeriod: number;
+  lastPaidDate?: string;
+  chartAccountCode?: string;
+  contractFileUrl?: string;
+  notes?: string;
+  status: 'active' | 'paused' | 'completed';
+}
+
+// 4. دليل الحسابات (Chart of Accounts)
+export type ChartAccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
+
+export interface ChartAccount {
+  code: string; // e.g. "101", "102", "201", "401", "501"
+  name: string;
+  type: ChartAccountType;
+  category: 'أصول' | 'التزامات' | 'حقوق ملكية' | 'إيرادات' | 'مصروفات';
+  parentCode?: string;
+  balance: number;
+  debitTotal: number;
+  creditTotal: number;
+  description?: string;
+}
+
+// 5. القيود اليومية المحاسبية المزدوجة (Double-Entry Journal)
+export interface JournalEntryLine {
+  accountCode: string;
+  accountName: string;
+  debit: number; // مدين
+  credit: number; // دائن
+  description?: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  entryNumber: string; // e.g. "JV-2026-001"
+  date: string;
+  description: string;
+  referenceType?: 'invoice' | 'receipt' | 'payment' | 'payroll' | 'transfer' | 'manual';
+  referenceId?: string;
+  lines: JournalEntryLine[];
+  totalDebit: number;
+  totalCredit: number;
+  isBalanced: boolean;
+  status: 'draft' | 'posted';
+  postedAt?: string;
+  createdByName: string;
+  approvedByName?: string;
+  createdAt: string;
+}
+
+// 6. الفواتير والتحصيلات
+export interface ClientInvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface ClientInvoice {
+  id: string;
+  invoiceNumber: string; // e.g. "INV-2026-101"
+  clientId: string;
+  clientName: string;
+  companyName: string;
+  phone?: string;
+  contractId?: string;
+  projectId?: string;
+  serviceTitle: string;
+  items: ClientInvoiceItem[];
+  issueDate: string;
+  dueDate: string;
+  subtotal: number;
+  discount: number;
+  taxRate: number; // %
+  taxAmount: number;
+  totalAmount: number; // الإجمالي النهائي
+  paidAmount: number; // المحصل
+  remainingAmount: number; // المتبقي
+  status: 'draft' | 'approved' | 'partially_paid' | 'paid' | 'overdue' | 'cancelled';
+  payments: {
+    id: string;
+    amount: number;
+    paymentDate: string;
+    paymentMethod: string;
+    referenceNumber?: string;
+    receiptNumber?: string;
+    accountId?: string;
+    note?: string;
+  }[];
+  notes?: string;
+  createdAt: string;
+}
+
 // ==================== أفكار الماركيتنج وأفكاري المكتوبة ====================
 export interface MarketingIdea {
   id: string;

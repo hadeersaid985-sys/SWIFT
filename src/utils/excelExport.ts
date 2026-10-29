@@ -163,3 +163,119 @@ export const exportDailyWorkReportToExcel = (
   XLSX.writeFile(workbook, `${brandName}-تقرير-إنجاز-المهام-اليومي-${selectedDate}.xlsx`);
 };
 
+/**
+ * Export Financial Transactions to Excel (.xlsx)
+ */
+export const exportFinancialTransactionsToExcel = (
+  transactions: any[],
+  brandName: string = 'سويفت مايند'
+) => {
+  const data = transactions.map((t, index) => ({
+    'م': index + 1,
+    'رقم الحركة / السند': t.transactionNumber || '-',
+    'النوع': t.type === 'revenue' ? 'إيراد / تحصيل' : t.type === 'expense' ? 'مصروف' : 'تحويل داخلي',
+    'الحالة': t.status === 'approved' ? 'معتمدة' : t.status === 'paid' ? 'مدفوعة' : t.status === 'draft' ? 'مسودة' : 'ملغاة',
+    'البيان': t.description,
+    'التصنيف': t.category,
+    'المبلغ': t.amount,
+    'العملة': t.currency || 'ج.م',
+    'حالة السداد': t.isPaid ? 'مدفوع فعلياً' : 'مستحق لم يسدد',
+    'الجهة / الطرف': t.clientName || t.employeeName || t.vendorName || '-',
+    'الحساب المالي': t.fromAccountName || t.toAccountName || '-',
+    'طريقة الدفع': t.paymentMethod,
+    'رقم الإيصال / الحوالة': t.referenceNumber || '-',
+    'التاريخ': t.date,
+    'تاريخ الاستحقاق': t.dueDate || '-',
+    'المنشئ': t.createdByName,
+    'المعتمد': t.approvedByName || '-',
+    'ملاحظات': t.notes || '-'
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  if (!worksheet['!views']) worksheet['!views'] = [];
+  worksheet['!views'].push({ rightToLeft: true });
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'الحركات المالية');
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(workbook, `${brandName}-سجل-الحركات-المالية-${dateStr}.xlsx`);
+};
+
+/**
+ * Export Client Statement of Account to Excel (.xlsx)
+ */
+export const exportClientStatementToExcel = (
+  clientName: string,
+  companyName: string,
+  records: any[],
+  currentBalance: number,
+  currency: string = 'ج.م',
+  brandName: string = 'سويفت مايند'
+) => {
+  const data = records.map((r, index) => ({
+    'م': index + 1,
+    'التاريخ': r.date,
+    'المستند': r.documentType,
+    'رقم المستند': r.documentNumber,
+    'البيان': r.description,
+    'مدين (مستحق عليه)': r.debit > 0 ? r.debit : '-',
+    'دائن (مدفوع منه)': r.credit > 0 ? r.credit : '-',
+    'الرصيد المتبقي': r.balance,
+    'طريقة السداد / الحوالة': r.referenceNumber || r.paymentMethod || '-'
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  if (!worksheet['!views']) worksheet['!views'] = [];
+  worksheet['!views'].push({ rightToLeft: true });
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'كشف الحساب');
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(workbook, `${brandName}-كشف-حساب-${clientName.replace(/\s+/g, '_')}-${dateStr}.xlsx`);
+};
+
+/**
+ * Export Trial Balance to Excel (.xlsx)
+ */
+export const exportTrialBalanceToExcel = (
+  accounts: any[],
+  totalDebit: number,
+  totalCredit: number,
+  brandName: string = 'سويفت مايند'
+) => {
+  const data = accounts.map((acc, idx) => ({
+    'م': idx + 1,
+    'رمز الحساب': acc.code,
+    'اسم الحساب': acc.name,
+    'المجموعة': acc.category,
+    'إجمالي المدين': acc.debitTotal,
+    'إجمالي الدائن': acc.creditTotal,
+    'الرصيد النهائي': acc.balance,
+    'طبيعة الرصيد': acc.debitTotal >= acc.creditTotal ? 'مدين' : 'دائن'
+  }));
+
+  // Add Totals row
+  data.push({
+    'م': 'الإجمالي' as any,
+    'رمز الحساب': '-',
+    'اسم الحساب': 'المجموع العام',
+    'المجموعة': '-',
+    'إجمالي المدين': totalDebit,
+    'إجمالي الدائن': totalCredit,
+    'الرصيد النهائي': 0,
+    'طبيعة الرصيد': totalDebit === totalCredit ? 'متوازن 100%' : 'غير متوازن'
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  if (!worksheet['!views']) worksheet['!views'] = [];
+  worksheet['!views'].push({ rightToLeft: true });
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'ميزان المراجعة');
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(workbook, `${brandName}-ميزان-المراجعة-${dateStr}.xlsx`);
+};
+

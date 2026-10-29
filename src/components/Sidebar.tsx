@@ -1068,6 +1068,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                     <span>جهات اتصال</span>
                   </button>
                   <button
+                    onClick={() => handleSelectTab('accounts')}
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                      activeTab === 'accounts' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-[#9bb0cb]" />
+                    <span>الحسابات</span>
+                  </button>
+                  <button
                     onClick={() => handleSelectTab('deals')}
                     className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
                       activeTab === 'deals' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'

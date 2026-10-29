@@ -334,7 +334,7 @@ const AppContent: React.FC = () => {
 
               {/* Sub-views from Sales menu */}
               {effectiveTab === 'contacts' && <LeadsView />}
-              {effectiveTab === 'accounts' && <LeadsView />}
+              {effectiveTab === 'accounts' && <FinancialSystemView />}
               {effectiveTab === 'forecasts' && <AnalyticsView />}
               {effectiveTab === 'documents' && <ReportsListView />}
               {effectiveTab === 'campaigns' && <ReportsListView />}
