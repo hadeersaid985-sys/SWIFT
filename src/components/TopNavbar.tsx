@@ -564,7 +564,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <div>
                     <div className="font-bold">تعديل وتنظيم مهام العمل</div>
-                    <div className="text-[10px] text-slate-400">لوحات كانبان وجداول المهام</div>
+                    <div className="text-[10px] text-slate-400">مراحل المهام وجداول العمل</div>
                   </div>
                 </button>
 

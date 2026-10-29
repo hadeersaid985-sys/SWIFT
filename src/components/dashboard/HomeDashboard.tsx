@@ -416,7 +416,7 @@ export const HomeDashboard: React.FC = () => {
                 onClick={() => setActiveTab('deals')}
                 className="text-xs text-blue-600 font-bold hover:underline"
               >
-                فتح لوحة الصفقات الكانبان &larr;
+                فتح لوحة مراحل الصفقات &larr;
               </button>
             </div>
 

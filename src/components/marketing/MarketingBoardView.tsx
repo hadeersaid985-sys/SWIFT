@@ -567,7 +567,7 @@ export const MarketingBoardView: React.FC = () => {
             }`}
           >
             <LayoutGrid className="w-4 h-4 text-blue-300" />
-            <span>لوحة الكانبان (Board)</span>
+            <span>لوحة مراحل الحملات</span>
           </button>
 
           <button

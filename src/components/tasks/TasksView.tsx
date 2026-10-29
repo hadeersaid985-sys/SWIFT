@@ -996,7 +996,7 @@ export const TasksView: React.FC = () => {
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>بورد أعضاء الفريق (swiftmynd التيم)</span>
+            <span>توزيع المهام حسب الفريق</span>
           </button>
 
           {/* Board by Days */}
@@ -1009,7 +1009,7 @@ export const TasksView: React.FC = () => {
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span>بورد الأيام (swiftmynd بالأيام)</span>
+            <span>جدول المهام حسب الأيام</span>
           </button>
 
           {/* Table List View */}
@@ -1025,7 +1025,7 @@ export const TasksView: React.FC = () => {
             <span>جدول المهام والمؤقت</span>
           </button>
 
-          {/* Kanban Status */}
+          {/* Workflow Stages (formerly Kanban) */}
           <button
             onClick={() => setViewMode('kanban')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer whitespace-nowrap ${
@@ -1033,9 +1033,10 @@ export const TasksView: React.FC = () => {
                 ? 'bg-white text-blue-600 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
+            title="لوحة مراحل سير العمل والإنجاز"
           >
             <Kanban className="w-3.5 h-3.5" />
-            <span>لوحة كانبان</span>
+            <span>مراحل سير العمل</span>
           </button>
 
           {isManager && (
@@ -1048,7 +1049,7 @@ export const TasksView: React.FC = () => {
               }`}
             >
               <Radio className="w-3.5 h-3.5 text-emerald-600" />
-              <span>متابعة التيم المباشرة</span>
+              <span>متابعة الفريق المباشرة</span>
             </button>
           )}
 
@@ -1471,10 +1472,10 @@ export const TasksView: React.FC = () => {
               </span>
               <div>
                 <strong className="font-extrabold text-slate-900 block text-xs">
-                  بورد أعضاء الفريق (swiftmynd التيم):
+                  لوحة توزيع المهام حسب الفريق:
                 </strong>
                 <p className="text-slate-600 text-[11px] mt-0.5">
-                  قائمة مهام مستقلة لكل موظف. يمكنك كمدير أو عضو إضافة مهام فوراً، تشغيل المؤقت (Start/End)، وتعليم علامة صح [✓] على المهمة المنجزة بنقرة واحدة.
+                  قائمة مهام مستقلة لكل موظف. يمكنك إضافة مهام فوراً، تشغيل مؤقت الإنجاز، وإتمام المهمة [✓] بنقرة واحدة.
                 </p>
               </div>
             </div>
@@ -1960,10 +1961,10 @@ export const TasksView: React.FC = () => {
                 </span>
                 <div>
                   <strong className="font-extrabold text-slate-900 block text-xs">
-                    بورد الأيام (swiftmynd بالأيام):
+                    جدول المهام حسب الأيام والمواعيد:
                   </strong>
                   <p className="text-slate-600 text-[11px] mt-0.5">
-                    تنظيم وتوزيع المهام حسب أيام الاستحقاق (اليوم، غداً، هذا الأسبوع، قريباً، المنجزة). علامة صح [✓] لإنهاء أي مهمة فوراً.
+                    تنظيم وتوزيع المهام حسب أيام ومواعيد الاستحقاق (اليوم، غداً، هذا الأسبوع، قريباً، المنجزة) مع إنهاء فوري بنقرة زر.
                   </p>
                 </div>
               </div>
@@ -2721,9 +2722,39 @@ export const TasksView: React.FC = () => {
         </div>
       )}
 
-      {/* VIEW 3: KANBAN BOARD */}
+      {/* VIEW 3: WORKFLOW STAGES (مراحل سير العمل) */}
       {viewMode === 'kanban' && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="space-y-3">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 bg-blue-600 text-white rounded-lg shadow-2xs">
+                <Kanban className="w-4 h-4" />
+              </span>
+              <div>
+                <strong className="font-extrabold text-slate-900 block text-xs">
+                  لوحة مراحل سير العمل والإنجاز:
+                </strong>
+                <p className="text-slate-600 text-[11px] mt-0.5">
+                  متابعة المهام حسب مرحلة التنفيذ (قيد الانتظار &larr; جاري العمل الآن &larr; قيد المراجعة &larr; مكتملة بنجاح) مع إمكانية النقل الفوري بين المراحل بنقرة واحدة.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {isManager && (
+                <button
+                  type="button"
+                  onClick={() => setOpenQuickModal('task')}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>مهمة جديدة</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {(['todo', 'in_progress', 'review', 'completed'] as TaskStatus[]).map(status => {
             const statusTasks = filteredTasks.filter(t => t.status === status);
             const statusLabels: Record<TaskStatus, { title: string; color: string }> = {
@@ -2970,6 +3001,7 @@ export const TasksView: React.FC = () => {
               </div>
             );
           })}
+          </div>
         </div>
       )}
 
