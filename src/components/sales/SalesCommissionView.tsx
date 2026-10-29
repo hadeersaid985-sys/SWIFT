@@ -476,8 +476,8 @@ interface CommissionMonthStats {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="min-w-[900px] w-full text-right text-xs">
               <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">موظف المبيعات</th>

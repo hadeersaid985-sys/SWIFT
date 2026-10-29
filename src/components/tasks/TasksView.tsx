@@ -868,33 +868,34 @@ export const TasksView: React.FC = () => {
         </div>
 
         {/* Action Buttons: Add Task & Reset Data */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {/* Prominent Reset Button - Admin Only */}
           {isManager && (
             <button
               onClick={() => setIsResetModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap text-xs shadow-2xs"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap text-xs shadow-2xs"
               title="مسح البيانات المضافة أو استعادة ضبط المصنع"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
-              <span>مسح الداتا / Reset</span>
+              <RotateCcw className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+              <span className="hidden sm:inline">مسح الداتا / Reset</span>
+              <span className="sm:hidden">Reset</span>
             </button>
           )}
 
           {isManager && (
             <button
               onClick={() => setViewMode('radar')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold transition-all cursor-pointer text-xs ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl font-bold transition-all cursor-pointer text-xs ${
                 viewMode === 'radar'
                   ? 'bg-emerald-600 text-white shadow-2xs'
                   : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
               }`}
             >
-              <Radio className="w-4 h-4 text-emerald-600" />
+              <Radio className="w-4 h-4 text-emerald-600 shrink-0" />
               <span className="hidden sm:inline">رادار المباشر: مين شغال في إيه؟</span>
               <span className="sm:hidden">الرادار</span>
               {runningTimersCount > 0 && (
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
               )}
             </button>
           )}
@@ -902,31 +903,34 @@ export const TasksView: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsDailyReportModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-xl text-xs transition-all cursor-pointer shadow-xs hover:scale-102"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-xl text-xs transition-all cursor-pointer shadow-xs hover:scale-102"
             title="التقرير اليومي لشغل وتاسكات التيم: كل موظف اشتغل ايه ووقت التاسك مجمع باليوم والتاريخ"
           >
-            <Clock className="w-4 h-4 text-sky-200" />
-            <span>⏱️ تقرير إنجاز اليوم المجمع</span>
-            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded font-mono">جديد</span>
+            <Clock className="w-4 h-4 text-sky-200 shrink-0" />
+            <span className="hidden sm:inline">⏱️ تقرير إنجاز اليوم المجمع</span>
+            <span className="sm:hidden">تقرير اليوم</span>
+            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded font-mono hidden sm:inline">جديد</span>
           </button>
 
           <button
             type="button"
             onClick={() => exportTasksToExcel(tasks, team)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-2xs hover:scale-102"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-2xs hover:scale-102"
             title="تصدير كشف المهام والمسؤولين وتتبع الساعات لإكسيل (.xlsx)"
           >
-            <FileSpreadsheet className="w-4 h-4 text-white" />
-            <span>تصدير إكسيل (Excel) 📗</span>
+            <FileSpreadsheet className="w-4 h-4 text-white shrink-0" />
+            <span className="hidden sm:inline">تصدير إكسيل (Excel) 📗</span>
+            <span className="sm:hidden">إكسيل</span>
           </button>
 
           <button
             onClick={() => setOpenQuickModal('task')}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap text-xs"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap text-xs"
           >
-            <Plus className="w-4 h-4" />
-            <span>+ إنشاء مهمة عمل جديدة</span>
-            <span className="bg-white/20 px-1.5 py-0.2 rounded-md text-[10px] font-mono flex items-center gap-0.5">
+            <Plus className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">+ إنشاء مهمة عمل جديدة</span>
+            <span className="sm:hidden">+ مهمة جديدة</span>
+            <span className="bg-white/20 px-1.5 py-0.2 rounded-md text-[10px] font-mono hidden sm:flex items-center gap-0.5">
               <AtSign className="w-2.5 h-2.5 inline" /> منشن
             </span>
           </button>

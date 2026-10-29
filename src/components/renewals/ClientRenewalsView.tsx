@@ -1577,8 +1577,8 @@ export const ClientRenewalsView: React.FC = () => {
 
       {/* RENEWALS TABLE */}
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right border-collapse">
+        <div className="overflow-x-auto scrollbar-thin">
+          <table className="min-w-[850px] w-full text-right border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold">
                 <th className="py-3 px-3 w-10 text-center">

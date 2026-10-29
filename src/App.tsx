@@ -246,7 +246,7 @@ const AppContent: React.FC = () => {
   }, [isManager, activeTab, setActiveTab]);
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#f4f6f9] text-slate-800 flex flex-row selection:bg-blue-600 selection:text-white">
+    <div className="h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-[#f4f6f9] text-slate-800 flex flex-row selection:bg-blue-600 selection:text-white">
       {/* Right Navigation Sidebar (SwiftMynd style) */}
       <Sidebar isMobileOpen={isMobileMenuOpen} onCloseMobile={() => setIsMobileMenuOpen(false)} />
 
@@ -282,7 +282,7 @@ const AppContent: React.FC = () => {
         />
 
         {/* Content Body */}
-        <main className="flex-1 overflow-y-auto p-3 sm:p-5 pb-20 md:pb-5">
+        <main className="flex-1 overflow-y-auto p-2.5 sm:p-5 pb-28 sm:pb-24 md:pb-5 scrollbar-thin">
           {/* Employee only sees personal tasks, meetings, calls, mail, renewals, chat, performance profile, and profile */}
           {!isManager ? (
             <>

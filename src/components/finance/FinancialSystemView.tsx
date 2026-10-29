@@ -721,10 +721,10 @@ export const FinancialSystemView: React.FC = () => {
       </div>
 
       {/* ================= 7 MAIN NAVIGATION TABS ================= */}
-      <div className="flex items-center gap-1.5 border-b border-slate-200 bg-white p-1.5 rounded-2xl shadow-xs overflow-x-auto">
+      <div className="flex items-center gap-1.5 border-b border-slate-200 bg-white p-1.5 rounded-2xl shadow-xs overflow-x-auto scrollbar-none touch-pan-x -mx-1 sm:mx-0">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'overview'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -736,7 +736,7 @@ export const FinancialSystemView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('clients')}
-          className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'clients'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -748,7 +748,7 @@ export const FinancialSystemView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('transactions')}
-          className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'transactions'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -760,7 +760,7 @@ export const FinancialSystemView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('payroll')}
-          className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'payroll'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -772,7 +772,7 @@ export const FinancialSystemView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('recurring')}
-          className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'recurring'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -784,7 +784,7 @@ export const FinancialSystemView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('treasury')}
-          className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'treasury'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -796,7 +796,7 @@ export const FinancialSystemView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('reports')}
-          className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'reports'
               ? 'bg-blue-600 text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -811,88 +811,88 @@ export const FinancialSystemView: React.FC = () => {
       {/* TAB 1: 01. FINANCIAL SUMMARY & DASHBOARD (الملخص المالي)                   */}
       {/* ========================================================================= */}
       {activeTab === 'overview' && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Period Filter Bar */}
           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-500">الفترة المالية المعروضة:</span>
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs font-bold text-slate-500 whitespace-nowrap">الفترة المالية المعروضة:</span>
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold overflow-x-auto scrollbar-none w-full sm:w-auto">
                 <button
                   onClick={() => setPeriodFilter('today')}
-                  className={`px-3 py-1 rounded-lg transition-all ${periodFilter === 'today' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600'}`}
+                  className={`px-3 py-1 rounded-lg transition-all whitespace-nowrap ${periodFilter === 'today' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600'}`}
                 >
                   اليوم
                 </button>
                 <button
                   onClick={() => setPeriodFilter('this_month')}
-                  className={`px-3 py-1 rounded-lg transition-all ${periodFilter === 'this_month' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600'}`}
+                  className={`px-3 py-1 rounded-lg transition-all whitespace-nowrap ${periodFilter === 'this_month' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600'}`}
                 >
                   الشهر الحالي ({selectedMonth})
                 </button>
                 <button
                   onClick={() => setPeriodFilter('this_quarter')}
-                  className={`px-3 py-1 rounded-lg transition-all ${periodFilter === 'this_quarter' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600'}`}
+                  className={`px-3 py-1 rounded-lg transition-all whitespace-nowrap ${periodFilter === 'this_quarter' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600'}`}
                 >
                   الربع الحالي
                 </button>
                 <button
                   onClick={() => setPeriodFilter('all')}
-                  className={`px-3 py-1 rounded-lg transition-all ${periodFilter === 'all' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600'}`}
+                  className={`px-3 py-1 rounded-lg transition-all whitespace-nowrap ${periodFilter === 'all' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-600'}`}
                 >
                   الكل
                 </button>
               </div>
             </div>
 
-            <div className="text-xs text-slate-500 font-bold flex items-center gap-1.5">
+            <div className="text-xs text-slate-500 font-bold flex items-center gap-1.5 self-start sm:self-auto">
               <Clock className="w-3.5 h-3.5 text-blue-600" />
               <span>آخر تحديث مباشر: {new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </div>
 
           {/* Primary Financial Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
             {/* Card 1: الإيرادات المكتسبة */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-500">الإيرادات المكتسبة</span>
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                   <ArrowDownRight className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-black text-slate-900 mt-1.5">
+              <div className="text-lg sm:text-xl font-black text-slate-900 mt-1 sm:mt-1.5">
                 {financialKPIs.totalContractValue.toLocaleString()} ج.م
               </div>
               <p className="text-[10px] text-emerald-600 font-semibold mt-1">
-                تم تحصيل فعلي: {financialKPIs.actualCashInflow.toLocaleString()} ج.م
+                تم تحصيل: {financialKPIs.actualCashInflow.toLocaleString()} ج.م
               </p>
             </div>
 
             {/* Card 2: المصروفات المستحقة */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-500">المصروفات المستحقة</span>
-                <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
                   <ArrowUpRight className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-black text-slate-900 mt-1.5">
+              <div className="text-lg sm:text-xl font-black text-slate-900 mt-1 sm:mt-1.5">
                 {financialKPIs.totalAccruedExpenses.toLocaleString()} ج.م
               </div>
               <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                تشغيل، إيجارات، ورواتب شهرية
+                تشغيل، إيجار، ورواتب
               </p>
             </div>
 
             {/* Card 3: صافي الربح المبدئي */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-500">صافي الربح المبدئي</span>
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <TrendingUp className="w-4 h-4" />
                 </div>
               </div>
-              <div className={`text-xl font-black mt-1.5 ${financialKPIs.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              <div className={`text-lg sm:text-xl font-black mt-1 sm:mt-1.5 ${financialKPIs.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {financialKPIs.netProfit.toLocaleString()} ج.م
               </div>
               <p className="text-[10px] text-slate-400 font-semibold mt-1">
@@ -901,28 +901,28 @@ export const FinancialSystemView: React.FC = () => {
             </div>
 
             {/* Card 4: المستحق من العملاء */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-500">المستحق من العملاء</span>
-                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
                   <Clock className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-black text-amber-600 mt-1.5">
+              <div className="text-lg sm:text-xl font-black text-amber-600 mt-1 sm:mt-1.5">
                 {financialKPIs.totalRemainingReceivables.toLocaleString()} ج.م
               </div>
               <p className="text-[10px] text-rose-600 font-semibold mt-1">
-                متأخر في السداد: {financialKPIs.overdueReceivables.toLocaleString()} ج.م
+                متأخر: {financialKPIs.overdueReceivables.toLocaleString()} ج.م
               </p>
             </div>
 
             {/* Card 5: الرصيد الفعلي بالخزنة والبنك */}
-            <div className="bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-4 rounded-2xl shadow-sm">
+            <div className="bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-3.5 sm:p-4 rounded-2xl shadow-sm col-span-2 sm:col-span-1 lg:col-span-1">
               <div className="flex items-center justify-between text-blue-200">
                 <span className="text-[11px] font-bold">الرصيد الفعلي بالخزنة والبنك</span>
                 <Wallet className="w-4 h-4" />
               </div>
-              <div className="text-xl font-black text-white mt-1.5">
+              <div className="text-lg sm:text-xl font-black text-white mt-1 sm:mt-1.5">
                 {financialKPIs.totalTreasuryBalance.toLocaleString()} ج.م
               </div>
               <p className="text-[10px] text-blue-200 font-semibold mt-1">
@@ -1122,7 +1122,7 @@ export const FinancialSystemView: React.FC = () => {
 
             <button
               onClick={() => setIsNewContractModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+              className="w-full sm:w-auto justify-center flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>إضافة عقد عميل جديد</span>
@@ -1131,8 +1131,8 @@ export const FinancialSystemView: React.FC = () => {
 
           {/* Client Financial Table */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <table className="w-full min-w-[720px] text-right text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4">العميل والمؤسسة</th>
@@ -1272,10 +1272,10 @@ export const FinancialSystemView: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => exportFinancialTransactionsToExcel(allTransactions, brandConfig?.brandName || 'سويفت مايند')}
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold transition-all cursor-pointer border border-emerald-200"
+                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold transition-all cursor-pointer border border-emerald-200 shrink-0"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                 <span>تصدير إكسيل</span>
@@ -1286,7 +1286,7 @@ export const FinancialSystemView: React.FC = () => {
                   setNewTransactionForm(prev => ({ ...prev, type: 'revenue' }));
                   setIsNewTransactionModalOpen(true);
                 }}
-                className="flex items-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                className="flex items-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>تسجيل إيراد</span>
@@ -1297,7 +1297,7 @@ export const FinancialSystemView: React.FC = () => {
                   setNewTransactionForm(prev => ({ ...prev, type: 'expense' }));
                   setIsNewTransactionModalOpen(true);
                 }}
-                className="flex items-center gap-1 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                className="flex items-center gap-1 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>تسجيل مصروف</span>
@@ -1306,8 +1306,8 @@ export const FinancialSystemView: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <table className="w-full min-w-[760px] text-right text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4">رقم الحركة</th>
@@ -1398,8 +1398,8 @@ export const FinancialSystemView: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <table className="w-full min-w-[760px] text-right text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4">الموظف</th>
@@ -1539,8 +1539,8 @@ export const FinancialSystemView: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <table className="w-full min-w-[760px] text-right text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4">بند المصروف / الالتزام</th>
@@ -1720,8 +1720,8 @@ export const FinancialSystemView: React.FC = () => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <table className="w-full min-w-[650px] text-right text-xs">
                 <thead className="bg-slate-100/60 text-slate-500 font-bold border-b border-slate-200">
                   <tr>
                     <th className="py-2.5 px-4">رمز الحساب</th>
@@ -1849,9 +1849,9 @@ export const FinancialSystemView: React.FC = () => {
       {/* MODAL: INTERNAL TRANSFER (تحويل داخلي بين الخزائن والبنوك)                 */}
       {/* ========================================================================= */}
       {isTransferModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+          <div className="bg-white w-[94vw] sm:w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[88dvh] flex flex-col">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
               <div className="flex items-center gap-2">
                 <ArrowRightLeft className="w-4 h-4 text-blue-600" />
                 <h3 className="text-sm font-black text-slate-900">إجراء تحويل مالي داخلي</h3>
@@ -1864,7 +1864,7 @@ export const FinancialSystemView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleTransferSubmit} className="p-4 space-y-3.5 text-xs">
+            <form onSubmit={handleTransferSubmit} className="p-4 space-y-3.5 text-xs overflow-y-auto">
               <div className="p-2.5 bg-blue-50 border border-blue-200/80 rounded-xl text-blue-900 text-[11px]">
                 💡 <strong>قاعدة نظامية:</strong> التحويل بين الخزنة والبنك ينقل الأموال بين حسابين فقط، ولا يتم احتسابه كإيراد جديد أو مصروف جديد في قائمة الأرباح والخسائر.
               </div>
@@ -1968,9 +1968,9 @@ export const FinancialSystemView: React.FC = () => {
       {/* MODAL: ADD TRANSACTION (إضافة حركة مالية إيراد أو مصروف)                    */}
       {/* ========================================================================= */}
       {isNewTransactionModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+          <div className="bg-white w-[94vw] sm:w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[88dvh] flex flex-col">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
               <h3 className="text-sm font-black text-slate-900">
                 تسجيل حركة مالية جديدة ({newTransactionForm.type === 'revenue' ? 'إيراد عميل' : 'مصروف'})
               </h3>
@@ -1998,7 +1998,7 @@ export const FinancialSystemView: React.FC = () => {
                 confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
                 setIsNewTransactionModalOpen(false);
               }}
-              className="p-4 space-y-3 text-xs"
+              className="p-4 space-y-3 text-xs overflow-y-auto"
             >
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -2238,9 +2238,9 @@ export const FinancialSystemView: React.FC = () => {
       {/* MODAL: RECORD CLIENT PAYMENT (استلام دفعة من العميل)                        */}
       {/* ========================================================================= */}
       {selectedClientForPayment && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+          <div className="bg-white w-[94vw] sm:w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[88dvh] flex flex-col">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
               <div>
                 <h3 className="text-sm font-black text-slate-900">تسجيل دفعة مستلمة من العميل</h3>
                 <p className="text-[11px] text-slate-500">{selectedClientForPayment.clientName}</p>
@@ -2253,7 +2253,7 @@ export const FinancialSystemView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleRecordClientPayment} className="p-4 space-y-3 text-xs">
+            <form onSubmit={handleRecordClientPayment} className="p-4 space-y-3 text-xs overflow-y-auto">
               <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex items-center justify-between">
                 <span>المتبقي حالياً على العميل:</span>
                 <strong className="text-sm font-black">
@@ -2360,9 +2360,9 @@ export const FinancialSystemView: React.FC = () => {
       {/* MODAL: ADD CLIENT CONTRACT (تسجيل عقد عميل جديد)                           */}
       {/* ========================================================================= */}
       {isNewContractModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+          <div className="bg-white w-[94vw] sm:w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[88dvh] flex flex-col">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
               <h3 className="text-sm font-black text-slate-900">تسجيل عقد مالي لعميل جديد</h3>
               <button
                 onClick={() => setIsNewContractModalOpen(false)}
@@ -2372,7 +2372,7 @@ export const FinancialSystemView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleAddContract} className="p-4 space-y-3 text-xs">
+            <form onSubmit={handleAddContract} className="p-4 space-y-3 text-xs overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">اسم العميل *</label>
@@ -2503,9 +2503,9 @@ export const FinancialSystemView: React.FC = () => {
       {/* MODAL: ADD RECURRING OBLIGATION (تسجيل التزام متكرر)                       */}
       {/* ========================================================================= */}
       {isNewObligationModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+          <div className="bg-white w-[94vw] sm:w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[88dvh] flex flex-col">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
               <h3 className="text-sm font-black text-slate-900">إضافة التزام ومصروف متكرر</h3>
               <button
                 onClick={() => setIsNewObligationModalOpen(false)}
@@ -2537,7 +2537,7 @@ export const FinancialSystemView: React.FC = () => {
                 setRecurringObligations(prev => [newOb, ...prev]);
                 setIsNewObligationModalOpen(false);
               }}
-              className="p-4 space-y-3 text-xs"
+              className="p-4 space-y-3 text-xs overflow-y-auto"
             >
               <div>
                 <label className="block font-bold text-slate-700 mb-1">اسم المصروف أو الالتزام *</label>

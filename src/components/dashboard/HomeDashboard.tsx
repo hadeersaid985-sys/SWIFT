@@ -146,28 +146,28 @@ export const HomeDashboard: React.FC = () => {
       </div>
 
       {/* 4 Big KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Card 1: Tasks & Deadlines */}
         <div
           onClick={() => setActiveTab('tasks')}
-          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 transition-colors cursor-pointer group"
+          className="bg-white p-3.5 sm:p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 transition-colors cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">المهام الجارية</span>
-            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
-              <CheckSquare className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500">المهام الجارية</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+              <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-slate-900">{pendingTasks.length}</span>
-            <span className="text-xs text-slate-500">مهمة معلقة</span>
+          <div className="mt-2.5 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2">
+            <span className="text-xl sm:text-3xl font-bold font-mono tabular-nums text-slate-900">{pendingTasks.length}</span>
+            <span className="text-[10px] sm:text-xs text-slate-500">معلقة</span>
           </div>
-          <div className="mt-3 flex items-center justify-between text-xs pt-2.5 border-t border-slate-100">
-            <span className="text-amber-700 font-medium flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> {todayTasks.length} مستحق اليوم / متأخر
+          <div className="mt-2.5 sm:mt-3 flex items-center justify-between text-[10px] sm:text-xs pt-2 sm:pt-2.5 border-t border-slate-100">
+            <span className="text-amber-700 font-medium flex items-center gap-1 truncate">
+              <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-600 shrink-0" /> {todayTasks.length} مستحق
             </span>
-            <span className="text-blue-600 font-medium flex items-center gap-0.5">
-              عرض الكل <ChevronLeft className="w-3 h-3" />
+            <span className="text-blue-600 font-medium hidden sm:flex items-center gap-0.5 shrink-0">
+              عرض <ChevronLeft className="w-3 h-3" />
             </span>
           </div>
         </div>
@@ -175,26 +175,23 @@ export const HomeDashboard: React.FC = () => {
         {/* Card 2: Sales Pipeline Value */}
         <div
           onClick={() => setActiveTab('deals')}
-          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 transition-colors cursor-pointer group"
+          className="bg-white p-3.5 sm:p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 transition-colors cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">قيمة صفقات المبيعات</span>
-            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500">صفقات المبيعات</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-slate-900">
+          <div className="mt-2.5 sm:mt-3 flex items-baseline gap-1 sm:gap-1.5">
+            <span className="text-xl sm:text-3xl font-bold font-mono tabular-nums text-slate-900">
               {totalPipelineValue.toLocaleString()}
             </span>
-            <span className="text-xs font-medium text-slate-500">{currency}</span>
+            <span className="text-[10px] sm:text-xs font-medium text-slate-500">{currency}</span>
           </div>
-          <div className="mt-3 flex items-center justify-between text-xs pt-2.5 border-t border-slate-100">
-            <span className="text-slate-700 font-medium">
+          <div className="mt-2.5 sm:mt-3 flex items-center justify-between text-[10px] sm:text-xs pt-2 sm:pt-2.5 border-t border-slate-100">
+            <span className="text-slate-700 font-medium truncate">
               محقق: {wonDealsValue.toLocaleString()} {currency}
-            </span>
-            <span className="text-blue-600 font-medium flex items-center gap-0.5">
-              عرض <ChevronLeft className="w-3 h-3" />
             </span>
           </div>
         </div>
@@ -202,24 +199,24 @@ export const HomeDashboard: React.FC = () => {
         {/* Card 3: Team Activity */}
         <div
           onClick={() => setActiveTab('team')}
-          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 transition-colors cursor-pointer group"
+          className="bg-white p-3.5 sm:p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 transition-colors cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">فريق العمل</span>
-            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
-              <Users className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500">فريق العمل</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-slate-900">{team.length}</span>
-            <span className="text-xs text-slate-500">عضو نشط</span>
+          <div className="mt-2.5 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2">
+            <span className="text-xl sm:text-3xl font-bold font-mono tabular-nums text-slate-900">{team.length}</span>
+            <span className="text-[10px] sm:text-xs text-slate-500">عضو نشط</span>
           </div>
-          <div className="mt-3 flex items-center justify-between text-xs pt-2.5 border-t border-slate-100">
-            <span className="text-emerald-700 font-medium flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />
-              {team.filter(m => m.status === 'online').length} متصلين الآن
+          <div className="mt-2.5 sm:mt-3 flex items-center justify-between text-[10px] sm:text-xs pt-2 sm:pt-2.5 border-t border-slate-100">
+            <span className="text-emerald-700 font-medium flex items-center gap-1 truncate">
+              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-600 inline-block shrink-0" />
+              {team.filter(m => m.status === 'online').length} متصل
             </span>
-            <span className="text-blue-600 font-medium flex items-center gap-0.5">
+            <span className="text-blue-600 font-medium hidden sm:flex items-center gap-0.5 shrink-0">
               الدليل <ChevronLeft className="w-3 h-3" />
             </span>
           </div>
@@ -228,24 +225,24 @@ export const HomeDashboard: React.FC = () => {
         {/* Card 4: Team Mail & Leads */}
         <div
           onClick={() => setActiveTab('mail')}
-          className="bg-white p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 transition-colors cursor-pointer group"
+          className="bg-white p-3.5 sm:p-4.5 rounded-xl border border-slate-200 shadow-xs hover:border-slate-300 transition-colors cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">بريد الفريق الوارد</span>
-            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
-              <Mail className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs font-medium text-slate-500">بريد الفريق الوارد</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
+              <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-slate-900">{unreadEmails.length}</span>
-            <span className="text-xs text-slate-500">رسائل جديدة</span>
+          <div className="mt-2.5 sm:mt-3 flex items-baseline gap-1.5 sm:gap-2">
+            <span className="text-xl sm:text-3xl font-bold font-mono tabular-nums text-slate-900">{unreadEmails.length}</span>
+            <span className="text-[10px] sm:text-xs text-slate-500">رسائل جديدة</span>
           </div>
-          <div className="mt-3 flex items-center justify-between text-xs pt-3 border-t border-slate-100">
-            <span className="text-purple-600 font-semibold">
-              {leads.length} عميل محتمل مسجل
+          <div className="mt-2.5 sm:mt-3 flex items-center justify-between text-[10px] sm:text-xs pt-2 sm:pt-2.5 border-t border-slate-100">
+            <span className="text-purple-600 font-semibold truncate">
+              {leads.length} عميل محتمل
             </span>
-            <span className="text-blue-600 flex items-center gap-0.5 group-hover:translate-x-[-3px] transition-transform">
-              فتح البريد <ChevronLeft className="w-3 h-3" />
+            <span className="text-blue-600 hidden sm:flex items-center gap-0.5 shrink-0">
+              فتح <ChevronLeft className="w-3 h-3" />
             </span>
           </div>
         </div>

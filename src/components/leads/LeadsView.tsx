@@ -955,8 +955,8 @@ export const LeadsView: React.FC = () => {
       {/* VIEW 2: DETAILED TABLE */}
       {viewMode === 'table' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="min-w-[950px] w-full text-right text-xs">
               <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                 <tr>
                   <th className="py-3.5 px-4">اسم العميل والمسمى</th>

@@ -111,7 +111,7 @@ export const DealsView: React.FC = () => {
       </div>
 
       {/* Kanban Pipeline Columns */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
+      <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 scrollbar-none snap-x items-start">
         {stages.map(stage => {
           const stageDeals = deals.filter(d => d.stage === stage.id);
           const stageValue = stageDeals.reduce((sum, d) => sum + d.value, 0);
@@ -119,7 +119,7 @@ export const DealsView: React.FC = () => {
           return (
             <div
               key={stage.id}
-              className={`rounded-2xl border ${stage.border} ${stage.bg} p-3.5 space-y-3 min-h-[500px] flex flex-col`}
+              className={`w-[84vw] sm:w-auto shrink-0 snap-center rounded-2xl border ${stage.border} ${stage.bg} p-3.5 space-y-3 min-h-[380px] sm:min-h-[500px] flex flex-col`}
             >
               {/* Stage Header */}
               <div className="border-b border-slate-200/70 pb-2">

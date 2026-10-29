@@ -446,9 +446,9 @@ export const TeamChatView: React.FC = () => {
   }, [activeMessages]);
 
   return (
-    <div className="h-[calc(100vh-5.5rem)] flex flex-col bg-white rounded-2xl shadow-xs border border-slate-200/90 overflow-hidden">
+    <div className="h-[calc(100dvh-10.5rem)] sm:h-[calc(100dvh-8rem)] md:h-[calc(100dvh-5.5rem)] flex flex-col bg-white rounded-2xl shadow-xs border border-slate-200/90 overflow-hidden">
       {/* Top Banner / Breadcrumb */}
-      <div className="bg-[#1e293b] text-white px-4 py-3 flex items-center justify-between border-b border-slate-700/80 shrink-0">
+      <div className="bg-[#1e293b] text-white px-3 sm:px-4 py-2.5 sm:py-3 flex flex-wrap sm:flex-nowrap items-center justify-between border-b border-slate-700/80 shrink-0 gap-2">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 bg-blue-600 rounded-lg text-white shadow-xs">
             <MessagesSquare className="w-4 h-4" />

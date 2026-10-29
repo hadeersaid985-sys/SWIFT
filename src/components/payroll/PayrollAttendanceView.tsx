@@ -836,10 +836,10 @@ export const PayrollAttendanceView: React.FC = () => {
       </div>
 
       {/* 3. SUBTABS NAVIGATION */}
-      <div className="flex items-center gap-1.5 p-1 bg-slate-200/80 rounded-xl w-fit text-xs font-bold">
+      <div className="flex items-center gap-1.5 p-1 bg-slate-200/80 rounded-xl w-full sm:w-fit text-xs font-bold overflow-x-auto scrollbar-none">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer shrink-0 ${
             activeTab === 'overview'
               ? 'bg-white text-emerald-800 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
@@ -851,7 +851,7 @@ export const PayrollAttendanceView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('attendance')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer shrink-0 ${
             activeTab === 'attendance'
               ? 'bg-white text-blue-700 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
@@ -866,7 +866,7 @@ export const PayrollAttendanceView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('payroll')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer shrink-0 ${
             activeTab === 'payroll'
               ? 'bg-white text-emerald-700 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
@@ -878,7 +878,7 @@ export const PayrollAttendanceView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('calculator')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all cursor-pointer shrink-0 ${
             activeTab === 'calculator'
               ? 'bg-white text-purple-700 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
@@ -1076,8 +1076,8 @@ export const PayrollAttendanceView: React.FC = () => {
 
           {/* Attendance Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+            <div className="overflow-x-auto scrollbar-thin">
+              <table className="min-w-[850px] w-full text-right text-xs">
                 <thead>
                   <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-extrabold text-[11px]">
                     <th className="py-3 px-4">الموظف والكود</th>
@@ -1284,8 +1284,8 @@ export const PayrollAttendanceView: React.FC = () => {
 
           {/* Payroll Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs">
+            <div className="overflow-x-auto scrollbar-thin">
+              <table className="min-w-[850px] w-full text-right text-xs">
                 <thead>
                   <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-extrabold text-[11px]">
                     <th className="py-3 px-4">الموظف والكود</th>

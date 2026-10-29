@@ -381,11 +381,11 @@ export const TeamView: React.FC = () => {
       {/* Sub Tabs: Credentials Hub vs Cards View */}
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         {/* Toggle View Mode */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-lg text-xs font-bold">
+        <div className="flex items-center bg-slate-100 p-1 rounded-lg text-xs font-bold overflow-x-auto max-w-full scrollbar-none">
           {isManager && (
             <button
               onClick={() => setActiveSubTab('credentials')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer shrink-0 ${
                 activeSubTab === 'credentials'
                   ? 'bg-white text-blue-600 shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -401,7 +401,7 @@ export const TeamView: React.FC = () => {
 
           <button
             onClick={() => setActiveSubTab('directory')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer shrink-0 ${
               activeSubTab === 'directory'
                 ? 'bg-white text-blue-600 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -414,7 +414,7 @@ export const TeamView: React.FC = () => {
           {isManager && (
             <button
               onClick={() => setActiveSubTab('salaries')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all cursor-pointer shrink-0 ${
                 activeSubTab === 'salaries'
                   ? 'bg-emerald-600 text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -430,7 +430,7 @@ export const TeamView: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2 flex-1 max-w-lg justify-end">
+        <div className="flex items-center gap-2 flex-1 max-w-lg justify-start sm:justify-end flex-wrap w-full sm:w-auto">
           <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
@@ -446,7 +446,7 @@ export const TeamView: React.FC = () => {
             </select>
           </div>
 
-          <div className="relative w-44 sm:w-56">
+          <div className="relative flex-1 sm:flex-initial w-full sm:w-56">
             <input
               type="text"
               value={searchMember}
@@ -462,7 +462,7 @@ export const TeamView: React.FC = () => {
       {/* VIEW 1: ADMIN CREDENTIALS & ACCOUNTS HUB (MAIN REQUEST) */}
       {activeSubTab === 'credentials' && (
         <div className="space-y-3">
-          <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-900 flex items-start justify-between gap-3">
+          <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-start gap-2.5">
               <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
@@ -474,7 +474,7 @@ export const TeamView: React.FC = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <button
                 type="button"
                 onClick={() => exportSystemBackup()}
@@ -495,8 +495,8 @@ export const TeamView: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse text-xs">
+            <div className="overflow-x-auto scrollbar-thin">
+              <table className="min-w-[850px] w-full text-right border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-extrabold">
                     <th className="py-3 px-4">الموظف والكود</th>
