@@ -34,7 +34,14 @@ import {
   ClientPaymentEntry,
   ClientFinancialContract,
   MarketingIdea,
-  WrittenThoughtNote
+  WrittenThoughtNote,
+  PerformanceEvaluationRecord,
+  DelayRecord,
+  CompanyRule,
+  RuleViolationRecord,
+  MonthlyPerformanceReview,
+  DelayReviewStatus,
+  ViolationReviewStatus
 } from '../types/crm';
 import {
   CURRENT_USER,
@@ -57,7 +64,12 @@ import {
   INITIAL_SALES_COMMISSIONS,
   INITIAL_FINANCIAL_CONTRACTS,
   INITIAL_MARKETING_IDEAS,
-  INITIAL_WRITTEN_THOUGHTS
+  INITIAL_WRITTEN_THOUGHTS,
+  INITIAL_PERFORMANCE_EVALUATIONS,
+  INITIAL_DELAYS,
+  INITIAL_COMPANY_RULES,
+  INITIAL_RULE_VIOLATIONS,
+  INITIAL_MONTHLY_PERFORMANCE_REVIEWS
 } from '../data/initialData';
 import {
   saveTaskToFirestore,
@@ -308,6 +320,41 @@ interface CRMContextType {
   updateWrittenThought: (id: string, updates: Partial<WrittenThoughtNote>) => void;
   deleteWrittenThought: (id: string) => void;
   togglePinThought: (id: string) => void;
+
+  // ==================== 1. تقييم أداء الموظفين (Performance Evaluations) ====================
+  performanceEvaluations: PerformanceEvaluationRecord[];
+  addPerformanceEvaluation: (record: Omit<PerformanceEvaluationRecord, 'id' | 'createdAt'>) => void;
+  updatePerformanceEvaluation: (id: string, updates: Partial<PerformanceEvaluationRecord>) => void;
+  deletePerformanceEvaluation: (id: string) => void;
+  approvePerformanceEvaluation: (id: string, actionTaken?: string, followUpDate?: string) => void;
+  addEvaluationClarification: (id: string, clarification: string) => void;
+
+  // ==================== 2. متابعة التأخيرات المنظم (Delays & Attendance Log) ====================
+  delays: DelayRecord[];
+  addDelayRecord: (record: Omit<DelayRecord, 'id' | 'createdAt'>) => void;
+  updateDelayRecord: (id: string, updates: Partial<DelayRecord>) => void;
+  deleteDelayRecord: (id: string) => void;
+  reviewDelayRecord: (id: string, reviewStatus: DelayReviewStatus, actionTaken?: string, notes?: string) => void;
+
+  // ==================== 3. قواعد وسياسات الشركة (Company Rules & Policies) ====================
+  companyRules: CompanyRule[];
+  addCompanyRule: (rule: Omit<CompanyRule, 'id' | 'createdAt' | 'lastModified' | 'acknowledgments'>) => void;
+  updateCompanyRule: (id: string, updates: Partial<CompanyRule>) => void;
+  deleteCompanyRule: (id: string) => void;
+  acknowledgeCompanyRule: (ruleId: string, employeeId?: string, employeeName?: string) => void;
+
+  // ==================== 4. سجل حالات عدم الالتزام (Rule Violations Log) ====================
+  ruleViolations: RuleViolationRecord[];
+  addRuleViolation: (violation: Omit<RuleViolationRecord, 'id' | 'createdAt'>) => void;
+  updateRuleViolation: (id: string, updates: Partial<RuleViolationRecord>) => void;
+  deleteRuleViolation: (id: string) => void;
+  reviewRuleViolation: (id: string, reviewStatus: ViolationReviewStatus, actionTaken?: string, notes?: string) => void;
+  addViolationClarification: (id: string, clarification: string) => void;
+
+  // ==================== 5. التقييم الشهري للموظفين (Monthly Reviews) ====================
+  monthlyPerformanceReviews: MonthlyPerformanceReview[];
+  saveMonthlyPerformanceReview: (review: MonthlyPerformanceReview) => void;
+  deleteMonthlyPerformanceReview: (id: string) => void;
 
   // Data Actions & Reset
   resetToDemoData: () => void;
@@ -790,6 +837,10 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         'mail',
         'chat',
         'profile',
+        'performance',
+        'company_rules',
+        'delays',
+        'payroll',
         ...(isSales ? ['leads'] : [])
       ];
 
@@ -847,7 +898,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           'meetings',
           'calls',
           'mail',
+          'chat',
           'profile',
+          'performance',
+          'company_rules',
+          'delays',
+          'payroll',
           ...(isSales ? ['leads'] : [])
         ];
 
@@ -907,7 +963,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       'meetings',
       'calls',
       'mail',
+      'chat',
       'profile',
+      'performance',
+      'company_rules',
+      'delays',
+      'payroll',
       ...(isSales ? ['leads'] : [])
     ];
 
@@ -1947,6 +2008,285 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setWrittenThoughts(prev =>
       prev.map(t => (t.id === id ? { ...t, isPinned: !t.isPinned, updatedAt: new Date().toISOString() } : t))
     );
+  };
+
+  // ==================== 1. نظام تقييم أداء الموظفين ====================
+  const [performanceEvaluations, setPerformanceEvaluations] = useState<PerformanceEvaluationRecord[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}performance_evaluations`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_PERFORMANCE_EVALUATIONS;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}performance_evaluations`, JSON.stringify(performanceEvaluations));
+  }, [performanceEvaluations]);
+
+  const addPerformanceEvaluation = (evalData: Omit<PerformanceEvaluationRecord, 'id' | 'createdAt'>) => {
+    const newEval: PerformanceEvaluationRecord = {
+      ...evalData,
+      id: 'eval-' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    setPerformanceEvaluations(prev => [newEval, ...prev]);
+    logActivity('team', 'تسجيل ملاحظة تقييم أداء للموظف', `${newEval.employeeName} - ${newEval.type === 'positive' ? 'إيجابية' : newEval.type === 'negative' ? 'تقصير' : newEval.type === 'extra_work' ? 'شغل إضافي' : 'فرصة تحسين'}`);
+  };
+
+  const updatePerformanceEvaluation = (id: string, updates: Partial<PerformanceEvaluationRecord>) => {
+    setPerformanceEvaluations(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+  };
+
+  const deletePerformanceEvaluation = (id: string) => {
+    setPerformanceEvaluations(prev => prev.filter(e => e.id !== id));
+  };
+
+  const approvePerformanceEvaluation = (id: string, actionTaken?: string, followUpDate?: string) => {
+    setPerformanceEvaluations(prev =>
+      prev.map(e => {
+        if (e.id === id) {
+          return {
+            ...e,
+            status: 'approved',
+            reviewedBy: currentUser?.name || 'المدير',
+            reviewedAt: new Date().toISOString(),
+            actionTaken: actionTaken || e.actionTaken || 'تم الاعتماد',
+            followUpDate: followUpDate || e.followUpDate
+          };
+        }
+        return e;
+      })
+    );
+    logActivity('team', 'اعتماد تقييم أداء رسمي', `تم اعتماد تقييم الموظف من قِبل ${currentUser?.name || 'الإدارة'}`);
+  };
+
+  const addEvaluationClarification = (id: string, clarification: string) => {
+    setPerformanceEvaluations(prev =>
+      prev.map(e => {
+        if (e.id === id) {
+          return {
+            ...e,
+            employeeClarification: clarification,
+            employeeClarificationDate: new Date().toISOString()
+          };
+        }
+        return e;
+      })
+    );
+    logActivity('team', 'إضافة توضيح/رد موظف على التقييم', `أضاف ${currentUser?.name || 'الموظف'} توضيحاً على الملاحظة`);
+  };
+
+  // ==================== 2. نظام متابعة التأخيرات المنظم ====================
+  const [delays, setDelays] = useState<DelayRecord[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}delays`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_DELAYS;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}delays`, JSON.stringify(delays));
+  }, [delays]);
+
+  const addDelayRecord = (delayData: Omit<DelayRecord, 'id' | 'createdAt'>) => {
+    const newDelay: DelayRecord = {
+      ...delayData,
+      id: 'delay-' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    setDelays(prev => [newDelay, ...prev]);
+    logActivity('team', 'تسجيل واقعة تأخير حضور', `${newDelay.employeeName} (${newDelay.delayMinutes} دقيقة) - ${newDelay.date}`);
+  };
+
+  const updateDelayRecord = (id: string, updates: Partial<DelayRecord>) => {
+    setDelays(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
+  };
+
+  const deleteDelayRecord = (id: string) => {
+    setDelays(prev => prev.filter(d => d.id !== id));
+  };
+
+  const reviewDelayRecord = (id: string, reviewStatus: DelayReviewStatus, actionTaken?: string, notes?: string) => {
+    setDelays(prev =>
+      prev.map(d => {
+        if (d.id === id) {
+          return {
+            ...d,
+            reviewStatus,
+            reviewedBy: currentUser?.name || 'المدير',
+            reviewedAt: new Date().toISOString(),
+            actionTaken: actionTaken !== undefined ? actionTaken : d.actionTaken,
+            notes: notes !== undefined ? notes : d.notes
+          };
+        }
+        return d;
+      })
+    );
+    logActivity('team', 'مراجعة عذر التأخير', `تمت مراجعة حالة التأخير (${reviewStatus})`);
+  };
+
+  // ==================== 3. نظام قواعد وسياسات الشركة ====================
+  const [companyRules, setCompanyRules] = useState<CompanyRule[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}company_rules`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_COMPANY_RULES;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}company_rules`, JSON.stringify(companyRules));
+  }, [companyRules]);
+
+  const addCompanyRule = (ruleData: Omit<CompanyRule, 'id' | 'createdAt' | 'lastModified' | 'acknowledgments'>) => {
+    const newRule: CompanyRule = {
+      ...ruleData,
+      id: 'rule-' + Date.now(),
+      acknowledgments: [],
+      lastModified: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString()
+    };
+    setCompanyRules(prev => [newRule, ...prev]);
+    logActivity('task', 'إضافة قاعدة/سياسة جديدة للشركة 📜', newRule.title);
+  };
+
+  const updateCompanyRule = (id: string, updates: Partial<CompanyRule>) => {
+    setCompanyRules(prev =>
+      prev.map(r => (r.id === id ? { ...r, ...updates, lastModified: new Date().toISOString().split('T')[0] } : r))
+    );
+  };
+
+  const deleteCompanyRule = (id: string) => {
+    setCompanyRules(prev => prev.filter(r => r.id !== id));
+  };
+
+  const acknowledgeCompanyRule = (ruleId: string, employeeId = currentUser?.id, employeeName = currentUser?.name) => {
+    if (!employeeId) return;
+    setCompanyRules(prev =>
+      prev.map(r => {
+        if (r.id === ruleId) {
+          const existing = r.acknowledgments || [];
+          if (existing.some(a => a.employeeId === employeeId)) return r;
+          return {
+            ...r,
+            acknowledgments: [
+              ...existing,
+              {
+                employeeId,
+                employeeName: employeeName || 'موظف',
+                acknowledgedAt: new Date().toISOString()
+              }
+            ]
+          };
+        }
+        return r;
+      })
+    );
+    logActivity('team', 'إقرار اطلاع على قاعدة بالشركة', `أقر ${employeeName} بالاطلاع على لائحة الشركة`);
+  };
+
+  // ==================== 4. سجل حالات عدم الالتزام ====================
+  const [ruleViolations, setRuleViolations] = useState<RuleViolationRecord[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}rule_violations`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_RULE_VIOLATIONS;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}rule_violations`, JSON.stringify(ruleViolations));
+  }, [ruleViolations]);
+
+  const addRuleViolation = (violationData: Omit<RuleViolationRecord, 'id' | 'createdAt'>) => {
+    const newViolation: RuleViolationRecord = {
+      ...violationData,
+      id: 'viol-' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    setRuleViolations(prev => [newViolation, ...prev]);
+    logActivity('team', 'تسجيل حالة عدم التزام بقواعد الشركة', `${newViolation.employeeName} - ${newViolation.ruleTitle}`);
+  };
+
+  const updateRuleViolation = (id: string, updates: Partial<RuleViolationRecord>) => {
+    setRuleViolations(prev => prev.map(v => (v.id === id ? { ...v, ...updates } : v)));
+  };
+
+  const deleteRuleViolation = (id: string) => {
+    setRuleViolations(prev => prev.filter(v => v.id !== id));
+  };
+
+  const reviewRuleViolation = (id: string, reviewStatus: ViolationReviewStatus, actionTaken?: string, notes?: string) => {
+    setRuleViolations(prev =>
+      prev.map(v => {
+        if (v.id === id) {
+          return {
+            ...v,
+            reviewStatus,
+            reviewedBy: currentUser?.name || 'المدير',
+            reviewedAt: new Date().toISOString(),
+            actionTaken: actionTaken !== undefined ? actionTaken : v.actionTaken,
+            notes: notes !== undefined ? notes : v.notes
+          };
+        }
+        return v;
+      })
+    );
+    logActivity('team', 'مراجعة حالة عدم الالتزام', `تمت مراجعة الحالة واعتماد النتيجة (${reviewStatus})`);
+  };
+
+  const addViolationClarification = (id: string, clarification: string) => {
+    setRuleViolations(prev =>
+      prev.map(v => (v.id === id ? { ...v, employeeClarification: clarification } : v))
+    );
+    logActivity('team', 'تقديم رد وتوضيح على مخالفة', `أضاف ${currentUser?.name || 'الموظف'} توضيحاً بشأن الواقعة`);
+  };
+
+  // ==================== 5. سجل التقييمات الشهرية ====================
+  const [monthlyPerformanceReviews, setMonthlyPerformanceReviews] = useState<MonthlyPerformanceReview[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}monthly_reviews`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_MONTHLY_PERFORMANCE_REVIEWS;
+  });
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}monthly_reviews`, JSON.stringify(monthlyPerformanceReviews));
+  }, [monthlyPerformanceReviews]);
+
+  const saveMonthlyPerformanceReview = (review: MonthlyPerformanceReview) => {
+    setMonthlyPerformanceReviews(prev => {
+      const idx = prev.findIndex(r => r.id === review.id || (r.employeeId === review.employeeId && r.month === review.month));
+      if (idx !== -1) {
+        const updated = [...prev];
+        updated[idx] = review;
+        return updated;
+      }
+      return [review, ...prev];
+    });
+    confetti({ particleCount: 70, spread: 60, origin: { y: 0.5 } });
+    logActivity('team', 'اعتماد التقييم الشهري للموظف 🌟', `تم حفظ تقييم ${review.employeeName} لشهر ${review.month} بتقدير (${review.overallRating})`);
+  };
+
+  const deleteMonthlyPerformanceReview = (id: string) => {
+    setMonthlyPerformanceReviews(prev => prev.filter(r => r.id !== id));
   };
 
   // Check client renewals due within 4 days and notify the admin
@@ -5266,6 +5606,31 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateWrittenThought,
         deleteWrittenThought,
         togglePinThought,
+        performanceEvaluations,
+        addPerformanceEvaluation,
+        updatePerformanceEvaluation,
+        deletePerformanceEvaluation,
+        approvePerformanceEvaluation,
+        addEvaluationClarification,
+        delays,
+        addDelayRecord,
+        updateDelayRecord,
+        deleteDelayRecord,
+        reviewDelayRecord,
+        companyRules,
+        addCompanyRule,
+        updateCompanyRule,
+        deleteCompanyRule,
+        acknowledgeCompanyRule,
+        ruleViolations,
+        addRuleViolation,
+        updateRuleViolation,
+        deleteRuleViolation,
+        reviewRuleViolation,
+        addViolationClarification,
+        monthlyPerformanceReviews,
+        saveMonthlyPerformanceReview,
+        deleteMonthlyPerformanceReview,
         activities,
         notifications,
         markAllNotificationsAsRead,

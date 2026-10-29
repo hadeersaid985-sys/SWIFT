@@ -46,10 +46,11 @@ import {
   ArrowRight,
   ArrowUp,
   ArrowDown,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Award
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
-import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember } from '../../types/crm';
+import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember, EvaluationType, EvaluationCategory } from '../../types/crm';
 import { exportTasksToExcel } from '../../utils/excelExport';
 import { DailyTasksWorkReportModal } from '../reports/DailyTasksWorkReportModal';
 
@@ -78,7 +79,9 @@ export const TasksView: React.FC = () => {
     deleteTimeLog,
     addTaskComment,
     setOpenQuickModal,
-    setIsResetModalOpen
+    setIsResetModalOpen,
+    setActiveTab,
+    addPerformanceEvaluation
   } = useCRM();
 
   // Tasks Trash Modal state
@@ -134,6 +137,13 @@ export const TasksView: React.FC = () => {
   const [selectedMentionIds, setSelectedMentionIds] = useState<string[]>([]);
   const [mentionSuccessToast, setMentionSuccessToast] = useState(false);
 
+  // Performance Observation Modal linked to Task
+  const [perfTaskModalOpen, setPerfTaskModalOpen] = useState(false);
+  const [perfModalType, setPerfModalType] = useState<EvaluationType>('positive');
+  const [perfModalCategory, setPerfModalCategory] = useState<EvaluationCategory>('quality');
+  const [perfModalTitle, setPerfModalTitle] = useState('');
+  const [perfModalDesc, setPerfModalDesc] = useState('');
+
   // Task Editing, Copying & Moving States (تعديل التاسكات، نسخ الكلام، نقل بين الكروت والموظفين)
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<{
@@ -146,6 +156,12 @@ export const TasksView: React.FC = () => {
     dueDate: string;
     status: TaskStatus;
     isPrivate: boolean;
+    actualCompletionDate: string;
+    qualityRating: 'excellent' | 'very_good' | 'good' | 'needs_work' | 'unacceptable' | '';
+    reviewOutcome: 'approved' | 'revisions_requested' | 'under_review' | 'pending' | '';
+    revisionsCount: number;
+    delayReason: string;
+    delayResponsibleParty: 'employee' | 'client_approval' | 'management' | 'external_info' | 'technical' | '';
   }>({
     title: '',
     description: '',
@@ -155,7 +171,13 @@ export const TasksView: React.FC = () => {
     startDate: '',
     dueDate: '',
     status: 'todo',
-    isPrivate: false
+    isPrivate: false,
+    actualCompletionDate: '',
+    qualityRating: '',
+    reviewOutcome: '',
+    revisionsCount: 0,
+    delayReason: '',
+    delayResponsibleParty: ''
   });
   const [copiedTaskId, setCopiedTaskId] = useState<string | null>(null);
   const [moveDropdownTaskId, setMoveDropdownTaskId] = useState<string | null>(null);
@@ -192,7 +214,13 @@ export const TasksView: React.FC = () => {
       startDate: task.startDate || '',
       dueDate: task.dueDate,
       status: task.status,
-      isPrivate: !!task.isPrivate
+      isPrivate: !!task.isPrivate,
+      actualCompletionDate: task.actualCompletionDate || '',
+      qualityRating: task.qualityRating || '',
+      reviewOutcome: task.reviewOutcome || '',
+      revisionsCount: task.revisionsCount || 0,
+      delayReason: task.delayReason || '',
+      delayResponsibleParty: task.delayResponsibleParty || ''
     });
     setEditingTaskId(task.id);
   };
@@ -203,9 +231,47 @@ export const TasksView: React.FC = () => {
       showToast('يرجى إدخال عنوان المهمة');
       return;
     }
-    updateTask(editingTaskId, editFormData);
-    showToast('تم حفظ وتعديل بيانات المهمة بنجاح! ✏️');
+    updateTask(editingTaskId, {
+      ...editFormData,
+      qualityRating: (editFormData.qualityRating || undefined) as any,
+      reviewOutcome: (editFormData.reviewOutcome || undefined) as any,
+      delayResponsibleParty: (editFormData.delayResponsibleParty || undefined) as any,
+      actualCompletionDate: editFormData.actualCompletionDate || undefined,
+      delayReason: editFormData.delayReason || undefined,
+    });
+    showToast('تم حفظ وتعديل بيانات المهمة وملاحظات الجودة بنجاح! ✏️');
     setEditingTaskId(null);
+  };
+
+  // Handle Submit Performance Observation on a Task
+  const handleSubmitTaskPerfObservation = (task: Task) => {
+    if (!perfModalTitle.trim() || !perfModalDesc.trim()) {
+      showToast('يرجى كتابة عنوان ووصف الملاحظة');
+      return;
+    }
+    const assignee = team.find(m => m.id === task.assignedToId);
+    if (!assignee) {
+      showToast('المهمة غير مسندة لموظف محدد');
+      return;
+    }
+    addPerformanceEvaluation({
+      employeeId: assignee.id,
+      employeeName: assignee.name,
+      department: assignee.department || 'عام',
+      date: new Date().toISOString().split('T')[0],
+      type: perfModalType,
+      category: perfModalCategory,
+      description: perfModalDesc.trim() ? `${perfModalTitle.trim()} - ${perfModalDesc.trim()}` : perfModalTitle.trim(),
+      relatedTaskId: task.id,
+      relatedTaskTitle: task.title,
+      createdById: currentUser.id,
+      createdByName: currentUser.name,
+      status: 'pending_review'
+    });
+    showToast('تم تسجيل ملاحظة الأداء وربطها بالمهمة بنجاح! 🌟');
+    setPerfTaskModalOpen(false);
+    setPerfModalTitle('');
+    setPerfModalDesc('');
   };
 
   // Move Task To Team Member (نقل المهمة لموظف آخر)
@@ -3530,6 +3596,101 @@ export const TasksView: React.FC = () => {
                       </label>
                     </div>
                   )}
+
+                  {/* Quality & Performance Review Section in Task Edit */}
+                  <div className="pt-3 border-t border-slate-200 space-y-3 bg-slate-50 p-3.5 rounded-xl border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800">
+                        <Award className="w-4 h-4 text-amber-500" />
+                        <span>مراجعة الجودة ومتابعة التسليم (Performance & Quality)</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-normal">تقييم الجودة والتأخير</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">مستوى جودة التنفيذ</label>
+                        <select
+                          value={editFormData.qualityRating}
+                          onChange={e => setEditFormData(prev => ({ ...prev, qualityRating: e.target.value as any }))}
+                          className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="">لم يُحدد بعد</option>
+                          <option value="excellent">🌟 ممتاز (5 نجوم)</option>
+                          <option value="very_good">⭐ جيد جداً (4 نجوم)</option>
+                          <option value="good">👍 جيد (3 نجوم)</option>
+                          <option value="needs_work">⚠️ يحتاج تحسين (نجمتان)</option>
+                          <option value="unacceptable">❌ غير مقبول (نجمة)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">نتيجة مراجعة التاسك</label>
+                        <select
+                          value={editFormData.reviewOutcome}
+                          onChange={e => setEditFormData(prev => ({ ...prev, reviewOutcome: e.target.value as any }))}
+                          className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="">لم تُراجع بعد</option>
+                          <option value="approved">✅ معتمدة بنجاح</option>
+                          <option value="revisions_requested">🔄 مطلوب تعديلات</option>
+                          <option value="under_review">⏳ قيد المراجعة الفنية</option>
+                          <option value="pending">بانتظار المراجعة</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">عدد مرات طلب التعديلات</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="20"
+                          value={editFormData.revisionsCount}
+                          onChange={e => setEditFormData(prev => ({ ...prev, revisionsCount: parseInt(e.target.value) || 0 }))}
+                          className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">تاريخ التسليم الفعلي</label>
+                        <input
+                          type="date"
+                          value={editFormData.actualCompletionDate}
+                          onChange={e => setEditFormData(prev => ({ ...prev, actualCompletionDate: e.target.value }))}
+                          className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-mono focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">الطرف المتسبب في التأخير (إن وجد)</label>
+                        <select
+                          value={editFormData.delayResponsibleParty}
+                          onChange={e => setEditFormData(prev => ({ ...prev, delayResponsibleParty: e.target.value as any }))}
+                          className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="">لا يوجد تأخير / غير محدد</option>
+                          <option value="employee">الموظف (تقصير أو بطء تنفيذ)</option>
+                          <option value="client_approval">تأخر العميل في الاعتماد أو الرد</option>
+                          <option value="external_info">نقص معلومات أو متطلبات خارجية</option>
+                          <option value="management">تغيير أولويات من الإدارة</option>
+                          <option value="technical">أعطال أو مشاكل تقنية خارج الإرادة</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">سبب التأخير أو ملاحظات إعادة العمل</label>
+                      <input
+                        type="text"
+                        value={editFormData.delayReason}
+                        onChange={e => setEditFormData(prev => ({ ...prev, delayReason: e.target.value }))}
+                        placeholder="توضيح سبب التأخير أو تفاصيل التعديلات المطلوبة بدقة..."
+                        className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t">
@@ -3590,6 +3751,112 @@ export const TasksView: React.FC = () => {
                     {formatDurationMinutes(selectedTask.totalLoggedMinutes || 0)}
                   </div>
                 </div>
+              </div>
+
+              {/* Performance & Quality Tracking Card */}
+              <div className="bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-slate-50 border border-blue-200/80 rounded-2xl p-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                      <Award className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-slate-900 text-xs">تقييم جودة التنفيذ والتسليم</div>
+                      <div className="text-[10px] text-slate-500">ربط المهام بسجل الأداء الرسمي للموظف</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {isManager && (
+                      <button
+                        type="button"
+                        onClick={() => setPerfTaskModalOpen(true)}
+                        className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-xs cursor-pointer transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>تسجيل ملاحظة أداء للمهمة</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTaskId(null);
+                        setActiveTab('performance');
+                      }}
+                      className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
+                      title="فتح سجل تقييم الأداء الشامل"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                      <span>سجل الأداء</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quality & Review Status Row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
+                    <div className="text-[10px] text-slate-400 font-bold mb-0.5">جودة التنفيذ</div>
+                    <div className="font-bold text-slate-800">
+                      {selectedTask.qualityRating === 'excellent' && <span className="text-emerald-700">🌟 ممتاز (5/5)</span>}
+                      {selectedTask.qualityRating === 'very_good' && <span className="text-blue-700">⭐ جيد جداً (4/5)</span>}
+                      {selectedTask.qualityRating === 'good' && <span className="text-slate-700">👍 جيد (3/5)</span>}
+                      {selectedTask.qualityRating === 'needs_work' && <span className="text-amber-700">⚠️ يحتاج تحسين (2/5)</span>}
+                      {selectedTask.qualityRating === 'unacceptable' && <span className="text-rose-700">❌ غير مقبول (1/5)</span>}
+                      {!selectedTask.qualityRating && <span className="text-slate-400 italic">بانتظار التقييم</span>}
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
+                    <div className="text-[10px] text-slate-400 font-bold mb-0.5">حالة المراجعة</div>
+                    <div className="font-bold">
+                      {selectedTask.reviewOutcome === 'approved' && <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">معتمدة بنجاح ✓</span>}
+                      {selectedTask.reviewOutcome === 'revisions_requested' && <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">مطلوب تعديلات 🔄</span>}
+                      {selectedTask.reviewOutcome === 'under_review' && <span className="text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">قيد المراجعة ⏳</span>}
+                      {(!selectedTask.reviewOutcome || selectedTask.reviewOutcome === 'pending') && <span className="text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">بانتظار المراجعة</span>}
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
+                    <div className="text-[10px] text-slate-400 font-bold mb-0.5">طلبات التعديل</div>
+                    <div className="font-extrabold text-slate-800">
+                      {selectedTask.revisionsCount ? `${selectedTask.revisionsCount} مرات` : '0 تعديل'}
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
+                    <div className="text-[10px] text-slate-400 font-bold mb-0.5">التسليم الفعلي</div>
+                    <div className="font-mono font-bold text-slate-800">
+                      {selectedTask.actualCompletionDate || (selectedTask.status === 'completed' ? 'تم الاكتمال' : 'قيد التنفيذ')}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delay Reason & Party if late or notes exist */}
+                {(selectedTask.delayReason || selectedTask.delayResponsibleParty) && (
+                  <div className="bg-amber-50/80 border border-amber-200 p-2.5 rounded-xl text-xs space-y-1">
+                    <div className="flex items-center justify-between font-bold text-amber-900 text-[11px]">
+                      <span className="flex items-center gap-1">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                        <span>ملاحظات التأخير وإعادة العمل:</span>
+                      </span>
+                      {selectedTask.delayResponsibleParty && (
+                        <span className="text-[10px] bg-white px-2 py-0.5 rounded border border-amber-300">
+                          المتسبب: {
+                            selectedTask.delayResponsibleParty === 'employee' ? 'الموظف ⚠️' :
+                            selectedTask.delayResponsibleParty === 'client_approval' ? 'تأخر العميل (عامل خارجي)' :
+                            selectedTask.delayResponsibleParty === 'external_info' ? 'نقص معلومات خارجية' :
+                            selectedTask.delayResponsibleParty === 'management' ? 'توجيهات الإدارة' : 'مشاكل تقنية خارج الإرادة'
+                          }
+                        </span>
+                      )}
+                    </div>
+                    {selectedTask.delayReason && (
+                      <p className="text-amber-800 text-[11px] leading-relaxed">
+                        {selectedTask.delayReason}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Work Periods Log */}
@@ -3972,6 +4239,123 @@ export const TasksView: React.FC = () => {
                 className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 cursor-pointer"
               >
                 إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Task Performance Observation Modal */}
+      {perfTaskModalOpen && selectedTask && (
+        <div
+          onClick={() => setPerfTaskModalOpen(false)}
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in cursor-pointer"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 cursor-default"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 bg-blue-100 text-blue-700 rounded-xl flex items-center justify-center font-bold">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-sm">تسجيل ملاحظة أداء مرتبطة بالمهمة</h3>
+                  <p className="text-slate-500 text-xs">
+                    المهمة: <strong>{selectedTask.title}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPerfTaskModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">الموظف المعني</label>
+                <div className="p-2.5 bg-slate-50 rounded-xl font-bold text-slate-800 border">
+                  {team.find(m => m.id === selectedTask.assignedToId)?.name || 'غير محدد'}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">نوع الملاحظة</label>
+                  <select
+                    value={perfModalType}
+                    onChange={e => setPerfModalType(e.target.value as EvaluationType)}
+                    className="w-full p-2 bg-slate-50 border rounded-xl font-bold focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="positive">✨ إيجابيات وتميز</option>
+                    <option value="negative">⚠️ سلبيات أو تقصير</option>
+                    <option value="extra_work">🚀 شغل إضافي مميز</option>
+                    <option value="improvement">🌱 فرصة للتحسين</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">تصنيف الملاحظة</label>
+                  <select
+                    value={perfModalCategory}
+                    onChange={e => setPerfModalCategory(e.target.value as EvaluationCategory)}
+                    className="w-full p-2 bg-slate-50 border rounded-xl font-bold focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="quality">جودة الشغل والنتائج</option>
+                    <option value="commitment">الالتزام ومواعيد التسليم</option>
+                    <option value="teamwork">التعاون مع الفريق</option>
+                    <option value="initiative">المبادرة والمساعدة</option>
+                    <option value="communication">التواصل والمتابعة</option>
+                    <option value="other">أخرى</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">عنوان الملاحظة *</label>
+                <input
+                  type="text"
+                  required
+                  value={perfModalTitle}
+                  onChange={e => setPerfModalTitle(e.target.value)}
+                  placeholder="مثال: تسليم احترافي قبل الموعد وبدون أي أخطاء"
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:border-blue-500 font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">تفاصيل ووصف الموقف بدقة *</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={perfModalDesc}
+                  onChange={e => setPerfModalDesc(e.target.value)}
+                  placeholder="صف ما قام به الموظف بالتحديد في هذه المهمة..."
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:border-blue-500 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t">
+              <button
+                type="button"
+                onClick={() => setPerfTaskModalOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSubmitTaskPerfObservation(selectedTask)}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+              >
+                <Check className="w-4 h-4 stroke-[3]" />
+                <span>تسجيل في ملف الموظف</span>
               </button>
             </div>
           </div>

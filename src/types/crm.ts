@@ -51,6 +51,15 @@ export interface Task {
   isPrivate?: boolean; // مهمة سرية خاصة بالمدير فقط - لا تظهر لأي موظف في التيم
   createdAt: string;
   completedAt?: string;
+  // نظام متابعة جودة التنفيذ والتسليم
+  actualCompletionDate?: string; // تاريخ التسليم الفعلي
+  actualCompletionTime?: string; // وقت التسليم الفعلي
+  qualityRating?: 'excellent' | 'very_good' | 'good' | 'needs_work' | 'unacceptable'; // مستوى جودة التنفيذ
+  reviewOutcome?: 'approved' | 'revisions_requested' | 'under_review' | 'pending'; // نتيجة مراجعة التاسك
+  revisionsCount?: number; // عدد مرات طلب التعديلات
+  delayReason?: string; // سبب التأخير أو إعادة العمل
+  delayResponsibleParty?: 'employee' | 'client_approval' | 'management' | 'external_info' | 'technical'; // هل التأخير بسبب الموظف أم عوامل خارجية؟
+  evaluationsLinkedCount?: number; // عدد الملاحظات والتقييمات المرتبطة بهذه التاسك
 }
 
 export interface TaskComment {
@@ -688,3 +697,171 @@ export interface WrittenThoughtNote {
   updatedAt: string;
   createdAt: string;
 }
+
+// ==================== 1. نظام تقييم أداء الموظفين (Performance Evaluations) ====================
+export type EvaluationType = 'positive' | 'negative' | 'extra_work' | 'improvement';
+export type EvaluationCategory = 'quality' | 'commitment' | 'teamwork' | 'initiative' | 'communication' | 'other';
+export type EvaluationStatus = 'draft' | 'pending_review' | 'approved' | 'rejected';
+
+export interface PerformanceEvaluationRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  date: string; // YYYY-MM-DD تاريخ الواقعة
+  type: EvaluationType; // إيجابيات / سلبيات أو تقصير / شغل إضافي مميز / فرص للتحسين
+  category: EvaluationCategory; // جودة الشغل، الالتزام، سرعة الإنجاز، التعاون، المبادرة
+  description: string; // وصف واضح للموقف بالتفصيل
+  relatedTaskId?: string; // ربط بالتاسك إن وجدت
+  relatedTaskTitle?: string;
+  evidenceUrl?: string; // دليل أو رابط للتاسك / المرفقات
+  evidenceNote?: string;
+  createdById: string; // اسم الشخص الذي سجّل الملاحظة
+  createdByName: string;
+  createdAt: string;
+  employeeClarification?: string; // رد الموظف أو توضيحه
+  employeeClarificationDate?: string;
+  status: EvaluationStatus; // مسودة / بانتظار المراجعة / معتمدة / مرفوضة
+  reviewedBy?: string; // اسم المسؤول عن المراجعة والاعتماد
+  reviewedAt?: string;
+  actionTaken?: string; // الإجراء المتخذ: شكر وتقدير، تنبيه، تدريب، مكافأة، لا إجراء
+  followUpDate?: string; // موعد المتابعة إن لزم
+  pointsWeight?: number; // وزن التقييم (مثلاً +5 أو -5)
+  notes?: string;
+}
+
+// ==================== 2. نظام متابعة التأخيرات المنظم (Delays & Attendance Log) ====================
+export type DelayRangeCategory = '1-5' | '6-15' | '16-30' | '30+';
+export type DelayReasonCategory =
+  | 'not_specified'
+  | 'personal'
+  | 'emergency'
+  | 'attendance_device_issue'
+  | 'traffic_commute'
+  | 'work_related'
+  | 'other';
+
+export type DelayReviewStatus = 'pending' | 'reviewed' | 'excused' | 'unexcused';
+
+export interface DelayRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  date: string; // YYYY-MM-DD
+  scheduledStartTime: string; // موعد بداية الدوام المحدد e.g. "09:00"
+  actualArrivalTime: string; // وقت الحضور الفعلي e.g. "09:28"
+  delayMinutes: number; // مدة التأخير بالدقائق (محسوبة تلقائياً)
+  delayRange: DelayRangeCategory; // فئة التأخير (من 1 إلى 5، 6 إلى 15، 16 إلى 30، أكثر من 30)
+  reasonCategory: DelayReasonCategory; // سبب التأخير المصنف
+  reasonDetails: string; // تفاصيل العذر المقدم
+  reviewStatus: DelayReviewStatus; // حالة مراجعة العذر (بانتظار المراجعة / تمت المراجعة / تم اعتماد العذر / تم رفض العذر)
+  reviewedBy?: string; // اسم المسؤول عن مراجعة الحالة
+  reviewedAt?: string;
+  actionTaken?: string; // الإجراء المتخذ: عذر مقبول بدون جزاء، تنبيه ودي، لفت نظر، خصم معتمد بعد المراجعة
+  notes?: string;
+  createdAt: string;
+}
+
+// ==================== 3. نظام قواعد وسياسات الشركة (Company Rules & Policies) ====================
+export type CompanyRuleCategory =
+  | 'attendance'
+  | 'work_quality'
+  | 'task_delivery'
+  | 'communication'
+  | 'confidentiality'
+  | 'tools_usage'
+  | 'general';
+
+export interface RuleAcknowledgment {
+  employeeId: string;
+  employeeName: string;
+  acknowledgedAt: string; // ISO date-time
+}
+
+export interface CompanyRule {
+  id: string;
+  title: string; // اسم القاعدة مثل الالتزام بمواعيد العمل
+  category: CompanyRuleCategory; // الحضور، جودة الشغل، تسليم التاسكات، التواصل، سرية المعلومات، أدوات الشركة
+  description: string; // شرح المطلوب بشكل محدد ومفصل
+  targetDepartment: string; // كل الشركة أو قسم معين
+  effectiveDate: string; // تاريخ السريان (لا تطبق بأثر رجعي)
+  approvedBy: string; // المسؤول عن اعتمادها
+  version: string; // رقم الإصدار e.g. "v1.0"
+  lastModified: string;
+  documentUrl?: string; // إمكانية إرفاق مستندات توضيحية أو روابط
+  violationProcedure: string; // آلية التعامل مع المخالفة وفق السياسة المعتمدة
+  severityLevel: 'critical' | 'high' | 'medium' | 'guideline';
+  acknowledgments: RuleAcknowledgment[]; // سجل إقرار واطلاع الموظفين على القاعدة
+  createdAt: string;
+}
+
+export type ViolationReviewStatus = 'under_review' | 'confirmed' | 'excused' | 'dismissed';
+
+export interface RuleViolationRecord {
+  id: string;
+  ruleId: string; // القاعدة المعنية
+  ruleTitle: string;
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  incidentDate: string; // تاريخ الواقعة
+  description: string; // تفاصيل الواقعة
+  evidence?: string; // الأدلة أو المرفقات
+  employeeClarification?: string; // التوضيح أو الرد المقدم من الموظف
+  reviewStatus: ViolationReviewStatus; // حالة المراجعة والاعتماد (تحت المراجعة / مخالفة مؤكدة / تم قبول التوضيح / ملغاة)
+  reviewedBy?: string; // المسؤول عن المراجعة
+  reviewedAt?: string;
+  actionTaken?: string; // الإجراء المعتمد
+  notes?: string;
+  createdAt: string;
+}
+
+// ==================== 4. لوحة متابعة أداء الموظفين والتقييم الشهري (Monthly Review) ====================
+export interface MonthlyPerformanceReview {
+  id: string;
+  month: string; // YYYY-MM e.g. "2026-10"
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  
+  // مؤشرات التاسكات
+  totalAssignedTasks: number;
+  completedTasks: number;
+  tasksCompletionRate: number; // % نسبة الإنجاز
+  onTimeDeliveries: number;
+  onTimeDeliveryRate: number; // % نسبة التسليم في الموعد
+  qualityScore: number; // متوسط الجودة من 5 نجوم أو %
+  revisionsRequestedCount: number; // عدد مرات طلب التعديلات
+  delayedTasksCount: number;
+
+  // مؤشرات التأخيرات والحضور
+  delaysCount: number;
+  totalDelayMinutes: number;
+  excusedDelaysCount: number;
+  unexcusedDelaysCount: number;
+
+  // ملاحظات الأداء
+  positiveNotesCount: number;
+  negativeNotesCount: number;
+  extraWorkCount: number;
+  improvementCount: number;
+  violationsCount: number;
+
+  // التقييم النهائي الموزون
+  overallScore: number; // من 100
+  overallRating: 'ممتاز' | 'جيد جداً' | 'جيد' | 'يحتاج تحسين' | 'غير مرضٍ';
+
+  // ملاحظات ومتابعة
+  strengths: string; // نقاط القوة
+  areasForImprovement: string; // الجوانب التي تحتاج إلى تحسين
+  nextMonthGoals: string; // أهداف قابلة للمتابعة خلال الشهر التالي
+  managerNotes: string; // ملاحظات المدير
+  employeeFeedback?: string; // رد الموظف أو توضيحه
+  
+  status: 'draft' | 'pending_review' | 'approved';
+  reviewedBy: string;
+  reviewedAt?: string;
+  createdAt: string;
+}
+

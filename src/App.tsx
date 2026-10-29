@@ -23,6 +23,7 @@ import { PayrollAttendanceView } from './components/payroll/PayrollAttendanceVie
 import { FinancialSystemView } from './components/finance/FinancialSystemView';
 import { SalesCommissionView } from './components/sales/SalesCommissionView';
 import { MarketingIdeasThoughtsView } from './components/marketing/MarketingIdeasThoughtsView';
+import { PerformanceEvaluationView } from './components/performance/PerformanceEvaluationView';
 import { QuickModals } from './components/modals/QuickModals';
 import { LoginModal } from './components/auth/LoginModal';
 import { EmployeeLoginPage } from './components/auth/EmployeeLoginPage';
@@ -219,6 +220,9 @@ const AppContent: React.FC = () => {
     'mail',
     'chat',
     'profile',
+    'performance',
+    'company_rules',
+    'delays',
     ...(isSalesUser ? ['leads'] : [])
   ];
   
@@ -279,7 +283,7 @@ const AppContent: React.FC = () => {
 
         {/* Content Body */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-5 pb-20 md:pb-5">
-          {/* Employee only sees personal tasks, meetings, calls, mail, renewals, chat, and profile */}
+          {/* Employee only sees personal tasks, meetings, calls, mail, renewals, chat, performance profile, and profile */}
           {!isManager ? (
             <>
               {effectiveTab === 'profile' && <ProfileView />}
@@ -289,14 +293,20 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'mail' && <MailView />}
               {effectiveTab === 'chat' && <TeamChatView />}
               {effectiveTab === 'leads' && isSalesUser && <LeadsView />}
+              {(effectiveTab === 'performance' || effectiveTab === 'company_rules' || effectiveTab === 'delays') && (
+                <PerformanceEvaluationView key={effectiveTab} initialTab={effectiveTab === 'company_rules' ? 'rules' : effectiveTab === 'delays' ? 'delays' : 'dashboard'} />
+              )}
               {effectiveTab === 'tasks' && <TasksView />}
-              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'chat', 'tasks', ...(isSalesUser ? ['leads'] : [])].includes(effectiveTab) && (
+              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'chat', 'tasks', 'performance', 'company_rules', 'delays', ...(isSalesUser ? ['leads'] : [])].includes(effectiveTab) && (
                 <TasksView />
               )}
             </>
           ) : (
             <>
               {effectiveTab === 'profile' && <ProfileView />}
+              {(effectiveTab === 'performance' || effectiveTab === 'company_rules' || effectiveTab === 'delays') && (
+                <PerformanceEvaluationView key={effectiveTab} initialTab={effectiveTab === 'company_rules' ? 'rules' : effectiveTab === 'delays' ? 'delays' : 'dashboard'} />
+              )}
               {effectiveTab === 'marketing' && <MarketingBoardView />}
               {effectiveTab === 'renewals' && <ClientRenewalsView />}
               {effectiveTab === 'suspended_contracts' && <SuspendedContractsView />}
@@ -330,7 +340,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'campaigns' && <ReportsListView />}
 
               {/* Fallback for unlisted manager tabs */}
-              {!['profile', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'chat', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'payroll', 'salaries', 'finance', 'sales_commissions', 'marketing_ideas', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns'].includes(effectiveTab) && (
+              {!['profile', 'performance', 'company_rules', 'delays', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'chat', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'payroll', 'salaries', 'finance', 'sales_commissions', 'marketing_ideas', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns'].includes(effectiveTab) && (
                 <ReportsListView />
               )}
             </>

@@ -12,7 +12,8 @@ import {
   DollarSign,
   Wallet,
   Percent,
-  Lightbulb
+  Lightbulb,
+  Award
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 
@@ -76,6 +77,12 @@ export const NavigationTabs: React.FC = () => {
       icon: Users,
       badge: team.length,
       badgeColor: 'bg-slate-200 text-slate-700'
+    },
+    {
+      id: 'performance',
+      label: 'تقييم الأداء والموظفين',
+      icon: Award,
+      badge: null
     },
     {
       id: 'mail',

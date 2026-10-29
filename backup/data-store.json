@@ -45,9 +45,9 @@
       "bankIban": "SA4420000001234567890123",
       "bio": "مسؤولة إدارة العمليات والمبيعات وتنسيق المهام بين فرق العمل.",
       "socialAccounts": {
-        "slack": "@hadeer.said",
+        "whatsapp": "+966501234567",
         "linkedin": "linkedin.com/in/hadeer-said",
-        "whatsapp": "+966501234567"
+        "slack": "@hadeer.said"
       },
       "updatedAt": "2026-10-28T11:39:52.242Z"
     },
@@ -1571,6 +1571,56 @@
       "timerStartedAt": 1793187797628,
       "totalLoggedMinutes": 169,
       "completedAt": "2026-10-28"
+    },
+    {
+      "dueTime": "18:00",
+      "updatedAt": "2026-10-29T07:25:30.646Z",
+      "comments": [],
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "estimatedHours": 2,
+      "title": "تعديل ال responsive swift",
+      "status": "in_progress",
+      "subtasks": [],
+      "assignedToId": "user-mariam",
+      "priority": "medium",
+      "mentionedUserIds": [],
+      "createdAt": "2026-10-29",
+      "timeLogs": [],
+      "startDate": "2026-10-29",
+      "dueDate": "2026-10-29",
+      "isPrivate": false,
+      "id": "task-1793258729382",
+      "category": "إداري",
+      "timerAccumulatedMs": 0,
+      "isTimerRunning": true,
+      "timerStartedAt": 1793258730646,
+      "isTimerPaused": false,
+      "timerLastResumedAt": 1793258730646
+    },
+    {
+      "isPrivate": false,
+      "updatedAt": "2026-10-29T08:02:39.036Z",
+      "dueDate": "2026-10-29",
+      "subtasks": [],
+      "comments": [],
+      "mentionedUserIds": [],
+      "timeLogs": [],
+      "estimatedHours": 2,
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "title": "رفع صور جولدن",
+      "id": "task-1793260957156",
+      "dueTime": "18:00",
+      "priority": "medium",
+      "status": "in_progress",
+      "assignedToId": "user-eman",
+      "category": "إداري",
+      "startDate": "2026-10-29",
+      "createdAt": "2026-10-29",
+      "timerLastResumedAt": 1793260959036,
+      "timerAccumulatedMs": 0,
+      "isTimerRunning": true,
+      "isTimerPaused": false,
+      "timerStartedAt": 1793260959036
     }
   ],
   "leads": [
@@ -3170,7 +3220,7 @@
     "user-1793016396281"
   ],
   "deletedTasks": [],
-  "updatedAt": "2026-10-29T08:00:56.197Z",
+  "updatedAt": "2026-10-29T08:49:49.852Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": []
 }

@@ -44,7 +44,10 @@ import {
   X,
   Folder,
   Layers,
-  AtSign
+  AtSign,
+  Award,
+  ShieldCheck,
+  Star
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../context/CRMContext';
 import { useChat } from '../context/ChatContext';
@@ -272,6 +275,54 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               >
                 <Bot className={`w-4 h-4 shrink-0 ${activeTab === 'team' ? 'text-white' : 'text-[#fbbf24]'}`} />
                 {!isCollapsed && <span>العاملون</span>}
+              </button>
+            )}
+
+            {/* 6. تقييم الأداء والموظفين (Emerald #34d399) */}
+            {(matchesSearch('تقييم الأداء') || matchesSearch('التقييم') || matchesSearch('أداء')) && (
+              <button
+                onClick={() => handleSelectTab('performance')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'performance'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
+                }`}
+                title="تقييم الأداء والموظفين"
+              >
+                <Award className={`w-4 h-4 shrink-0 ${activeTab === 'performance' ? 'text-white' : 'text-[#34d399]'}`} />
+                {!isCollapsed && <span>تقييم الأداء والموظفين</span>}
+              </button>
+            )}
+
+            {/* 7. الحضور والتأخيرات (Amber #fbbf24) */}
+            {(matchesSearch('التأخيرات') || matchesSearch('الحضور') || matchesSearch('سجل التأخير')) && (
+              <button
+                onClick={() => handleSelectTab('delays')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'delays'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
+                }`}
+                title="الحضور والتأخيرات"
+              >
+                <Clock className={`w-4 h-4 shrink-0 ${activeTab === 'delays' ? 'text-white' : 'text-[#fbbf24]'}`} />
+                {!isCollapsed && <span>الحضور والتأخيرات</span>}
+              </button>
+            )}
+
+            {/* 8. قواعد وسياسات الشركة (Indigo #818cf8) */}
+            {(matchesSearch('قواعد') || matchesSearch('السياسات') || matchesSearch('قواعد الشركة')) && (
+              <button
+                onClick={() => handleSelectTab('company_rules')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'company_rules'
+                    ? 'bg-[#2f4874] text-white font-bold'
+                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
+                }`}
+                title="قواعد وسياسات الشركة"
+              >
+                <ShieldCheck className={`w-4 h-4 shrink-0 ${activeTab === 'company_rules' ? 'text-white' : 'text-[#818cf8]'}`} />
+                {!isCollapsed && <span>قواعد وسياسات الشركة</span>}
               </button>
             )}
           </div>
@@ -959,6 +1010,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               >
                 <Bot className="w-4 h-4 text-[#fbbf24]" />
                 <span>العاملون</span>
+              </button>
+
+              <button
+                onClick={() => handleSelectTab('performance')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'performance' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                }`}
+              >
+                <Award className="w-4 h-4 text-[#34d399]" />
+                <span>تقييم الأداء والموظفين</span>
+              </button>
+
+              <button
+                onClick={() => handleSelectTab('delays')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'delays' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                }`}
+              >
+                <Clock className="w-4 h-4 text-[#fbbf24]" />
+                <span>الحضور والتأخيرات</span>
+              </button>
+
+              <button
+                onClick={() => handleSelectTab('company_rules')}
+                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
+                  activeTab === 'company_rules' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 text-[#818cf8]" />
+                <span>قواعد وسياسات الشركة</span>
               </button>
 
               {/* Folders in mobile */}
