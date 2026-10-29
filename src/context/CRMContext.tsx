@@ -1977,9 +1977,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, [clientRenewals]);
 
-  // Count renewals due soon (within 4 days)
+  // Count renewals due soon (within 4 days) - Active contracts only
   const renewalsDueSoonCount = clientRenewals.filter(r => {
-    if (r.status === 'renewed' || r.status === 'cancelled') return false;
+    if (r.status === 'renewed' || r.status === 'cancelled' || r.status === 'suspended') return false;
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const renDate = new Date(r.renewalDate).getTime();
@@ -2754,8 +2754,11 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   const visibleClients = useMemo(() => {
+    // ملفات العملاء والاشتراكات الحالية فقط (الموقوفة تظهر في العقود الموقوفة لوحدها فقط)
+    const activeRenewals = (clientRenewals || []).filter(c => c.status !== 'suspended');
+
     if (isUserAdminOrRoot) {
-      return clientRenewals;
+      return activeRenewals;
     }
     if (!currentUser) return [];
 
@@ -2770,7 +2773,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const normName = normalizeAr(currentName);
     const normUsername = normalizeAr(currentUsername);
 
-    return clientRenewals
+    return activeRenewals
       .filter(c => {
         // Exclude any mock demo client
         if (isMockDemoClient(c)) return false;

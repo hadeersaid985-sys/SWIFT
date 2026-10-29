@@ -312,12 +312,12 @@ export const SuspendedContractsView: React.FC = () => {
       {/* Header Banner */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-600 flex items-center justify-center text-white shadow-md shadow-orange-500/20 shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-xs shrink-0">
             <PauseCircle className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h1 className="text-xl font-black text-slate-900">عقود موقفه (العملاء المتوقفين)</h1>
+              <h1 className="text-xl font-black text-slate-900">العقود الموقوفة (العملاء المتوقفين)</h1>
               <span className="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold border border-amber-300">
                 {suspendedContracts.length} عميل موقف
               </span>
@@ -334,7 +334,7 @@ export const SuspendedContractsView: React.FC = () => {
             className="px-3 py-2 rounded-xl border border-slate-300 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
             title="الرجوع لملفات العملاء السارية والتجديدات"
           >
-            <span>ملفات العملاء السارية</span>
+            <span>ملفات العملاء والاشتراكات الحالية</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
 
@@ -352,7 +352,7 @@ export const SuspendedContractsView: React.FC = () => {
               resetNewClientForm();
               setShowAddModal(true);
             }}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white text-xs font-black flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-orange-600/20 hover:scale-102"
+            className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs"
           >
             <Plus className="w-4 h-4" />
             <span>إيقاف عقد عميل جديد +</span>

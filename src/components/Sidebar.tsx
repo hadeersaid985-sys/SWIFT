@@ -485,19 +485,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
 
             {(!isCollapsed ? activitiesOpen : true) && (
               <div className="space-y-0.5 pr-2 mt-0.5">
-                {/* المهام (Exact highlighted active container from image) */}
-                {matchesSearch('المهام') && (
+                {/* مهام العمل والمتابعة */}
+                {(matchesSearch('المهام') || matchesSearch('مهام العمل') || matchesSearch('المتابعة') || matchesSearch('مهام العمل والمتابعة')) && (
                   <button
                     onClick={() => handleSelectTab('tasks')}
-                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                    className={`w-full text-right flex items-center justify-between px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
                       activeTab === 'tasks'
                         ? 'bg-[#2f4874] text-white font-bold shadow-xs'
                         : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
                     }`}
-                    title="المهام"
+                    title="مهام العمل والمتابعة"
                   >
-                    <CheckSquare className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'tasks' ? 'text-white' : 'text-[#9bb0cb]'}`} />
-                    {!isCollapsed && <span>المهام</span>}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <CheckSquare className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'tasks' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                      {!isCollapsed && <span className="truncate whitespace-nowrap">مهام العمل والمتابعة</span>}
+                    </div>
                   </button>
                 )}
 
@@ -1031,12 +1033,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                 <div className="space-y-0.5 pr-2">
                   <button
                     onClick={() => handleSelectTab('tasks')}
-                    className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs ${
+                    className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded text-xs ${
                       activeTab === 'tasks' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1]'
                     }`}
                   >
-                    <CheckSquare className="w-3.5 h-3.5 text-[#9bb0cb]" />
-                    <span>المهام</span>
+                    <CheckSquare className="w-3.5 h-3.5 text-[#9bb0cb] shrink-0" />
+                    <span className="truncate whitespace-nowrap">مهام العمل والمتابعة</span>
                   </button>
                   <button
                     onClick={() => handleSelectTab('meetings')}

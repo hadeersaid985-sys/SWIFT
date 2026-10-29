@@ -192,8 +192,9 @@ export const ClientRenewalsView: React.FC = () => {
   };
 
 
-  // Active pool: Admin sees all clientRenewals; non-admin employee sees visibleClients strictly
-  const activeClientsPool = isManager ? clientRenewals : visibleClients;
+  // Active pool: Only current/active clients (suspended contracts belong strictly to "العقود الموقوفة")
+  const currentActiveClients = (isManager ? clientRenewals : visibleClients).filter(c => c.status !== 'suspended');
+  const activeClientsPool = currentActiveClients;
 
   // Active client being viewed in the dossier modal (strictly hidden if unmentioned or unassigned)
   const currentDossierClient = selectedClientForDossier
@@ -583,14 +584,14 @@ export const ClientRenewalsView: React.FC = () => {
     return `https://wa.me/${rawNumber}?text=${msg}`;
   };
 
-  // KPI calculations
-  const totalDueSoon = clientRenewals.filter(r => {
+  // KPI calculations - Current active contracts only
+  const totalDueSoon = currentActiveClients.filter(r => {
     if (r.status === 'renewed' || r.status === 'cancelled') return false;
     const diff = getDaysRemaining(r.renewalDate);
     return diff <= 4 && diff >= 0;
   });
 
-  const totalRevenueExpected = clientRenewals
+  const totalRevenueExpected = currentActiveClients
     .filter(r => r.status !== 'cancelled')
     .reduce((sum, r) => sum + r.amount, 0);
 
@@ -641,7 +642,7 @@ export const ClientRenewalsView: React.FC = () => {
           </span>
         </div>
         <span className="text-[11px] font-mono font-bold bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 text-slate-600">
-          المعروض: {filteredRenewals.length} من أصل {clientRenewals.length} عميل
+          المعروض: {filteredRenewals.length} من أصل {currentActiveClients.length} عميل حالي
         </span>
       </div>
 
@@ -725,9 +726,9 @@ export const ClientRenewalsView: React.FC = () => {
       {/* KPI Overview Ribbon */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
-          <div className="text-slate-400 font-bold text-[11px]">إجمالي اشتراكات العملاء</div>
-          <div className="text-2xl font-black text-slate-900 mt-1">{clientRenewals.length} عميل</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">مسجلة في قاعدة بيانات سويفت</div>
+          <div className="text-slate-400 font-bold text-[11px]">إجمالي اشتراكات العملاء الحالية</div>
+          <div className="text-2xl font-black text-slate-900 mt-1">{currentActiveClients.length} عميل</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">العقود النشطة والحالية (دون الموقوفة)</div>
         </div>
 
         <div className="bg-white p-3.5 rounded-xl border border-amber-200 shadow-2xs bg-amber-50/30">
@@ -752,7 +753,7 @@ export const ClientRenewalsView: React.FC = () => {
         <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
           <div className="text-slate-400 font-bold text-[11px]">اشتراكات متأخرة عن السداد</div>
           <div className="text-2xl font-black text-rose-600 mt-1">
-            {clientRenewals.filter(r => getDaysRemaining(r.renewalDate) < 0 && r.status !== 'renewed').length}
+            {currentActiveClients.filter(r => getDaysRemaining(r.renewalDate) < 0 && r.status !== 'renewed').length}
           </div>
           <div className="text-[10px] text-slate-500 mt-0.5">بانتظار تحصيل المستحقات</div>
         </div>
@@ -964,10 +965,10 @@ export const ClientRenewalsView: React.FC = () => {
                         : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}
                   >
-                    الكل ({clientRenewals.length})
+                    الكل ({currentActiveClients.length})
                   </button>
                   {team.map(member => {
-                    const empClientsCount = clientRenewals.filter(c =>
+                    const empClientsCount = currentActiveClients.filter(c =>
                       (c.assignedTeamMemberIds || []).includes(member.id) ||
                       c.managedBy === member.name ||
                       c.managedBy === member.id
@@ -1438,7 +1439,7 @@ export const ClientRenewalsView: React.FC = () => {
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            كافة الاشتراكات ({clientRenewals.length})
+            كافة الاشتراكات الحالية ({currentActiveClients.length})
           </button>
 
           <button
@@ -1797,12 +1798,12 @@ export const ClientRenewalsView: React.FC = () => {
               </p>
             </div>
             <div className="text-xs font-mono font-bold bg-indigo-50 text-indigo-800 px-3 py-1.5 rounded-lg border border-indigo-200">
-              إجمالي الحسابات: {clientRenewals.length}
+              إجمالي الحسابات الحالية: {currentActiveClients.length}
             </div>
           </div>
 
           <div className="space-y-4">
-            {clientRenewals.map(client => {
+            {currentActiveClients.map(client => {
               const diffDays = getDaysRemaining(client.renewalDate);
               return (
                 <div
@@ -2068,7 +2069,7 @@ export const ClientRenewalsView: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {clientRenewals.map(client => (
+            {currentActiveClients.map(client => (
               <div key={client.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-black text-slate-900 text-sm">{client.company}</span>

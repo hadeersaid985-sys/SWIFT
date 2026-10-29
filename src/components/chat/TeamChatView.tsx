@@ -446,22 +446,22 @@ export const TeamChatView: React.FC = () => {
   }, [activeMessages]);
 
   return (
-    <div className="h-[calc(100vh-5.5rem)] flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+    <div className="h-[calc(100vh-5.5rem)] flex flex-col bg-white rounded-2xl shadow-xs border border-slate-200/90 overflow-hidden">
       {/* Top Banner / Breadcrumb */}
-      <div className="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between border-b border-slate-800 shrink-0">
+      <div className="bg-[#1e293b] text-white px-4 py-3 flex items-center justify-between border-b border-slate-700/80 shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 bg-blue-600 rounded-lg text-white shadow-xs">
             <MessagesSquare className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-black text-white">دردشة وتواصل فريق العمل</h1>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.2 rounded-full font-bold flex items-center gap-1">
+              <h1 className="text-sm font-bold text-white">دردشة وتواصل فريق العمل</h1>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>مباشر وفوري (Real-Time)</span>
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-300">
               قنوات تواصل مفتوحة ومحادثات خاصة مباشرة بين جميع أفراد سويفت مايند
             </p>
           </div>
@@ -1092,8 +1092,8 @@ export const TeamChatView: React.FC = () => {
                           <div
                             className={`p-3 rounded-2xl text-xs sm:text-sm leading-relaxed relative shadow-2xs ${
                               isMe
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-xs'
-                                : 'bg-white text-slate-800 border border-slate-200/90 rounded-bl-xs'
+                                ? 'bg-blue-600 text-white rounded-br-xs'
+                                : 'bg-white text-slate-900 border border-slate-200/90 rounded-bl-xs'
                             }`}
                           >
                             {/* Replying To snippet */}
@@ -1395,7 +1395,7 @@ export const TeamChatView: React.FC = () => {
                   disabled={!inputText.trim() && pendingAttachments.length === 0}
                   className={`p-2.5 rounded-xl font-bold transition-all shrink-0 cursor-pointer ${
                     inputText.trim() || pendingAttachments.length > 0
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:scale-105'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs'
                       : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                   title="إرسال (Enter)"

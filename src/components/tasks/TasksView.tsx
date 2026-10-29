@@ -511,26 +511,26 @@ export const TasksView: React.FC = () => {
       {/* ROLE BANNER & LIVE TIMER FOR EMPLOYEE */}
       {!isManager ? (
         <div className="space-y-3">
-          <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white p-3.5 sm:p-4 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="bg-[#1e293b] text-white p-3.5 sm:p-4 rounded-2xl shadow-xs border border-slate-700/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
-              <span className="p-2 bg-white/20 rounded-xl shrink-0">
+              <span className="p-2 bg-blue-600 rounded-xl shrink-0 text-white shadow-xs">
                 <UserCheck className="w-5 h-5 text-white" />
               </span>
               <div className="min-w-0">
-                <div className="font-black text-sm flex flex-wrap items-center gap-1.5">
+                <div className="font-bold text-sm flex flex-wrap items-center gap-1.5">
                   <span>مرحباً بك، {currentUser.name}</span>
-                  <span className="text-[10px] bg-white/20 text-blue-100 px-2 py-0.5 rounded-full font-bold">
-                    واجهة الموظف: التاسكات والتايمر وشغلك بس
+                  <span className="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded-full font-bold">
+                    واجهة الموظف: مهام العمل والمتابعة ومؤقت الإنجاز
                   </span>
                 </div>
-                <p className="text-xs text-blue-100 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                   تظهر لك هنا فقط <strong>مهامك المكلف بها ({assignedToMeCount})</strong> والمهام التي <strong>معمول لك فيها منشن (@) ({tasksWithMentionsCount})</strong> ومؤقت العمل ومواعيد التسليم.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/20 font-bold">
+              <span className="text-xs bg-slate-800/90 text-blue-200 px-3 py-1.5 rounded-xl border border-slate-700 font-mono font-bold">
                 كود الموظف: {currentUser.employeeCode || 'SM-Emp'}
               </span>
             </div>
@@ -784,8 +784,8 @@ export const TasksView: React.FC = () => {
               <h1 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
                 <span>
                   {isManager && managerScope === 'all'
-                    ? 'مهام وتاسكات الفريق وتتبع ساعات العمل'
-                    : 'مهامي الشخصية ومؤقت الإنجاز'}
+                    ? 'مهام العمل والمتابعة وتتبع ساعات الإنجاز'
+                    : 'مهام العمل والمتابعة الشخصية'}
                 </span>
                 {managerPrivacyFilter === 'private_only' && (
                   <span className="text-xs bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">

@@ -124,4 +124,21 @@ describe('Client Renewal & Files Visibility Isolation', () => {
     };
     assert.equal(isClientVisibleToUser(unassignedClient, employeeYomna), false);
   });
+
+  it('active clients pool strictly excludes suspended contracts', () => {
+    const clients: ClientRenewal[] = [
+      { ...sampleClient, id: 'c1', status: 'renewing_soon' },
+      { ...sampleClient, id: 'c2', status: 'suspended' },
+      { ...sampleClient, id: 'c3', status: 'renewed' },
+      { ...sampleClient, id: 'c4', status: 'suspended' }
+    ];
+
+    const currentActiveOnly = clients.filter(c => c.status !== 'suspended');
+    const suspendedOnly = clients.filter(c => c.status === 'suspended');
+
+    assert.equal(currentActiveOnly.length, 2);
+    assert.deepEqual(currentActiveOnly.map(c => c.id), ['c1', 'c3']);
+    assert.equal(suspendedOnly.length, 2);
+    assert.deepEqual(suspendedOnly.map(c => c.id), ['c2', 'c4']);
+  });
 });

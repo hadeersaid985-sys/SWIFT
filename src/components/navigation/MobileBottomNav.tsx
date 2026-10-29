@@ -40,7 +40,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
   const employeeItems = [
     {
       id: 'tasks',
-      label: 'المهام',
+      label: 'مهام العمل والمتابعة',
+      shortLabel: 'المهام والمتابعة',
       icon: CheckSquare,
       badge: myPendingTasksCount > 0 ? myPendingTasksCount : null,
       badgeColor: 'bg-emerald-600'
@@ -48,6 +49,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
     {
       id: 'chat',
       label: 'الدردشة',
+      shortLabel: 'الدردشة',
       icon: MessagesSquare,
       badge: unreadChatCount > 0 ? unreadChatCount : null,
       badgeColor: 'bg-rose-600'
@@ -55,6 +57,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
     {
       id: 'mail',
       label: 'البريد',
+      shortLabel: 'البريد',
       icon: Mail,
       badge: unreadEmailsCount > 0 ? unreadEmailsCount : null,
       badgeColor: 'bg-blue-600'
@@ -62,6 +65,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
     {
       id: 'renewals',
       label: 'العملاء',
+      shortLabel: 'العملاء',
       icon: FileSpreadsheet,
       badge: null,
       badgeColor: 'bg-emerald-600'
@@ -73,13 +77,15 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
     {
       id: 'home',
       label: 'الرئيسية',
+      shortLabel: 'الرئيسية',
       icon: Home,
       badge: null,
       badgeColor: 'bg-blue-600'
     },
     {
       id: 'tasks',
-      label: 'المهام',
+      label: 'مهام العمل والمتابعة',
+      shortLabel: 'المهام والمتابعة',
       icon: CheckSquare,
       badge: tasks.filter(t => t.status !== 'completed').length || null,
       badgeColor: 'bg-emerald-600'
@@ -137,8 +143,13 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
               )}
             </div>
 
-            <span className={`text-[10px] mt-0.5 tracking-tight ${isActive ? 'font-black text-blue-700' : 'font-medium'}`}>
-              {item.label}
+            <span
+              title={item.label}
+              className={`text-[10px] mt-0.5 tracking-tight whitespace-nowrap truncate max-w-[70px] text-center ${
+                isActive ? 'font-black text-blue-700' : 'font-medium text-slate-600'
+              }`}
+            >
+              {item.shortLabel || item.label}
             </span>
           </button>
         );

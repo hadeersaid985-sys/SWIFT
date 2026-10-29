@@ -158,7 +158,7 @@ export const ProfileView: React.FC = () => {
               onClick={() => setActiveTab(isManager ? 'home' : 'tasks')}
               className="hover:text-blue-600 transition-colors flex items-center gap-1 cursor-pointer"
             >
-              <span>{isManager ? 'الرئيسية' : 'مهام العمل'}</span>
+              <span>{isManager ? 'الرئيسية' : 'مهام العمل والمتابعة'}</span>
             </button>
             <span>/</span>
             <span className="text-blue-600 font-bold">الملف الشخصي وإعدادات الحساب</span>

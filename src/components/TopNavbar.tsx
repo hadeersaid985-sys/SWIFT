@@ -180,7 +180,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
       case 'reports':
         return 'التقارير';
       case 'tasks':
-        return 'المهام ومواعيدها';
+        return 'مهام العمل والمتابعة';
       case 'team':
         return 'فريق العمل (الموظفين)';
       case 'mail':
