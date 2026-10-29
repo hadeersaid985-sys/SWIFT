@@ -47,6 +47,7 @@ import { useCRM } from '../context/CRMContext';
 import { useChat } from '../context/ChatContext';
 import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 import { QuickAttendanceWidget } from './attendance/QuickAttendanceWidget';
+import { SystemClockWidget } from './common/SystemClockWidget';
 import { WeeklyExecutiveModal } from './reports/WeeklyExecutiveModal';
 
 interface TopNavbarProps {
@@ -248,14 +249,16 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           showSubtitle={false}
           onClick={() => setActiveTab(isManagerUser ? 'home' : 'tasks')}
         />
-        <button
-          onClick={() => setIsBrandModalOpen(true)}
-          className="hidden md:flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-2xs shrink-0"
-          title="تغيير اللوجو واسم النظام مباشرة من الواجهة الرئيسية"
-        >
-          <Camera className="w-3 h-3" />
-          <span className="hidden sm:inline">تغيير اللوجو</span>
-        </button>
+        {isManagerUser && (
+          <button
+            onClick={() => setIsBrandModalOpen(true)}
+            className="hidden md:flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+            title="تغيير اللوجو واسم النظام مباشرة من الواجهة الرئيسية"
+          >
+            <Camera className="w-3 h-3" />
+            <span className="hidden sm:inline">تغيير اللوجو</span>
+          </button>
+        )}
         {getTabTitle(activeTab) ? (
           <>
             <span className="text-slate-300 hidden md:inline">|</span>
@@ -316,45 +319,49 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                   </div>
                 </button>
 
-                <button
-                  onClick={() => {
-                    setActiveTab('reports');
-                    setShowAddMenu(false);
-                  }}
-                  className="w-full text-right px-3 py-2 hover:bg-blue-50/60 flex items-center gap-2 text-slate-700 cursor-pointer"
-                >
-                  <BarChart3 className="w-4 h-4 text-indigo-600" />
-                  <div>
-                    <div className="font-bold">تقرير تحليلي جديد</div>
-                    <div className="text-[10px] text-slate-400">إحصاءات البريد والمبيعات</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => {
-                    setOpenQuickModal('deal');
-                    setShowAddMenu(false);
-                  }}
-                  className="w-full text-right px-3 py-2 hover:bg-blue-50/60 flex items-center gap-2 text-slate-700 cursor-pointer"
-                >
-                  <Briefcase className="w-4 h-4 text-emerald-600" />
-                  <div>
-                    <div className="font-bold">صفقة مبيعات جديدة</div>
-                    <div className="text-[10px] text-slate-400">قيمة مالية ومراحل إغلاق</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => {
-                    setOpenQuickModal('lead');
-                    setShowAddMenu(false);
-                  }}
-                  className="w-full text-right px-3 py-2 hover:bg-blue-50/60 flex items-center gap-2 text-slate-700 cursor-pointer"
-                >
-                  <Building className="w-4 h-4 text-purple-600" />
-                  <div>
-                    <div className="font-bold">عميل محتمل (Lead)</div>
-                    <div className="text-[10px] text-slate-400">عميل جديد ومصدر التواصل</div>
-                  </div>
-                </button>
+                {isManagerUser && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setActiveTab('reports');
+                        setShowAddMenu(false);
+                      }}
+                      className="w-full text-right px-3 py-2 hover:bg-blue-50/60 flex items-center gap-2 text-slate-700 cursor-pointer"
+                    >
+                      <BarChart3 className="w-4 h-4 text-indigo-600" />
+                      <div>
+                        <div className="font-bold">تقرير تحليلي جديد</div>
+                        <div className="text-[10px] text-slate-400">إحصاءات البريد والمبيعات</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOpenQuickModal('deal');
+                        setShowAddMenu(false);
+                      }}
+                      className="w-full text-right px-3 py-2 hover:bg-blue-50/60 flex items-center gap-2 text-slate-700 cursor-pointer"
+                    >
+                      <Briefcase className="w-4 h-4 text-emerald-600" />
+                      <div>
+                        <div className="font-bold">صفقة مبيعات جديدة</div>
+                        <div className="text-[10px] text-slate-400">قيمة مالية ومراحل إغلاق</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOpenQuickModal('lead');
+                        setShowAddMenu(false);
+                      }}
+                      className="w-full text-right px-3 py-2 hover:bg-blue-50/60 flex items-center gap-2 text-slate-700 cursor-pointer"
+                    >
+                      <Building className="w-4 h-4 text-purple-600" />
+                      <div>
+                        <div className="font-bold">عميل محتمل (Lead)</div>
+                        <div className="text-[10px] text-slate-400">عميل جديد ومصدر التواصل</div>
+                      </div>
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => {
                     setOpenQuickModal('meeting');
@@ -1030,6 +1037,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
             </div>
           )}
         </div>
+
+        {/* Live System Synchronized Clock (5:36 PM) */}
+        <SystemClockWidget />
 
         {/* Quick Check-in / Check-out Widget */}
         <QuickAttendanceWidget />

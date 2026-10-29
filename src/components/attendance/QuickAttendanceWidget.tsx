@@ -11,14 +11,16 @@ import confetti from 'canvas-confetti';
 import { useCRM } from '../../context/CRMContext';
 import { AttendanceRecord } from '../../types/crm';
 
+import { getSystemDateString, formatSystemTimeAr } from '../../utils/timeUtils';
+
 export const QuickAttendanceWidget: React.FC = () => {
   const { currentUser, attendanceRecords, recordAttendance, updateAttendanceRecord } = useCRM();
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   if (!currentUser) return null;
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const nowTimeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+  const todayStr = getSystemDateString();
+  const nowTimeStr = formatSystemTimeAr();
 
   // Find today's record for this user
   const todayRecord = attendanceRecords.find(

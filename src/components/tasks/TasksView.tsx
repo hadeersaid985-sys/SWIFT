@@ -104,7 +104,28 @@ export const TasksView: React.FC = () => {
   // Navigation view mode: team member lists (Trello), day lists (Trello), table, radar, etc.
   const [viewMode, setViewMode] = useState<'team_boards' | 'day_boards' | 'list' | 'radar' | 'time_logs' | 'kanban' | 'calendar'>('team_boards');
   const [filterMember, setFilterMember] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlFilter = urlParams.get('filter');
+        if (urlFilter) return urlFilter;
+        const saved = sessionStorage.getItem('swiftmynd_tasks_filter');
+        if (saved) return saved;
+      }
+    } catch {}
+    return 'all';
+  });
+
+  useEffect(() => {
+    const handleFilterEvent = (e: any) => {
+      if (e && e.detail) {
+        setFilterStatus(e.detail);
+      }
+    };
+    window.addEventListener('swiftmynd_tasks_filter', handleFilterEvent);
+    return () => window.removeEventListener('swiftmynd_tasks_filter', handleFilterEvent);
+  }, []);
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [taskSearch, setTaskSearch] = useState<string>('');
   const [starredTasks, setStarredTasks] = useState<string[]>(['task-101', 'task-103']);

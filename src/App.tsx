@@ -220,9 +220,6 @@ const AppContent: React.FC = () => {
     'mail',
     'chat',
     'profile',
-    'performance',
-    'company_rules',
-    'delays',
     ...(isSalesUser ? ['leads'] : [])
   ];
   
@@ -235,7 +232,7 @@ const AppContent: React.FC = () => {
       return isManager ? 'reports' : 'tasks';
     }
     return activeTab || (isManager ? 'reports' : 'tasks');
-  }, [isManager, activeTab]);
+  }, [isManager, activeTab, isSalesUser]);
 
   useEffect(() => {
     if (activeTab === 'work_queue') {
@@ -243,7 +240,7 @@ const AppContent: React.FC = () => {
     } else if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
       setActiveTab('tasks');
     }
-  }, [isManager, activeTab, setActiveTab]);
+  }, [isManager, activeTab, setActiveTab, isSalesUser]);
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-[#f4f6f9] text-slate-800 flex flex-row selection:bg-blue-600 selection:text-white">
@@ -283,7 +280,7 @@ const AppContent: React.FC = () => {
 
         {/* Content Body */}
         <main className="flex-1 overflow-y-auto p-2.5 sm:p-5 pb-28 sm:pb-24 md:pb-5 scrollbar-thin">
-          {/* Employee only sees personal tasks, meetings, calls, mail, renewals, chat, performance profile, and profile */}
+          {/* Employee only sees personal tasks, meetings, calls, mail, renewals, chat, and profile */}
           {!isManager ? (
             <>
               {effectiveTab === 'profile' && <ProfileView />}
@@ -293,11 +290,8 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'mail' && <MailView />}
               {effectiveTab === 'chat' && <TeamChatView />}
               {effectiveTab === 'leads' && isSalesUser && <LeadsView />}
-              {(effectiveTab === 'performance' || effectiveTab === 'company_rules' || effectiveTab === 'delays') && (
-                <PerformanceEvaluationView key={effectiveTab} initialTab={effectiveTab === 'company_rules' ? 'rules' : effectiveTab === 'delays' ? 'delays' : 'dashboard'} />
-              )}
               {effectiveTab === 'tasks' && <TasksView />}
-              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'chat', 'tasks', 'performance', 'company_rules', 'delays', ...(isSalesUser ? ['leads'] : [])].includes(effectiveTab) && (
+              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'chat', 'tasks', ...(isSalesUser ? ['leads'] : [])].includes(effectiveTab) && (
                 <TasksView />
               )}
             </>
