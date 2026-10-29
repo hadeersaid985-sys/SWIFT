@@ -225,9 +225,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   };
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-40 shadow-2xs">
+    <header className="h-14 bg-white border-b border-slate-200 px-2 sm:px-3 flex items-center justify-between sticky top-0 z-40 shadow-2xs w-full max-w-full overflow-hidden">
       {/* Right Side: Swift Logo & Quick Logo Edit & Page Title */}
-      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0 max-w-[35%] sm:max-w-none">
         {/* Mobile Hamburger Drawer Toggle */}
         <button
           type="button"
@@ -252,35 +252,35 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         {isManagerUser && (
           <button
             onClick={() => setIsBrandModalOpen(true)}
-            className="hidden md:flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+            className="hidden xl:flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-2xs shrink-0"
             title="تغيير اللوجو واسم النظام مباشرة من الواجهة الرئيسية"
           >
             <Camera className="w-3 h-3" />
-            <span className="hidden sm:inline">تغيير اللوجو</span>
+            <span className="hidden xl:inline">تغيير اللوجو</span>
           </button>
         )}
         {getTabTitle(activeTab) ? (
           <>
             <span className="text-slate-300 hidden md:inline">|</span>
-            <h1 className="text-xs sm:text-sm font-bold text-slate-800 tracking-tight hidden sm:block truncate max-w-[120px] sm:max-w-xs whitespace-nowrap">
+            <h1 className="text-xs sm:text-sm font-bold text-slate-800 tracking-tight hidden sm:block truncate max-w-[90px] md:max-w-[130px] whitespace-nowrap">
               {getTabTitle(activeTab)}
             </h1>
           </>
         ) : null}
       </div>
 
-      {/* Left Side: Tools & Actions */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-        {/* Search Input */}
-        <div className="relative hidden md:block w-52 lg:w-72 xl:w-80">
+      {/* Left Side: Tools & Actions - Fully responsive & scrollable, never cut off */}
+      <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 shrink overflow-x-auto scrollbar-none py-1">
+        {/* Search Input for very wide displays */}
+        <div className="relative hidden 2xl:block w-40 shrink">
           <input
             type="text"
             value={topSearch}
             onChange={e => setTopSearch(e.target.value)}
-            placeholder="البحث في السجلات والبيانات..."
-            className="w-full bg-slate-50 hover:bg-slate-100/70 text-slate-800 placeholder-slate-400 text-xs rounded-lg pr-8 pl-4 py-1.5 border border-slate-200 focus:border-blue-600 focus:bg-white focus:outline-none transition-all"
+            placeholder="بحث سريع..."
+            className="w-full bg-slate-50 hover:bg-slate-100/70 text-slate-800 placeholder-slate-400 text-xs rounded-lg pr-7 pl-3 py-1.5 border border-slate-200 focus:border-blue-600 focus:bg-white focus:outline-none transition-all"
           />
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2" />
+          <Search className="w-3 h-3 text-slate-400 absolute right-2.5 top-2.5" />
         </div>
 
         {/* Unified ➕ إضافة (Add Menu for Mobile & Desktop) */}
@@ -756,7 +756,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           title="موجز المهام اليومي - المهام المتأخرة والمجدولة لليوم"
         >
           <Sun className="w-3.5 h-3.5 text-amber-600" />
-          <span>موجز اليوم</span>
+          <span className="hidden xl:inline">موجز اليوم</span>
           {(digestOverdueCount + digestTodayCount) > 0 && (
             <span className="bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.2 rounded min-w-4 text-center">
               {digestOverdueCount + digestTodayCount}
@@ -874,24 +874,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           )}
         </div>
 
-        {/* Marketplace Store Icon */}
-        <button
-          onClick={() => setActiveTab('integrations')}
-          className="text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer hidden xl:block shrink-0"
-          title="سوق التطبيقات والربط"
-        >
-          <Store className="w-4 h-4" />
-        </button>
 
-        {/* Customization & Brand Settings */}
-        <button
-          onClick={() => setIsBrandModalOpen(true)}
-          className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
-          title="تخصيص الهوية والشعار"
-        >
-          <Camera className="w-3.5 h-3.5 text-slate-500" />
-          <span>تخصيص الهوية</span>
-        </button>
 
         {/* Settings Menu Dropdown (Accessible directly from main interface on desktop) */}
         <div className="relative hidden md:block shrink-0" ref={settingsRef}>
