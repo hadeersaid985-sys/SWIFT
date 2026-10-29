@@ -81,8 +81,8 @@ export const QuickAttendanceWidget: React.FC = () => {
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-          <span className="hidden md:inline">تسجيل حضور 🟢</span>
-          <span className="md:hidden text-[11px]">حضور</span>
+          <span className="hidden xl:inline">تسجيل حضور 🟢</span>
+          <span className="xl:hidden text-[11px]">حضور 🟢</span>
         </button>
       )}
 

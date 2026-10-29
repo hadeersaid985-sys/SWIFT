@@ -1,30 +1,26 @@
 /**
  * Centralized Time & Clock Utility for SwiftMynd
- * Synchronized to local system clock (Cairo Time)
+ * Standardized to Egypt Official Time (UTC+2 / Cairo Winter Time)
  * 
  * Rules:
- * - Display matches the user's actual system clock (e.g., 6:52 PM, not +1 hr 7:52 PM).
- * - Egypt Daylight Saving transition: After 12:00 midnight (end of Thursday Oct 29, 2026),
- *   the clock rolls back 1 hour (from 12:00 midnight back to 11:00 PM) for Winter Time.
- * - Allows 1-click calibration (-1 hr, +1 hr, reset to device).
+ * - Time is synchronized to Egypt Standard / Winter Time (UTC+2) -> displays 6:xx PM (not 8:xx).
+ * - Clear any old lingering offsets.
  */
 
+export const EGYPT_TIMEZONE = 'Etc/GMT-2';
 export const STORAGE_OFFSET_KEY = 'swiftmynd_time_offset_minutes';
 export const TIME_EVENT_NAME = 'swiftmynd_time_changed';
 
-// Clean up any legacy +60 offset that previously bumped the clock by 1 hour
+// Clear legacy offsets that may have shifted the clock incorrectly to 8:xx
 if (typeof window !== 'undefined') {
   try {
-    const legacy = localStorage.getItem(STORAGE_OFFSET_KEY);
-    if (legacy === '60' || legacy === '+60') {
-      localStorage.removeItem(STORAGE_OFFSET_KEY);
-    }
+    localStorage.removeItem(STORAGE_OFFSET_KEY);
+    localStorage.removeItem('swiftmynd_time_offset');
   } catch {}
 }
 
 /**
- * Returns current Date object with any active calibration offset applied.
- * Also checks Egypt winter time threshold (Midnight Thursday Oct 29 -> Friday Oct 30, 2026).
+ * Returns current Date object with any active calibration offset applied
  */
 export function getSystemDate(): Date {
   const now = new Date();
@@ -39,10 +35,7 @@ export function getSystemDate(): Date {
     } catch {}
   }
 
-  // Base date with user offset applied
-  const calculatedDate = new Date(now.getTime() + offsetMinutes * 60 * 1000);
-
-  return calculatedDate;
+  return new Date(now.getTime() + offsetMinutes * 60 * 1000);
 }
 
 /**
@@ -72,7 +65,7 @@ export function adjustSystemTimeOffset(deltaMinutes: number): void {
 }
 
 /**
- * Resets system time offset back to 0 (exact device clock)
+ * Resets system time back to official Egypt time (UTC+2 -> 6:xx PM)
  */
 export function resetSystemTimeToDevice(): void {
   if (typeof window === 'undefined') return;
@@ -83,26 +76,30 @@ export function resetSystemTimeToDevice(): void {
 }
 
 /**
- * Formats time in 12-hour format: e.g. "6:52 PM"
- * Uses client local device clock (no forced foreign timezone that adds +1hr)
+ * Formats time in 12-hour format: e.g. "6:05 PM"
+ * Uses Egypt Official Time (UTC+2 / Etc/GMT-2)
  */
 export function formatSystemTimeEn(date: Date = getSystemDate(), includeSeconds: boolean = false): string {
   try {
     return new Intl.DateTimeFormat('en-US', {
+      timeZone: EGYPT_TIMEZONE,
       hour: 'numeric',
       minute: '2-digit',
       ...(includeSeconds ? { second: '2-digit' } : {}),
       hour12: true
     }).format(date);
   } catch {
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
+    // Manual fallback for UTC+2
+    const utcMs = date.getTime();
+    const egyptDate = new Date(utcMs + 2 * 60 * 60 * 1000);
+    let hours = egyptDate.getUTCHours();
+    const minutes = egyptDate.getUTCMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12;
     hours = hours ? hours : 12;
     const minStr = minutes < 10 ? '0' + minutes : minutes;
     if (includeSeconds) {
-      const seconds = date.getSeconds();
+      const seconds = egyptDate.getUTCSeconds();
       const secStr = seconds < 10 ? '0' + seconds : seconds;
       return `${hours}:${minStr}:${secStr} ${ampm}`;
     }
@@ -111,11 +108,12 @@ export function formatSystemTimeEn(date: Date = getSystemDate(), includeSeconds:
 }
 
 /**
- * Formats time in Arabic: e.g. "6:52 م"
+ * Formats time in Arabic: e.g. "6:05 م"
  */
 export function formatSystemTimeAr(date: Date = getSystemDate(), includeSeconds: boolean = false): string {
   try {
     return new Intl.DateTimeFormat('ar-EG', {
+      timeZone: EGYPT_TIMEZONE,
       hour: 'numeric',
       minute: '2-digit',
       ...(includeSeconds ? { second: '2-digit' } : {}),
@@ -129,14 +127,16 @@ export function formatSystemTimeAr(date: Date = getSystemDate(), includeSeconds:
 }
 
 /**
- * Formats date as YYYY-MM-DD
+ * Formats date as YYYY-MM-DD in Egypt timezone
  */
 export function getSystemDateString(date: Date = getSystemDate()): string {
   try {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: EGYPT_TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(date);
   } catch {
     return date.toISOString().split('T')[0];
   }
@@ -148,6 +148,7 @@ export function getSystemDateString(date: Date = getSystemDate()): string {
 export function getSystemFullDateAr(date: Date = getSystemDate()): string {
   try {
     return new Intl.DateTimeFormat('ar-EG', {
+      timeZone: EGYPT_TIMEZONE,
       weekday: 'long',
       day: 'numeric',
       month: 'long',

@@ -225,9 +225,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   };
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 px-2 sm:px-3 flex items-center justify-between sticky top-0 z-40 shadow-2xs w-full max-w-full overflow-hidden">
-      {/* Right Side: Swift Logo & Quick Logo Edit & Page Title */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 min-w-0 max-w-[35%] sm:max-w-none">
+    <header className="h-14 bg-white border-b border-slate-200 px-2 sm:px-3 flex items-center justify-between sticky top-0 z-40 shadow-2xs w-full max-w-full overflow-visible">
+      {/* Right Side: Swift Logo & Page Title */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
         {/* Mobile Hamburger Drawer Toggle */}
         <button
           type="button"
@@ -252,25 +252,22 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         {isManagerUser && (
           <button
             onClick={() => setIsBrandModalOpen(true)}
-            className="hidden xl:flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+            className="hidden 2xl:flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-2xs shrink-0"
             title="تغيير اللوجو واسم النظام مباشرة من الواجهة الرئيسية"
           >
             <Camera className="w-3 h-3" />
-            <span className="hidden xl:inline">تغيير اللوجو</span>
+            <span>تغيير اللوجو</span>
           </button>
         )}
         {getTabTitle(activeTab) ? (
-          <>
-            <span className="text-slate-300 hidden md:inline">|</span>
-            <h1 className="text-xs sm:text-sm font-bold text-slate-800 tracking-tight hidden sm:block truncate max-w-[90px] md:max-w-[130px] whitespace-nowrap">
-              {getTabTitle(activeTab)}
-            </h1>
-          </>
+          <h1 className="text-xs font-bold text-slate-600 hidden 2xl:block truncate max-w-[120px] whitespace-nowrap">
+            | {getTabTitle(activeTab)}
+          </h1>
         ) : null}
       </div>
 
-      {/* Left Side: Tools & Actions - Fully responsive & scrollable, never cut off */}
-      <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 shrink overflow-x-auto scrollbar-none py-1">
+      {/* Left Side: Tools & Actions - Fully visible, responsive, zero clipping */}
+      <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 shrink-0">
         {/* Search Input for very wide displays */}
         <div className="relative hidden 2xl:block w-40 shrink">
           <input
@@ -618,11 +615,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                   setShowAddMenu(false);
                   setShowEditMenu(false);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200/90 hover:border-rose-200 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                className="flex items-center gap-1 px-2 py-1 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200/90 hover:border-rose-200 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0"
                 title="حذف وتفريغ السجلات والبيانات من الأعلى"
               >
                 <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                <span className="hidden sm:inline">حذف</span>
+                <span className="hidden 2xl:inline">حذف</span>
                 <ChevronDown className="w-3 h-3 opacity-70" />
               </button>
 
@@ -752,11 +749,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         {/* Daily Digest Button (موجز المهام اليومي) */}
         <button
           onClick={() => setIsDailyDigestOpen(true)}
-          className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
+          className="flex items-center gap-1 px-2 py-1 text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
           title="موجز المهام اليومي - المهام المتأخرة والمجدولة لليوم"
         >
           <Sun className="w-3.5 h-3.5 text-amber-600" />
-          <span className="hidden xl:inline">موجز اليوم</span>
+          <span className="hidden 2xl:inline">موجز اليوم</span>
           {(digestOverdueCount + digestTodayCount) > 0 && (
             <span className="bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.2 rounded min-w-4 text-center">
               {digestOverdueCount + digestTodayCount}
@@ -1037,7 +1034,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                 showToast(`تم التبديل لحساب (${emp.name})`);
               }
             }}
-            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 text-amber-300 hover:bg-slate-700 border border-amber-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
+            className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 text-amber-300 hover:bg-slate-700 border border-amber-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0"
             title="تجربة وضع الموظف للتأكد من أن التاسكات فقط تظهر له"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
