@@ -328,6 +328,34 @@ export interface ClientGoogleSheet {
   url: string;
 }
 
+// تاسكات الشهر ومتابعة الإنجاز لكل اكونت (Account Monthly Tasks & Deliverables)
+export type AccountMonthlyTaskCategory =
+  | 'محتوى وبوستات'
+  | 'ريلز ومونتاج'
+  | 'تصميم جرافيك'
+  | 'سيو ومقالات'
+  | 'إعلانات ممولة'
+  | 'تقارير وتحليلات'
+  | 'إداري ومتابعة'
+  | 'أخرى';
+
+export interface AccountMonthlyTask {
+  id: string;
+  title: string;
+  month: string; // e.g. "2026-10"
+  assignedToId?: string; // مع مين (معرف العضو)
+  assignedToName?: string; // اسم الموظف المكلف
+  assignedToRole?: string; // تخصص العضو (سيو، مصمم، كاتب محتوى...)
+  category: AccountMonthlyTaskCategory;
+  completed: boolean;
+  completedAt?: string;
+  completedByName?: string;
+  dueDate: string; // موعد التسليم المحدد (قبل معاد التسليم)
+  deliverableCount?: string; // عدد المخرجات (مثلاً: 12 بوست، 4 ريلز، خطة الشهر)
+  notes?: string;
+  createdAt: string;
+}
+
 // Client Renewals Tracker (مواعيد تجديد اشتراكات العملاء والتنبيهات بـ 4 أيام)
 export type RenewalStatus = 'active' | 'renewing_soon' | 'overdue' | 'renewed' | 'cancelled' | 'suspended';
 
@@ -345,12 +373,16 @@ export interface ClientRenewal {
   currency: string; // e.g. "ر.س", "د.ك", "$"
   renewalDate: string; // YYYY-MM-DD
   startDate?: string; // تاريخ بدء التعاقد / تاريخ البداية
+  monthlyDeliveryDate?: string; // موعد التسليم الشهري المحدد
   status: RenewalStatus;
   firstSubscribedAt?: string; // تاريخ وساعة أول اشتراك (e.g. "2024-01-10 14:00")
   totalRenewalsCount?: number; // عدد مرات التجديد
   lastPaymentDate?: string;
   notes?: string;
-  managedBy?: string;
+  managedBy?: string; // اسم مدير الحساب
+  accountManagerId?: string; // معرف الأكونت مانجر
+  accountManagerName?: string; // اسم الأكونت مانجر المسند له الحساب
+  monthlyTasks?: AccountMonthlyTask[]; // قائمة تاسكات الشهر المضافة للحساب (Checklist)
   // تفاصيل إيقاف العقد (السبب والتاريخ والتصنيف)
   suspensionReason?: string; // سبب إيقاف العقد والاشتراك (السبب يكون مسجل ومحفوظ)
   suspendedAt?: string; // تاريخ إيقاف العقد

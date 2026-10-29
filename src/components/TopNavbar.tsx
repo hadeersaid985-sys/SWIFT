@@ -213,8 +213,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         return 'الدعم';
       case 'integrations':
         return 'عمليات التكامل';
-      case 'mcp':
-        return 'MCP الذكاء الاصطناعي';
       case 'payroll':
       case 'salaries':
         return '';

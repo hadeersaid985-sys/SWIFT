@@ -5,7 +5,6 @@ import {
   BarChart2,
   PieChart,
   Bot,
-  Paperclip,
   MoreHorizontal,
   Search,
   ChevronDown,
@@ -273,22 +272,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               >
                 <Bot className={`w-4 h-4 shrink-0 ${activeTab === 'team' ? 'text-white' : 'text-[#fbbf24]'}`} />
                 {!isCollapsed && <span>العاملون</span>}
-              </button>
-            )}
-
-            {/* 6. MCP (Bright Yellow #facc15) */}
-            {matchesSearch('mcp') && (
-              <button
-                onClick={() => handleSelectTab('mcp')}
-                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
-                  activeTab === 'mcp'
-                    ? 'bg-[#2f4874] text-white font-bold'
-                    : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
-                }`}
-                title="MCP"
-              >
-                <Paperclip className={`w-4 h-4 shrink-0 ${activeTab === 'mcp' ? 'text-white' : 'text-[#facc15]'}`} />
-                {!isCollapsed && <span>MCP</span>}
               </button>
             )}
           </div>
@@ -976,16 +959,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
               >
                 <Bot className="w-4 h-4 text-[#fbbf24]" />
                 <span>العاملون</span>
-              </button>
-
-              <button
-                onClick={() => handleSelectTab('mcp')}
-                className={`w-full text-right flex items-center gap-3 px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
-                  activeTab === 'mcp' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
-                }`}
-              >
-                <Paperclip className="w-4 h-4 text-[#facc15]" />
-                <span>MCP</span>
               </button>
 
               {/* Folders in mobile */}

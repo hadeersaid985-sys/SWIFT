@@ -48,6 +48,7 @@ import { ClientRenewal, RenewalStatus, ClientFileDocument } from '../../types/cr
 import { WhatsAppRenewalModal } from './WhatsAppRenewalModal';
 import { ClientInvoiceModal } from './ClientInvoiceModal';
 import { exportClientsToExcel } from '../../utils/excelExport';
+import { AccountMonthlyTasksTracker } from './AccountMonthlyTasksTracker';
 
 export const ClientRenewalsView: React.FC = () => {
   const {
@@ -74,17 +75,17 @@ export const ClientRenewalsView: React.FC = () => {
     setActiveTab
   } = useCRM();
 
-  // Subtabs: 'client_dossiers' (ملفات العملاء والشيتات للتيم), 'renewals_list' (مواعيد التجديد), 'timeline', 'coaching_offers', 'swift_accounts'
-  const [activeRenewalSubTab, setActiveRenewalSubTabState] = useState<'client_dossiers' | 'renewals_list' | 'timeline' | 'coaching_offers' | 'swift_accounts'>(() => {
+  // Subtabs: 'account_tasks' (تاسكات الشهر ومتابعة الإنجاز), 'client_dossiers' (ملفات العملاء والشيتات للتيم), 'renewals_list' (مواعيد التجديد), 'timeline', 'coaching_offers', 'swift_accounts'
+  const [activeRenewalSubTab, setActiveRenewalSubTabState] = useState<'account_tasks' | 'client_dossiers' | 'renewals_list' | 'timeline' | 'coaching_offers' | 'swift_accounts'>(() => {
     try {
       if (typeof window !== 'undefined') {
         const searchParams = new URLSearchParams(window.location.search);
         const urlSub = searchParams.get('subtab');
-        if (urlSub && ['client_dossiers', 'renewals_list', 'timeline', 'coaching_offers', 'swift_accounts'].includes(urlSub)) {
+        if (urlSub && ['account_tasks', 'client_dossiers', 'renewals_list', 'timeline', 'coaching_offers', 'swift_accounts'].includes(urlSub)) {
           return urlSub as any;
         }
         const saved = localStorage.getItem('swiftmynd_crm_renewals_subtab');
-        if (saved && ['client_dossiers', 'renewals_list', 'timeline', 'coaching_offers', 'swift_accounts'].includes(saved)) {
+        if (saved && ['account_tasks', 'client_dossiers', 'renewals_list', 'timeline', 'coaching_offers', 'swift_accounts'].includes(saved)) {
           return saved as any;
         }
       }
@@ -92,7 +93,7 @@ export const ClientRenewalsView: React.FC = () => {
     return 'client_dossiers';
   });
 
-  const setActiveRenewalSubTab = (tab: 'client_dossiers' | 'renewals_list' | 'timeline' | 'coaching_offers' | 'swift_accounts') => {
+  const setActiveRenewalSubTab = (tab: 'account_tasks' | 'client_dossiers' | 'renewals_list' | 'timeline' | 'coaching_offers' | 'swift_accounts') => {
     setActiveRenewalSubTabState(tab);
     try {
       localStorage.setItem('swiftmynd_crm_renewals_subtab', tab);
@@ -759,9 +760,25 @@ export const ClientRenewalsView: React.FC = () => {
         </div>
       </div>
 
-      {/* 5 CORE MODES SWITCHER BAR (ملفات العملاء والشيتات للتيم + مواعيد التجديد وتنبيهات 4 أيام + تاريخ كل اكونت + عروض الكوتشن + طلبات سويفت) */}
+      {/* 6 CORE MODES SWITCHER BAR (تاسكات الحسابات ومتابعة الإنجاز + ملفات العملاء والشيتات للتيم + مواعيد التجديد وتنبيهات 4 أيام + تاريخ كل اكونت + عروض الكوتشن + طلبات سويفت) */}
       <div className="bg-white p-2.5 rounded-2xl border border-slate-200/90 shadow-2xs overflow-x-auto scrollbar-none">
         <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold min-w-max gap-1">
+          {/* SubTab 0: تاسكات الحسابات الشهرية ومتابعة الإنجاز */}
+          <button
+            onClick={() => setActiveRenewalSubTab('account_tasks')}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg transition-all cursor-pointer font-bold ${
+              activeRenewalSubTab === 'account_tasks'
+                ? 'bg-blue-600 text-white shadow-2xs font-black'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <CheckSquare className="w-4 h-4 text-blue-300" />
+            <span>تاسكات الحسابات ومتابعة الإنجاز 📋</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${activeRenewalSubTab === 'account_tasks' ? 'bg-white text-blue-900' : 'bg-blue-100 text-blue-800'}`}>
+              معدل الإنجاز والتسليم
+            </span>
+          </button>
+
           {/* SubTab 1: ملفات العملاء والشيتات (Google Sheets) لسهولة وصول التيم */}
           <button
             onClick={() => setActiveRenewalSubTab('client_dossiers')}
@@ -837,6 +854,13 @@ export const ClientRenewalsView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* ================= MODE: ACCOUNT MONTHLY TASKS & DELIVERABLES TRACKER (تاسكات الشهر ومتابعة الإنجاز لكل اكونت) ================= */}
+      {activeRenewalSubTab === 'account_tasks' && (
+        <div className="animate-in fade-in">
+          <AccountMonthlyTasksTracker onOpenClientDossier={handleOpenDossier} />
+        </div>
+      )}
 
       {/* ================= MODE: CLIENT DOSSIERS & SHEETS (ملف كل عميل بتفاصيله ولينك الشيت لسهولة الوصول للتيم) ================= */}
       {activeRenewalSubTab === 'client_dossiers' && (
@@ -1354,6 +1378,44 @@ export const ClientRenewalsView: React.FC = () => {
                           )}
                         </div>
                       </div>
+
+                      {/* Monthly Tasks Progress Ribbon on the Card (تاسكات ومخرجات الشهر) */}
+                      {(() => {
+                        const mTasks = client.monthlyTasks || [];
+                        const completed = mTasks.filter(t => t.completed).length;
+                        const remaining = mTasks.length - completed;
+                        const pct = mTasks.length === 0 ? 0 : Math.round((completed / mTasks.length) * 100);
+
+                        return (
+                          <div
+                            onClick={() => {
+                              setSelectedClientForDossier(client);
+                              setSelectedTeamMemberIdsForClient(client.assignedTeamMemberIds || []);
+                              setDossierActiveTab('tasks');
+                            }}
+                            className="mt-2.5 p-2 bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200/80 rounded-xl transition-all cursor-pointer flex items-center justify-between gap-2 text-[11px]"
+                            title="عرض وتعديل تاسكات الشهر لهذا الحساب ومتابعة المتبقي"
+                          >
+                            <div className="flex items-center gap-1.5 font-bold text-blue-950">
+                              <CheckSquare className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                              <span>تاسكات الشهر:</span>
+                              <span className="font-extrabold text-blue-800">
+                                {mTasks.length > 0 ? `${completed}/${mTasks.length} منجز (${pct}%)` : 'لم تُضف بعد'}
+                              </span>
+                            </div>
+
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs shrink-0 ${
+                              remaining > 0
+                                ? 'bg-blue-600 text-white'
+                                : mTasks.length > 0
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}>
+                              {remaining > 0 ? `${remaining} متبقي ⏳` : mTasks.length > 0 ? 'مكتمل ✅' : '+ إضافة تاسك'}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Footer Actions */}
@@ -3407,59 +3469,63 @@ export const ClientRenewalsView: React.FC = () => {
               </div>
             )}
 
-            {/* TAB 5: المهام المرتبطة بالعميل */}
+            {/* TAB 5: تاسكات الشهر ومتابعة الإنجاز للعميل */}
             {dossierActiveTab === 'tasks' && (
-              <div className="space-y-3 animate-in fade-in">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                    <CheckSquare className="w-4 h-4 text-indigo-600" />
-                    <span>المهام المكلف بها التيم والخاصة بهذا العميل:</span>
+              <div className="space-y-5 animate-in fade-in">
+                {/* 1. Account Monthly Tasks & Deliverables Tracker */}
+                <AccountMonthlyTasksTracker singleClientId={currentDossierClient.id} />
+
+                {/* 2. المهام العامة المرتبطة في جدول مهام السيستم */}
+                <div className="pt-3 border-t border-slate-200 space-y-2">
+                  <h4 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                    <CheckSquare className="w-4 h-4 text-slate-600" />
+                    <span>المهام الإضافية المرتبطة باسم هذا العميل في جدول مهام السيستم:</span>
                   </h4>
-                </div>
 
-                {(() => {
-                  const linkedTasks = tasks.filter(t =>
-                    t.title.includes(currentDossierClient.clientName) ||
-                    t.title.includes(currentDossierClient.company) ||
-                    (t.relatedTo && t.relatedTo.name && t.relatedTo.name.includes(currentDossierClient.clientName)) ||
-                    (currentDossierClient.contractNumber && t.description?.includes(currentDossierClient.contractNumber))
-                  );
+                  {(() => {
+                    const linkedTasks = tasks.filter(t =>
+                      t.title.includes(currentDossierClient.clientName) ||
+                      t.title.includes(currentDossierClient.company) ||
+                      (t.relatedTo && t.relatedTo.name && t.relatedTo.name.includes(currentDossierClient.clientName)) ||
+                      (currentDossierClient.contractNumber && t.description?.includes(currentDossierClient.contractNumber))
+                    );
 
-                  if (linkedTasks.length === 0) {
+                    if (linkedTasks.length === 0) {
+                      return (
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center text-xs text-slate-400">
+                          لا توجد مهام إضافية مسجلة باسم هذا العميل في الجدول العام.
+                        </div>
+                      );
+                    }
+
                     return (
-                      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-center text-xs text-slate-400">
-                        لا توجد مهام مسجلة مباشرة باسم هذا العميل حالياً.
+                      <div className="space-y-2">
+                        {linkedTasks.map(t => {
+                          const assignee = team.find(m => m.id === t.assignedToId);
+                          return (
+                            <div key={t.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3 text-xs">
+                              <div>
+                                <div className="font-bold text-slate-900">{t.title}</div>
+                                <div className="text-[10px] text-slate-500 mt-0.5">
+                                  مكلف بها: <strong>{assignee ? assignee.name : 'غير محدد'}</strong> • موعد التسليم: {t.dueDate}
+                                </div>
+                              </div>
+                              <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
+                                t.status === 'completed'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : t.status === 'in_progress'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {t.status === 'completed' ? 'مكتملة' : t.status === 'in_progress' ? 'قيد التنفيذ' : 'معلقة'}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     );
-                  }
-
-                  return (
-                    <div className="space-y-2">
-                      {linkedTasks.map(t => {
-                        const assignee = team.find(m => m.id === t.assignedToId);
-                        return (
-                          <div key={t.id} className="bg-slate-50 p-3 rounded-2xl border border-slate-200/90 flex items-center justify-between gap-3 text-xs">
-                            <div>
-                              <div className="font-bold text-slate-900">{t.title}</div>
-                              <div className="text-[10px] text-slate-500 mt-0.5">
-                                مكلف بها: <strong>{assignee ? assignee.name : 'غير محدد'}</strong> • موعد التسليم: {t.dueDate}
-                              </div>
-                            </div>
-                            <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
-                              t.status === 'completed'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : t.status === 'in_progress'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {t.status === 'completed' ? 'مكتملة' : t.status === 'in_progress' ? 'قيد التنفيذ' : 'معلقة'}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
+                  })()}
+                </div>
               </div>
             )}
 

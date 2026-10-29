@@ -45,9 +45,9 @@
       "bankIban": "SA4420000001234567890123",
       "bio": "مسؤولة إدارة العمليات والمبيعات وتنسيق المهام بين فرق العمل.",
       "socialAccounts": {
+        "slack": "@hadeer.said",
         "linkedin": "linkedin.com/in/hadeer-said",
-        "whatsapp": "+966501234567",
-        "slack": "@hadeer.said"
+        "whatsapp": "+966501234567"
       },
       "updatedAt": "2026-10-28T11:39:52.242Z"
     },
@@ -1333,6 +1333,244 @@
       "dueDate": "2026-10-27",
       "isTimerRunning": true,
       "timerStartedAt": 1793101772064
+    },
+    {
+      "title": "عمل لوجو سويفتورا برايم الجديد للشركة علي البيدج او اعمل سرش الافضل اغيرها ولا اسيب سويفت والسجل اسم تاني",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-1",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-28",
+      "dueDate": "2026-11-06",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793206890340",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-28",
+      "updatedAt": "2026-10-28T17:01:30.340Z"
+    },
+    {
+      "title": "مقالات موقع الكشفيه",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-roaa",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-28",
+      "dueDate": "2026-10-28",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793203031745",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-28",
+      "updatedAt": "2026-10-28T15:57:11.746Z"
+    },
+    {
+      "title": "تعديلات موقع بيوشار",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-roaa",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-28",
+      "dueDate": "2026-10-28",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793202987058",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-28",
+      "updatedAt": "2026-10-28T15:56:27.058Z"
+    },
+    {
+      "priority": "medium",
+      "mentionedUserIds": [],
+      "id": "task-1793172539177",
+      "dueTime": "18:00",
+      "startDate": "2026-10-28",
+      "status": "completed",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "title": "تعديل صفحات الخدمات في موقع سويفت عربي وانجليزي",
+      "subtasks": [],
+      "assignedToId": "user-mariam",
+      "category": "إداري",
+      "timeLogs": [
+        {
+          "memberName": "Mariam Islam",
+          "durationMinutes": 205,
+          "memberId": "user-mariam",
+          "startDate": "2026-10-28",
+          "startTime": "١٠:٢٩ ص",
+          "createdAt": "2026-10-28",
+          "endDate": "2026-10-28",
+          "endTime": "٠٢:٤٢ م",
+          "id": "log-1793187760684",
+          "memberAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي"
+        }
+      ],
+      "estimatedHours": 2,
+      "createdAt": "2026-10-28",
+      "isPrivate": false,
+      "dueDate": "2026-10-28",
+      "comments": [],
+      "updatedAt": "2026-10-28T11:42:40.684Z",
+      "timerLastResumedAt": 1793182962069,
+      "isTimerRunning": false,
+      "timerAccumulatedMs": 0,
+      "isTimerPaused": false,
+      "timerStartedAt": 1793172545497,
+      "completedAt": "2026-10-28",
+      "totalLoggedMinutes": 205
+    },
+    {
+      "updatedAt": "2026-10-28T15:03:23.739Z",
+      "comments": [],
+      "title": "رفع مقالات CAFM",
+      "dueDate": "2026-10-28",
+      "createdAt": "2026-10-28",
+      "isPrivate": false,
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "subtasks": [],
+      "category": "إداري",
+      "timeLogs": [
+        {
+          "id": "log-1793199803739",
+          "endTime": "٠٦:٠٣ م",
+          "endDate": "2026-10-28",
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي",
+          "memberAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+          "memberId": "user-1",
+          "memberName": "هدير سعيد",
+          "durationMinutes": 443,
+          "createdAt": "2026-10-28",
+          "startTime": "١٠:٤٠ ص",
+          "startDate": "2026-10-28"
+        }
+      ],
+      "mentionedUserIds": [],
+      "estimatedHours": 2,
+      "dueTime": "18:00",
+      "id": "task-1793173210055",
+      "startDate": "2026-10-28",
+      "status": "completed",
+      "priority": "medium",
+      "timerAccumulatedMs": 0,
+      "isTimerPaused": false,
+      "isTimerRunning": false,
+      "completedAt": "2026-10-28",
+      "totalLoggedMinutes": 443,
+      "timerStartedAt": 1793173212687,
+      "timerLastResumedAt": 1793173212687
+    },
+    {
+      "comments": [
+        {
+          "authorName": "Eman Ashraf",
+          "mentionedUserIds": [
+            "user-1",
+            "user-yomna"
+          ],
+          "taskId": "task-1793180320610",
+          "authorAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "authorId": "user-eman",
+          "createdAt": "٠٦:١٢ م اليوم",
+          "content": "عملت 60 باك لينك صور للمقالات و 4 ارتكل للصفح لموقع جولدن @هدير_سعيد  @Yomna",
+          "id": "comment-1793200354534"
+        }
+      ],
+      "priority": "medium",
+      "timeLogs": [
+        {
+          "durationMinutes": 288,
+          "id": "log-1793200360742",
+          "memberId": "user-eman",
+          "createdAt": "2026-10-28",
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي",
+          "startTime": "٠١:٢٤ م",
+          "memberName": "Eman Ashraf",
+          "endTime": "٠٦:١٢ م",
+          "startDate": "2026-10-28",
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "endDate": "2026-10-28"
+        }
+      ],
+      "dueDate": "2026-10-28",
+      "dueTime": "18:00",
+      "updatedAt": "2026-10-28T15:12:40.742Z",
+      "status": "completed",
+      "isPrivate": false,
+      "category": "إداري",
+      "subtasks": [],
+      "createdAt": "2026-10-28",
+      "estimatedHours": 2,
+      "startDate": "2026-10-28",
+      "title": "باك لينك جولدن",
+      "id": "task-1793180320610",
+      "assignedToId": "user-eman",
+      "mentionedUserIds": [],
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "isTimerRunning": false,
+      "timerLastResumedAt": 1793183057021,
+      "timerStartedAt": 1793183057021,
+      "totalLoggedMinutes": 288,
+      "completedAt": "2026-10-28"
+    },
+    {
+      "id": "task-1793187796580",
+      "status": "completed",
+      "dueTime": "18:00",
+      "estimatedHours": 2,
+      "updatedAt": "2026-10-28T15:13:04.340Z",
+      "title": "تعديل صفحه تواصل معنا swift",
+      "mentionedUserIds": [],
+      "startDate": "2026-10-28",
+      "subtasks": [],
+      "assignedToId": "user-mariam",
+      "priority": "medium",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "category": "إداري",
+      "comments": [],
+      "dueDate": "2026-10-28",
+      "isPrivate": false,
+      "createdAt": "2026-10-28",
+      "timeLogs": [
+        {
+          "memberId": "user-mariam",
+          "durationMinutes": 169,
+          "endTime": "٠٦:١٢ م",
+          "id": "log-1793200364739",
+          "endDate": "2026-10-28",
+          "startDate": "2026-10-28",
+          "memberName": "Mariam Islam",
+          "note": "جلسة عمل فعلية مسجلة عبر المؤقت المباشر (مستبعد منها فترات التوقف)",
+          "startTime": "٠٢:٤٣ م",
+          "memberAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+          "createdAt": "2026-10-28"
+        }
+      ],
+      "isTimerPaused": false,
+      "isTimerRunning": false,
+      "timerLastResumedAt": 1793194662466,
+      "timerAccumulatedMs": 0,
+      "timerStartedAt": 1793187797628,
+      "totalLoggedMinutes": 169,
+      "completedAt": "2026-10-28"
     }
   ],
   "leads": [
@@ -1369,10 +1607,10 @@
         }
       ],
       "notes": "يبحثون عن أتمتة لجميع فروعهم الـ 14 مع تتبع فوري لمواعيد التسليم.",
-      "followUpDate": "2026-10-28",
+      "followUpDate": "2026-10-29",
       "followUpTime": "13:00",
       "followUpNotes": "الاتصال الهاتفي النهائي لمناقشة تعديل شروط الدفع وتوقيع العقد المبدئي.",
-      "createdAt": "2026-10-25"
+      "createdAt": "2026-10-26"
     },
     {
       "id": "lead-302",
@@ -1407,10 +1645,10 @@
         }
       ],
       "notes": "تحتاج لربط برامج العيادات مع نظام إدارة مهام الأطباء ومواعيد الزيارات.",
-      "followUpDate": "2026-10-28",
+      "followUpDate": "2026-10-29",
       "followUpTime": "15:30",
       "followUpNotes": "متابعة قرار مجلس الإدارة ومناقشة تفاصيل الربط التقني.",
-      "createdAt": "2026-10-28"
+      "createdAt": "2026-10-29"
     },
     {
       "id": "lead-303",
@@ -1445,10 +1683,10 @@
         }
       ],
       "notes": "طلب إعادة الاتصال بعد دراسة الميزانية السنوية الجديدة للشركة.",
-      "followUpDate": "2026-10-29",
+      "followUpDate": "2026-10-30",
       "followUpTime": "11:00",
       "followUpNotes": "مكالمة هاتفية للمتابعة بعد مراجعة الإدارة المالية للميزانية.",
-      "createdAt": "2026-10-26"
+      "createdAt": "2026-10-27"
     },
     {
       "id": "lead-304",
@@ -1483,7 +1721,7 @@
         }
       ],
       "notes": "طلبوا تجربة عملية ديمو للربط مع نظام إدارة الأسطول والمخازن.",
-      "createdAt": "2026-10-23"
+      "createdAt": "2026-10-24"
     }
   ],
   "deals": [
@@ -1498,9 +1736,9 @@
       "currency": "ج.م",
       "stage": "تفاوض",
       "probability": 85,
-      "expectedCloseDate": "2026-11-02",
+      "expectedCloseDate": "2026-11-03",
       "assignedToId": "user-1",
-      "createdAt": "2026-10-13",
+      "createdAt": "2026-10-14",
       "notes": "الصفقة في مرحلة الصياغة القانونية النهائية للعقد."
     },
     {
@@ -1514,9 +1752,9 @@
       "currency": "ج.م",
       "stage": "عرض سعر",
       "probability": 60,
-      "expectedCloseDate": "2026-11-09",
+      "expectedCloseDate": "2026-11-10",
       "assignedToId": "user-2",
-      "createdAt": "2026-10-18",
+      "createdAt": "2026-10-19",
       "notes": "العرض يشمل التخصيص والأمان العالي وربط الفروع المصرفية."
     },
     {
@@ -1530,9 +1768,9 @@
       "currency": "ج.م",
       "stage": "مؤهل",
       "probability": 40,
-      "expectedCloseDate": "2026-11-17",
+      "expectedCloseDate": "2026-11-18",
       "assignedToId": "user-3",
-      "createdAt": "2026-10-24",
+      "createdAt": "2026-10-25",
       "notes": "تم تقديم العرض الأولي والمقارنة مع الحلول المنافسة."
     },
     {
@@ -1546,9 +1784,9 @@
       "currency": "ج.م",
       "stage": "مغلقة ناجحة",
       "probability": 100,
-      "expectedCloseDate": "2026-10-25",
+      "expectedCloseDate": "2026-10-26",
       "assignedToId": "user-2",
-      "createdAt": "2026-09-28",
+      "createdAt": "2026-09-29",
       "notes": "تم توقيع العقد رسمياً واستلام الدفعة الأولى بنجاح!"
     }
   ],
@@ -1556,7 +1794,7 @@
     {
       "id": "meet-1",
       "title": "الاجتماع الصباحي اليومي لفريق المبيعات (Daily Standup)",
-      "date": "2026-10-28",
+      "date": "2026-10-29",
       "time": "10:00",
       "duration": "20 دقيقة",
       "location": "Google Meet",
@@ -1572,7 +1810,7 @@
     {
       "id": "meet-2",
       "title": "عرض ديمو تفاعلي مباشر مع مسؤولي بنك الرياض للاستثمار",
-      "date": "2026-10-29",
+      "date": "2026-10-30",
       "time": "12:30",
       "duration": "45 دقيقة",
       "location": "Zoom",
@@ -1589,7 +1827,7 @@
     {
       "id": "meet-3",
       "title": "جلسة التخطيط المالي وتوزيع ميزانية الربع الرابع",
-      "date": "2026-11-01",
+      "date": "2026-11-02",
       "time": "14:00",
       "duration": "60 دقيقة",
       "location": "مقر الشركة",
@@ -1786,6 +2024,23 @@
           "id": "sheet-gx-1",
           "title": "gxpway",
           "url": "https://docs.google.com/spreadsheets/d/1tt3BDSaNEgZa5wCf7PGHTbhrr9irsIDN08K_izNKTNI/edit?gid=1314647522#gid=1314647522"
+        }
+      ],
+      "monthlyTasks": [
+        {
+          "id": "atask-1793260779918",
+          "createdAt": "2026-10-29",
+          "title": "تصميم 12 بوست سوشيال ميديا وهوية بصرية",
+          "deliverableCount": "12 بوست",
+          "category": "تصميم جرافيك",
+          "completed": true,
+          "assignedToId": "user-aya",
+          "assignedToName": "Aya Gaber",
+          "assignedToRole": "Designer",
+          "dueDate": "2026-10-27",
+          "month": "2026-10",
+          "completedAt": "2026-10-29",
+          "completedByName": "هدير سعيد"
         }
       ]
     },
@@ -2395,6 +2650,24 @@
   ],
   "activities": [
     {
+      "id": "act-1793260855085",
+      "type": "task",
+      "title": "إنجاز تاسك شهري بالحساب ✅",
+      "description": "تم وضع علامة صح على: تصميم 12 بوست سوشيال ميديا وهوية بصرية",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
+      "id": "act-1793260779922",
+      "type": "task",
+      "title": "إضافة تاسك شهري للحساب 📋",
+      "description": "تصميم 12 بوست سوشيال ميديا وهوية بصرية - العميل: موقع gx",
+      "timestamp": "الآن",
+      "userName": "هدير سعيد",
+      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+    },
+    {
       "id": "act-1793026278170",
       "type": "team",
       "title": "حذف موظف من الفريق",
@@ -2552,24 +2825,6 @@
       "type": "deal",
       "title": "إضافة موعد تجديد اشتراك عميل",
       "description": "عمر - باقة السيو",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1793024639515",
-      "type": "deal",
-      "title": "إضافة موعد تجديد اشتراك عميل",
-      "description": "ساوث كوست - باقة سيو ",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1793024552371",
-      "type": "deal",
-      "title": "إضافة موعد تجديد اشتراك عميل",
-      "description": "ساوث كوست - باقة سيو ",
       "timestamp": "الآن",
       "userName": "هدير سعيد",
       "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
@@ -2915,7 +3170,7 @@
     "user-1793016396281"
   ],
   "deletedTasks": [],
-  "updatedAt": "2026-10-28T12:51:26.489Z",
+  "updatedAt": "2026-10-29T08:00:56.197Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": []
 }

@@ -328,10 +328,9 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'forecasts' && <AnalyticsView />}
               {effectiveTab === 'documents' && <ReportsListView />}
               {effectiveTab === 'campaigns' && <ReportsListView />}
-              {effectiveTab === 'mcp' && <AnalyticsView />}
 
               {/* Fallback for unlisted manager tabs */}
-              {!['profile', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'chat', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'payroll', 'salaries', 'finance', 'sales_commissions', 'marketing_ideas', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns', 'mcp'].includes(effectiveTab) && (
+              {!['profile', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'chat', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'payroll', 'salaries', 'finance', 'sales_commissions', 'marketing_ideas', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns'].includes(effectiveTab) && (
                 <ReportsListView />
               )}
             </>
