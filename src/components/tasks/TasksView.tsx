@@ -1747,7 +1747,16 @@ export const TasksView: React.FC = () => {
                 return [effectiveAccountManager, ...others];
               }
 
-              // 2. If logged in user is an Account Manager:
+              // 2. Regular manager (seeing all 9 team members including Islam):
+              if (isManager) {
+                if (managerScope === 'my') {
+                  const me = team.find(m => m.id === currentUser.id);
+                  return me ? [me] : [];
+                }
+                return filterMember === 'all' ? team : team.filter(m => m.id === filterMember);
+              }
+
+              // 3. If logged in user is an Account Manager:
               if (isCurrentUserAccountManager && effectiveAccountManager) {
                 if (accountManagerViewScope === 'my_personal') {
                   const me = team.find(m => m.id === currentUser.id);
@@ -1756,11 +1765,6 @@ export const TasksView: React.FC = () => {
                 const me = team.find(m => m.id === currentUser.id);
                 const others = accountManagerTeam.filter(m => m.id !== currentUser.id);
                 return me ? [me, ...others] : accountManagerTeam;
-              }
-
-              // 3. Regular manager:
-              if (isManager && managerScope === 'all') {
-                return filterMember === 'all' ? team : team.filter(m => m.id === filterMember);
               }
 
               // 4. Regular employee:
@@ -1774,7 +1778,7 @@ export const TasksView: React.FC = () => {
               const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member));
               const completedCount = memberTasks.filter(t => t.status === 'completed').length;
               const isCurrentMemberOpen = quickAddColumn === member.id;
-              const isCollaboratingOnAM = (isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && member.id !== effectiveAccountManager?.id;
+              const isCollaboratingOnAM = ((!isManager && isCurrentUserAccountManager) || (isManager && selectedSimulatedAccountManagerId !== 'all')) && member.id !== effectiveAccountManager?.id;
 
               return (
                 <div
@@ -2321,7 +2325,7 @@ export const TasksView: React.FC = () => {
                                   <div className="flex-1 min-w-0">
                                     <div
                                       onClick={() => setSelectedTaskId(task.id)}
-                                      className={`font-extrabold cursor-pointer leading-snug hover:text-blue-600 transition-colors ${
+                                      className={`font-extrabold cursor-pointer leading-snug hover:text-blue-600 transition-colors break-words break-all [overflow-wrap:anywhere] min-w-0 max-w-full ${
                                         isDone ? 'line-through text-slate-400' : 'text-slate-900'
                                       }`}
                                     >

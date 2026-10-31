@@ -9,6 +9,9 @@ export function isUserAccountManager(
 ): boolean {
   if (!user) return false;
 
+  // System admin / General Manager has full executive scope, NOT a restricted Account Manager
+  if (user.accessLevel === 'admin') return false;
+
   if (user.isAccountManager) return true;
 
   const role = (user.role || '').toLowerCase();
