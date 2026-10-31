@@ -746,10 +746,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           <Calendar className="w-4 h-4" />
         </button>
 
-        {/* Daily Digest Button (موجز المهام اليومي) */}
+        {/* Daily Digest Button (موجز المهام اليومي) - Available on tablets and desktop */}
         <button
           onClick={() => setIsDailyDigestOpen(true)}
-          className="flex items-center gap-1 px-2 py-1 text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
+          className="hidden md:flex items-center gap-1 px-2 py-1 text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
           title="موجز المهام اليومي - المهام المتأخرة والمجدولة لليوم"
         >
           <Sun className="w-3.5 h-3.5 text-amber-600" />
@@ -761,10 +761,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           )}
         </button>
 
-        {/* Team Chat Quick Button */}
+        {/* Team Chat Quick Button - Hidden on mobile as it is already in the mobile bottom bar */}
         <button
           onClick={() => setActiveTab('chat')}
-          className={`p-1.5 rounded-lg transition-colors cursor-pointer relative shrink-0 ${
+          className={`hidden md:flex p-1.5 rounded-lg transition-colors cursor-pointer relative shrink-0 ${
             activeTab === 'chat'
               ? 'text-blue-600 bg-blue-50 font-bold'
               : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'
@@ -1018,8 +1018,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           )}
         </div>
 
-        {/* Live System Synchronized Clock (5:36 PM) */}
-        <SystemClockWidget />
+        {/* Live System Synchronized Clock (5:36 PM) - Shown on tablets and desktops */}
+        <div className="hidden sm:block shrink-0">
+          <SystemClockWidget />
+        </div>
 
         {/* Quick Check-in / Check-out Widget */}
         <QuickAttendanceWidget />

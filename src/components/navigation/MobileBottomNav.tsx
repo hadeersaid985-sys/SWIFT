@@ -1,17 +1,17 @@
 import React from 'react';
 import {
+  Inbox,
   CheckSquare,
   Mail,
   FileSpreadsheet,
-  UserCheck,
   Menu,
   Home,
   Clock,
-  Megaphone,
   MessagesSquare
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
 import { useChat } from '../../context/ChatContext';
+import { isDemoWorkItem } from '../../utils/workQueueUtils';
 
 interface MobileBottomNavProps {
   onOpenMenu: () => void;
@@ -30,26 +30,38 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
     renewalsDueSoonCount
   } = useCRM();
 
-  // Employee pending tasks count
+  // Real pending tasks count for current employee
   const myPendingTasksCount = tasks.filter(
-    t => !t.isPrivate && t.status !== 'completed' &&
+    t => !isDemoWorkItem(t.id, t.title, t.clientName) &&
+      !t.isPrivate &&
+      t.status !== 'completed' &&
       ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentionedInTask(t, currentUser))
   ).length;
 
-  // Items for Employee
+  // Real pending tasks count for manager queue
+  const managerPendingTasksCount = tasks.filter(
+    t => !isDemoWorkItem(t.id, t.title, t.clientName) && t.status !== 'completed'
+  ).length;
+
+  // Items for Employee (5 buttons total: 4 primary + 1 menu)
   const employeeItems = [
     {
-      id: 'tasks',
-      label: 'مهام العمل والمتابعة',
-      shortLabel: 'المهام والمتابعة',
-      icon: CheckSquare,
+      id: 'work_queue',
+      label: 'قائمة العمل',
+      icon: Inbox,
       badge: myPendingTasksCount > 0 ? myPendingTasksCount : null,
+      badgeColor: 'bg-orange-500'
+    },
+    {
+      id: 'tasks',
+      label: 'المهام',
+      icon: CheckSquare,
+      badge: null,
       badgeColor: 'bg-emerald-600'
     },
     {
       id: 'chat',
       label: 'الدردشة',
-      shortLabel: 'الدردشة',
       icon: MessagesSquare,
       badge: unreadChatCount > 0 ? unreadChatCount : null,
       badgeColor: 'bg-rose-600'
@@ -57,37 +69,33 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
     {
       id: 'mail',
       label: 'البريد',
-      shortLabel: 'البريد',
       icon: Mail,
       badge: unreadEmailsCount > 0 ? unreadEmailsCount : null,
       badgeColor: 'bg-blue-600'
-    },
-    {
-      id: 'renewals',
-      label: 'العملاء',
-      shortLabel: 'العملاء',
-      icon: FileSpreadsheet,
-      badge: null,
-      badgeColor: 'bg-emerald-600'
     }
   ];
 
-  // Items for Admin / Manager
+  // Items for Admin / Manager (5 buttons total: 4 primary + 1 menu)
   const adminItems = [
     {
       id: 'home',
       label: 'الرئيسية',
-      shortLabel: 'الرئيسية',
       icon: Home,
       badge: null,
       badgeColor: 'bg-blue-600'
     },
     {
+      id: 'work_queue',
+      label: 'قائمة العمل',
+      icon: Inbox,
+      badge: managerPendingTasksCount > 0 ? managerPendingTasksCount : null,
+      badgeColor: 'bg-orange-500'
+    },
+    {
       id: 'tasks',
-      label: 'مهام العمل والمتابعة',
-      shortLabel: 'المهام والمتابعة',
+      label: 'المهام',
       icon: CheckSquare,
-      badge: tasks.filter(t => t.status !== 'completed').length || null,
+      badge: null,
       badgeColor: 'bg-emerald-600'
     },
     {
@@ -95,13 +103,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
       label: 'الدردشة',
       icon: MessagesSquare,
       badge: unreadChatCount > 0 ? unreadChatCount : null,
-      badgeColor: 'bg-rose-600'
-    },
-    {
-      id: 'renewals',
-      label: 'تجديدات',
-      icon: Clock,
-      badge: renewalsDueSoonCount > 0 ? renewalsDueSoonCount : null,
       badgeColor: 'bg-rose-600'
     }
   ];
@@ -110,7 +111,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 md:hidden shadow-[0_-4px_16px_rgba(0,0,0,0.06)] px-2 py-1 flex items-center justify-around safe-bottom"
+      className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-1.5 py-1 flex items-center justify-between safe-bottom"
       aria-label="شريط التنقل السريع في الموبايل"
     >
       {items.map(item => {
@@ -120,8 +121,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
         return (
           <button
             key={item.id}
+            type="button"
             onClick={() => setActiveTab(item.id)}
-            className={`flex flex-col items-center justify-center py-1 px-2 min-w-[56px] rounded-xl transition-all cursor-pointer relative ${
+            className={`flex-1 min-w-0 max-w-[20%] flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer relative touch-manipulation active:scale-95 ${
               isActive
                 ? 'text-blue-600 font-bold'
                 : 'text-slate-500 hover:text-slate-800'
@@ -129,11 +131,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
           >
             {/* Active Pill Indicator */}
             {isActive && (
-              <span className="absolute -top-1 w-8 h-1 bg-blue-600 rounded-full" />
+              <span className="absolute -top-1 w-7 h-1 bg-blue-600 rounded-full animate-in fade-in" />
             )}
 
             <div className="relative">
-              <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110 stroke-[2.4]' : 'stroke-[1.8]'}`} />
+              <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110 stroke-[2.3]' : 'stroke-[1.8]'}`} />
               {item.badge !== null && item.badge !== undefined && (
                 <span
                   className={`min-w-4 h-4 px-1 ${item.badgeColor} text-white rounded-full text-[9px] font-black absolute -top-1.5 -right-2 flex items-center justify-center shadow-xs ring-2 ring-white`}
@@ -145,11 +147,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
 
             <span
               title={item.label}
-              className={`text-[10px] mt-0.5 tracking-tight whitespace-nowrap truncate max-w-[70px] text-center ${
+              className={`text-[10px] mt-0.5 tracking-tight whitespace-nowrap truncate max-w-full text-center ${
                 isActive ? 'font-black text-blue-700' : 'font-medium text-slate-600'
               }`}
             >
-              {item.shortLabel || item.label}
+              {item.label}
             </span>
           </button>
         );
@@ -157,21 +159,22 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenMenu, is
 
       {/* 5th Button: القائمة (Opens mobile drawer) */}
       <button
+        type="button"
         onClick={onOpenMenu}
-        className={`flex flex-col items-center justify-center py-1 px-2 min-w-[56px] rounded-xl transition-all cursor-pointer relative ${
+        className={`flex-1 min-w-0 max-w-[20%] flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer relative touch-manipulation active:scale-95 ${
           isMenuOpen ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
         }`}
       >
         {isMenuOpen && (
-          <span className="absolute -top-1 w-8 h-1 bg-blue-600 rounded-full" />
+          <span className="absolute -top-1 w-7 h-1 bg-blue-600 rounded-full animate-in fade-in" />
         )}
         <div className="relative">
-          <Menu className={`w-5 h-5 transition-transform ${isMenuOpen ? 'scale-110 stroke-[2.4]' : 'stroke-[1.8]'}`} />
+          <Menu className={`w-5 h-5 transition-transform ${isMenuOpen ? 'scale-110 stroke-[2.3]' : 'stroke-[1.8]'}`} />
           {renewalsDueSoonCount > 0 && isManager && (
             <span className="w-2 h-2 rounded-full bg-rose-600 ring-2 ring-white absolute top-0 right-0 animate-pulse" />
           )}
         </div>
-        <span className={`text-[10px] mt-0.5 tracking-tight ${isMenuOpen ? 'font-black text-blue-700' : 'font-medium'}`}>
+        <span className={`text-[10px] mt-0.5 tracking-tight ${isMenuOpen ? 'font-black text-blue-700' : 'font-medium text-slate-600'}`}>
           القائمة
         </span>
       </button>

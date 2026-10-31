@@ -5,6 +5,7 @@
     border-color: var(--color-slate-200, #e2e8f0);
     user-select: text;
     -webkit-user-select: text;
+    -webkit-tap-highlight-color: transparent;
   }
   
   body {
@@ -13,6 +14,12 @@
     text-align: right;
     user-select: text;
     -webkit-user-select: text;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input[type="button"], input[type="submit"], a {
+    touch-action: manipulation;
   }
 
   button, input[type="button"], input[type="submit"] {

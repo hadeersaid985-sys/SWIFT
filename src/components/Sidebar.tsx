@@ -1217,6 +1217,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
 
                   <div className="space-y-1 pr-1">
                     <button
+                      onClick={() => handleSelectTab('work_queue')}
+                      className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
+                        activeTab === 'work_queue'
+                          ? 'bg-[#2563eb] text-white font-bold'
+                          : 'text-slate-300 hover:bg-[#24375a]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Inbox className="w-4 h-4 text-[#fb923c]" />
+                        <span>قائمة انتظار العمل</span>
+                      </div>
+                      {pendingTasksCount > 0 && (
+                        <span className="text-[10px] bg-[#fb923c]/20 text-[#fb923c] px-2 py-0.5 rounded-full font-mono font-bold">
+                          {pendingTasksCount}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
                       onClick={handleSelectAllTasks}
                       className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
                         activeTab === 'tasks' && !isMentionsFilterActive()
@@ -1316,9 +1335,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                   </button>
 
                   <button
-                    onClick={() => handleSelectTab('tasks')}
+                    onClick={() => handleSelectTab('work_queue')}
                     className={`w-full text-right flex items-center justify-between px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
-                      activeTab === 'tasks' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
+                      activeTab === 'work_queue' ? 'bg-[#2563eb] text-white font-bold shadow-xs' : 'text-[#e2e8f0] hover:bg-[#2b416a]'
                     }`}
                   >
                     <div className="flex items-center gap-3">

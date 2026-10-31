@@ -666,117 +666,122 @@ export const WorkQueueView: React.FC = () => {
       </div>
 
       {/* 2. Top Metric Cards (5 Cards as proposed) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
         {/* Card 1: إجمالي الأعمال */}
         <button
+          type="button"
           onClick={() => {
             setActiveSection('overview');
             setPriorityFilter('all');
           }}
-          className={`p-3.5 rounded-xl border text-right transition-all cursor-pointer relative overflow-hidden ${
+          className={`p-2.5 sm:p-3.5 rounded-xl border text-right transition-all cursor-pointer relative overflow-hidden touch-manipulation active:scale-98 ${
             activeSection === 'overview' && priorityFilter === 'all'
               ? 'bg-blue-50 border-blue-400 shadow-md ring-2 ring-blue-400/30'
               : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">إجمالي الأعمال</span>
-            <span className="p-1.5 rounded-lg bg-blue-100 text-blue-700">
-              <Layers className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs font-bold text-slate-500">إجمالي الأعمال</span>
+            <span className="p-1 sm:p-1.5 rounded-lg bg-blue-100 text-blue-700">
+              <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-slate-800 mt-2 font-mono">
+          <div className="text-xl sm:text-3xl font-black text-slate-800 mt-1.5 sm:mt-2 font-mono">
             {metrics.total}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">كافة الأعمال والمهام</div>
+          <div className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 truncate">كافة الأعمال والمهام</div>
         </button>
 
         {/* Card 2: متأخرة */}
         <button
+          type="button"
           onClick={() => {
             setActiveSection('intervention');
             setPriorityFilter('urgent');
           }}
-          className={`p-3.5 rounded-xl border text-right transition-all cursor-pointer relative overflow-hidden ${
+          className={`p-2.5 sm:p-3.5 rounded-xl border text-right transition-all cursor-pointer relative overflow-hidden touch-manipulation active:scale-98 ${
             priorityFilter === 'urgent'
               ? 'bg-rose-50 border-rose-400 shadow-md ring-2 ring-rose-400/30'
               : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-rose-600">متأخرة</span>
-            <span className="p-1.5 rounded-lg bg-rose-100 text-rose-700">
-              <AlertTriangle className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs font-bold text-rose-600">متأخرة</span>
+            <span className="p-1 sm:p-1.5 rounded-lg bg-rose-100 text-rose-700">
+              <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-rose-600 mt-2 font-mono">
+          <div className="text-xl sm:text-3xl font-black text-rose-600 mt-1.5 sm:mt-2 font-mono">
             {metrics.overdue}
           </div>
-          <div className="text-[11px] text-rose-600/80 mt-1 font-semibold">تجاوزت تاريخ الاستحقاق</div>
+          <div className="text-[10px] sm:text-[11px] text-rose-600/80 mt-0.5 font-semibold truncate">تجاوزت الاستحقاق</div>
         </button>
 
         {/* Card 3: قيد التنفيذ */}
         <button
+          type="button"
           onClick={() => {
             setActiveSection('overview');
             setPriorityFilter('all');
           }}
-          className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs text-right transition-all cursor-pointer"
+          className="p-2.5 sm:p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs text-right transition-all cursor-pointer touch-manipulation active:scale-98"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-600">قيد التنفيذ</span>
-            <span className="p-1.5 rounded-lg bg-amber-100 text-amber-700">
-              <Clock className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs font-bold text-amber-600">قيد التنفيذ</span>
+            <span className="p-1 sm:p-1.5 rounded-lg bg-amber-100 text-amber-700">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-amber-600 mt-2 font-mono">
+          <div className="text-xl sm:text-3xl font-black text-amber-600 mt-1.5 sm:mt-2 font-mono">
             {metrics.inProgress}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">جاري العمل عليها حالياً</div>
+          <div className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 truncate">جاري العمل عليها</div>
         </button>
 
         {/* Card 4: بانتظار رد / اعتماد */}
         <button
+          type="button"
           onClick={() => {
             setActiveSection('intervention');
             setPriorityFilter('waiting');
           }}
-          className={`p-3.5 rounded-xl border text-right transition-all cursor-pointer ${
+          className={`p-2.5 sm:p-3.5 rounded-xl border text-right transition-all cursor-pointer touch-manipulation active:scale-98 ${
             priorityFilter === 'waiting'
               ? 'bg-purple-50 border-purple-400 shadow-md ring-2 ring-purple-400/30'
               : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-600">بانتظار رد / اعتماد</span>
-            <span className="p-1.5 rounded-lg bg-purple-100 text-purple-700">
-              <Hourglass className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs font-bold text-purple-600">بانتظار رد</span>
+            <span className="p-1 sm:p-1.5 rounded-lg bg-purple-100 text-purple-700">
+              <Hourglass className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-purple-600 mt-2 font-mono">
+          <div className="text-xl sm:text-3xl font-black text-purple-600 mt-1.5 sm:mt-2 font-mono">
             {metrics.waiting}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">متوقفة على رد أو موافقة</div>
+          <div className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 truncate">متوقفة على موافقة</div>
         </button>
 
-        {/* Card 5: مكتملة */}
+        {/* Card 5: مكتملة (Spans 2 columns on mobile for balanced layout) */}
         <button
+          type="button"
           onClick={() => {
             setActiveSection('overview');
             setPriorityFilter('all');
           }}
-          className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs text-right transition-all cursor-pointer"
+          className="col-span-2 sm:col-span-1 p-2.5 sm:p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs text-right transition-all cursor-pointer touch-manipulation active:scale-98"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-600">مكتملة</span>
-            <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-700">
-              <CheckCircle2 className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs font-bold text-emerald-600">مكتملة</span>
+            <span className="p-1 sm:p-1.5 rounded-lg bg-emerald-100 text-emerald-700">
+              <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </span>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-emerald-600 mt-2 font-mono">
+          <div className="text-xl sm:text-3xl font-black text-emerald-600 mt-1.5 sm:mt-2 font-mono">
             {metrics.completed}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">تم إنجازها بنجاح</div>
+          <div className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 truncate">تم إنجازها بنجاح</div>
         </button>
       </div>
 
@@ -785,8 +790,9 @@ export const WorkQueueView: React.FC = () => {
         <div className="flex items-center gap-1 min-w-max">
           {/* Section 1: نظرة عامة */}
           <button
+            type="button"
             onClick={() => setActiveSection('overview')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               activeSection === 'overview'
                 ? 'bg-[#182642] text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -801,8 +807,9 @@ export const WorkQueueView: React.FC = () => {
 
           {/* Section 2: المهام */}
           <button
+            type="button"
             onClick={() => setActiveSection('tasks')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               activeSection === 'tasks'
                 ? 'bg-[#182642] text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -817,8 +824,9 @@ export const WorkQueueView: React.FC = () => {
 
           {/* Section 3: الاجتماعات والمكالمات */}
           <button
+            type="button"
             onClick={() => setActiveSection('meetings_calls')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               activeSection === 'meetings_calls'
                 ? 'bg-[#182642] text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -833,8 +841,9 @@ export const WorkQueueView: React.FC = () => {
 
           {/* Section 4: متابعة العملاء والصفقات */}
           <button
+            type="button"
             onClick={() => setActiveSection('clients_deals')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               activeSection === 'clients_deals'
                 ? 'bg-[#182642] text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -849,8 +858,9 @@ export const WorkQueueView: React.FC = () => {
 
           {/* Section 5: الأعمال التي تحتاج تدخل */}
           <button
+            type="button"
             onClick={() => setActiveSection('intervention')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
               activeSection === 'intervention'
                 ? 'bg-rose-600 text-white shadow-xs'
                 : 'text-rose-600 hover:bg-rose-50'
@@ -868,8 +878,9 @@ export const WorkQueueView: React.FC = () => {
           {/* Section 6: لوحة المدير (خاصة بالمدير) */}
           {isManager && (
             <button
+              type="button"
               onClick={() => setActiveSection('manager_metrics')}
-              className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation active:scale-95 shrink-0 ${
                 activeSection === 'manager_metrics'
                   ? 'bg-amber-600 text-white shadow-xs'
                   : 'text-amber-700 hover:bg-amber-50'
@@ -912,8 +923,9 @@ export const WorkQueueView: React.FC = () => {
             <span className="text-xs font-bold text-slate-500 shrink-0 ml-1">التصنيف:</span>
 
             <button
+              type="button"
               onClick={() => setPriorityFilter('all')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 touch-manipulation active:scale-95 ${
                 priorityFilter === 'all'
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -923,8 +935,9 @@ export const WorkQueueView: React.FC = () => {
             </button>
 
             <button
+              type="button"
               onClick={() => setPriorityFilter('urgent')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1 touch-manipulation active:scale-95 ${
                 priorityFilter === 'urgent'
                   ? 'bg-rose-600 text-white shadow-xs'
                   : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
@@ -935,8 +948,9 @@ export const WorkQueueView: React.FC = () => {
             </button>
 
             <button
+              type="button"
               onClick={() => setPriorityFilter('today')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1 touch-manipulation active:scale-95 ${
                 priorityFilter === 'today'
                   ? 'bg-amber-600 text-white shadow-xs'
                 : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
@@ -947,8 +961,9 @@ export const WorkQueueView: React.FC = () => {
             </button>
 
             <button
+              type="button"
               onClick={() => setPriorityFilter('waiting')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1 touch-manipulation active:scale-95 ${
                 priorityFilter === 'waiting'
                   ? 'bg-purple-600 text-white shadow-xs'
                   : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
@@ -959,8 +974,9 @@ export const WorkQueueView: React.FC = () => {
             </button>
 
             <button
+              type="button"
               onClick={() => setPriorityFilter('upcoming')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 ${
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 touch-manipulation active:scale-95 ${
                 priorityFilter === 'upcoming'
                   ? 'bg-emerald-600 text-white shadow-xs'
                   : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
@@ -1315,8 +1331,9 @@ export const WorkQueueView: React.FC = () => {
                   <div className="flex items-center justify-between gap-1.5 pt-1">
                     {/* Complete button */}
                     <button
+                      type="button"
                       onClick={() => handleToggleCompleteItem(item)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer touch-manipulation active:scale-95 ${
                         isCompleted
                           ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
                           : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs'
@@ -1329,6 +1346,7 @@ export const WorkQueueView: React.FC = () => {
                     {/* Convert Meeting / Call to Task */}
                     {(item.type === 'meeting' || item.type === 'call') && (
                       <button
+                        type="button"
                         onClick={() =>
                           handleOpenConvertModal(
                             item.type as 'meeting' | 'call',
@@ -1339,10 +1357,10 @@ export const WorkQueueView: React.FC = () => {
                             item.assigneeId
                           )
                         }
-                        className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                        className="px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all touch-manipulation active:scale-95"
                         title="إنشاء مهمة عمل من مخرجات التواصل"
                       >
-                        <Sparkles className="w-3 h-3 text-blue-600" />
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                         <span>تحويل لمهمة</span>
                       </button>
                     )}
