@@ -266,13 +266,60 @@ export const MarketingBoardView: React.FC = () => {
   const activeBoard =
     marketingBoards.find(b => b.id === activeMarketingBoardId) || marketingBoards[0];
 
+  // URL Detection & Helper utilities to prevent overflow and format links cleanly
+  const isUrlString = (str?: string): boolean => {
+    if (!str) return false;
+    const s = str.trim();
+    return (
+      s.startsWith('http://') ||
+      s.startsWith('https://') ||
+      s.startsWith('www.') ||
+      s.includes('docs.google.com') ||
+      s.includes('drive.google.com') ||
+      s.includes('sheets.google.com') ||
+      s.includes('youtube.com') ||
+      s.includes('youtu.be') ||
+      s.includes('facebook.com') ||
+      s.includes('instagram.com') ||
+      s.includes('t.me/') ||
+      s.includes('wa.me/')
+    );
+  };
+
+  const getCleanUrl = (str: string): string => {
+    const s = str.trim();
+    if (s.startsWith('http://') || s.startsWith('https://')) return s;
+    return `https://${s}`;
+  };
+
+  const getUrlLabel = (url: string): string => {
+    if (url.includes('docs.google.com')) return 'مستند جوجل (Google Doc)';
+    if (url.includes('drive.google.com')) return 'ملف جوجل درايف (Google Drive)';
+    if (url.includes('sheets.google.com')) return 'شيت جوجل (Google Sheets)';
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'فيديو يوتيوب (YouTube)';
+    if (url.includes('facebook.com')) return 'فيسبوك (Facebook)';
+    if (url.includes('instagram.com')) return 'إنستغرام (Instagram)';
+    if (url.includes('t.me/')) return 'تليجرام (Telegram)';
+    if (url.includes('wa.me/')) return 'واتساب (WhatsApp)';
+    try {
+      const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+      return parsed.hostname.replace(/^www\./, '');
+    } catch {
+      return 'رابط خارجي';
+    }
+  };
+
   // Quick submit for inline "Add a card"
   const handleInlineAddCard = (listId: string) => {
     if (!newCardTitle.trim()) return;
+    const titleText = newCardTitle.trim();
+    const isLink = isUrlString(titleText);
     addMarketingCard(listId, {
-      title: newCardTitle.trim(),
+      title: titleText,
       description: '',
-      labels: [{ id: 'lbl-' + Date.now(), name: 'ماركيتنج', color: '#3b82f6' }],
+      linkUrl: isLink ? getCleanUrl(titleText) : undefined,
+      linkLabel: isLink ? getUrlLabel(titleText) : undefined,
+      labels: [{ id: 'lbl-' + Date.now(), name: isLink ? 'رابط ومستند' : 'ماركيتنج', color: isLink ? '#2563eb' : '#3b82f6' }],
       assigneeName: currentUser.name,
       assigneeAvatar: currentUser.avatar
     });
@@ -314,9 +361,12 @@ export const MarketingBoardView: React.FC = () => {
       showToast('يرجى إدخال نص الكارت');
       return;
     }
+    const titleText = editingCardTitle.trim();
+    const isLink = isUrlString(titleText);
     updateMarketingCard(cardId, {
-      title: editingCardTitle.trim(),
-      description: editingCardDesc.trim()
+      title: titleText,
+      description: editingCardDesc.trim(),
+      ...(isLink ? { linkUrl: getCleanUrl(titleText), linkLabel: getUrlLabel(titleText) } : {})
     });
     setEditingCardId(null);
     showToast('تم حفظ وتحديث الكارت بنجاح! ✅');
@@ -386,21 +436,29 @@ export const MarketingBoardView: React.FC = () => {
     try {
       const text = await navigator.clipboard.readText();
       if (text && text.trim()) {
+        const titleText = text.trim();
+        const isLink = isUrlString(titleText);
         addMarketingCard(listId, {
-          title: text.trim(),
+          title: titleText,
           description: '',
-          labels: [{ id: 'lbl-' + Date.now(), name: 'ماركيتنج', color: '#10b981' }],
+          linkUrl: isLink ? getCleanUrl(titleText) : undefined,
+          linkLabel: isLink ? getUrlLabel(titleText) : undefined,
+          labels: [{ id: 'lbl-' + Date.now(), name: isLink ? 'رابط ومستند' : 'ماركيتنج', color: isLink ? '#2563eb' : '#10b981' }],
           assigneeName: currentUser.name,
           assigneeAvatar: currentUser.avatar
         });
-        showToast('تم إنشاء ولصق كارت جديد من الحافظة بنجاح! 📋');
+        showToast(isLink ? 'تم لصق الرابط ككارت تسويقي منظم بنجاح! 🔗' : 'تم إنشاء ولصق كارت جديد من الحافظة بنجاح! 📋');
       } else {
-        const manual = prompt('الصق نص الكارت الجديد هنا:');
+        const manual = prompt('الصق نص أو رابط الكارت الجديد هنا:');
         if (manual && manual.trim()) {
+          const titleText = manual.trim();
+          const isLink = isUrlString(titleText);
           addMarketingCard(listId, {
-            title: manual.trim(),
+            title: titleText,
             description: '',
-            labels: [{ id: 'lbl-' + Date.now(), name: 'ماركيتنج', color: '#3b82f6' }],
+            linkUrl: isLink ? getCleanUrl(titleText) : undefined,
+            linkLabel: isLink ? getUrlLabel(titleText) : undefined,
+            labels: [{ id: 'lbl-' + Date.now(), name: isLink ? 'رابط ومستند' : 'ماركيتنج', color: isLink ? '#2563eb' : '#3b82f6' }],
             assigneeName: currentUser.name,
             assigneeAvatar: currentUser.avatar
           });
@@ -408,12 +466,16 @@ export const MarketingBoardView: React.FC = () => {
         }
       }
     } catch {
-      const manual = prompt('الصق نص الكارت الجديد هنا:');
+      const manual = prompt('الصق نص أو رابط الكارت الجديد هنا:');
       if (manual && manual.trim()) {
+        const titleText = manual.trim();
+        const isLink = isUrlString(titleText);
         addMarketingCard(listId, {
-          title: manual.trim(),
+          title: titleText,
           description: '',
-          labels: [{ id: 'lbl-' + Date.now(), name: 'ماركيتنج', color: '#3b82f6' }],
+          linkUrl: isLink ? getCleanUrl(titleText) : undefined,
+          linkLabel: isLink ? getUrlLabel(titleText) : undefined,
+          labels: [{ id: 'lbl-' + Date.now(), name: isLink ? 'رابط ومستند' : 'ماركيتنج', color: isLink ? '#2563eb' : '#3b82f6' }],
           assigneeName: currentUser.name,
           assigneeAvatar: currentUser.avatar
         });
@@ -683,7 +745,7 @@ export const MarketingBoardView: React.FC = () => {
               return (
                 <div
                   key={list.id}
-                  className="w-72 sm:w-80 shrink-0 bg-[#ebecf0]/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-300/80 p-2.5 flex flex-col max-h-[calc(100vh-320px)]"
+                  className="w-72 sm:w-80 shrink-0 bg-[#ebecf0]/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-300/80 p-2.5 flex flex-col max-h-[calc(100vh-320px)] min-w-0 max-w-full overflow-hidden"
                 >
                   {/* List Header */}
                   <div className="flex items-center justify-between px-2 py-1.5 text-slate-800 font-extrabold text-xs">
@@ -726,8 +788,8 @@ export const MarketingBoardView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Cards Scroll Area */}
-                  <div className="flex-1 overflow-y-auto space-y-2.5 p-1 scrollbar-thin">
+                  {/* Cards Scroll Area - overflow-x-hidden strictly prevents horizontal scrollbars */}
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-2.5 p-1 scrollbar-thin min-w-0 max-w-full">
                     {listCards.map(card => {
                       const isEditing = editingCardId === card.id;
                       const isCopied = copiedCardId === card.id;
@@ -737,7 +799,7 @@ export const MarketingBoardView: React.FC = () => {
                           <div
                             key={card.id}
                             onClick={e => e.stopPropagation()}
-                            className="bg-white rounded-xl p-3 shadow-md border-2 border-blue-500 space-y-2 animate-in fade-in"
+                            className="bg-white rounded-xl p-3 shadow-md border-2 border-blue-500 space-y-2 animate-in fade-in min-w-0 max-w-full overflow-hidden"
                           >
                             <div className="flex items-center justify-between text-[11px] font-bold text-blue-700 pb-1 border-b border-blue-100">
                               <span className="flex items-center gap-1">
@@ -748,12 +810,12 @@ export const MarketingBoardView: React.FC = () => {
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-bold text-slate-600 mb-1">نص / عنوان الكارت:</label>
+                              <label className="block text-[10px] font-bold text-slate-600 mb-1">نص / عنوان أو رابط الكارت:</label>
                               <textarea
                                 rows={3}
                                 value={editingCardTitle}
                                 onChange={e => setEditingCardTitle(e.target.value)}
-                                className="w-full text-xs font-bold text-slate-900 bg-slate-50 p-2.5 rounded-lg border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500 resize-y leading-relaxed"
+                                className="w-full max-w-full text-xs font-bold text-slate-900 bg-slate-50 p-2.5 rounded-lg border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500 resize-y leading-relaxed break-words break-all [overflow-wrap:anywhere]"
                                 autoFocus
                                 onKeyDown={e => {
                                   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -773,7 +835,7 @@ export const MarketingBoardView: React.FC = () => {
                                 value={editingCardDesc}
                                 onChange={e => setEditingCardDesc(e.target.value)}
                                 placeholder="أضف وصفاً أو تفاصيل إضافية هنا..."
-                                className="w-full text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500 resize-y"
+                                className="w-full max-w-full text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 focus:bg-white focus:outline-none focus:border-blue-500 resize-y break-words break-all [overflow-wrap:anywhere]"
                               />
                             </div>
 
@@ -829,17 +891,17 @@ export const MarketingBoardView: React.FC = () => {
                         <div
                           key={card.id}
                           onClick={() => setSelectedCardForModal(card)}
-                          className="bg-white rounded-xl p-3 shadow-xs hover:shadow-md border border-slate-200/90 transition-all cursor-pointer group hover:border-blue-400/80 relative"
+                          className="bg-white rounded-xl p-3 shadow-xs hover:shadow-md border border-slate-200/90 transition-all cursor-pointer group hover:border-blue-400/80 relative min-w-0 max-w-full overflow-hidden break-words"
                         >
                           {/* Top Row: Labels + 1-Click Copy & Edit Action Buttons */}
                           <div className="flex items-start justify-between gap-1 mb-2">
-                            <div className="flex flex-wrap gap-1 flex-1">
+                            <div className="flex flex-wrap gap-1 flex-1 min-w-0">
                               {card.labels && card.labels.length > 0 ? (
                                 card.labels.map(lbl => (
                                   <span
                                     key={lbl.id}
                                     style={{ backgroundColor: `${lbl.color}15`, color: lbl.color, borderColor: `${lbl.color}40` }}
-                                    className="text-[9px] font-bold px-2 py-0.2 rounded-full border"
+                                    className="text-[9px] font-bold px-2 py-0.2 rounded-full border truncate max-w-[120px]"
                                   >
                                     {lbl.name}
                                   </span>
@@ -957,40 +1019,74 @@ export const MarketingBoardView: React.FC = () => {
                             </div>
                           )}
 
-                          {/* Card Title (Clickable & Text Selectable) */}
-                          <h4
-                            onClick={e => {
-                              // If user double clicked or clicked with Alt, edit directly
-                              if (e.detail === 2) {
-                                e.stopPropagation();
-                                handleStartInlineEdit(e, card);
-                              }
-                            }}
-                            className="text-xs font-extrabold text-slate-900 group-hover:text-blue-700 leading-snug select-text cursor-pointer"
-                            title="انقر لعرض التفاصيل أو انقر مرتين لتعديل النص مباشرة"
-                          >
-                            {card.title}
-                          </h4>
+                          {/* Card Title or Link (Fit to Card Size, No Scrollbar) */}
+                          {isUrlString(card.title) ? (
+                            <div className="w-full max-w-full min-w-0 space-y-1.5 overflow-hidden">
+                              <div className="flex items-center justify-between gap-1.5 bg-blue-50 text-blue-800 px-2.5 py-1.5 rounded-lg border border-blue-200/80 text-[11px] font-bold">
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                  <Link2 className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+                                  <span className="truncate">{getUrlLabel(card.title)}</span>
+                                </div>
+                                <a
+                                  href={getCleanUrl(card.title)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className="px-2 py-0.5 hover:bg-blue-200/70 rounded text-blue-700 hover:text-blue-900 shrink-0 cursor-pointer flex items-center gap-1 bg-white shadow-2xs text-[10px] font-bold border border-blue-200"
+                                  title="فتح الرابط في نافذة جديدة"
+                                >
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                  <span>فتح الرابط</span>
+                                </a>
+                              </div>
+                              <div
+                                onClick={e => {
+                                  if (e.detail === 2) {
+                                    e.stopPropagation();
+                                    handleStartInlineEdit(e, card);
+                                  }
+                                }}
+                                className="text-[11px] font-mono text-blue-700 hover:text-blue-900 leading-relaxed select-text cursor-pointer break-all break-words [overflow-wrap:anywhere] max-w-full bg-slate-50/80 p-2 rounded-lg border border-slate-100 hover:bg-blue-50/50 transition-colors"
+                                title="انقر لعرض التفاصيل أو انقر مرتين لتعديل الرابط"
+                              >
+                                {card.title}
+                              </div>
+                            </div>
+                          ) : (
+                            <h4
+                              onClick={e => {
+                                // If user double clicked or clicked with Alt, edit directly
+                                if (e.detail === 2) {
+                                  e.stopPropagation();
+                                  handleStartInlineEdit(e, card);
+                                }
+                              }}
+                              className="text-xs font-extrabold text-slate-900 group-hover:text-blue-700 leading-snug select-text cursor-pointer break-words break-all [overflow-wrap:anywhere] max-w-full min-w-0"
+                              title="انقر لعرض التفاصيل أو انقر مرتين لتعديل النص مباشرة"
+                            >
+                              {card.title}
+                            </h4>
+                          )}
 
                           {/* Card Description Snippet */}
                           {card.description && (
-                            <p className="text-[11px] text-slate-600 mt-1.5 line-clamp-3 leading-relaxed whitespace-pre-line bg-slate-50/70 p-2 rounded-lg border border-slate-100 select-text">
+                            <p className="text-[11px] text-slate-600 mt-1.5 line-clamp-3 leading-relaxed whitespace-pre-line bg-slate-50/70 p-2 rounded-lg border border-slate-100 select-text break-words break-all [overflow-wrap:anywhere] max-w-full min-w-0">
                               {card.description}
                             </p>
                           )}
 
                           {/* External Link Pill */}
                           {card.linkUrl && (
-                            <div className="mt-2">
+                            <div className="mt-2 max-w-full min-w-0 overflow-hidden">
                               <a
-                                href={card.linkUrl}
+                                href={getCleanUrl(card.linkUrl)}
                                 target="_blank"
                                 rel="noreferrer"
                                 onClick={e => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md transition-colors"
+                                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md transition-colors max-w-full border border-blue-200/60"
                               >
-                                <ExternalLink className="w-2.5 h-2.5" />
-                                <span>{card.linkLabel || card.linkUrl}</span>
+                                <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                                <span className="truncate break-all max-w-[200px]">{card.linkLabel || card.linkUrl}</span>
                               </a>
                             </div>
                           )}
@@ -1062,13 +1158,13 @@ export const MarketingBoardView: React.FC = () => {
 
                     {/* Inline Add Card Input (matching screenshot: "Enter a title or paste a link" with "Add card", "Tip", and "X") */}
                     {isAddingHere ? (
-                      <div className="bg-white rounded-xl p-2.5 shadow-sm border border-slate-300 space-y-2 animate-in fade-in">
+                      <div className="bg-white rounded-xl p-2.5 shadow-sm border border-slate-300 space-y-2 animate-in fade-in min-w-0 max-w-full overflow-hidden">
                         <textarea
                           rows={2}
                           value={newCardTitle}
                           onChange={e => setNewCardTitle(e.target.value)}
                           placeholder="اكتب عنوان الكارت أو الصق نصاً أو رابطاً هنا..."
-                          className="w-full text-xs text-slate-800 placeholder-slate-400 focus:outline-none resize-none font-bold"
+                          className="w-full max-w-full text-xs text-slate-800 placeholder-slate-400 focus:outline-none resize-none font-bold break-words break-all [overflow-wrap:anywhere]"
                           autoFocus
                           onKeyDown={e => {
                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -1241,7 +1337,7 @@ export const MarketingBoardView: React.FC = () => {
                 <div
                   key={card.id}
                   onClick={() => setSelectedCardForModal(card)}
-                  className="bg-slate-50/80 hover:bg-blue-50/50 rounded-xl p-4 border border-slate-200 transition-all cursor-pointer flex flex-col justify-between space-y-2 group"
+                  className="bg-slate-50/80 hover:bg-blue-50/50 rounded-xl p-4 border border-slate-200 transition-all cursor-pointer flex flex-col justify-between space-y-2 group min-w-0 max-w-full overflow-hidden break-words"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold bg-slate-200/80 text-slate-700 px-2 py-0.5 rounded-full font-mono">
@@ -1253,12 +1349,24 @@ export const MarketingBoardView: React.FC = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-xs font-extrabold text-slate-900 group-hover:text-blue-700">
-                    {card.title}
-                  </h3>
+                  {isUrlString(card.title) ? (
+                    <div className="w-full max-w-full min-w-0 space-y-1">
+                      <div className="flex items-center gap-1.5 text-blue-700 bg-blue-50 px-2 py-1 rounded text-[11px] font-bold">
+                        <Link2 className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{getUrlLabel(card.title)}</span>
+                      </div>
+                      <div className="text-[11px] font-mono text-blue-600 break-all break-words [overflow-wrap:anywhere]">
+                        {card.title}
+                      </div>
+                    </div>
+                  ) : (
+                    <h3 className="text-xs font-extrabold text-slate-900 group-hover:text-blue-700 break-words break-all [overflow-wrap:anywhere] max-w-full min-w-0">
+                      {card.title}
+                    </h3>
+                  )}
 
                   {card.description && (
-                    <p className="text-[11px] text-slate-500 line-clamp-2">
+                    <p className="text-[11px] text-slate-500 line-clamp-2 break-words break-all [overflow-wrap:anywhere] max-w-full min-w-0">
                       {card.description}
                     </p>
                   )}
@@ -2036,7 +2144,7 @@ export const MarketingBoardView: React.FC = () => {
         >
           <div
             onClick={e => e.stopPropagation()}
-            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto cursor-default"
+            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto overflow-x-hidden min-w-0 cursor-default"
           >
             {/* Modal Top Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -2359,28 +2467,51 @@ export const MarketingBoardView: React.FC = () => {
             ) : (
               /* وضع العرض والقراءة والنسخ */
               <div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/90 space-y-2 select-text">
-                  <h3 className="text-sm font-black text-slate-900 leading-snug">
-                    {selectedCardForModal.title}
-                  </h3>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/90 space-y-2.5 select-text min-w-0 max-w-full overflow-hidden">
+                  {isUrlString(selectedCardForModal.title) ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2 bg-blue-50 text-blue-800 px-3 py-2 rounded-lg border border-blue-200 text-xs font-bold">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <Link2 className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span className="truncate">{getUrlLabel(selectedCardForModal.title)}</span>
+                        </div>
+                        <a
+                          href={getCleanUrl(selectedCardForModal.title)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-bold shrink-0 flex items-center gap-1 transition-all"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>فتح الرابط</span>
+                        </a>
+                      </div>
+                      <div className="text-xs font-mono text-blue-700 break-all break-words [overflow-wrap:anywhere] leading-relaxed p-2.5 bg-white rounded-lg border border-slate-200 select-text">
+                        {selectedCardForModal.title}
+                      </div>
+                    </div>
+                  ) : (
+                    <h3 className="text-sm font-black text-slate-900 leading-snug break-words break-all [overflow-wrap:anywhere]">
+                      {selectedCardForModal.title}
+                    </h3>
+                  )}
 
                   {selectedCardForModal.description && (
-                    <div className="pt-2 border-t border-slate-200 text-xs text-slate-700 leading-relaxed whitespace-pre-line">
+                    <div className="pt-2 border-t border-slate-200 text-xs text-slate-700 leading-relaxed whitespace-pre-line break-words break-all [overflow-wrap:anywhere]">
                       {selectedCardForModal.description}
                     </div>
                   )}
                 </div>
 
                 {selectedCardForModal.linkUrl && (
-                  <div className="mt-3">
+                  <div className="mt-3 max-w-full overflow-hidden">
                     <a
-                      href={selectedCardForModal.linkUrl}
+                      href={getCleanUrl(selectedCardForModal.linkUrl)}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs max-w-full"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>زيارة الرابط: {selectedCardForModal.linkLabel || selectedCardForModal.linkUrl}</span>
+                      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate break-all">{selectedCardForModal.linkLabel || selectedCardForModal.linkUrl}</span>
                     </a>
                   </div>
                 )}

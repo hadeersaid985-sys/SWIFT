@@ -481,10 +481,10 @@ export const MarketingIdeasThoughtsView: React.FC = () => {
                       </div>
 
                       {/* Title */}
-                      <h3 className="text-base font-black text-slate-900 leading-snug">{idea.title}</h3>
+                      <h3 className="text-base font-black text-slate-900 leading-snug break-words break-all [overflow-wrap:anywhere] min-w-0 max-w-full">{idea.title}</h3>
 
                       {/* Concept */}
-                      <p className="text-xs text-slate-600 mt-2 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <p className="text-xs text-slate-600 mt-2 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 break-words break-all [overflow-wrap:anywhere] min-w-0 max-w-full">
                         {idea.concept}
                       </p>
 
@@ -607,10 +607,10 @@ export const MarketingIdeasThoughtsView: React.FC = () => {
                       </div>
 
                       {/* Title */}
-                      <h3 className="text-base font-black text-slate-900 leading-snug">{thought.title}</h3>
+                      <h3 className="text-base font-black text-slate-900 leading-snug break-words break-all [overflow-wrap:anywhere] min-w-0 max-w-full">{thought.title}</h3>
 
                       {/* Content */}
-                      <div className="text-xs text-slate-700 mt-2.5 whitespace-pre-line leading-relaxed font-normal">
+                      <div className="text-xs text-slate-700 mt-2.5 whitespace-pre-line leading-relaxed font-normal break-words break-all [overflow-wrap:anywhere] min-w-0 max-w-full">
                         {thought.content}
                       </div>
 
