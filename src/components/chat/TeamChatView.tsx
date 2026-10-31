@@ -34,6 +34,11 @@ import {
 import { useChat } from '../../context/ChatContext';
 import { useCRM } from '../../context/CRMContext';
 import { ChatMessage, TeamMember, ChatAttachment } from '../../types/crm';
+import {
+  buildAllTeamConversations,
+  getVisibleTeamMembersForUser,
+  getVisibleMessagesForChat
+} from '../../utils/chatSecurity';
 
 const QUICK_EMOJIS = ['👍', '❤️', '🔥', '👏', '🎉', '🚀', '🙌', '💡', '✅', '😂', '💯', '🌸'];
 
@@ -64,7 +69,7 @@ export const TeamChatView: React.FC = () => {
   // Local state
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'channels' | 'dms'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'channels' | 'dms' | 'audit'>('all');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [pendingAttachments, setPendingAttachments] = useState<ChatAttachment[]>([]);
@@ -99,7 +104,19 @@ export const TeamChatView: React.FC = () => {
 
   // When switching chats on mobile, hide the list to show chat
   const handleSelectChat = (id: string, type: 'channel' | 'dm') => {
+    setAdminSupervisorMode(false);
+    if (filterType === 'audit') {
+      setFilterType('all');
+    }
     setActiveChat(id, type);
+    setIsMobileListVisible(false);
+    setReplyingTo(null);
+  };
+
+  // When Admin selects an audit conversation pair
+  const handleSelectAuditPair = (pairKey: string) => {
+    setSelectedAuditPairKey(pairKey);
+    setAdminSupervisorMode(true);
     setIsMobileListVisible(false);
     setReplyingTo(null);
   };
@@ -107,74 +124,26 @@ export const TeamChatView: React.FC = () => {
   // Group all 1-on-1 team conversations across the entire organization for Admin
   const allTeamConversations = useMemo(() => {
     if (!isManager) return [];
-
-    const map = new Map<string, {
-      pairKey: string;
-      memberA: TeamMember;
-      memberB: TeamMember;
-      messages: ChatMessage[];
-      lastMessage: ChatMessage;
-    }>();
-
-    messages.forEach(m => {
-      if (!m.channelId && m.senderId && m.recipientId) {
-        const sortedIds = [m.senderId, m.recipientId].sort();
-        const pairKey = sortedIds.join('__');
-        const memA = team.find(x => x.id === sortedIds[0]) || (({
-          id: sortedIds[0],
-          name: m.senderName,
-          avatar: m.senderAvatar,
-          role: m.senderRole,
-          department: m.senderDepartment
-        } as unknown) as TeamMember);
-        const memB = team.find(x => x.id === sortedIds[1]) || (({
-          id: sortedIds[1],
-          name: 'عضو الفريق',
-          avatar: '',
-          role: '',
-          department: ''
-        } as unknown) as TeamMember);
-
-        if (!map.has(pairKey)) {
-          map.set(pairKey, {
-            pairKey,
-            memberA: memA,
-            memberB: memB,
-            messages: [],
-            lastMessage: m
-          });
-        }
-
-        const entry = map.get(pairKey)!;
-        entry.messages.push(m);
-        if (new Date(m.timestamp).getTime() > new Date(entry.lastMessage.timestamp).getTime()) {
-          entry.lastMessage = m;
-        }
-      }
-    });
-
-    let result = Array.from(map.values()).sort(
-      (a, b) => new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
-    );
+    let list = buildAllTeamConversations({ messages, team });
 
     if (supervisorFilterMemberA !== 'all') {
-      result = result.filter(c => c.memberA.id === supervisorFilterMemberA || c.memberB.id === supervisorFilterMemberA);
+      list = list.filter(c => c.memberA.id === supervisorFilterMemberA || c.memberB.id === supervisorFilterMemberA);
     }
     if (supervisorFilterMemberB !== 'all') {
-      result = result.filter(c => c.memberA.id === supervisorFilterMemberB || c.memberB.id === supervisorFilterMemberB);
+      list = list.filter(c => c.memberA.id === supervisorFilterMemberB || c.memberB.id === supervisorFilterMemberB);
     }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(
+      list = list.filter(
         c =>
           c.memberA.name.toLowerCase().includes(q) ||
           c.memberB.name.toLowerCase().includes(q) ||
-          c.lastMessage.text.toLowerCase().includes(q)
+          (c.lastMessage && c.lastMessage.text && c.lastMessage.text.toLowerCase().includes(q))
       );
     }
 
-    return result;
+    return list;
   }, [isManager, messages, team, supervisorFilterMemberA, supervisorFilterMemberB, searchQuery]);
 
   // Set default audit conversation pair if none selected
@@ -190,36 +159,24 @@ export const TeamChatView: React.FC = () => {
     return allTeamConversations.find(c => c.pairKey === selectedAuditPairKey) || null;
   }, [adminSupervisorMode, selectedAuditPairKey, allTeamConversations]);
 
-  // Filtered messages for current active chat
+  // Filtered messages for current active chat with strict role isolation
   const activeMessages = useMemo(() => {
     if (!currentUser) return [];
 
-    // If Admin is in supervisor audit mode
-    if (adminSupervisorMode && activeAuditConversation) {
-      const memAId = activeAuditConversation.memberA.id;
-      const memBId = activeAuditConversation.memberB.id;
-      return messages
-        .filter(
-          m =>
-            !m.channelId &&
-            ((m.senderId === memAId && m.recipientId === memBId) ||
-              (m.senderId === memBId && m.recipientId === memAId))
-        )
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    }
-
-    if (activeChatType === 'channel') {
-      return messages.filter(m => m.channelId === activeChatId);
-    } else {
-      // 1-on-1 DM between currentUser and activeChatId
-      return messages.filter(
-        m =>
-          !m.channelId &&
-          ((m.senderId === currentUser.id && m.recipientId === activeChatId) ||
-            (m.senderId === activeChatId && m.recipientId === currentUser.id))
-      );
-    }
-  }, [messages, activeChatId, activeChatType, currentUser, adminSupervisorMode, activeAuditConversation]);
+    return getVisibleMessagesForChat({
+      messages,
+      currentUser,
+      activeChatId,
+      activeChatType,
+      isAuditMode: isManager && (adminSupervisorMode || filterType === 'audit'),
+      auditPair: activeAuditConversation
+        ? {
+            memberAId: activeAuditConversation.memberA.id,
+            memberBId: activeAuditConversation.memberB.id
+          }
+        : null
+    });
+  }, [messages, currentUser, activeChatId, activeChatType, isManager, adminSupervisorMode, filterType, activeAuditConversation]);
 
   // Search filter for channels and members in sidebar
   const filteredChannels = useMemo(() => {
@@ -235,50 +192,15 @@ export const TeamChatView: React.FC = () => {
   // للموظف: يظهر فقط الشات للأشخاص الذين تحدث معهم أو المدير
   // للأدمن: يظهر جميع أعضاء الفريق
   const filteredTeamMembers = useMemo(() => {
-    if (isManager) {
-      return team
-        .filter(m => m.id !== currentUser?.id)
-        .filter(m => {
-          if (!searchQuery.trim()) return true;
-          return (
-            m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            m.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            m.department.toLowerCase().includes(searchQuery.toLowerCase())
-          );
-        });
-    }
-
-    // للموظف: حساب الأعضاء الذين تم تبادل الرسائل معهم فقط
-    const myId = currentUser?.id;
-    const chattedMemberIds = new Set<string>();
-
-    messages.forEach(m => {
-      if (!m.channelId) {
-        if (m.senderId === myId && m.recipientId) {
-          chattedMemberIds.add(m.recipientId);
-        } else if (m.recipientId === myId && m.senderId) {
-          chattedMemberIds.add(m.senderId);
-        }
-      }
+    return getVisibleTeamMembersForUser({
+      team,
+      currentUser,
+      messages,
+      activeChatId,
+      activeChatType,
+      searchQuery
     });
-
-    // إضافة المدير تلقائياً ليكون هناك مسار مباشر دائم
-    const adminMember = team.find(m => m.id === 'user-1' || m.accessLevel === 'admin');
-    if (adminMember && adminMember.id !== myId) {
-      chattedMemberIds.add(adminMember.id);
-    }
-
-    return team
-      .filter(m => m.id !== myId && chattedMemberIds.has(m.id))
-      .filter(m => {
-        if (!searchQuery.trim()) return true;
-        return (
-          m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          m.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          m.department.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      });
-  }, [team, currentUser, isManager, messages, searchQuery]);
+  }, [team, currentUser, messages, activeChatId, activeChatType, searchQuery]);
 
   // All colleagues available to initiate a new chat
   const otherColleaguesToStartChat = useMemo(() => {
@@ -472,18 +394,24 @@ export const TeamChatView: React.FC = () => {
           {isManager && (
             <button
               onClick={() => {
-                setAdminSupervisorMode(!adminSupervisorMode);
+                const nextMode = !adminSupervisorMode;
+                setAdminSupervisorMode(nextMode);
+                if (nextMode) {
+                  setFilterType('audit');
+                } else if (filterType === 'audit') {
+                  setFilterType('all');
+                }
                 setIsMobileListVisible(true);
               }}
               className={`px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
-                adminSupervisorMode
+                adminSupervisorMode || filterType === 'audit'
                   ? 'bg-amber-500 text-white border-amber-400 shadow-sm ring-2 ring-amber-300/30'
                   : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
               }`}
               title="مراقبة والاطلاع على كافة محادثات التيم بين الموظفين"
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>{adminSupervisorMode ? 'وضع مراقبة رسائل التيم (نشط)' : 'استعراض كافة محادثات التيم'}</span>
+              <span>{adminSupervisorMode || filterType === 'audit' ? 'وضع مراقبة رسائل التيم (نشط)' : 'استعراض كافة محادثات التيم'}</span>
             </button>
           )}
 
@@ -555,31 +483,54 @@ export const TeamChatView: React.FC = () => {
               )}
             </div>
 
-            {/* Filter pills: الكل / القنوات / المحادثات الخاصة */}
+            {/* Filter pills: الكل / محادثات التيم (للأدمن) / الخاص / القنوات */}
             <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-[11px] font-bold">
               <button
-                onClick={() => setFilterType('all')}
+                onClick={() => {
+                  setFilterType('all');
+                  setAdminSupervisorMode(false);
+                }}
                 className={`flex-1 py-1 rounded-md transition-all cursor-pointer text-center ${
-                  filterType === 'all' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  filterType === 'all' && !adminSupervisorMode ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 الكل
               </button>
+              {isManager && (
+                <button
+                  onClick={() => {
+                    setFilterType('audit');
+                    setAdminSupervisorMode(true);
+                  }}
+                  className={`flex-1 py-1 rounded-md transition-all cursor-pointer text-center ${
+                    filterType === 'audit' || adminSupervisorMode ? 'bg-amber-500 text-white shadow-2xs font-bold' : 'text-amber-800 hover:text-amber-900 bg-amber-50/60'
+                  }`}
+                  title="مراقبة والاطلاع على كافة محادثات التيم بين الموظفين"
+                >
+                  محادثات التيم ({allTeamConversations.length})
+                </button>
+              )}
               <button
-                onClick={() => setFilterType('channels')}
+                onClick={() => {
+                  setFilterType('dms');
+                  setAdminSupervisorMode(false);
+                }}
                 className={`flex-1 py-1 rounded-md transition-all cursor-pointer text-center ${
-                  filterType === 'channels' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  filterType === 'dms' && !adminSupervisorMode ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {isManager ? `محادثاتي (${filteredTeamMembers.length})` : `الخاص (${filteredTeamMembers.length})`}
+              </button>
+              <button
+                onClick={() => {
+                  setFilterType('channels');
+                  setAdminSupervisorMode(false);
+                }}
+                className={`flex-1 py-1 rounded-md transition-all cursor-pointer text-center ${
+                  filterType === 'channels' && !adminSupervisorMode ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 القنوات ({filteredChannels.length})
-              </button>
-              <button
-                onClick={() => setFilterType('dms')}
-                className={`flex-1 py-1 rounded-md transition-all cursor-pointer text-center ${
-                  filterType === 'dms' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                الخاص ({filteredTeamMembers.length})
               </button>
             </div>
           </div>
@@ -600,7 +551,7 @@ export const TeamChatView: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-[10px] text-amber-700 leading-relaxed">
-                    استعراض الرسائل المتبادلة بين موظفي الشركة للاطلاع الإداري والمتابعة
+                    استعراض كافة الرسائل والمحادثات المتبادلة بين موظفي الشركة للاطلاع الإداري والمتابعة
                   </p>
                   
                   {/* Filters for pair members */}
@@ -633,7 +584,7 @@ export const TeamChatView: React.FC = () => {
                 <div className="space-y-1.5">
                   {allTeamConversations.length === 0 ? (
                     <div className="text-center py-8 text-slate-400 text-xs">
-                      لا توجد محادثات مطابقة للشروط المحددة
+                      لا توجد محادثات خاصة مسجلة بين الموظفين حتى الآن
                     </div>
                   ) : (
                     allTeamConversations.map(conv => {
@@ -641,10 +592,7 @@ export const TeamChatView: React.FC = () => {
                       return (
                         <button
                           key={conv.pairKey}
-                          onClick={() => {
-                            setSelectedAuditPairKey(conv.pairKey);
-                            setIsMobileListVisible(false);
-                          }}
+                          onClick={() => handleSelectAuditPair(conv.pairKey)}
                           className={`w-full text-right p-2.5 rounded-xl transition-all cursor-pointer border ${
                             isSelected
                               ? 'bg-amber-100/90 border-amber-300 text-slate-900 font-bold shadow-2xs'
@@ -692,6 +640,62 @@ export const TeamChatView: React.FC = () => {
               </div>
             ) : (
               <>
+                {/* For Admin in 'all': Team Conversations Quick Section */}
+                {isManager && (filterType === 'all' || filterType === 'audit') && allTeamConversations.length > 0 && (
+                  <div className="p-2.5 bg-gradient-to-br from-amber-50 to-orange-50/40 border border-amber-200/90 rounded-2xl space-y-2 mb-2">
+                    <div className="flex items-center justify-between text-xs font-black text-amber-950 px-1">
+                      <span className="flex items-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5 text-amber-600" />
+                        <span>محادثات بين أفراد الفريق (رقابة إدارية)</span>
+                      </span>
+                      <span className="bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold">
+                        {allTeamConversations.length} محادثة
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {allTeamConversations.map(conv => {
+                        const isSelected = adminSupervisorMode && selectedAuditPairKey === conv.pairKey;
+                        return (
+                          <button
+                            key={conv.pairKey}
+                            onClick={() => handleSelectAuditPair(conv.pairKey)}
+                            className={`w-full text-right p-2 rounded-xl transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-amber-100/90 border-amber-400 text-slate-900 font-bold shadow-xs'
+                                : 'bg-white hover:bg-amber-100/60 border-amber-200/70 text-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center -space-x-1.5 space-x-reverse">
+                                <img
+                                  src={conv.memberA.avatar}
+                                  alt={conv.memberA.name}
+                                  className="w-5 h-5 rounded-full border border-white object-cover"
+                                />
+                                <img
+                                  src={conv.memberB.avatar}
+                                  alt={conv.memberB.name}
+                                  className="w-5 h-5 rounded-full border border-white object-cover"
+                                />
+                              </div>
+                              <span className="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-mono font-bold">
+                                {conv.messages.length} رسالة
+                              </span>
+                            </div>
+                            <div className="text-xs font-bold text-slate-900 truncate">
+                              {conv.memberA.name} ↔ {conv.memberB.name}
+                            </div>
+                            <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                              <span className="font-semibold text-slate-700">{conv.lastMessage.senderName}: </span>
+                              {conv.lastMessage.text || 'مرفق'}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. Public Channels Section */}
                 {(filterType === 'all' || filterType === 'channels') && (
                   <div>

@@ -347,7 +347,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                     )}
                   </button>
 
-                  {/* 6. ملفات العملاء والشيتات (Selected in screenshot) */}
+                  {/* 6. دردشة الفريق (Team Chat) */}
+                  <button
+                    onClick={() => handleSelectTab('chat')}
+                    className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
+                      activeTab === 'chat'
+                        ? 'bg-[#2563eb] text-white font-bold shadow-xs'
+                        : 'text-slate-300 hover:text-white hover:bg-[#24375a]/70'
+                    }`}
+                    title="دردشة وتواصل الفريق"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <MessagesSquare className="w-4 h-4 shrink-0 text-slate-300" />
+                      {!isCollapsed && <span className="truncate">دردشة الفريق</span>}
+                    </div>
+                    {!isCollapsed && unreadChatCount > 0 && (
+                      <span className="text-[10px] bg-rose-600 text-white px-2 py-0.5 rounded-full font-bold font-mono animate-pulse">
+                        {unreadChatCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* 7. ملفات العملاء والشيتات (Selected in screenshot) */}
                   <button
                     onClick={() => handleSelectTab('renewals')}
                     className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-lg text-xs transition-colors cursor-pointer ${
