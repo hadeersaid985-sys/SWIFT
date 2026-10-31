@@ -336,7 +336,7 @@ export const QuickModals: React.FC = () => {
       contactEmail: dealContactEmail,
       contactPhone: dealContactPhone,
       value: Number(dealValue) || 100000,
-      currency: 'ر.س',
+      currency: 'ج.م',
       stage: dealStage,
       probability: dealStage === 'مغلقة ناجحة' ? 100 : 50,
       expectedCloseDate: dealDate,
@@ -1495,7 +1495,7 @@ export const QuickModals: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">القيمة المالية (ر.س) *</label>
+                  <label className="block font-bold text-slate-700 mb-1">القيمة المالية (ج.م) *</label>
                   <input
                     type="number"
                     required

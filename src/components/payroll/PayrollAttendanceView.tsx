@@ -1305,7 +1305,7 @@ export const PayrollAttendanceView: React.FC = () => {
                     const baseSal = member.salary || 7000;
                     const allowances = member.allowances || 0;
                     const net = baseSal + allowances - stats.totalDeductions;
-                    const currency = member.salaryCurrency || 'ر.س';
+                    const currency = member.salaryCurrency || 'ج.م';
 
                     const payrollRec = monthlyPayrolls.find(
                       p => p.memberId === member.id && p.month === selectedMonth

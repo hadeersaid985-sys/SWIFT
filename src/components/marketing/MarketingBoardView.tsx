@@ -201,7 +201,7 @@ export const MarketingBoardView: React.FC = () => {
       priority: 'متوسطة',
       completed: false,
       assignee: 'سارة المنصوري',
-      notes: 'الميزانية اليومية 250 ر.س مع صفحة هبوط مخصصة لعرض الـ 2 دومين.'
+      notes: 'الميزانية اليومية 250 ج.م مع صفحة هبوط مخصصة لعرض الـ 2 دومين.'
     }
   ];
 

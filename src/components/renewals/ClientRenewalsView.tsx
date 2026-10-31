@@ -1029,7 +1029,7 @@ export const ClientRenewalsView: React.FC = () => {
           <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs">
             <div className="text-slate-400 font-bold text-[11px]">إجمالي إيراد التجديدات المتوقع</div>
             <div className="text-2xl font-black text-emerald-600 mt-1">
-              {totalRevenueExpected.toLocaleString()} ر.س
+              {totalRevenueExpected.toLocaleString()} ج.م
             </div>
             <div className="text-[10px] text-slate-500 mt-0.5">عبر العقود السنوية والشهرية (خاص بالأدمن)</div>
           </div>
@@ -2442,7 +2442,7 @@ export const ClientRenewalsView: React.FC = () => {
                 company: 'شركة الأفق',
                 serviceName: 'استضافة وسيرفرات سويفت',
                 amount: 3200,
-                currency: 'ر.س',
+                currency: 'ج.م',
                 whatsappNumber: '+96599881234'
               };
 

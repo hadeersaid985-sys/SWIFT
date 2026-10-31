@@ -455,7 +455,7 @@ export const INITIAL_TASKS: Task[] = [
   {
     id: 'task-104',
     title: 'إطلاق حملة لينكد إن الموجهة لمديري المشتريات بالرياض',
-    description: 'توزيع ميزانية 15,000 ريال على حملات Lead Generation المباشرة واستهداف قطاع المقاولات والتجزئة.',
+    description: 'توزيع ميزانية 15,000 ج.م على حملات Lead Generation المباشرة واستهداف قطاع المقاولات والتجزئة.',
     assignedToId: 'user-3',
     priority: 'medium',
     status: 'in_progress',
@@ -1470,7 +1470,7 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   },
   {
     id: 'notif-4',
-    title: 'مبروك! إغلاق صفقة ناجحة بقيمة 350,000 ر.س',
+    title: 'مبروك! إغلاق صفقة ناجحة بقيمة 350,000 ج.م',
     message: 'أحمد الشريف أتم صفقة شبكة النقل السريع بنجاح تام.',
     timestamp: 'أمس',
     type: 'deal_won',
@@ -1484,7 +1484,7 @@ export const INITIAL_ACTIVITIES: ActivityItem[] = [
     id: 'act-1',
     type: 'deal',
     title: 'تم نقل الصفقة إلى مرحلة التفاوض النهائي',
-    description: 'صفقة "توريد نظام سحابي لمجموعة إعمار المستقبل" بقيمة 285,000 ر.س',
+    description: 'صفقة "توريد نظام سحابي لمجموعة إعمار المستقبل" بقيمة 285,000 ج.م',
     timestamp: 'منذ 35 دقيقة',
     userName: 'هدير سعيد',
     userAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
@@ -2912,7 +2912,7 @@ export const INITIAL_WRITTEN_THOUGHTS: WrittenThoughtNote[] = [
     title: 'خطة إطلاق باقة "GEO Elite" للشركات الكبرى بالخليج (الربع الأول 2027)',
     content: `فكرة تطوير منتج وخدمة ممتازة:
 - الطلب على خدمات تحسين محركات الذكاء الاصطناعي التوليدي (ChatGPT, Claude, Perplexity) يتضاعف شهرياً.
-- سنبني باقة سنوية بقيمة تبدأ من 50,000 ج.م / 15,000 ر.س تتضمن:
+- سنبني باقة سنوية بقيمة تبدأ من 50,000 ج.م تتضمن:
   * إدراج العلامة التجارية في 15 منصة ذكاء اصطناعي.
   * إدارة سمعة وتدريب روبوتات المحادثة على اسم الشركة.
   * لوحة تتبع ومتابعة شهرية مع تقرير تحليلي مصور.

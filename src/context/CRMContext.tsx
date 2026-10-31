@@ -4277,7 +4277,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...memberData,
       id: 'user-' + Date.now(),
       isAccountActive: memberData.isAccountActive !== undefined ? memberData.isAccountActive : true,
-      salaryCurrency: memberData.salaryCurrency || brandConfig.systemCurrency || 'ر.س',
+      salaryCurrency: memberData.salaryCurrency || brandConfig.systemCurrency || 'ج.م',
       joinedDate: new Date().toISOString().split('T')[0]
     };
     setTeam(prev => {

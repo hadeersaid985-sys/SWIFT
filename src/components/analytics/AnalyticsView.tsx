@@ -76,7 +76,7 @@ export const AnalyticsView: React.FC = () => {
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
           <span className="text-slate-500 font-bold">إجمالي مبيعات الصفقات الرابحة</span>
           <div className="text-3xl font-black text-emerald-600 mt-1">
-            {wonAmount.toLocaleString()} ر.س
+            {wonAmount.toLocaleString()} ج.م
           </div>
           <div className="text-[11px] text-slate-400 mt-1">
             تم إغلاق {totalWonDeals.length} صفقات بنجاح

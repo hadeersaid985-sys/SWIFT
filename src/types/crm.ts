@@ -365,7 +365,7 @@ export interface BrandConfig {
   secondaryColor?: string; // e.g. "#1e3a8a"
   accentColor?: string; // e.g. "#f59e0b"
   sidebarTheme?: 'dark' | 'midnight' | 'slate' | 'brand_tint';
-  systemCurrency?: string; // e.g. "ر.س"
+  systemCurrency?: string; // e.g. "ج.م"
   adminPin?: string; // رمز أمان الأدمن لمنع دخول الموظفين (الافتراضي 8899)
   updatedAt?: string;
 }

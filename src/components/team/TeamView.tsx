@@ -95,7 +95,7 @@ export const TeamView: React.FC = () => {
   const [editingSalaryMember, setEditingSalaryMember] = useState<TeamMember | null>(null);
   const [salaryForm, setSalaryForm] = useState({
     salary: 0,
-    salaryCurrency: 'ر.س',
+    salaryCurrency: 'ج.م',
     allowances: 0,
     contractType: 'دوام كامل' as TeamMember['contractType'],
     joinedDate: ''
@@ -455,7 +455,7 @@ export const TeamView: React.FC = () => {
               <DollarSign className={`w-3.5 h-3.5 ${activeSubTab === 'salaries' ? 'text-white' : 'text-emerald-600'}`} />
               <span>مرتبات الموظفين وبدايتهم بالشركة (للأدمن 🔒)</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${activeSubTab === 'salaries' ? 'bg-emerald-800 text-emerald-100' : 'bg-emerald-100 text-emerald-800'}`}>
-                {team.reduce((acc, m) => acc + (m.salary || 0), 0).toLocaleString()} ر.س
+                {team.reduce((acc, m) => acc + (m.salary || 0), 0).toLocaleString()} ج.م
               </span>
             </button>
           )}
@@ -1014,7 +1014,7 @@ export const TeamView: React.FC = () => {
                 <DollarSign className="w-4 h-4 text-emerald-200" />
               </div>
               <div className="text-2xl font-black mt-2 font-mono">
-                {team.reduce((acc, m) => acc + (m.salary || 0), 0).toLocaleString()} ر.س
+                {team.reduce((acc, m) => acc + (m.salary || 0), 0).toLocaleString()} ج.م
               </div>
               <div className="text-[10px] text-emerald-100 mt-1">الرواتب الأساسية المعتمدة لـ {team.length} موظفين</div>
             </div>
