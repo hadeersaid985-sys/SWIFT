@@ -239,6 +239,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
 
               {activitiesOpen && (
                 <div className="space-y-1 mt-1 pr-1">
+                  {/* 0. قائمة انتظار العمل (Work Queue) */}
+                  <button
+                    onClick={() => handleSelectTab('work_queue')}
+                    className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
+                      activeTab === 'work_queue'
+                        ? 'bg-[#2563eb] text-white font-bold shadow-xs'
+                        : 'text-slate-300 hover:text-white hover:bg-[#24375a]/70'
+                    }`}
+                    title="قائمة انتظار العمل (Work Queue)"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Inbox className={`w-4 h-4 shrink-0 ${activeTab === 'work_queue' ? 'text-white' : 'text-[#fb923c]'}`} />
+                      {!isCollapsed && <span className="truncate">قائمة انتظار العمل</span>}
+                    </div>
+                    {!isCollapsed && pendingTasksCount > 0 && (
+                      <span className="text-[10px] bg-[#fb923c]/20 text-[#fb923c] px-1.5 py-0.2 rounded font-mono font-bold">
+                        {pendingTasksCount}
+                      </span>
+                    )}
+                  </button>
+
                   {/* 1. تاسكات الفريق والتايمر */}
                   <button
                     onClick={handleSelectAllTasks}
@@ -538,16 +559,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
 
               {matchesSearch('قائمة انتظار العمل') && (
                 <button
-                  onClick={() => handleSelectTab('tasks')}
+                  onClick={() => handleSelectTab('work_queue')}
                   className={`w-full text-right flex items-center justify-between px-3 py-2 rounded text-xs transition-colors cursor-pointer ${
-                    activeTab === 'tasks'
+                    activeTab === 'work_queue'
                       ? 'bg-[#2f4874] text-white font-bold'
                       : 'text-[#e2e8f0] hover:bg-[#2b416a] hover:text-white'
                   }`}
                   title="قائمة انتظار العمل"
                 >
                   <div className="flex items-center gap-3">
-                    <Inbox className={`w-4 h-4 shrink-0 ${activeTab === 'tasks' ? 'text-white' : 'text-[#fb923c]'}`} />
+                    <Inbox className={`w-4 h-4 shrink-0 ${activeTab === 'work_queue' ? 'text-white' : 'text-[#fb923c]'}`} />
                     {!isCollapsed && <span>قائمة انتظار العمل</span>}
                   </div>
                   {!isCollapsed && pendingTasksCount > 0 && (

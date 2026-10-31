@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  Inbox,
   CheckSquare,
   Users,
   Mail,
@@ -36,6 +37,13 @@ export const NavigationTabs: React.FC = () => {
       label: 'الرئيسية',
       icon: LayoutDashboard,
       badge: null
+    },
+    {
+      id: 'work_queue',
+      label: 'قائمة انتظار العمل',
+      icon: Inbox,
+      badge: pendingTasksCount > 0 ? pendingTasksCount : null,
+      badgeColor: 'bg-orange-500 text-white'
     },
     ...(isManager
       ? [

@@ -36,6 +36,7 @@ import { ProfileView } from './components/profile/ProfileView';
 import { GitHubSyncModal } from './components/modals/GitHubSyncModal';
 import { SwiftMyndLogo } from './components/common/SwiftMyndLogo';
 import { MobileBottomNav } from './components/navigation/MobileBottomNav';
+import { WorkQueueView } from './components/workqueue/WorkQueueView';
 import { ShieldAlert, ArrowLeft, UserCheck, KeyRound, LogIn, LogOut, BellRing, Sparkles } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -213,6 +214,7 @@ const AppContent: React.FC = () => {
   // Security & Role check: Non-admin employees ONLY see their allowed personal tabs
   // موظف المبيعات (مثل مايبل Maibel) يظهر له قسم العملاء المحتملين 'leads'
   const allowedEmployeeTabs = [
+    'work_queue',
     'tasks',
     'renewals',
     'meetings',
@@ -226,19 +228,14 @@ const AppContent: React.FC = () => {
   // Compute safe effective tab immediately to prevent blank content on role switch
   const effectiveTab = React.useMemo(() => {
     if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
-      return 'tasks';
+      return 'work_queue';
     }
-    if (activeTab === 'work_queue') {
-      return isManager ? 'reports' : 'tasks';
-    }
-    return activeTab || (isManager ? 'reports' : 'tasks');
+    return activeTab || (isManager ? 'reports' : 'work_queue');
   }, [isManager, activeTab, isSalesUser]);
 
   useEffect(() => {
-    if (activeTab === 'work_queue') {
-      setActiveTab(isManager ? 'reports' : 'tasks');
-    } else if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
-      setActiveTab('tasks');
+    if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
+      setActiveTab('work_queue');
     }
   }, [isManager, activeTab, setActiveTab, isSalesUser]);
 
@@ -280,9 +277,10 @@ const AppContent: React.FC = () => {
 
         {/* Content Body */}
         <main className="flex-1 overflow-y-auto p-2.5 sm:p-5 pb-28 sm:pb-24 md:pb-5 scrollbar-thin">
-          {/* Employee only sees personal tasks, meetings, calls, mail, renewals, chat, and profile */}
+          {/* Employee only sees personal work queue, tasks, meetings, calls, mail, renewals, chat, and profile */}
           {!isManager ? (
             <>
+              {effectiveTab === 'work_queue' && <WorkQueueView />}
               {effectiveTab === 'profile' && <ProfileView />}
               {effectiveTab === 'renewals' && <ClientRenewalsView />}
               {effectiveTab === 'meetings' && <MeetingsView />}
@@ -291,12 +289,13 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'chat' && <TeamChatView />}
               {effectiveTab === 'leads' && isSalesUser && <LeadsView />}
               {effectiveTab === 'tasks' && <TasksView />}
-              {!['profile', 'renewals', 'meetings', 'calls', 'mail', 'chat', 'tasks', ...(isSalesUser ? ['leads'] : [])].includes(effectiveTab) && (
-                <TasksView />
+              {!['work_queue', 'profile', 'renewals', 'meetings', 'calls', 'mail', 'chat', 'tasks', ...(isSalesUser ? ['leads'] : [])].includes(effectiveTab) && (
+                <WorkQueueView />
               )}
             </>
           ) : (
             <>
+              {effectiveTab === 'work_queue' && <WorkQueueView />}
               {effectiveTab === 'profile' && <ProfileView />}
               {(effectiveTab === 'performance' || effectiveTab === 'company_rules' || effectiveTab === 'delays') && (
                 <PerformanceEvaluationView key={effectiveTab} initialTab={effectiveTab === 'company_rules' ? 'rules' : effectiveTab === 'delays' ? 'delays' : 'dashboard'} />
@@ -334,7 +333,7 @@ const AppContent: React.FC = () => {
               {effectiveTab === 'campaigns' && <ReportsListView />}
 
               {/* Fallback for unlisted manager tabs */}
-              {!['profile', 'performance', 'company_rules', 'delays', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'chat', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'payroll', 'salaries', 'finance', 'sales_commissions', 'marketing_ideas', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns'].includes(effectiveTab) && (
+              {!['work_queue', 'profile', 'performance', 'company_rules', 'delays', 'marketing', 'renewals', 'suspended_contracts', 'host_migration', 'reports', 'tasks', 'team', 'mail', 'chat', 'home', 'analytics', 'deals', 'leads', 'meetings', 'calls', 'projects', 'inventory', 'support', 'integrations', 'system_settings', 'payroll', 'salaries', 'finance', 'sales_commissions', 'marketing_ideas', 'contacts', 'accounts', 'forecasts', 'documents', 'campaigns'].includes(effectiveTab) && (
                 <ReportsListView />
               )}
             </>
