@@ -57,9 +57,50 @@ export function getAccountManagerClients(
 }
 
 /**
+ * Checks whether a team member is an Admin / General Manager (e.g., Hadeer Said)
+ */
+export function isAdminMember(member?: TeamMember | null): boolean {
+  if (!member) return false;
+  if (member.accessLevel === 'admin') return true;
+  const id = (member.id || '').trim().toLowerCase();
+  if (id === 'user-1' || id === 'user-admin' || id === 'admin') return true;
+  const username = (member.username || '').trim().toLowerCase();
+  if (username === 'hadeer.admin' || username === 'admin' || username.includes('hadeer')) return true;
+  const name = (member.name || '').trim();
+  if (name.includes('هدير')) return true;
+  const role = (member.role || '').toLowerCase();
+  if (role.includes('مدير عام') || role.includes('المدير')) return true;
+  return false;
+}
+
+/**
+ * Checks whether a task is assigned to or belongs to Admin / General Manager (Hadeer Said)
+ * "تاسكات الادمن والمدير هدير سعيد متظهرش غير لالادمن بس"
+ */
+export function isAdminTask(task?: Task | null): boolean {
+  if (!task) return false;
+  const aid = (task.assignedToId || '').trim().toLowerCase();
+  if (!aid) return false;
+  if (
+    aid === 'user-1' ||
+    aid === 'user-admin' ||
+    aid === 'hadeer.admin' ||
+    aid === 'admin' ||
+    aid === 'hadeer'
+  ) {
+    return true;
+  }
+  if (aid.includes('هدير') || aid.includes('hadeer')) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Checks whether a specific task belongs to the Account Manager's scope.
  * 
  * "اظهر لاكونت مانجر الموظفين اللي تابعه والتاسكات اللي مع الموظفين تابعه بس اعملي فكره ليها لان مش كل شغل الموظفين معاه ولا كل تاسكاتهم معاه"
+ * "تاسكات الادمن والمدير هدير سعيد متظهرش غير لالادمن بس"
  * A task is in scope ONLY if:
  * 1. Assigned directly to the Account Manager.
  * 2. Created/delegated by this Account Manager.
@@ -72,6 +113,16 @@ export function isTaskInAccountManagerScope(
   clientRenewals: ClientRenewal[] = []
 ): boolean {
   if (!task || !user) return false;
+
+  // Admin / General Manager Hadeer Said tasks must NEVER appear to non-admin users / Account Managers
+  if (user.accessLevel !== 'admin' && isAdminTask(task)) {
+    return false;
+  }
+
+  // If task is private and user is not admin, do not show
+  if (task.isPrivate && user.accessLevel !== 'admin') {
+    return false;
+  }
 
   // 1. Direct assignment to the account manager
   if (task.assignedToId === user.id) return true;
@@ -127,6 +178,7 @@ export function isTaskInAccountManagerScope(
 
 /**
  * Retrieves the team members collaborating with this Account Manager on their clients/tasks.
+ * Strictly excludes any Admin / General Manager (Hadeer Said).
  */
 export function getAccountManagerTeamMembers(
   user: TeamMember,
@@ -161,18 +213,22 @@ export function getAccountManagerTeamMembers(
 
   // From tasks in this Account Manager's scope
   allTasks.forEach(task => {
-    if (isTaskInAccountManagerScope(task, user, clientRenewals)) {
+    if (!isAdminTask(task) && isTaskInAccountManagerScope(task, user, clientRenewals)) {
       if (task.assignedToId && task.assignedToId !== user.id) {
         collaboratingMemberIds.add(task.assignedToId);
       }
     }
   });
 
-  return allTeam.filter(m => collaboratingMemberIds.has(m.id));
+  // Filter allTeam and strictly exclude user themselves and any Admin / General Manager (e.g. Hadeer Said)
+  return allTeam.filter(
+    m => collaboratingMemberIds.has(m.id) && m.id !== user.id && !isAdminMember(m)
+  );
 }
 
 /**
  * Filters tasks list to include only those within the Account Manager's scope.
+ * Strictly excludes Admin Hadeer's tasks for non-admins.
  */
 export function filterTasksForAccountManager(
   tasks: Task[],
@@ -184,6 +240,8 @@ export function filterTasksForAccountManager(
   return tasks.filter(task => {
     // If task is private and user is not admin, do not show
     if (task.isPrivate && user.accessLevel !== 'admin') return false;
+    // Admin / General Manager Hadeer Said tasks must strictly appear ONLY to Admin!
+    if (user.accessLevel !== 'admin' && isAdminTask(task)) return false;
     return isTaskInAccountManagerScope(task, user, clientRenewals);
   });
 }

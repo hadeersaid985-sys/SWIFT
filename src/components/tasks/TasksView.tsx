@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   CheckSquare,
   Clock,
@@ -58,6 +58,7 @@ import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../conte
 import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember, EvaluationType, EvaluationCategory } from '../../types/crm';
 import { exportTasksToExcel } from '../../utils/excelExport';
 import { DailyTasksWorkReportModal } from '../reports/DailyTasksWorkReportModal';
+import { isAdminMember, isAdminTask } from '../../utils/accountManagerScope';
 
 export const TasksView: React.FC = () => {
   const {
@@ -379,17 +380,19 @@ export const TasksView: React.FC = () => {
 
   // Base tasks for current user:
   // "اظهر لاكونت مانجر الموظفين اللي تابعه والتاسكات اللي مع الموظفين تابعه بس اعملي فكره ليها لان مش كل شغل الموظفين معاه ولا كل تاسكاتهم معاه"
+  // "تاسكات الادمن والمدير هدير سعيد متظهرش غير لالادمن بس"
   const userBaseTasks = isManager
     ? (selectedSimulatedAccountManagerId !== 'all' && effectiveAccountManager
         ? (accountManagerViewScope === 'my_personal'
             ? tasks.filter(t => t.assignedToId === effectiveAccountManager.id)
-            : accountManagerScopeTasks)
+            : accountManagerScopeTasks.filter(t => !isAdminTask(t)))
         : tasks)
     : isCurrentUserAccountManager
     ? (accountManagerViewScope === 'my_personal'
-        ? tasks.filter(t => !t.isPrivate && isTaskAssignedToUser(t, currentUser))
+        ? tasks.filter(t => !t.isPrivate && !isAdminTask(t) && isTaskAssignedToUser(t, currentUser))
         : tasks.filter(task => {
             if (task.isPrivate) return false;
+            if (isAdminTask(task)) return false;
             const isAssigned = isTaskAssignedToUser(task, currentUser);
             const isMentioned = isUserMentionedInTask(task, currentUser);
             const inAmScope = isTaskInAccountManagerScope(task, currentUser);
@@ -397,6 +400,7 @@ export const TasksView: React.FC = () => {
           }))
     : tasks.filter(task => {
         if (task.isPrivate) return false;
+        if (isAdminTask(task)) return false;
         const isAssigned = isTaskAssignedToUser(task, currentUser);
         const isMentioned = isUserMentionedInTask(task, currentUser);
         return isAssigned || isMentioned;
@@ -406,6 +410,11 @@ export const TasksView: React.FC = () => {
   const filteredTasks = userBaseTasks.filter(task => {
     // 0. Strict Private Task Isolation: If task is private and user is not manager, NEVER show it!
     if (task.isPrivate && !isManager) {
+      return false;
+    }
+
+    // 0b. Admin tasks isolation: tasks of admin/manager Hadeer Said must strictly appear ONLY to admin!
+    if (!isManager && isAdminTask(task)) {
       return false;
     }
 
@@ -471,6 +480,17 @@ export const TasksView: React.FC = () => {
 
   // Selected task for detailed modal
   const selectedTask = tasks.find(t => t.id === selectedTaskId) || null;
+
+  // Members that can be assigned or transferred to by the current user
+  const availableMoveMembers = useMemo(() => {
+    if (isManager && selectedSimulatedAccountManagerId === 'all') return team;
+    if (isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) {
+      const am = effectiveAccountManager || currentUser;
+      const others = accountManagerTeam.filter(m => !isAdminMember(m) && m.id !== am.id);
+      return [am, ...others];
+    }
+    return team.filter(m => m.id === currentUser.id);
+  }, [isManager, selectedSimulatedAccountManagerId, isCurrentUserAccountManager, effectiveAccountManager, currentUser, accountManagerTeam, team]);
 
   // Helper calculate active worked seconds on a task (excluding pause intervals)
   const getTaskActiveElapsedSeconds = (task?: Task | null): number => {
@@ -1743,7 +1763,9 @@ export const TasksView: React.FC = () => {
                 if (accountManagerViewScope === 'my_personal') {
                   return [effectiveAccountManager];
                 }
-                const others = accountManagerTeam.filter(m => m.id !== effectiveAccountManager.id);
+                const others = accountManagerTeam.filter(
+                  m => m.id !== effectiveAccountManager.id && !isAdminMember(m)
+                );
                 return [effectiveAccountManager, ...others];
               }
 
@@ -1757,22 +1779,26 @@ export const TasksView: React.FC = () => {
               }
 
               // 3. If logged in user is an Account Manager:
+              // "اكونت اميره الالكوكنت مانجر كله تمام بس مش يظهرلها تاكسات الادمن هدير خالص"
               if (isCurrentUserAccountManager && effectiveAccountManager) {
                 if (accountManagerViewScope === 'my_personal') {
                   const me = team.find(m => m.id === currentUser.id);
                   return me ? [me] : [];
                 }
                 const me = team.find(m => m.id === currentUser.id);
-                const others = accountManagerTeam.filter(m => m.id !== currentUser.id);
-                return me ? [me, ...others] : accountManagerTeam;
+                const others = accountManagerTeam.filter(
+                  m => m.id !== currentUser.id && !isAdminMember(m)
+                );
+                return me ? [me, ...others] : accountManagerTeam.filter(m => !isAdminMember(m));
               }
 
               // 4. Regular employee:
               return team.filter(
                 m =>
-                  m.id === currentUser.id ||
+                  !isAdminMember(m) &&
+                  (m.id === currentUser.id ||
                   isTaskAssignedToUser({ id: 'dummy', title: '', assignedToId: m.id } as Task, currentUser) ||
-                  (m.username && currentUser.username && m.username.toLowerCase() === currentUser.username.toLowerCase())
+                  (m.username && currentUser.username && m.username.toLowerCase() === currentUser.username.toLowerCase()))
               );
             })().map(member => {
               const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member));
@@ -1974,7 +2000,7 @@ export const TasksView: React.FC = () => {
                                         نقل المهمة إلى:
                                       </div>
                                       <div className="max-h-40 overflow-y-auto">
-                                        {team.map(m => (
+                                        {availableMoveMembers.map(m => (
                                           <button
                                             key={m.id}
                                             type="button"
@@ -2399,7 +2425,7 @@ export const TasksView: React.FC = () => {
                                           نقل المهمة إلى:
                                         </div>
                                         <div className="max-h-40 overflow-y-auto">
-                                          {team.map(m => (
+                                          {availableMoveMembers.map(m => (
                                             <button
                                               key={m.id}
                                               type="button"

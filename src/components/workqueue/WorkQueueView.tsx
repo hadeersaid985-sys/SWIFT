@@ -43,7 +43,12 @@ import {
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
 import { Task, TaskPriority, TaskStatus, Meeting, CallLog, Lead, Deal, TeamMember } from '../../types/crm';
-import { isDemoWorkItem } from '../../utils/workQueueUtils';
+import {
+  isDemoWorkItem,
+  buildWaitingClientsFromTasks,
+  extractClientFromTask,
+  WaitingClientGroup
+} from '../../utils/workQueueUtils';
 
 // Unified Work Item definition for the Work Queue
 export type WorkItemType = 'task' | 'meeting' | 'call' | 'lead' | 'deal' | 'approval';
@@ -67,7 +72,7 @@ export interface WorkQueueItem {
   progressPercent: number;
   notes?: string;
   source: 'مهمة' | 'اجتماع' | 'مكالمة' | 'عميل' | 'صفقة' | 'مدير' | 'يدوي';
-  rawObject?: Task | Meeting | CallLog | Lead | Deal | any;
+  rawObject?: Task | Meeting | CallLog | Lead | Deal | WaitingClientGroup | any;
   isOverdue: boolean;
   isDueToday: boolean;
   overdueDays?: number;
@@ -83,6 +88,7 @@ export const WorkQueueView: React.FC = () => {
     calls,
     leads,
     deals,
+    clientRenewals,
     team,
     currentUser,
     isManager,
@@ -168,6 +174,11 @@ export const WorkQueueView: React.FC = () => {
       diffDays
     };
   };
+
+  // Derive real waiting clients 100% dynamically from actual team tasks
+  const waitingClientGroups = useMemo<WaitingClientGroup[]>(() => {
+    return buildWaitingClientsFromTasks(tasks, team, clientRenewals);
+  }, [tasks, team, clientRenewals]);
 
   // Build unified items from all CRM sources
   const allUnifiedItems = useMemo<WorkQueueItem[]>(() => {
@@ -334,7 +345,39 @@ export const WorkQueueView: React.FC = () => {
       });
     });
 
-    // 4. Leads requiring action (Excluding demo leads)
+    // 4. Waiting Clients derived 100% from real team tasks (عملاء الانتظار الحقيقيون من تاسكات التيم)
+    waitingClientGroups.forEach(group => {
+      const isCompleted = group.status === 'completed';
+      const isStalled = group.status === 'stalled';
+
+      items.push({
+        id: `client-waiting-${encodeURIComponent(group.clientName)}`,
+        originalId: group.clientName,
+        title: `عميل: ${group.clientName} (${group.activeTasks.length > 0 ? `${group.activeTasks.length} مهام قيد الانتظار` : 'كافة المهام مكتملة'})`,
+        type: 'lead',
+        typeLabel: 'عميل انتظار',
+        assigneeId: group.primaryAssignee?.id || 'team',
+        assigneeName: group.assignees.length > 0 ? group.assignees.map(a => a.name).join('، ') : 'فريق العمل',
+        assigneeAvatar: group.primaryAssignee?.avatar,
+        clientOrProjectName: group.clientName,
+        priority: group.highestPriority,
+        createdAt: group.earliestDueDate,
+        dueDate: group.earliestDueDate,
+        status: group.status,
+        statusLabel: group.statusLabel,
+        progressPercent: group.progressPercent,
+        notes: group.taskTitlesSnippet,
+        source: 'عميل',
+        rawObject: group,
+        isOverdue: group.isOverdue,
+        isDueToday: group.isDueToday,
+        overdueDays: group.isOverdue ? 1 : undefined,
+        needsIntervention: group.isOverdue || isStalled,
+        interventionReason: group.isOverdue ? `مهام متأخرة للعميل (${group.activeTasks.length} مهام نشطة)` : undefined
+      });
+    });
+
+    // 5. User-created non-demo leads (if any exist)
     leads.forEach(l => {
       if (isDemoWorkItem(l.id, l.name, l.company)) return;
       if (l.isConvertedToClient || l.status === 'غير مؤهل' || l.status === 'صفقة ناجحة (Won)') return;
@@ -373,7 +416,7 @@ export const WorkQueueView: React.FC = () => {
       });
     });
 
-    // 5. Deals in negotiation / awaiting approval (Excluding demo deals)
+    // 6. User-created non-demo deals (if any exist)
     deals.forEach(d => {
       if (isDemoWorkItem(d.id, d.title, d.company)) return;
       if (d.stage === 'مغلقة ناجحة' || d.stage === 'ملغاة') return;
@@ -839,7 +882,7 @@ export const WorkQueueView: React.FC = () => {
             </span>
           </button>
 
-          {/* Section 4: متابعة العملاء والصفقات */}
+          {/* Section 4: عملاء الانتظار (تاسكات التيم) */}
           <button
             type="button"
             onClick={() => setActiveSection('clients_deals')}
@@ -850,9 +893,9 @@ export const WorkQueueView: React.FC = () => {
             }`}
           >
             <Building className="w-3.5 h-3.5" />
-            <span>متابعة العملاء والصفقات</span>
-            <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.2 rounded-full font-mono font-bold">
-              {leads.filter(l => !l.isConvertedToClient).length + deals.filter(d => d.stage !== 'مغلقة ناجحة').length}
+            <span>عملاء الانتظار (تاسكات التيم)</span>
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-mono font-bold">
+              {waitingClientGroups.length}
             </span>
           </button>
 
@@ -1276,8 +1319,32 @@ export const WorkQueueView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Notes snippet */}
-                  {item.notes && (
+                  {/* Waiting Client Tasks Snippet & Progress */}
+                  {item.typeLabel === 'عميل انتظار' && item.rawObject?.totalTasks !== undefined && (
+                    <div className="mt-2 space-y-1.5 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                      <div className="flex items-center justify-between text-[10px] text-slate-600 font-bold">
+                        <span className="flex items-center gap-1 text-slate-700">
+                          <Clock className="w-3 h-3 text-amber-500" />
+                          <span>{item.rawObject.activeTasks?.length || 0} مهام بالانتظار</span>
+                        </span>
+                        <span className="font-mono text-emerald-700">{item.progressPercent}% إنجاز</span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-emerald-500 h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${item.progressPercent}%` }}
+                        />
+                      </div>
+                      {item.notes && (
+                        <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">
+                          📌 {item.notes}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Notes snippet for regular items */}
+                  {item.typeLabel !== 'عميل انتظار' && item.notes && (
                     <p className="text-[11px] text-slate-500 mt-2 line-clamp-2 leading-relaxed">
                       {item.notes}
                     </p>
@@ -1342,6 +1409,22 @@ export const WorkQueueView: React.FC = () => {
                       <Check className="w-3.5 h-3.5" />
                       <span>{isCompleted ? 'إعادة فتح' : 'إتمام'}</span>
                     </button>
+
+                    {/* View tasks for waiting client */}
+                    {item.typeLabel === 'عميل انتظار' && item.clientOrProjectName && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveSection('tasks');
+                          setSearchQuery(item.clientOrProjectName || '');
+                        }}
+                        className="px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all touch-manipulation active:scale-95"
+                        title="عرض كافة مهام هذا العميل"
+                      >
+                        <Briefcase className="w-3.5 h-3.5 text-blue-600" />
+                        <span>عرض مهام العميل</span>
+                      </button>
+                    )}
 
                     {/* Convert Meeting / Call to Task */}
                     {(item.type === 'meeting' || item.type === 'call') && (
