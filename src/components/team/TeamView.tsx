@@ -70,7 +70,10 @@ export const TeamView: React.FC = () => {
     setIsBrandModalOpen,
     updateTeamMemberSalary,
     exportSystemBackup,
-    brandConfig
+    brandConfig,
+    isCurrentUserAccountManager,
+    accountManagerClients,
+    accountManagerTeam
   } = useCRM();
 
   const currency = brandConfig?.systemCurrency || 'ج.م';
@@ -182,13 +185,14 @@ export const TeamView: React.FC = () => {
   ];
 
   const filteredTeam = team.filter(m => {
-    // Strict isolation: non-managers can ONLY see their own personal card and profile
+    // Strict isolation: non-managers can ONLY see their own personal card, unless they are an Account Manager who sees their collaborating account team members
     if (!isManager) {
       const isSelf =
         m.id === currentUser.id ||
         (m.username && currentUser.username && m.username.toLowerCase() === currentUser.username.toLowerCase()) ||
         (currentUser.id === 'user-islam' && (m.id === 'user-islam' || m.id === 'user-1793025675186' || m.id === 'user-1793016178916'));
-      if (!isSelf) return false;
+      const isCollaboratingMember = isCurrentUserAccountManager && accountManagerTeam.some(tm => tm.id === m.id);
+      if (!isSelf && !isCollaboratingMember) return false;
     }
     if (selectedDept !== 'all' && m.department !== selectedDept) return false;
     if (searchMember.trim()) {
@@ -377,6 +381,34 @@ export const TeamView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Account Manager Team Overview Banner */}
+      {isCurrentUserAccountManager && (
+        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl p-3.5 border border-indigo-500/40 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <span className="p-2 bg-indigo-500/20 text-indigo-300 rounded-lg shrink-0 mt-0.5 border border-indigo-400/30">
+              <Users className="w-5 h-5" />
+            </span>
+            <div>
+              <div className="font-extrabold text-[13px] flex items-center gap-2">
+                <span>أنت مسجل كـ أكونت مانجر ({currentUser.name})</span>
+                <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold">
+                  {accountManagerClients.length} عملاء
+                </span>
+                <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">
+                  {accountManagerTeam.length} موظف متعاون
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-1">
+                <strong>العملاء التابعين لحساباتك:</strong> {accountManagerClients.map(c => c.clientName).join('، ') || 'لا يوجد'}
+              </p>
+              <p className="text-[10px] text-indigo-200 mt-0.5">
+                تظهر لك بطاقات الموظفين الذين يعملون على حساباتك للتواصل وتوزيع المهام الخاصة بعملاء حسابك فقط.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sub Tabs: Credentials Hub vs Cards View */}
       <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">

@@ -276,18 +276,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                     )}
                   </button>
 
-                  {/* 3. الاجتماعات */}
+                  {/* 3. التواصل والاجتماعات */}
                   <button
                     onClick={() => handleSelectTab('meetings')}
                     className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
-                      activeTab === 'meetings'
+                      activeTab === 'meetings' || activeTab === 'calls'
                         ? 'bg-[#2563eb] text-white font-bold shadow-xs'
                         : 'text-slate-300 hover:text-white hover:bg-[#24375a]/70'
                     }`}
-                    title="الاجتماعات"
+                    title="التواصل والاجتماعات"
                   >
                     <Calendar className="w-4 h-4 shrink-0 text-slate-300" />
-                    {!isCollapsed && <span>الاجتماعات</span>}
+                    {!isCollapsed && <span>التواصل والاجتماعات</span>}
                   </button>
 
                   {/* 4. المكالمات */}
@@ -834,12 +834,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                   <button
                     onClick={() => handleSelectTab('meetings')}
                     className={`w-full text-right flex items-center gap-2.5 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
-                      activeTab === 'meetings' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
+                      activeTab === 'meetings' || activeTab === 'calls' ? 'bg-[#2f4874] text-white font-bold' : 'text-[#cbd5e1] hover:text-white hover:bg-[#2b416a]/60'
                     }`}
-                    title="الاجتماعات"
+                    title="التواصل والاجتماعات"
                   >
-                    <Calendar className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'meetings' ? 'text-white' : 'text-[#9bb0cb]'}`} />
-                    {!isCollapsed && <span>الاجتماعات</span>}
+                    <Calendar className={`w-3.5 h-3.5 shrink-0 ${activeTab === 'meetings' || activeTab === 'calls' ? 'text-white' : 'text-[#9bb0cb]'}`} />
+                    {!isCollapsed && <span>التواصل والاجتماعات</span>}
                   </button>
 
                   <button
@@ -1228,11 +1228,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                     <button
                       onClick={() => handleSelectTab('meetings')}
                       className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
-                        activeTab === 'meetings' ? 'bg-[#2563eb] text-white font-bold' : 'text-slate-300 hover:bg-[#24375a]'
+                        activeTab === 'meetings' || activeTab === 'calls' ? 'bg-[#2563eb] text-white font-bold' : 'text-slate-300 hover:bg-[#24375a]'
                       }`}
                     >
                       <Calendar className="w-4 h-4 text-slate-300" />
-                      <span>الاجتماعات</span>
+                      <span>التواصل والاجتماعات</span>
                     </button>
 
                     <button

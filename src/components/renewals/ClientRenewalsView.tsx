@@ -41,10 +41,26 @@ import {
   Upload,
   Shield,
   Tag,
-  PauseCircle
+  PauseCircle,
+  PhoneCall,
+  Video,
+  PhoneIncoming,
+  PhoneOutgoing,
+  CalendarCheck
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
-import { ClientRenewal, RenewalStatus, ClientFileDocument } from '../../types/crm';
+import {
+  ClientRenewal,
+  RenewalStatus,
+  ClientFileDocument,
+  CallLog,
+  Meeting,
+  MeetingType,
+  MeetingLocationType,
+  MeetingStatus,
+  CallType,
+  CallOutcome
+} from '../../types/crm';
 import { WhatsAppRenewalModal } from './WhatsAppRenewalModal';
 import { ClientInvoiceModal } from './ClientInvoiceModal';
 import { exportClientsToExcel } from '../../utils/excelExport';
@@ -72,7 +88,13 @@ export const ClientRenewalsView: React.FC = () => {
     sendCoachingOffer,
     suspendedContracts,
     suspendClientContract,
-    setActiveTab
+    setActiveTab,
+    meetings,
+    calls,
+    addMeeting,
+    addCallLog,
+    createTaskFromActionItem,
+    addTask
   } = useCRM();
 
   // Subtabs: 'account_tasks' (تاسكات الشهر ومتابعة الإنجاز), 'client_dossiers' (ملفات العملاء والشيتات للتيم), 'renewals_list' (مواعيد التجديد), 'timeline', 'coaching_offers', 'swift_accounts'
@@ -111,10 +133,78 @@ export const ClientRenewalsView: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [copiedOfferId, setCopiedOfferId] = useState<string | null>(null);
 
-  // Client Dossier & Sheet States (ملف كل عميل وفولدر المستندات وتوزيع التيم)
+  // Client Dossier & Sheet States (ملف كل عميل وفولدر المستندات وتوزيع التيم والتواصل)
   const [selectedClientForDossier, setSelectedClientForDossier] = useState<ClientRenewal | null>(null);
-  const [dossierActiveTab, setDossierActiveTab] = useState<'folder' | 'team_visibility' | 'notes' | 'overview' | 'tasks'>('folder');
+  const [dossierActiveTab, setDossierActiveTab] = useState<'folder' | 'team_visibility' | 'notes' | 'overview' | 'tasks' | 'communications'>('communications');
   const [showAddFileModal, setShowAddFileModal] = useState(false);
+
+  // Quick Communication states in Client Dossier
+  const [showClientCallModal, setShowClientCallModal] = useState(false);
+  const [showClientMeetingModal, setShowClientMeetingModal] = useState(false);
+
+  const [clientCallForm, setClientCallForm] = useState<{
+    callType: CallType;
+    employeeId: string;
+    date: string;
+    time: string;
+    durationMinutes: number;
+    purpose: string;
+    summary: string;
+    outcome: CallOutcome;
+    nextFollowUpDate: string;
+    createFollowUpTask: boolean;
+    followUpTaskTitle: string;
+    followUpTaskAssigneeId: string;
+  }>({
+    callType: 'outgoing',
+    employeeId: currentUser.id,
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toTimeString().substring(0, 5),
+    durationMinutes: 10,
+    purpose: '',
+    summary: '',
+    outcome: 'requires_followup',
+    nextFollowUpDate: '',
+    createFollowUpTask: true,
+    followUpTaskTitle: '',
+    followUpTaskAssigneeId: currentUser.id
+  });
+
+  const [clientMeetingForm, setClientMeetingForm] = useState<{
+    title: string;
+    meetingType: MeetingType;
+    date: string;
+    startTime: string;
+    endTime: string;
+    locationType: MeetingLocationType;
+    meetingLinkOrLocation: string;
+    hostId: string;
+    attendeeIds: string[];
+    agenda: string;
+    summary: string;
+    decisions: string;
+    actionItemText: string;
+    actionItemAssigneeId: string;
+    actionItemDueDate: string;
+    status: MeetingStatus;
+  }>({
+    title: '',
+    meetingType: 'client',
+    date: new Date().toISOString().split('T')[0],
+    startTime: '14:00',
+    endTime: '15:00',
+    locationType: 'online',
+    meetingLinkOrLocation: 'https://meet.google.com/new',
+    hostId: currentUser.id,
+    attendeeIds: [currentUser.id],
+    agenda: '',
+    summary: '',
+    decisions: '',
+    actionItemText: '',
+    actionItemAssigneeId: currentUser.id,
+    actionItemDueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    status: 'scheduled'
+  });
   const [newFileData, setNewFileData] = useState<{
     name: string;
     category: 'عقد' | 'فاتورة' | 'بريف فني' | 'عرض سعر' | 'ملفات تصميم' | 'أخرى';
@@ -190,6 +280,122 @@ export const ClientRenewalsView: React.FC = () => {
     );
     showToast(`تم إيقاف عقد العميل (${suspendModalClient.clientName}) ونقله إلى "عقود موقفه" بنجاح ⏸️`);
     setSuspendModalClient(null);
+  };
+
+  const handleSaveClientCall = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentDossierClient) return;
+    if (!clientCallForm.purpose.trim() && !clientCallForm.summary.trim()) {
+      showToast('يرجى كتابة الغرض من المكالمة أو ملخص ما تم الاتفاق عليه');
+      return;
+    }
+
+    const employee = team.find(m => m.id === clientCallForm.employeeId) || currentUser;
+    let createdTaskId: string | undefined = undefined;
+
+    if (clientCallForm.createFollowUpTask && clientCallForm.nextFollowUpDate) {
+      const taskTitle = clientCallForm.followUpTaskTitle.trim() || `متابعة مكالمة مع ${currentDossierClient.clientName}`;
+      const taskAssignee = team.find(m => m.id === clientCallForm.followUpTaskAssigneeId) || employee;
+      const genTaskId = `task-${Date.now()}`;
+      addTask({
+        title: taskTitle,
+        description: `مهمة ناتجة عن مكالمة مع العميل (${currentDossierClient.clientName} - ${currentDossierClient.company})\nملخص المكالمة: ${clientCallForm.summary || clientCallForm.purpose}`,
+        dueDate: clientCallForm.nextFollowUpDate,
+        assignedToId: taskAssignee.id,
+        category: 'مبيعات',
+        priority: 'high',
+        status: 'todo',
+        subtasks: [],
+        timeLogs: [],
+        clientRenewalId: currentDossierClient.id,
+        clientName: currentDossierClient.clientName
+      });
+      createdTaskId = genTaskId;
+    }
+
+    addCallLog({
+      clientRenewalId: currentDossierClient.id,
+      clientName: currentDossierClient.clientName,
+      company: currentDossierClient.company,
+      contactPerson: currentDossierClient.clientName,
+      contactPhone: currentDossierClient.phone || currentDossierClient.whatsappNumber || '',
+      employeeId: employee.id,
+      employeeName: employee.name,
+      date: clientCallForm.date,
+      time: clientCallForm.time,
+      durationMinutes: Number(clientCallForm.durationMinutes) || 10,
+      type: clientCallForm.callType,
+      callType: clientCallForm.callType,
+      purpose: clientCallForm.purpose.trim() || 'متابعة دورية للعميل',
+      summary: clientCallForm.summary.trim(),
+      outcome: clientCallForm.outcome,
+      nextFollowUpDate: clientCallForm.nextFollowUpDate || undefined,
+      createdTaskId
+    });
+
+    showToast('تم تسجيل المكالمة بنجاح وتحديث سجل التواصل للعميل! 📞');
+    setShowClientCallModal(false);
+    setClientCallForm({
+      callType: 'outgoing',
+      employeeId: currentUser.id,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().substring(0, 5),
+      durationMinutes: 10,
+      purpose: '',
+      summary: '',
+      outcome: 'requires_followup',
+      nextFollowUpDate: '',
+      createFollowUpTask: true,
+      followUpTaskTitle: '',
+      followUpTaskAssigneeId: currentUser.id
+    });
+  };
+
+  const handleSaveClientMeeting = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentDossierClient) return;
+    if (!clientMeetingForm.title.trim()) {
+      showToast('يرجى إدخال عنوان الاجتماع');
+      return;
+    }
+
+    const host = team.find(m => m.id === clientMeetingForm.hostId) || currentUser;
+    const actionItemsList = clientMeetingForm.actionItemText.trim() ? [{
+      id: `act-${Date.now()}`,
+      title: clientMeetingForm.actionItemText.trim(),
+      assignedToId: clientMeetingForm.actionItemAssigneeId,
+      assignedToName: team.find(m => m.id === clientMeetingForm.actionItemAssigneeId)?.name || 'مسؤول',
+      dueDate: clientMeetingForm.actionItemDueDate,
+      isCompleted: false
+    }] : [];
+
+    addMeeting({
+      title: clientMeetingForm.title.trim(),
+      meetingType: clientMeetingForm.meetingType,
+      date: clientMeetingForm.date,
+      time: clientMeetingForm.startTime,
+      duration: '60 دقيقة',
+      startTime: clientMeetingForm.startTime,
+      endTime: clientMeetingForm.endTime,
+      hostId: host.id,
+      hostName: host.name,
+      attendees: clientMeetingForm.attendeeIds,
+      attendeeIds: clientMeetingForm.attendeeIds,
+      clientRenewalId: currentDossierClient.id,
+      clientName: currentDossierClient.clientName,
+      company: currentDossierClient.company,
+      locationType: clientMeetingForm.locationType,
+      location: clientMeetingForm.locationType === 'online' ? 'Google Meet' : 'مقر الشركة',
+      meetingLinkOrLocation: clientMeetingForm.meetingLinkOrLocation,
+      agenda: clientMeetingForm.agenda.trim() || undefined,
+      summary: clientMeetingForm.summary.trim() || undefined,
+      decisions: clientMeetingForm.decisions.trim() || undefined,
+      actionItems: actionItemsList,
+      status: clientMeetingForm.status
+    });
+
+    showToast('تم جدولة الاجتماع وربطه بملف العميل بنجاح! 📅');
+    setShowClientMeetingModal(false);
   };
 
 
@@ -2730,6 +2936,28 @@ export const ClientRenewalsView: React.FC = () => {
               </button>
 
               <button
+                onClick={() => setDossierActiveTab('communications')}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all cursor-pointer shrink-0 ${
+                  dossierActiveTab === 'communications'
+                    ? 'bg-rose-600 text-white shadow-xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <PhoneCall className="w-4 h-4" />
+                <span>التواصل والاجتماعات</span>
+                {(() => {
+                  const clientMeetingsCount = meetings.filter(m => m.clientRenewalId === currentDossierClient.id || m.clientName?.includes(currentDossierClient.clientName) || m.clientName?.includes(currentDossierClient.company)).length;
+                  const clientCallsCount = calls.filter(c => c.clientRenewalId === currentDossierClient.id || c.clientName?.includes(currentDossierClient.clientName) || c.clientName?.includes(currentDossierClient.company)).length;
+                  const totalComms = clientMeetingsCount + clientCallsCount;
+                  return totalComms > 0 ? (
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${dossierActiveTab === 'communications' ? 'bg-white text-rose-900' : 'bg-rose-100 text-rose-800'}`}>
+                      {totalComms}
+                    </span>
+                  ) : null;
+                })()}
+              </button>
+
+              <button
                 onClick={() => setDossierActiveTab('tasks')}
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all cursor-pointer shrink-0 ${
                   dossierActiveTab === 'tasks'
@@ -3526,6 +3754,662 @@ export const ClientRenewalsView: React.FC = () => {
                     );
                   })()}
                 </div>
+              </div>
+            )}
+
+            {/* TAB: التواصل والاجتماعات للعميل (Meetings, Calls, and Actions) */}
+            {dossierActiveTab === 'communications' && (
+              <div className="space-y-4 animate-in fade-in">
+                {/* Header Action Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-rose-50 via-slate-50 to-blue-50 p-4 rounded-2xl border border-rose-200/80">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                      <PhoneCall className="w-4 h-4 text-rose-600" />
+                      <span>سجل التواصل والاجتماعات لـ {currentDossierClient.clientName}</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      توثيق كافة المكالمات الواردة والصادرة، جدولة الاجتماعات، وتكليف التاسكات المنبثقة فوراً
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowClientCallModal(true)}
+                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <PhoneCall className="w-3.5 h-3.5" />
+                      <span>+ تسجيل مكالمة</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowClientMeetingModal(true)}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <CalendarCheck className="w-3.5 h-3.5" />
+                      <span>+ جدولة اجتماع</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Communication KPI Stats */}
+                {(() => {
+                  const clientMeetings = meetings.filter(m => m.clientRenewalId === currentDossierClient.id || m.clientName?.includes(currentDossierClient.clientName) || m.clientName?.includes(currentDossierClient.company));
+                  const clientCalls = calls.filter(c => c.clientRenewalId === currentDossierClient.id || c.clientName?.includes(currentDossierClient.clientName) || c.clientName?.includes(currentDossierClient.company));
+                  const actionItemsCount = clientMeetings.reduce((acc, m) => acc + (m.actionItems?.length || 0), 0);
+
+                  return (
+                    <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold block">الاجتماعات المسجلة</span>
+                        <strong className="text-lg font-black text-blue-600 mt-0.5 block">{clientMeetings.length}</strong>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold block">المكالمات الموثقة</span>
+                        <strong className="text-lg font-black text-rose-600 mt-0.5 block">{clientCalls.length}</strong>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold block">إجراءات وتكليفات تابعة</span>
+                        <strong className="text-lg font-black text-amber-600 mt-0.5 block">{actionItemsCount}</strong>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Timeline of Meetings & Calls */}
+                {(() => {
+                  const clientMeetings = meetings.filter(m => m.clientRenewalId === currentDossierClient.id || m.clientName?.includes(currentDossierClient.clientName) || m.clientName?.includes(currentDossierClient.company)).map(m => ({ ...m, timelineType: 'meeting' as const }));
+                  const clientCalls = calls.filter(c => c.clientRenewalId === currentDossierClient.id || c.clientName?.includes(currentDossierClient.clientName) || c.clientName?.includes(currentDossierClient.company)).map(c => ({ ...c, timelineType: 'call' as const }));
+
+                  const combinedTimeline = [...clientMeetings, ...clientCalls].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                  if (combinedTimeline.length === 0) {
+                    return (
+                      <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 text-center space-y-2">
+                        <PhoneCall className="w-10 h-10 text-slate-300 mx-auto" />
+                        <p className="text-xs font-bold text-slate-600">
+                          لم يتم توثيق أي مكالمة أو اجتماع مع هذا العميل بعد.
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          استخدم الأزرار أعلاه لتسجيل أول مكالمة أو جدولة اجتماع مع توليد المهام تلقائياً.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                        <History className="w-4 h-4 text-slate-500" />
+                        <span>السجل الزمني للتواصل (مرتب من الأحدث للأقدم):</span>
+                      </h4>
+
+                      {combinedTimeline.map((item: any) => {
+                        if (item.timelineType === 'meeting') {
+                          const m: Meeting = item;
+                          return (
+                            <div key={`m-${m.id}`} className="bg-white p-4 rounded-2xl border border-blue-200/80 shadow-2xs space-y-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs font-black text-blue-900 flex items-center gap-1">
+                                    <CalendarCheck className="w-4 h-4 text-blue-600" />
+                                    <span>اجتماع: {m.title}</span>
+                                  </span>
+                                  <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">
+                                    {m.meetingType === 'client' ? 'مع العميل' : m.meetingType === 'partner' ? 'شركة شريكة' : 'داخلي'}
+                                  </span>
+                                  <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full">
+                                    {m.locationType === 'online' ? '🌐 أونلاين' : m.locationType === 'in_person' ? '🏢 حضوري' : '📞 هاتفي'}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-mono text-slate-500 font-bold">
+                                  {m.date} ({m.startTime} - {m.endTime})
+                                </span>
+                              </div>
+
+                              {m.summary && (
+                                <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed font-sans">
+                                  <strong className="text-slate-900">ملخص الاجتماع: </strong>{m.summary}
+                                </p>
+                              )}
+
+                              {m.decisions && (
+                                <div className="text-xs bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200 text-emerald-950">
+                                  <strong className="text-emerald-900 block mb-1">القرارات المتفق عليها:</strong>
+                                  {Array.isArray(m.decisions) ? (
+                                    <ul className="list-disc list-inside space-y-0.5">
+                                      {m.decisions.map((dec, i) => (
+                                        <li key={i}>{dec}</li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="leading-relaxed">{m.decisions}</p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Action Items */}
+                              {m.actionItems && m.actionItems.length > 0 && (
+                                <div className="space-y-1.5 pt-1 border-t border-slate-100">
+                                  <strong className="text-[11px] font-black text-slate-800 flex items-center gap-1">
+                                    <CheckSquare className="w-3.5 h-3.5 text-indigo-600" />
+                                    <span>المهام والتكليفات الناتجة:</span>
+                                  </strong>
+                                  <div className="space-y-1">
+                                    {m.actionItems.map(act => (
+                                      <div key={act.id} className="flex items-center justify-between gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                                        <div className="flex items-center gap-2">
+                                          <CheckCircle2 className={`w-3.5 h-3.5 ${act.isCompleted ? 'text-emerald-600' : 'text-slate-400'}`} />
+                                          <span className={act.isCompleted ? 'line-through text-slate-400' : 'text-slate-900 font-medium'}>
+                                            {act.title}
+                                          </span>
+                                          <span className="text-[10px] text-slate-500">
+                                            (مسؤول: {act.assignedToName} • تسليم: {act.dueDate})
+                                          </span>
+                                        </div>
+
+                                        {!act.taskId && !act.createdTaskId && (
+                                          <button
+                                            type="button"
+                                            onClick={() => createTaskFromActionItem({
+                                              title: act.title,
+                                              assignedToId: act.assignedToId,
+                                              dueDate: act.dueDate,
+                                              priority: 'high',
+                                              category: 'إداري',
+                                              meetingId: m.id,
+                                              meetingTitle: m.title,
+                                              clientName: currentDossierClient.clientName
+                                            })}
+                                            className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-lg border border-indigo-200 transition-colors cursor-pointer"
+                                          >
+                                            + إنشاء مهمة في جدول التيم ⚡
+                                          </button>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        } else {
+                          const c: CallLog = item;
+                          return (
+                            <div key={`c-${c.id}`} className="bg-white p-4 rounded-2xl border border-rose-200/80 shadow-2xs space-y-2.5">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs font-black text-rose-950 flex items-center gap-1">
+                                    {(c.callType === 'incoming' || c.type === 'incoming') ? (
+                                      <PhoneIncoming className="w-4 h-4 text-emerald-600" />
+                                    ) : (
+                                      <PhoneOutgoing className="w-4 h-4 text-rose-600" />
+                                    )}
+                                    <span>مكالمة {(c.callType === 'incoming' || c.type === 'incoming') ? 'واردة' : 'صادرة'}: {c.purpose}</span>
+                                  </span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    (c.outcome === 'agreed' || c.outcome === 'deal_agreed')
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : (c.outcome === 'requires_followup' || c.outcome === 'needs_follow_up')
+                                      ? 'bg-amber-100 text-amber-900'
+                                      : 'bg-slate-100 text-slate-700'
+                                  }`}>
+                                    {(c.outcome === 'agreed' || c.outcome === 'deal_agreed') ? 'تم الاتفاق بنجاح ✓' : (c.outcome === 'requires_followup' || c.outcome === 'needs_follow_up') ? 'يحتاج متابعة ⏱️' : c.outcome === 'no_answer' ? 'لا يوجد رد' : 'تم التواصل'}
+                                  </span>
+                                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-mono">
+                                    {c.durationMinutes} دقيقة
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-mono text-slate-500 font-bold">
+                                  {c.date} {c.time}
+                                </span>
+                              </div>
+
+                              <div className="text-[11px] text-slate-500">
+                                الموظف المسؤول: <strong className="text-slate-800">{c.employeeName}</strong>
+                                {c.contactPhone && (
+                                  <span className="mr-3 font-mono">الهاتف: {c.contactPhone}</span>
+                                )}
+                              </div>
+
+                              {c.summary && (
+                                <p className="text-xs text-slate-800 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed font-sans">
+                                  <strong className="text-slate-900">ملخص ما تم الاتفاق عليه: </strong>{c.summary}
+                                </p>
+                              )}
+
+                              {c.nextFollowUpDate && (
+                                <div className="text-[11px] bg-amber-50 text-amber-900 p-2 rounded-xl border border-amber-200 font-bold flex items-center justify-between">
+                                  <span>📅 موعد المتابعة القادمة: {c.nextFollowUpDate}</span>
+                                  {c.createdTaskId && (
+                                    <span className="text-[10px] bg-white text-emerald-700 px-2 py-0.5 rounded font-black border border-emerald-200">
+                                      تم ربط مهمة تابعة في جدول التيم ✓
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                      })}
+                    </div>
+                  );
+                })()}
+
+                {/* Inline Modal: Quick Add Call */}
+                {showClientCallModal && (
+                  <div
+                    onClick={() => setShowClientCallModal(false)}
+                    className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in"
+                  >
+                    <div
+                      onClick={e => e.stopPropagation()}
+                      className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto"
+                    >
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
+                            <PhoneCall className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black text-slate-900">تسجيل مكالمة مع {currentDossierClient.clientName}</h3>
+                            <p className="text-[11px] text-slate-500">{currentDossierClient.company}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowClientCallModal(false)}
+                          className="p-1 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleSaveClientCall} className="space-y-3 text-xs">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">نوع المكالمة:</label>
+                            <select
+                              value={clientCallForm.callType}
+                              onChange={e => setClientCallForm({ ...clientCallForm, callType: e.target.value as CallType })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold cursor-pointer"
+                            >
+                              <option value="outgoing">صادرة (اتصال بالعميل)</option>
+                              <option value="incoming">واردة (اتصال من العميل)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">الموظف الذي أجرى المكالمة:</label>
+                            <select
+                              value={clientCallForm.employeeId}
+                              onChange={e => setClientCallForm({ ...clientCallForm, employeeId: e.target.value })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold cursor-pointer"
+                            >
+                              {team.map(m => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">تاريخ المكالمة:</label>
+                            <input
+                              type="date"
+                              value={clientCallForm.date}
+                              onChange={e => setClientCallForm({ ...clientCallForm, date: e.target.value })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">الوقت:</label>
+                            <input
+                              type="time"
+                              value={clientCallForm.time}
+                              onChange={e => setClientCallForm({ ...clientCallForm, time: e.target.value })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">المدة (بالدقائق):</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={clientCallForm.durationMinutes}
+                              onChange={e => setClientCallForm({ ...clientCallForm, durationMinutes: Number(e.target.value) })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono font-bold"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">الغرض من المكالمة:</label>
+                          <input
+                            type="text"
+                            value={clientCallForm.purpose}
+                            onChange={e => setClientCallForm({ ...clientCallForm, purpose: e.target.value })}
+                            placeholder="مثال: متابعة خطة المحتوى وتأكيد موعد التجديد"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-medium"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">ملخص ما تم الاتفاق عليه:</label>
+                          <textarea
+                            rows={3}
+                            value={clientCallForm.summary}
+                            onChange={e => setClientCallForm({ ...clientCallForm, summary: e.target.value })}
+                            placeholder="اكتب النقاط المتفق عليها مع العميل وتفاصيل المكالمة..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium resize-none font-sans"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">نتيجة المكالمة:</label>
+                            <select
+                              value={clientCallForm.outcome}
+                              onChange={e => setClientCallForm({ ...clientCallForm, outcome: e.target.value as CallOutcome })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold cursor-pointer"
+                            >
+                              <option value="requires_followup">يحتاج متابعة ⏱️</option>
+                              <option value="agreed">تم الاتفاق بنجاح ✓</option>
+                              <option value="connected">تم التواصل فقط</option>
+                              <option value="no_answer">لم يرد العميل</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">موعد المتابعة القادمة:</label>
+                            <input
+                              type="date"
+                              value={clientCallForm.nextFollowUpDate}
+                              onChange={e => setClientCallForm({ ...clientCallForm, nextFollowUpDate: e.target.value })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        {/* إنشاء تاسك تلقائي من المكالمة */}
+                        {clientCallForm.nextFollowUpDate && (
+                          <div className="bg-amber-50/80 p-3 rounded-xl border border-amber-200 space-y-2">
+                            <label className="flex items-center gap-2 cursor-pointer font-bold text-amber-950">
+                              <input
+                                type="checkbox"
+                                checked={clientCallForm.createFollowUpTask}
+                                onChange={e => setClientCallForm({ ...clientCallForm, createFollowUpTask: e.target.checked })}
+                                className="w-4 h-4 text-amber-600 rounded cursor-pointer"
+                              />
+                              <span>إنشاء مهمة متابعة تلقائياً في جدول مهام السيستم ⚡</span>
+                            </label>
+
+                            {clientCallForm.createFollowUpTask && (
+                              <div className="grid grid-cols-2 gap-2 pt-1">
+                                <div>
+                                  <label className="block text-[10px] text-amber-900 font-bold mb-0.5">عنوان المهمة:</label>
+                                  <input
+                                    type="text"
+                                    value={clientCallForm.followUpTaskTitle}
+                                    onChange={e => setClientCallForm({ ...clientCallForm, followUpTaskTitle: e.target.value })}
+                                    placeholder={`متابعة مع ${currentDossierClient.clientName}`}
+                                    className="w-full bg-white border border-amber-300 rounded-lg p-1.5 text-xs font-bold"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-amber-900 font-bold mb-0.5">المسؤول عن التنفيذ:</label>
+                                  <select
+                                    value={clientCallForm.followUpTaskAssigneeId}
+                                    onChange={e => setClientCallForm({ ...clientCallForm, followUpTaskAssigneeId: e.target.value })}
+                                    className="w-full bg-white border border-amber-300 rounded-lg p-1.5 text-xs font-bold cursor-pointer"
+                                  >
+                                    {team.map(m => (
+                                      <option key={m.id} value={m.id}>{m.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => setShowClientCallModal(false)}
+                            className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl cursor-pointer"
+                          >
+                            إلغاء
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>حفظ وتوثيق المكالمة</span>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {/* Inline Modal: Quick Schedule Meeting */}
+                {showClientMeetingModal && (
+                  <div
+                    onClick={() => setShowClientMeetingModal(false)}
+                    className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in"
+                  >
+                    <div
+                      onClick={e => e.stopPropagation()}
+                      className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto"
+                    >
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                            <CalendarCheck className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-black text-slate-900">جدولة اجتماع مع {currentDossierClient.clientName}</h3>
+                            <p className="text-[11px] text-slate-500">{currentDossierClient.company}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowClientMeetingModal(false)}
+                          className="p-1 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleSaveClientMeeting} className="space-y-3 text-xs">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">عنوان الاجتماع:</label>
+                          <input
+                            type="text"
+                            required
+                            value={clientMeetingForm.title}
+                            onChange={e => setClientMeetingForm({ ...clientMeetingForm, title: e.target.value })}
+                            placeholder="مثال: مناقشة خطة التسويق وعرض أسعار التجديد"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">التاريخ:</label>
+                            <input
+                              type="date"
+                              required
+                              value={clientMeetingForm.date}
+                              onChange={e => setClientMeetingForm({ ...clientMeetingForm, date: e.target.value })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">وقت البدء:</label>
+                            <input
+                              type="time"
+                              required
+                              value={clientMeetingForm.startTime}
+                              onChange={e => setClientMeetingForm({ ...clientMeetingForm, startTime: e.target.value })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">وقت الانتهاء:</label>
+                            <input
+                              type="time"
+                              required
+                              value={clientMeetingForm.endTime}
+                              onChange={e => setClientMeetingForm({ ...clientMeetingForm, endTime: e.target.value })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">طريقة الاجتماع:</label>
+                            <select
+                              value={clientMeetingForm.locationType}
+                              onChange={e => setClientMeetingForm({ ...clientMeetingForm, locationType: e.target.value as MeetingLocationType })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold cursor-pointer"
+                            >
+                              <option value="online">أونلاين (Google Meet / Zoom)</option>
+                              <option value="in_person">حضوري بمقر الشركة أو العميل</option>
+                              <option value="phone">مكالمة هاتفية جماعية</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">رابط أو مكان الانعقاد:</label>
+                            <input
+                              type="text"
+                              value={clientMeetingForm.meetingLinkOrLocation}
+                              onChange={e => setClientMeetingForm({ ...clientMeetingForm, meetingLinkOrLocation: e.target.value })}
+                              placeholder="https://meet.google.com/..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono text-[11px]"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">المسؤول عن الاجتماع:</label>
+                            <select
+                              value={clientMeetingForm.hostId}
+                              onChange={e => setClientMeetingForm({ ...clientMeetingForm, hostId: e.target.value })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold cursor-pointer"
+                            >
+                              {team.map(m => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">حالة الاجتماع:</label>
+                            <select
+                              value={clientMeetingForm.status}
+                              onChange={e => setClientMeetingForm({ ...clientMeetingForm, status: e.target.value as MeetingStatus })}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-bold cursor-pointer"
+                            >
+                              <option value="scheduled">مجدول 📅</option>
+                              <option value="completed">تم بنجاح ✓</option>
+                              <option value="cancelled">أُلغي</option>
+                              <option value="rescheduled">أُعيدت جدولته</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">جدول الأعمال والنقاط للنقاش:</label>
+                          <textarea
+                            rows={2}
+                            value={clientMeetingForm.agenda}
+                            onChange={e => setClientMeetingForm({ ...clientMeetingForm, agenda: e.target.value })}
+                            placeholder="1. استعراض نتائج الشهر الماضي\n2. خطة الحملات القادمة"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-medium resize-none font-sans"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">ملخص الاجتماع والقرارات:</label>
+                          <textarea
+                            rows={2}
+                            value={clientMeetingForm.summary}
+                            onChange={e => setClientMeetingForm({ ...clientMeetingForm, summary: e.target.value })}
+                            placeholder="ملخص ما تم الاتفاق عليه والقرارات المعتمدة..."
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-medium resize-none font-sans"
+                          />
+                        </div>
+
+                        {/* مهمة ناتجة عن الاجتماع */}
+                        <div className="bg-indigo-50/80 p-3 rounded-xl border border-indigo-200 space-y-2">
+                          <label className="block text-[11px] font-bold text-indigo-950">
+                            مهمة ناتجة عن الاجتماع وموعدها (Action Item):
+                          </label>
+                          <input
+                            type="text"
+                            value={clientMeetingForm.actionItemText}
+                            onChange={e => setClientMeetingForm({ ...clientMeetingForm, actionItemText: e.target.value })}
+                            placeholder="مثال: إرسال عرض السعر المعدل خلال يومين"
+                            className="w-full bg-white border border-indigo-300 rounded-lg p-2 font-bold"
+                          />
+                          {clientMeetingForm.actionItemText.trim() && (
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              <div>
+                                <label className="block text-[10px] text-indigo-900 font-bold mb-0.5">الموظف المكلف:</label>
+                                <select
+                                  value={clientMeetingForm.actionItemAssigneeId}
+                                  onChange={e => setClientMeetingForm({ ...clientMeetingForm, actionItemAssigneeId: e.target.value })}
+                                  className="w-full bg-white border border-indigo-300 rounded-lg p-1.5 text-xs font-bold cursor-pointer"
+                                >
+                                  {team.map(m => (
+                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-indigo-900 font-bold mb-0.5">الموعد النهائي:</label>
+                                <input
+                                  type="date"
+                                  value={clientMeetingForm.actionItemDueDate}
+                                  onChange={e => setClientMeetingForm({ ...clientMeetingForm, actionItemDueDate: e.target.value })}
+                                  className="w-full bg-white border border-indigo-300 rounded-lg p-1.5 text-xs font-mono"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => setShowClientMeetingModal(false)}
+                            className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl cursor-pointer"
+                          >
+                            إلغاء
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>جدولة الاجتماع</span>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

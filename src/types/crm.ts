@@ -60,6 +60,17 @@ export interface Task {
   delayReason?: string; // سبب التأخير أو إعادة العمل
   delayResponsibleParty?: 'employee' | 'client_approval' | 'management' | 'external_info' | 'technical'; // هل التأخير بسبب الموظف أم عوامل خارجية؟
   evaluationsLinkedCount?: number; // عدد الملاحظات والتقييمات المرتبطة بهذه التاسك
+  // ربط الأكونت مانجر والتواصل والاجتماعات
+  createdById?: string; // من قام بإنشاء أو تكليف المهمة
+  createdByName?: string;
+  accountManagerId?: string; // معرف الأكونت مانجر التابع له هذا الشغل
+  accountManagerName?: string; // اسم الأكونت مانجر
+  meetingId?: string; // معرف الاجتماع المرتبطة به المهمة
+  meetingTitle?: string;
+  callId?: string; // معرف المكالمة المرتبطة بها المهمة
+  clientRenewalId?: string;
+  clientName?: string;
+  company?: string;
 }
 
 export interface TaskComment {
@@ -108,6 +119,8 @@ export interface TeamMember {
   bankIban?: string; // الحساب البنكي
   bio?: string;
   socialAccounts?: SocialAccounts; // اكونتات التواصل والعمل
+  isAccountManager?: boolean; // هل العضو مدير حسابات (Account Manager)
+  managedTeamMemberIds?: string[]; // أعضاء الفريق المكلفين بالعمل مع هذا الأكونت مانجر
 }
 
 export interface EmailAttachment {
@@ -200,18 +213,103 @@ export interface Deal {
   notes?: string;
 }
 
+export interface MeetingActionItem {
+  id: string;
+  title: string;
+  assignedToId: string;
+  assignedToName: string;
+  assigneeId?: string;
+  assigneeName?: string;
+  dueDate: string;
+  dueTime?: string;
+  taskId?: string; // معرف المهمة المرتبطة في السيستم
+  createdTaskId?: string;
+  isCompleted: boolean;
+  notes?: string;
+}
+
+export type MeetingType = 'internal' | 'client' | 'partner';
+export type MeetingLocationType = 'in_person' | 'online' | 'phone';
+export type MeetingStatus = 'قادم' | 'مكتمل' | 'ملغي' | 'مؤجل' | 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+
 export interface Meeting {
   id: string;
   title: string;
-  date: string;
-  time: string;
-  duration: string;
-  location: 'Google Meet' | 'Zoom' | 'مقر الشركة' | 'مكالمة هاتفية';
-  meetingLink?: string;
-  attendees: string[]; // Member IDs
+  meetingType?: MeetingType; // نوع الاجتماع: داخلي، مع عميل، أو مع شركة شريكة
+  date: string; // YYYY-MM-DD
+  time: string; // وقت البداية
+  startTime?: string; // HH:mm
+  endTime?: string; // HH:mm
+  duration: string; // مدة الاجتماع e.g. "45 دقيقة"
+  locationType?: MeetingLocationType; // طريقة الاجتماع: حضوري أو أونلاين أو هاتفي
+  location: 'Google Meet' | 'Zoom' | 'مقر الشركة' | 'مكالمة هاتفية' | string;
+  meetingLink?: string; // رابط الاجتماع
+  meetingLinkOrLocation?: string;
+  locationAddress?: string; // مكان انعقاده في حال كان حضورياً
+  hostId?: string; // المسؤول عن الاجتماع
+  hostName?: string;
+  attendees: string[]; // Member IDs من موظفي الفريق
+  attendeeIds?: string[];
+  clientAttendees?: string[]; // المشاركون من جهة العميل (أسماء / إيميلات)
+  clientId?: string; // العميل المرتبط إن وجد
+  clientRenewalId?: string;
   clientName?: string;
+  companyName?: string;
+  company?: string;
+  agenda?: string | string[]; // جدول الأعمال والنقاط المطلوب مناقشتها
+  summary?: string; // ملخص الاجتماع
+  decisions?: string | string[]; // القرارات المتفق عليها
+  actionItems?: MeetingActionItem[]; // المهام الناتجة عن الاجتماع والمسؤول عن كل مهمة وموعدها
+  recordingUrl?: string; // رابط تسجيل الاجتماع إن وجد
+  isVip?: boolean;
   notes?: string;
-  status: 'قادم' | 'مكتمل' | 'ملغي';
+  status: MeetingStatus; // حالة الاجتماع: مجدول (قادم)، تم (مكتمل)، أُلغي، أو أُعيدت جدولته (مؤجل)
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type CallType = 'incoming' | 'outgoing'; // نوع المكالمة: واردة أو صادرة
+export type CallOutcome =
+  | 'connected' // تم التواصل بنجاح
+  | 'no_answer' // لا يوجد رد / مشغول
+  | 'needs_follow_up' // يحتاج متابعة إضافية
+  | 'requires_followup'
+  | 'deal_agreed' // تم الاتفاق والموافقة
+  | 'agreed'
+  | 'rescheduled' // تم تأجيل المكالمة
+  | 'wrong_number' // رقم غير صحيح
+  | 'cancelled'; // ملغاة
+
+export interface CallLog {
+  id: string;
+  clientId?: string; // العميل المرتبط إن وجد
+  clientRenewalId?: string;
+  clientName: string; // العميل أو جهة الاتصال
+  companyName?: string; // الشركة
+  company?: string;
+  contactPhone?: string; // رقم هاتف العميل
+  contactPerson?: string; // الشخص المتحدث
+  employeeId: string; // الموظف الذي أجرى المكالمة
+  employeeName: string;
+  employeeAvatar?: string;
+  date: string; // تاريخ المكالمة YYYY-MM-DD
+  time: string; // وقت المكالمة HH:mm
+  durationMinutes: number; // مدة المكالمة بالدقائق
+  type: CallType; // نوع المكالمة: واردة أو صادرة
+  callType?: CallType;
+  purpose: string; // الغرض من المكالمة (استفسار، متابعة عرض، تفاوض، شكوى، تجديد...)
+  summary: string; // ملخص ما تم الاتفاق عليه
+  outcome: CallOutcome; // النتيجة: تم التواصل، لا يوجد رد، يحتاج متابعة، تم الاتفاق
+  nextFollowUpDate?: string; // موعد المتابعة القادمة YYYY-MM-DD
+  nextFollowUpTime?: string; // وقت المتابعة القادمة HH:mm
+  followUpNotes?: string; // ملاحظات وتوجيهات المتابعة
+  resultingTaskId?: string; // التاسك الناتج عن المكالمة إن وجد
+  resultingTaskTitle?: string;
+  createdTaskId?: string;
+  recordingUrl?: string; // رابط تسجيل المكالمة إن وجد
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ActivityItem {

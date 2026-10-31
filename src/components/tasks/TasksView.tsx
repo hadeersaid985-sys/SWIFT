@@ -47,7 +47,11 @@ import {
   ArrowUp,
   ArrowDown,
   FileSpreadsheet,
-  Award
+  Award,
+  Briefcase,
+  Shield,
+  Building,
+  CheckCircle
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
 import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember, EvaluationType, EvaluationCategory } from '../../types/crm';
@@ -81,7 +85,16 @@ export const TasksView: React.FC = () => {
     setOpenQuickModal,
     setIsResetModalOpen,
     setActiveTab,
-    addPerformanceEvaluation
+    addPerformanceEvaluation,
+    isCurrentUserAccountManager,
+    accountManagerClients,
+    accountManagerTeam,
+    accountManagerScopeTasks,
+    isTaskInAccountManagerScope,
+    selectedSimulatedAccountManagerId,
+    setSelectedSimulatedAccountManagerId,
+    effectiveAccountManager,
+    visibleClients
   } = useCRM();
 
   // Tasks Trash Modal state
@@ -97,6 +110,9 @@ export const TasksView: React.FC = () => {
 
   // Manager Scope Switcher: 'all' (all team tasks) vs 'my' (only manager's own tasks)
   const [managerScope, setManagerScope] = useState<'all' | 'my'>('all');
+
+  // Account Manager Scope: 'account_team' (فريق حساباتي وعملائي) vs 'my_personal' (مهامي أنا فقط)
+  const [accountManagerViewScope, setAccountManagerViewScope] = useState<'account_team' | 'my_personal'>('account_team');
 
   // Manager Privacy Filter: 'all' (all tasks) vs 'public_only' (team only) vs 'private_only' (manager only secret)
   const [managerPrivacyFilter, setManagerPrivacyFilter] = useState<'all' | 'public_only' | 'private_only'>('all');
@@ -334,10 +350,23 @@ export const TasksView: React.FC = () => {
   }, []);
 
   // Base tasks for current user:
-  // "اكسيس واكونتات التيم هيكون فيها التاسكات الخاصه بكل اكونت بس لوو معموله مننش والتاسكات ومواعيدها"
-  // "يعني لما اضف عضو يظهر التاسكات والتايمر وشغله بس"
+  // "اظهر لاكونت مانجر الموظفين اللي تابعه والتاسكات اللي مع الموظفين تابعه بس اعملي فكره ليها لان مش كل شغل الموظفين معاه ولا كل تاسكاتهم معاه"
   const userBaseTasks = isManager
-    ? tasks
+    ? (selectedSimulatedAccountManagerId !== 'all' && effectiveAccountManager
+        ? (accountManagerViewScope === 'my_personal'
+            ? tasks.filter(t => t.assignedToId === effectiveAccountManager.id)
+            : accountManagerScopeTasks)
+        : tasks)
+    : isCurrentUserAccountManager
+    ? (accountManagerViewScope === 'my_personal'
+        ? tasks.filter(t => !t.isPrivate && isTaskAssignedToUser(t, currentUser))
+        : tasks.filter(task => {
+            if (task.isPrivate) return false;
+            const isAssigned = isTaskAssignedToUser(task, currentUser);
+            const isMentioned = isUserMentionedInTask(task, currentUser);
+            const inAmScope = isTaskInAccountManagerScope(task, currentUser);
+            return isAssigned || isMentioned || inAmScope;
+          }))
     : tasks.filter(task => {
         if (task.isPrivate) return false;
         const isAssigned = isTaskAssignedToUser(task, currentUser);
@@ -856,6 +885,91 @@ export const TasksView: React.FC = () => {
                 <span>سرية للمدير فقط ({tasks.filter(t => t.isPrivate).length})</span>
               </button>
             </div>
+
+            {/* Account Manager Simulation Selector (Admin only) */}
+            <div className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
+              <Briefcase className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+              <select
+                value={selectedSimulatedAccountManagerId}
+                onChange={e => setSelectedSimulatedAccountManagerId(e.target.value)}
+                className="bg-transparent text-[11px] font-bold text-indigo-200 focus:outline-none cursor-pointer"
+                title="محاكاة صلاحيات ورؤية أكونت مانجر معين لمعاينة المهام والعملاء التابعين له فقط"
+              >
+                <option value="all" className="bg-slate-900 text-white">رؤية الإدارة العامة (الكل)</option>
+                {team.filter(m => m.isAccountManager || m.role?.toLowerCase().includes('account') || m.department?.includes('حسابات')).map(am => (
+                  <option key={am.id} value={am.id} className="bg-slate-900 text-indigo-300">
+                    محاكاة رؤية: {am.name} (أكونت مانجر)
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Account Manager Scope Banner (shown when user is AM or when Manager simulates an AM) */}
+      {(isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && effectiveAccountManager && (
+        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl p-3.5 border border-indigo-500/40 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <span className="p-2 bg-indigo-500/20 text-indigo-300 rounded-lg shrink-0 mt-0.5 border border-indigo-400/30">
+              <Briefcase className="w-5 h-5" />
+            </span>
+            <div>
+              <div className="font-extrabold text-[13px] flex items-center gap-2 flex-wrap">
+                <span>نطاق الأكونت مانجر: {effectiveAccountManager.name}</span>
+                <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold">
+                  {accountManagerClients.length} عملاء مرتبطين
+                </span>
+                <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">
+                  {accountManagerTeam.length} موظف متعاون
+                </span>
+                {isManager && selectedSimulatedAccountManagerId !== 'all' && (
+                  <span className="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-black flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    <span>وضع محاكاة رؤية الأكونت مانجر 👁️</span>
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-300 mt-1">
+                <strong>العملاء المدارون:</strong> {accountManagerClients.map(c => c.clientName).join('، ') || 'لا يوجد عملاء مخصصين حالياً'}
+                {accountManagerTeam.length > 0 && (
+                  <>
+                    <span className="mx-2 text-slate-500">•</span>
+                    <strong>فريق العمل على حساباتك:</strong> {accountManagerTeam.map(t => t.name).join('، ')}
+                  </>
+                )}
+              </p>
+              <p className="text-[10px] text-indigo-200 mt-0.5 flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>خصوصية تامة: تظهر لك فقط مهام عملائك والتكليفات الموجهة للتيم التابع؛ وباقي مهام الموظفين الأخرى لدى حسابات ثانية مخفية تماماً.</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle: Scope vs Personal */}
+          <div className="flex items-center gap-1 bg-slate-800/90 p-1 rounded-lg border border-indigo-400/30 shrink-0 self-start md:self-auto">
+            <button
+              onClick={() => setAccountManagerViewScope('account_team')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                accountManagerViewScope === 'account_team'
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>فريق حساباتي وتاسكاتهم ({accountManagerScopeTasks.length})</span>
+            </button>
+            <button
+              onClick={() => setAccountManagerViewScope('my_personal')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                accountManagerViewScope === 'my_personal'
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>مهامي الشخصية فقط</span>
+            </button>
           </div>
         </div>
       )}
@@ -1517,13 +1631,44 @@ export const TasksView: React.FC = () => {
 
           {/* Columns Grid / Horizontal Scroll */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
-            {(isManager && managerScope === 'all'
-              ? (filterMember === 'all' ? team : team.filter(m => m.id === filterMember))
-              : team.filter(m => m.id === currentUser.id || isTaskAssignedToUser({ id: 'dummy', title: '', assignedToId: m.id } as Task, currentUser) || (m.username && currentUser.username && m.username.toLowerCase() === currentUser.username.toLowerCase()))
-            ).map(member => {
+            {(() => {
+              // 1. If Manager is simulating an Account Manager:
+              if (isManager && selectedSimulatedAccountManagerId !== 'all' && effectiveAccountManager) {
+                if (accountManagerViewScope === 'my_personal') {
+                  return [effectiveAccountManager];
+                }
+                const others = accountManagerTeam.filter(m => m.id !== effectiveAccountManager.id);
+                return [effectiveAccountManager, ...others];
+              }
+
+              // 2. If logged in user is an Account Manager:
+              if (isCurrentUserAccountManager && effectiveAccountManager) {
+                if (accountManagerViewScope === 'my_personal') {
+                  const me = team.find(m => m.id === currentUser.id);
+                  return me ? [me] : [];
+                }
+                const me = team.find(m => m.id === currentUser.id);
+                const others = accountManagerTeam.filter(m => m.id !== currentUser.id);
+                return me ? [me, ...others] : accountManagerTeam;
+              }
+
+              // 3. Regular manager:
+              if (isManager && managerScope === 'all') {
+                return filterMember === 'all' ? team : team.filter(m => m.id === filterMember);
+              }
+
+              // 4. Regular employee:
+              return team.filter(
+                m =>
+                  m.id === currentUser.id ||
+                  isTaskAssignedToUser({ id: 'dummy', title: '', assignedToId: m.id } as Task, currentUser) ||
+                  (m.username && currentUser.username && m.username.toLowerCase() === currentUser.username.toLowerCase())
+              );
+            })().map(member => {
               const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member));
               const completedCount = memberTasks.filter(t => t.status === 'completed').length;
               const isCurrentMemberOpen = quickAddColumn === member.id;
+              const isCollaboratingOnAM = (isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && member.id !== effectiveAccountManager?.id;
 
               return (
                 <div
@@ -1553,6 +1698,11 @@ export const TasksView: React.FC = () => {
                           {member.id === currentUser.id && (
                             <span className="text-[9px] bg-blue-100 text-blue-700 px-1 rounded font-bold">
                               أنت
+                            </span>
+                          )}
+                          {isCollaboratingOnAM && (
+                            <span className="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded font-bold border border-indigo-200">
+                              فريق حساباتك
                             </span>
                           )}
                         </div>
@@ -1624,6 +1774,18 @@ export const TasksView: React.FC = () => {
                                     {isAllTeamTask && (
                                       <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
                                         <span>🌟 مهمة لجميع الفريق</span>
+                                      </span>
+                                    )}
+                                    {task.clientName && (
+                                      <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
+                                        <Building className="w-2.5 h-2.5 text-blue-600" />
+                                        <span>{task.clientName}</span>
+                                      </span>
+                                    )}
+                                    {(isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && (task.accountManagerId || task.createdById === effectiveAccountManager?.id) && (
+                                      <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
+                                        <CheckCircle className="w-2.5 h-2.5 text-indigo-600" />
+                                        <span>تكليف الأكونت مانجر</span>
                                       </span>
                                     )}
                                     {task.isPrivate && (

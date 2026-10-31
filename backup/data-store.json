@@ -45,9 +45,9 @@
       "bankIban": "SA4420000001234567890123",
       "bio": "مسؤولة إدارة العمليات والمبيعات وتنسيق المهام بين فرق العمل.",
       "socialAccounts": {
-        "whatsapp": "+966501234567",
         "slack": "@hadeer.said",
-        "linkedin": "linkedin.com/in/hadeer-said"
+        "linkedin": "linkedin.com/in/hadeer-said",
+        "whatsapp": "+966501234567"
       },
       "updatedAt": "2026-10-28T11:39:52.242Z"
     },
@@ -1657,10 +1657,10 @@
         }
       ],
       "notes": "يبحثون عن أتمتة لجميع فروعهم الـ 14 مع تتبع فوري لمواعيد التسليم.",
-      "followUpDate": "2026-10-29",
+      "followUpDate": "2026-10-31",
       "followUpTime": "13:00",
       "followUpNotes": "الاتصال الهاتفي النهائي لمناقشة تعديل شروط الدفع وتوقيع العقد المبدئي.",
-      "createdAt": "2026-10-26"
+      "createdAt": "2026-10-28"
     },
     {
       "id": "lead-302",
@@ -1695,10 +1695,10 @@
         }
       ],
       "notes": "تحتاج لربط برامج العيادات مع نظام إدارة مهام الأطباء ومواعيد الزيارات.",
-      "followUpDate": "2026-10-29",
+      "followUpDate": "2026-10-31",
       "followUpTime": "15:30",
       "followUpNotes": "متابعة قرار مجلس الإدارة ومناقشة تفاصيل الربط التقني.",
-      "createdAt": "2026-10-29"
+      "createdAt": "2026-10-31"
     },
     {
       "id": "lead-303",
@@ -1733,10 +1733,10 @@
         }
       ],
       "notes": "طلب إعادة الاتصال بعد دراسة الميزانية السنوية الجديدة للشركة.",
-      "followUpDate": "2026-10-30",
+      "followUpDate": "2026-11-01",
       "followUpTime": "11:00",
       "followUpNotes": "مكالمة هاتفية للمتابعة بعد مراجعة الإدارة المالية للميزانية.",
-      "createdAt": "2026-10-27"
+      "createdAt": "2026-10-29"
     },
     {
       "id": "lead-304",
@@ -1771,7 +1771,7 @@
         }
       ],
       "notes": "طلبوا تجربة عملية ديمو للربط مع نظام إدارة الأسطول والمخازن.",
-      "createdAt": "2026-10-24"
+      "createdAt": "2026-10-26"
     }
   ],
   "deals": [
@@ -1786,9 +1786,9 @@
       "currency": "ج.م",
       "stage": "تفاوض",
       "probability": 85,
-      "expectedCloseDate": "2026-11-03",
+      "expectedCloseDate": "2026-11-05",
       "assignedToId": "user-1",
-      "createdAt": "2026-10-14",
+      "createdAt": "2026-10-16",
       "notes": "الصفقة في مرحلة الصياغة القانونية النهائية للعقد."
     },
     {
@@ -1802,9 +1802,9 @@
       "currency": "ج.م",
       "stage": "عرض سعر",
       "probability": 60,
-      "expectedCloseDate": "2026-11-10",
+      "expectedCloseDate": "2026-11-12",
       "assignedToId": "user-2",
-      "createdAt": "2026-10-19",
+      "createdAt": "2026-10-21",
       "notes": "العرض يشمل التخصيص والأمان العالي وربط الفروع المصرفية."
     },
     {
@@ -1818,9 +1818,9 @@
       "currency": "ج.م",
       "stage": "مؤهل",
       "probability": 40,
-      "expectedCloseDate": "2026-11-18",
+      "expectedCloseDate": "2026-11-20",
       "assignedToId": "user-3",
-      "createdAt": "2026-10-25",
+      "createdAt": "2026-10-27",
       "notes": "تم تقديم العرض الأولي والمقارنة مع الحلول المنافسة."
     },
     {
@@ -1834,59 +1834,161 @@
       "currency": "ج.م",
       "stage": "مغلقة ناجحة",
       "probability": 100,
-      "expectedCloseDate": "2026-10-26",
+      "expectedCloseDate": "2026-10-28",
       "assignedToId": "user-2",
-      "createdAt": "2026-09-29",
+      "createdAt": "2026-10-01",
       "notes": "تم توقيع العقد رسمياً واستلام الدفعة الأولى بنجاح!"
     }
   ],
   "meetings": [
     {
       "id": "meet-1",
-      "title": "الاجتماع الصباحي اليومي لفريق المبيعات (Daily Standup)",
-      "date": "2026-10-29",
+      "title": "الاجتماع الصباحي اليومي لفريق المبيعات والحسابات (Daily Standup)",
+      "meetingType": "internal",
+      "date": "2026-10-31",
       "time": "10:00",
-      "duration": "20 دقيقة",
+      "startTime": "10:00",
+      "endTime": "10:30",
+      "duration": "30 دقيقة",
+      "locationType": "online",
       "location": "Google Meet",
       "meetingLink": "https://meet.google.com/zoh-crm-team",
+      "hostId": "user-1",
+      "hostName": "هدير سعيد",
       "attendees": [
         "user-1",
         "user-2",
-        "user-3"
+        "user-3",
+        "user-amira"
+      ],
+      "clientAttendees": [],
+      "agenda": "1. مراجعة أهداف اليوم وإغلاق الصفقات المتأخرة\n2. توزيع المهام العاجلة ومتابعة عملاء التجديد\n3. مراجعة خطة تسليم عملاء السوشيال ميديا",
+      "summary": "تم الاتفاق على تركيز التواصل الصباحي على تجديدات الأسبوع الحالي وتكليف إسلام بالفيديوهات المستعجلة.",
+      "decisions": "- تجهيز عرض سعر مخصص لشركة إعمار المستقبل\n- متابعة تسليمات العميل جولدن خلال 48 ساعة",
+      "actionItems": [
+        {
+          "id": "act-1",
+          "title": "إرسال عرض سعر العقد المعدل لشركة إعمار",
+          "assignedToId": "user-2",
+          "assignedToName": "أحمد الشريف",
+          "dueDate": "2026-11-01",
+          "dueTime": "15:00",
+          "taskId": "task-3",
+          "isCompleted": false
+        }
       ],
       "notes": "مراجعة أهداف اليوم، التحديات، ومتابعة التاسكات الحرجة المستحقة.",
-      "status": "قادم"
+      "status": "قادم",
+      "createdAt": "2026-10-25T08:00:00Z"
     },
     {
       "id": "meet-2",
-      "title": "عرض ديمو تفاعلي مباشر مع مسؤولي بنك الرياض للاستثمار",
-      "date": "2026-10-30",
+      "title": "عرض ديمو تفاعلي واجتماع استراتيجي مع مسؤولي بنك الرياض للاستثمار",
+      "meetingType": "client",
+      "date": "2026-11-01",
       "time": "12:30",
+      "startTime": "12:30",
+      "endTime": "13:15",
       "duration": "45 دقيقة",
+      "locationType": "online",
       "location": "Zoom",
       "meetingLink": "https://zoom.us/j/943269125",
+      "hostId": "user-1",
+      "hostName": "هدير سعيد",
       "attendees": [
         "user-1",
         "user-2",
         "user-4"
       ],
+      "clientAttendees": [
+        "م. فيصل العتيبي (مدير التحول الرقمي)",
+        "أ. نورة الدوسري"
+      ],
       "clientName": "بنك الرياض الرقمي",
+      "companyName": "بنك الرياض للاستثمار",
+      "agenda": "1. استعراض لوحات التقارير الآلية والداشبورد التنفيذي\n2. مناقشة بروتوكولات التشفير وسرعة الاستجابة\n3. الاتفاق على نطاق تجربة النظام (PoC)",
+      "summary": "جلسة لعرض قوة منصة سويفت مايند لإدارة تدفق العمل وحساب فترات الإنجاز بدقة.",
+      "decisions": "توفير حساب تجريبي لمدة 14 يوماً مع تدريب المشرفين التقنيين.",
+      "actionItems": [
+        {
+          "id": "act-2",
+          "title": "تجهيز ملف متطلبات الأمان وتشفير البيانات وإرساله للبنك",
+          "assignedToId": "user-4",
+          "assignedToName": "خالد ناصر",
+          "dueDate": "2026-11-02",
+          "dueTime": "12:00",
+          "taskId": "task-4",
+          "isCompleted": false
+        }
+      ],
       "notes": "التركيز على ميزات الأمان، سرعة الاستجابة، وتصدير التقارير الآلية.",
-      "status": "قادم"
+      "status": "قادم",
+      "createdAt": "2026-10-26T11:00:00Z"
     },
     {
       "id": "meet-3",
-      "title": "جلسة التخطيط المالي وتوزيع ميزانية الربع الرابع",
-      "date": "2026-11-02",
+      "title": "جلسة التخطيط المالي وتوزيع ميزانية الربع الرابع مع الإدارة",
+      "meetingType": "internal",
+      "date": "2026-11-04",
       "time": "14:00",
+      "startTime": "14:00",
+      "endTime": "15:00",
       "duration": "60 دقيقة",
+      "locationType": "in_person",
       "location": "مقر الشركة",
+      "locationAddress": "القاهرة - المقر الرئيسي، قاعة الاجتماعات التنفيذية",
+      "hostId": "user-1",
+      "hostName": "هدير سعيد",
       "attendees": [
         "user-1",
         "user-6"
       ],
+      "agenda": "1. مناقشة الحوافز والعمولات الشهرية\n2. اعتماد ميزانية الحملات التسويقية\n3. مراجعة مصاريف التوسعة التقنية والسيرفرات",
+      "summary": "اعتماد الموازنة التشغيلية لفريق المبيعات والتسويق وتحديد مؤشرات النجاح الرئيسية.",
+      "status": "قادم",
       "notes": "مناقشة الحوافز الشهرية لفريق المبيعات ونفقات الحملات الجديدة.",
-      "status": "قادم"
+      "createdAt": "2026-10-24T14:00:00Z"
+    },
+    {
+      "id": "meet-4",
+      "title": "اجتماع مراجعة تسليمات خطة السوشيال والمونتاج مع شركة جولدن",
+      "meetingType": "client",
+      "date": "2026-10-29",
+      "time": "11:00",
+      "startTime": "11:00",
+      "endTime": "11:45",
+      "duration": "45 دقيقة",
+      "locationType": "online",
+      "location": "Google Meet",
+      "meetingLink": "https://meet.google.com/gld-review-swift",
+      "hostId": "user-amira",
+      "hostName": "Amira",
+      "attendees": [
+        "user-amira",
+        "user-islam"
+      ],
+      "clientAttendees": [
+        "أ. شريف كمال (مدير التسويق بشركة جولدن)"
+      ],
+      "clientId": "ren-1793024552370",
+      "clientName": "شركة جولدن للأغذية",
+      "companyName": "جولدن",
+      "agenda": "1. اعتماد تصميمات الحملة الإعلانية لشهر نوفمبر\n2. استعراض فيديوهات الريلز المنفذة وملاحظات التعديل\n3. تحديد موعد إطلاق الإعلانات الممولة",
+      "summary": "أشاد العميل بجودة المونتاج وطلب إضافة شعار الشركة بشكل أوضح في الثواني الخمس الأولى.",
+      "decisions": "تعديل الفيديوهين رقم 3 و4 وتسليمهما صباح الأربعاء لاعتمادهما وبدء الحملة.",
+      "actionItems": [
+        {
+          "id": "act-3",
+          "title": "تعديل شعار المقدمة في ريلز شركة جولدن",
+          "assignedToId": "user-islam",
+          "assignedToName": "Islam",
+          "dueDate": "2026-11-01",
+          "dueTime": "13:00",
+          "isCompleted": true
+        }
+      ],
+      "status": "مكتمل",
+      "createdAt": "2026-10-28T09:00:00Z"
     }
   ],
   "emails": [
@@ -3220,7 +3322,8 @@
     "user-1793016396281"
   ],
   "deletedTasks": [],
-  "updatedAt": "2026-10-29T10:26:37.224Z",
+  "updatedAt": "2026-10-31T10:25:05.351Z",
   "deletedMarketingCardIds": [],
-  "deletedMarketingListIds": []
+  "deletedMarketingListIds": [],
+  "calls": []
 }

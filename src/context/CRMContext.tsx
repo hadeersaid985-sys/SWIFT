@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import {
   Task,
   TaskStatus,
+  TaskPriority,
   TeamMember,
   EmailMessage,
   Lead,
@@ -41,7 +42,8 @@ import {
   RuleViolationRecord,
   MonthlyPerformanceReview,
   DelayReviewStatus,
-  ViolationReviewStatus
+  ViolationReviewStatus,
+  CallLog
 } from '../types/crm';
 import {
   CURRENT_USER,
@@ -51,6 +53,7 @@ import {
   INITIAL_LEADS,
   INITIAL_DEALS,
   INITIAL_MEETINGS,
+  INITIAL_CALLS,
   INITIAL_NOTIFICATIONS,
   INITIAL_ACTIVITIES,
   INITIAL_REPORTS,
@@ -71,6 +74,13 @@ import {
   INITIAL_RULE_VIOLATIONS,
   INITIAL_MONTHLY_PERFORMANCE_REVIEWS
 } from '../data/initialData';
+import {
+  isUserAccountManager,
+  getAccountManagerClients,
+  getAccountManagerTeamMembers,
+  isTaskInAccountManagerScope,
+  filterTasksForAccountManager
+} from '../utils/accountManagerScope';
 import {
   saveTaskToFirestore,
   deleteTaskFromFirestore,
@@ -183,11 +193,44 @@ interface CRMContextType {
   updateDeal: (id: string, updates: Partial<Deal>) => void;
   deleteDeal: (id: string) => void;
 
-  // Meetings
+  // Meetings & Communications (التواصل والاجتماعات)
   meetings: Meeting[];
-  addMeeting: (meeting: Omit<Meeting, 'id'>) => void;
+  addMeeting: (meeting: Omit<Meeting, 'id'>) => Meeting;
   updateMeeting: (id: string, updates: Partial<Meeting>) => void;
   deleteMeeting: (id: string) => void;
+
+  // Calls (المكالمات)
+  calls: CallLog[];
+  addCallLog: (call: Omit<CallLog, 'id' | 'createdAt'>) => CallLog;
+  updateCallLog: (id: string, updates: Partial<CallLog>) => void;
+  deleteCallLog: (id: string) => void;
+
+  // Create Task directly from Meeting Action Item or Call Log
+  createTaskFromActionItem: (params: {
+    title: string;
+    description?: string;
+    assignedToId: string;
+    dueDate: string;
+    dueTime?: string;
+    priority?: TaskPriority;
+    category?: 'مبيعات' | 'تقني' | 'تسويق' | 'دعم' | 'إداري';
+    clientId?: string;
+    clientName?: string;
+    meetingId?: string;
+    meetingTitle?: string;
+    callId?: string;
+  }) => Task;
+
+  // Account Manager Scope & Filtering (نطاق مدير الحسابات)
+  isCurrentUserAccountManager: boolean;
+  accountManagerClients: ClientRenewal[];
+  accountManagerTeam: TeamMember[];
+  accountManagerScopeTasks: Task[];
+  isTaskInAccountManagerScope: (task: Task, user?: TeamMember) => boolean;
+  filterTasksForAccountManager: (tasks: Task[], user: TeamMember) => Task[];
+  selectedSimulatedAccountManagerId: string | 'all';
+  setSelectedSimulatedAccountManagerId: (id: string | 'all') => void;
+  effectiveAccountManager: TeamMember | null;
 
   // Reports
   reports: ReportItem[];
@@ -1221,6 +1264,20 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
     return INITIAL_MEETINGS;
   });
+
+  const [calls, setCalls] = useState<CallLog[]>(() => {
+    try {
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}calls`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return INITIAL_CALLS;
+  });
+
+  // State to allow Admin/General Manager to simulate/filter scope as a specific Account Manager
+  const [selectedSimulatedAccountManagerId, setSelectedSimulatedAccountManagerId] = useState<string | 'all'>('all');
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
     try {
@@ -4571,22 +4628,144 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDeals(prev => prev.filter(d => d.id !== id));
   };
 
-  // Meetings Actions
-  const addMeeting = (meetingData: Omit<Meeting, 'id'>) => {
+  // Meetings Actions (التواصل والاجتماعات)
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(meetings));
+  }, [meetings]);
+
+  useEffect(() => {
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}calls`, JSON.stringify(calls));
+  }, [calls]);
+
+  const addMeeting = (meetingData: Omit<Meeting, 'id'>): Meeting => {
     const newMeeting: Meeting = {
       ...meetingData,
-      id: 'meet-' + Date.now()
+      id: 'meet-' + Date.now(),
+      createdAt: meetingData.createdAt || new Date().toISOString()
     };
     setMeetings(prev => [newMeeting, ...prev]);
-    logActivity('meeting', 'تم جدولة اجتماع جديد', `${newMeeting.title} (${newMeeting.date} ${newMeeting.time})`);
+    logActivity('meeting', 'تم جدولة اجتماع جديد', `${newMeeting.title} (${newMeeting.date} ${newMeeting.time || newMeeting.startTime || ''})`);
+    return newMeeting;
   };
 
   const updateMeeting = (id: string, updates: Partial<Meeting>) => {
-    setMeetings(prev => prev.map(m => (m.id === id ? { ...m, ...updates } : m)));
+    setMeetings(prev => prev.map(m => (m.id === id ? { ...m, ...updates, updatedAt: new Date().toISOString() } : m)));
   };
 
   const deleteMeeting = (id: string) => {
     setMeetings(prev => prev.filter(m => m.id !== id));
+  };
+
+  // Calls Actions (سجل المكالمات)
+  const addCallLog = (callData: Omit<CallLog, 'id' | 'createdAt'>): CallLog => {
+    const newCall: CallLog = {
+      ...callData,
+      id: 'call-' + Date.now(),
+      createdAt: new Date().toISOString()
+    };
+    setCalls(prev => [newCall, ...prev]);
+    logActivity(
+      'lead',
+      'تم تسجيل مكالمة جديدة',
+      `${newCall.type === 'incoming' ? 'مكالمة واردة من' : 'مكالمة صادرة إلى'} ${newCall.clientName} (${newCall.purpose})`
+    );
+    return newCall;
+  };
+
+  const updateCallLog = (id: string, updates: Partial<CallLog>) => {
+    setCalls(prev => prev.map(c => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c)));
+  };
+
+  const deleteCallLog = (id: string) => {
+    setCalls(prev => prev.filter(c => c.id !== id));
+  };
+
+  // Create Task directly from Meeting Action Item or Call Log
+  const createTaskFromActionItem = (params: {
+    title: string;
+    description?: string;
+    assignedToId: string;
+    dueDate: string;
+    dueTime?: string;
+    priority?: TaskPriority;
+    category?: 'مبيعات' | 'تقني' | 'تسويق' | 'دعم' | 'إداري';
+    clientId?: string;
+    clientName?: string;
+    meetingId?: string;
+    meetingTitle?: string;
+    callId?: string;
+  }): Task => {
+    const assignedMember = team.find(m => m.id === params.assignedToId);
+    const newTask: Task = {
+      id: 'task-' + Date.now(),
+      title: params.title,
+      description:
+        params.description ||
+        (params.meetingTitle
+          ? `مهمة مكلفة من اجتماع: ${params.meetingTitle}`
+          : 'مهمة مكلفة من التواصل والمتابعة'),
+      assignedToId: params.assignedToId || currentUser.id,
+      priority: params.priority || 'high',
+      status: 'todo',
+      dueDate: params.dueDate,
+      dueTime: params.dueTime || '14:00',
+      category: params.category || 'إداري',
+      timeLogs: [],
+      subtasks: [],
+      createdById: currentUser.id,
+      createdByName: currentUser.name,
+      meetingId: params.meetingId,
+      meetingTitle: params.meetingTitle,
+      callId: params.callId,
+      createdAt: new Date().toISOString(),
+      ...(params.clientId || params.clientName
+        ? {
+            relatedTo: {
+              type: 'client',
+              id: params.clientId || 'client-gen',
+              name: params.clientName || 'عميل'
+            }
+          }
+        : {})
+    };
+
+    addTask(newTask);
+
+    // If linked to meeting action item, link that action item with the newly created task ID
+    if (params.meetingId) {
+      setMeetings(prev =>
+        prev.map(m => {
+          if (m.id === params.meetingId && m.actionItems) {
+            return {
+              ...m,
+              actionItems: m.actionItems.map(item =>
+                item.title === params.title ? { ...item, taskId: newTask.id } : item
+              )
+            };
+          }
+          return m;
+        })
+      );
+    }
+
+    // If linked to call, update that call with resultingTaskId
+    if (params.callId) {
+      setCalls(prev =>
+        prev.map(c =>
+          c.id === params.callId
+            ? { ...c, resultingTaskId: newTask.id, resultingTaskTitle: newTask.title }
+            : c
+        )
+      );
+    }
+
+    logActivity(
+      'task',
+      'تم إنشاء مهمة من التواصل والاجتماعات',
+      `"${newTask.title}" مسندة إلى: ${assignedMember?.name || 'عضو'}`
+    );
+
+    return newTask;
   };
 
   // Notifications Actions
@@ -5444,6 +5623,39 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   }).length;
 
+  // Account Manager Scope & Filtering Calculations
+  const isCurrentUserAccountManager = isUserAccountManager(currentUser, clientRenewals);
+
+  const simulatedAccountManager =
+    selectedSimulatedAccountManagerId !== 'all'
+      ? team.find(m => m.id === selectedSimulatedAccountManagerId) || null
+      : null;
+
+  const effectiveAccountManager: TeamMember | null =
+    simulatedAccountManager || (isCurrentUserAccountManager ? currentUser : null);
+
+  const accountManagerClients = effectiveAccountManager
+    ? getAccountManagerClients(effectiveAccountManager, clientRenewals)
+    : [];
+
+  const accountManagerTeam = effectiveAccountManager
+    ? getAccountManagerTeamMembers(effectiveAccountManager, clientRenewals, team, tasks)
+    : [];
+
+  const accountManagerScopeTasks = effectiveAccountManager
+    ? filterTasksForAccountManager(tasks, effectiveAccountManager, clientRenewals)
+    : tasks;
+
+  const isTaskInScope = (task: Task, user?: TeamMember): boolean => {
+    const targetUser = user || effectiveAccountManager;
+    if (!targetUser) return true;
+    return isTaskInAccountManagerScope(task, targetUser, clientRenewals);
+  };
+
+  const filterTasksForAM = (taskList: Task[], user: TeamMember): Task[] => {
+    return filterTasksForAccountManager(taskList, user, clientRenewals);
+  };
+
   return (
     <CRMContext.Provider
       value={{
@@ -5520,6 +5732,20 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addMeeting,
         updateMeeting,
         deleteMeeting,
+        calls,
+        addCallLog,
+        updateCallLog,
+        deleteCallLog,
+        createTaskFromActionItem,
+        isCurrentUserAccountManager,
+        accountManagerClients,
+        accountManagerTeam,
+        accountManagerScopeTasks,
+        isTaskInAccountManagerScope: isTaskInScope,
+        filterTasksForAccountManager: filterTasksForAM,
+        selectedSimulatedAccountManagerId,
+        setSelectedSimulatedAccountManagerId,
+        effectiveAccountManager,
         reports,
         addReport,
         updateReport,

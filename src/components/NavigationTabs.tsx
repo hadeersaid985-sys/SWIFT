@@ -26,6 +26,7 @@ export const NavigationTabs: React.FC = () => {
     team,
     leads,
     deals,
+    meetings,
     isManager
   } = useCRM();
 
@@ -107,9 +108,10 @@ export const NavigationTabs: React.FC = () => {
     },
     {
       id: 'meetings',
-      label: 'الاجتماعات والمكالمات',
+      label: 'التواصل والاجتماعات',
       icon: Calendar,
-      badge: null
+      badge: (meetings || []).filter(m => m.status === 'قادم').length || null,
+      badgeColor: 'bg-blue-100 text-blue-700 font-bold'
     },
     {
       id: 'reports',

@@ -23,7 +23,8 @@ import {
   DelayRecord,
   CompanyRule,
   RuleViolationRecord,
-  MonthlyPerformanceReview
+  MonthlyPerformanceReview,
+  CallLog
 } from '../types/crm';
 
 // Current logged in user is usually the primary operator
@@ -1203,41 +1204,223 @@ export const INITIAL_DEALS: Deal[] = [
 export const INITIAL_MEETINGS: Meeting[] = [
   {
     id: 'meet-1',
-    title: 'الاجتماع الصباحي اليومي لفريق المبيعات (Daily Standup)',
+    title: 'الاجتماع الصباحي اليومي لفريق المبيعات والحسابات (Daily Standup)',
+    meetingType: 'internal',
     date: formatDate(0), // Today
     time: '10:00',
-    duration: '20 دقيقة',
+    startTime: '10:00',
+    endTime: '10:30',
+    duration: '30 دقيقة',
+    locationType: 'online',
     location: 'Google Meet',
     meetingLink: 'https://meet.google.com/zoh-crm-team',
-    attendees: ['user-1', 'user-2', 'user-3'],
+    hostId: 'user-1',
+    hostName: 'هدير سعيد',
+    attendees: ['user-1', 'user-2', 'user-3', 'user-amira'],
+    clientAttendees: [],
+    agenda: '1. مراجعة أهداف اليوم وإغلاق الصفقات المتأخرة\n2. توزيع المهام العاجلة ومتابعة عملاء التجديد\n3. مراجعة خطة تسليم عملاء السوشيال ميديا',
+    summary: 'تم الاتفاق على تركيز التواصل الصباحي على تجديدات الأسبوع الحالي وتكليف إسلام بالفيديوهات المستعجلة.',
+    decisions: '- تجهيز عرض سعر مخصص لشركة إعمار المستقبل\n- متابعة تسليمات العميل جولدن خلال 48 ساعة',
+    actionItems: [
+      {
+        id: 'act-1',
+        title: 'إرسال عرض سعر العقد المعدل لشركة إعمار',
+        assignedToId: 'user-2',
+        assignedToName: 'أحمد الشريف',
+        dueDate: formatDate(1),
+        dueTime: '15:00',
+        taskId: 'task-3',
+        isCompleted: false
+      }
+    ],
     notes: 'مراجعة أهداف اليوم، التحديات، ومتابعة التاسكات الحرجة المستحقة.',
-    status: 'قادم'
+    status: 'قادم',
+    createdAt: '2026-10-25T08:00:00Z'
   },
   {
     id: 'meet-2',
-    title: 'عرض ديمو تفاعلي مباشر مع مسؤولي بنك الرياض للاستثمار',
+    title: 'عرض ديمو تفاعلي واجتماع استراتيجي مع مسؤولي بنك الرياض للاستثمار',
+    meetingType: 'client',
     date: formatDate(1), // Tomorrow
     time: '12:30',
+    startTime: '12:30',
+    endTime: '13:15',
     duration: '45 دقيقة',
+    locationType: 'online',
     location: 'Zoom',
     meetingLink: 'https://zoom.us/j/943269125',
+    hostId: 'user-1',
+    hostName: 'هدير سعيد',
     attendees: ['user-1', 'user-2', 'user-4'],
+    clientAttendees: ['م. فيصل العتيبي (مدير التحول الرقمي)', 'أ. نورة الدوسري'],
     clientName: 'بنك الرياض الرقمي',
+    companyName: 'بنك الرياض للاستثمار',
+    agenda: '1. استعراض لوحات التقارير الآلية والداشبورد التنفيذي\n2. مناقشة بروتوكولات التشفير وسرعة الاستجابة\n3. الاتفاق على نطاق تجربة النظام (PoC)',
+    summary: 'جلسة لعرض قوة منصة سويفت مايند لإدارة تدفق العمل وحساب فترات الإنجاز بدقة.',
+    decisions: 'توفير حساب تجريبي لمدة 14 يوماً مع تدريب المشرفين التقنيين.',
+    actionItems: [
+      {
+        id: 'act-2',
+        title: 'تجهيز ملف متطلبات الأمان وتشفير البيانات وإرساله للبنك',
+        assignedToId: 'user-4',
+        assignedToName: 'خالد ناصر',
+        dueDate: formatDate(2),
+        dueTime: '12:00',
+        taskId: 'task-4',
+        isCompleted: false
+      }
+    ],
     notes: 'التركيز على ميزات الأمان، سرعة الاستجابة، وتصدير التقارير الآلية.',
-    status: 'قادم'
+    status: 'قادم',
+    createdAt: '2026-10-26T11:00:00Z'
   },
   {
     id: 'meet-3',
-    title: 'جلسة التخطيط المالي وتوزيع ميزانية الربع الرابع',
+    title: 'جلسة التخطيط المالي وتوزيع ميزانية الربع الرابع مع الإدارة',
+    meetingType: 'internal',
     date: formatDate(4),
     time: '14:00',
+    startTime: '14:00',
+    endTime: '15:00',
     duration: '60 دقيقة',
+    locationType: 'in_person',
     location: 'مقر الشركة',
+    locationAddress: 'القاهرة - المقر الرئيسي، قاعة الاجتماعات التنفيذية',
+    hostId: 'user-1',
+    hostName: 'هدير سعيد',
     attendees: ['user-1', 'user-6'],
+    agenda: '1. مناقشة الحوافز والعمولات الشهرية\n2. اعتماد ميزانية الحملات التسويقية\n3. مراجعة مصاريف التوسعة التقنية والسيرفرات',
+    summary: 'اعتماد الموازنة التشغيلية لفريق المبيعات والتسويق وتحديد مؤشرات النجاح الرئيسية.',
+    status: 'قادم',
     notes: 'مناقشة الحوافز الشهرية لفريق المبيعات ونفقات الحملات الجديدة.',
-    status: 'قادم'
+    createdAt: '2026-10-24T14:00:00Z'
+  },
+  {
+    id: 'meet-4',
+    title: 'اجتماع مراجعة تسليمات خطة السوشيال والمونتاج مع شركة جولدن',
+    meetingType: 'client',
+    date: formatDate(-2),
+    time: '11:00',
+    startTime: '11:00',
+    endTime: '11:45',
+    duration: '45 دقيقة',
+    locationType: 'online',
+    location: 'Google Meet',
+    meetingLink: 'https://meet.google.com/gld-review-swift',
+    hostId: 'user-amira',
+    hostName: 'Amira',
+    attendees: ['user-amira', 'user-islam'],
+    clientAttendees: ['أ. شريف كمال (مدير التسويق بشركة جولدن)'],
+    clientId: 'ren-1793024552370',
+    clientName: 'شركة جولدن للأغذية',
+    companyName: 'جولدن',
+    agenda: '1. اعتماد تصميمات الحملة الإعلانية لشهر نوفمبر\n2. استعراض فيديوهات الريلز المنفذة وملاحظات التعديل\n3. تحديد موعد إطلاق الإعلانات الممولة',
+    summary: 'أشاد العميل بجودة المونتاج وطلب إضافة شعار الشركة بشكل أوضح في الثواني الخمس الأولى.',
+    decisions: 'تعديل الفيديوهين رقم 3 و4 وتسليمهما صباح الأربعاء لاعتمادهما وبدء الحملة.',
+    actionItems: [
+      {
+        id: 'act-3',
+        title: 'تعديل شعار المقدمة في ريلز شركة جولدن',
+        assignedToId: 'user-islam',
+        assignedToName: 'Islam',
+        dueDate: formatDate(1),
+        dueTime: '13:00',
+        isCompleted: true
+      }
+    ],
+    status: 'مكتمل',
+    createdAt: '2026-10-28T09:00:00Z'
   }
 ];
+
+export const INITIAL_CALLS: CallLog[] = [
+  {
+    id: 'call-1',
+    clientId: 'ren-1793024552370',
+    clientName: 'شركة جولدن للأغذية',
+    companyName: 'جولدن',
+    contactPerson: 'أ. شريف كمال',
+    contactPhone: '+20 10 9988 7766',
+    employeeId: 'user-amira',
+    employeeName: 'Amira',
+    date: formatDate(0),
+    time: '11:15',
+    durationMinutes: 14,
+    type: 'outgoing',
+    purpose: 'متابعة الموافقة على خطة المحتوى وتنسيق نشر الريلز',
+    summary: 'تم التواصل مع مدير التسويق وأبدى موافقته المبدئية على الجدول، وطلب تعديلاً بسيطاً على الهاشتاجات وموعد النشر المسائي.',
+    outcome: 'deal_agreed',
+    nextFollowUpDate: formatDate(3),
+    nextFollowUpTime: '12:00',
+    followUpNotes: 'متابعة تقرير نتائج أول 3 أيام بعد إطلاق الحملة وتزويدهم بالإحصائيات.',
+    notes: 'مكالمة إيجابية للغاية والعميل مهتم بتوسيع باقة الإعلانات الممولة للشهر القادم.',
+    createdAt: '2026-10-31T09:15:00Z'
+  },
+  {
+    id: 'call-2',
+    clientId: 'lead-1',
+    clientName: 'مؤسسة الحلول الذكية للتجارة',
+    companyName: 'الحلول الذكية',
+    contactPerson: 'أ. طارق عبد الرحمن',
+    contactPhone: '+966 55 432 1098',
+    employeeId: 'user-2',
+    employeeName: 'أحمد الشريف',
+    date: formatDate(0),
+    time: '09:40',
+    durationMinutes: 8,
+    type: 'incoming',
+    purpose: 'استفسار عن خطط باقات سويفت مايند CRM وإمكانية إضافة 15 موظفاً',
+    summary: 'شرحت له الميزات السحابية، وربط المهام بالأوقات، وتسجيل المكالمات والتواصل. تم الاتفاق على إرسال عرض مخصص.',
+    outcome: 'needs_follow_up',
+    nextFollowUpDate: formatDate(1),
+    nextFollowUpTime: '14:00',
+    followUpNotes: 'إرسال عرض السعر مع بروفايل الشركة والتواصل الهاتفي لشرح التفاصيل.',
+    notes: 'عميل جاد وقرار الشراء متوقع خلال أسبوع.',
+    createdAt: '2026-10-31T07:40:00Z'
+  },
+  {
+    id: 'call-3',
+    clientId: 'ren-1793022923682',
+    clientName: 'مجموعة جي إكس بي واي (gxpway)',
+    companyName: 'gxpway',
+    contactPerson: 'م. يوسف العبدالله',
+    contactPhone: '+966 54 876 5432',
+    employeeId: 'user-amira',
+    employeeName: 'Amira',
+    date: formatDate(-1),
+    time: '16:20',
+    durationMinutes: 18,
+    type: 'outgoing',
+    purpose: 'مراجعة موعد تجديد الاشتراك السنوي للسيرفرات والباقة التقنية',
+    summary: 'تم التذكير بموعد التجديد، وأكد العميل تحويل الرسوم لقسم المالية وتزويدنا بإشعار السداد البنكي غداً.',
+    outcome: 'deal_agreed',
+    nextFollowUpDate: formatDate(2),
+    nextFollowUpTime: '11:00',
+    followUpNotes: 'التأكد من قيد التحويل في الحسابات وتجديد شهادات الأمان تلقائياً.',
+    createdAt: '2026-10-30T14:20:00Z'
+  },
+  {
+    id: 'call-4',
+    clientName: 'شركة النور العالمية للمقاولات',
+    companyName: 'النور للمقاولات',
+    contactPerson: 'م. حسام الدين',
+    contactPhone: '+20 12 3456 7890',
+    employeeId: 'user-2',
+    employeeName: 'أحمد الشريف',
+    date: formatDate(-2),
+    time: '13:00',
+    durationMinutes: 2,
+    type: 'outgoing',
+    purpose: 'متابعة استلام مسودة العقد بعد جلسة التفاوض',
+    summary: 'تم الاتصال مرتين وكان الهاتف يرن دون إجابة.',
+    outcome: 'no_answer',
+    nextFollowUpDate: formatDate(0),
+    nextFollowUpTime: '15:30',
+    followUpNotes: 'إعادة الاتصال وإرسال رسالة واتساب ودية للتذكير.',
+    createdAt: '2026-10-29T11:00:00Z'
+  }
+];
+
 
 export const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
