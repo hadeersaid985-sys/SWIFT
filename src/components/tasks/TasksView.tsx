@@ -51,7 +51,8 @@ import {
   Briefcase,
   Shield,
   Building,
-  CheckCircle
+  CheckCircle,
+  HelpCircle
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
 import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember, EvaluationType, EvaluationCategory } from '../../types/crm';
@@ -94,8 +95,12 @@ export const TasksView: React.FC = () => {
     selectedSimulatedAccountManagerId,
     setSelectedSimulatedAccountManagerId,
     effectiveAccountManager,
-    visibleClients
+    visibleClients,
+    clientRenewals
   } = useCRM();
+
+  // How to show employee with specific tasks guide modal/card
+  const [showAmHelpGuide, setShowAmHelpGuide] = useState(false);
 
   // Tasks Trash Modal state
   const [isTasksTrashModalOpen, setIsTasksTrashModalOpen] = useState(false);
@@ -199,6 +204,11 @@ export const TasksView: React.FC = () => {
     revisionsCount: number;
     delayReason: string;
     delayResponsibleParty: 'employee' | 'client_approval' | 'management' | 'external_info' | 'technical' | '';
+    clientRenewalId: string;
+    clientName: string;
+    company: string;
+    accountManagerId: string;
+    accountManagerName: string;
   }>({
     title: '',
     description: '',
@@ -214,7 +224,12 @@ export const TasksView: React.FC = () => {
     reviewOutcome: '',
     revisionsCount: 0,
     delayReason: '',
-    delayResponsibleParty: ''
+    delayResponsibleParty: '',
+    clientRenewalId: '',
+    clientName: '',
+    company: '',
+    accountManagerId: '',
+    accountManagerName: ''
   });
   const [copiedTaskId, setCopiedTaskId] = useState<string | null>(null);
   const [moveDropdownTaskId, setMoveDropdownTaskId] = useState<string | null>(null);
@@ -257,7 +272,12 @@ export const TasksView: React.FC = () => {
       reviewOutcome: task.reviewOutcome || '',
       revisionsCount: task.revisionsCount || 0,
       delayReason: task.delayReason || '',
-      delayResponsibleParty: task.delayResponsibleParty || ''
+      delayResponsibleParty: task.delayResponsibleParty || '',
+      clientRenewalId: task.clientRenewalId || '',
+      clientName: task.clientName || '',
+      company: task.company || '',
+      accountManagerId: task.accountManagerId || '',
+      accountManagerName: task.accountManagerName || ''
     });
     setEditingTaskId(task.id);
   };
@@ -268,6 +288,9 @@ export const TasksView: React.FC = () => {
       showToast('يرجى إدخال عنوان المهمة');
       return;
     }
+    const selectedClient = clientRenewals.find(c => c.id === editFormData.clientRenewalId);
+    const selectedAM = team.find(m => m.id === editFormData.accountManagerId);
+
     updateTask(editingTaskId, {
       ...editFormData,
       qualityRating: (editFormData.qualityRating || undefined) as any,
@@ -275,8 +298,13 @@ export const TasksView: React.FC = () => {
       delayResponsibleParty: (editFormData.delayResponsibleParty || undefined) as any,
       actualCompletionDate: editFormData.actualCompletionDate || undefined,
       delayReason: editFormData.delayReason || undefined,
+      clientRenewalId: editFormData.clientRenewalId || undefined,
+      clientName: selectedClient?.clientName || editFormData.clientName || undefined,
+      company: selectedClient?.company || editFormData.company || undefined,
+      accountManagerId: editFormData.accountManagerId || selectedClient?.accountManagerId || undefined,
+      accountManagerName: selectedAM?.name || selectedClient?.accountManagerName || editFormData.accountManagerName || undefined
     });
-    showToast('تم حفظ وتعديل بيانات المهمة وملاحظات الجودة بنجاح! ✏️');
+    showToast('تم حفظ وتعديل بيانات المهمة ونطاق الحساب بنجاح! ✏️');
     setEditingTaskId(null);
   };
 
@@ -973,6 +1001,84 @@ export const TasksView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* HOW-TO GUIDE: كيف تظهر الموظف لأكونت مانجر بتاسكات معينة فقط؟ */}
+      <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-amber-50 rounded-xl border border-indigo-200/90 p-3.5 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0 shadow-2xs">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-extrabold text-slate-900 text-xs flex items-center gap-2">
+                <span>💡 كيف تظهر الموظف لأكونت مانجر بتاسكات معينة فقط؟</span>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.2 rounded-full border border-emerald-200">
+                  ميزة حصرية ومحمية بالخصوصية
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                طريقة ربط موظفي الفريق (مثل إسلام أو حازم) بحسابات الأكونت مانجر وعزل باقي مهامهم وسريتها.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowAmHelpGuide(prev => !prev)}
+              className="px-3 py-1.5 bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+              <span>{showAmHelpGuide ? 'إخفاء الشرح المختصر' : 'عرض خطوات العمل (3 خطوات)'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenQuickModal('task')}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ مهمة جديدة وربطها بحساب</span>
+            </button>
+          </div>
+        </div>
+
+        {showAmHelpGuide && (
+          <div className="mt-3 pt-3 border-t border-indigo-200/70 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs animate-in fade-in">
+            {/* Step 1 */}
+            <div className="bg-white p-3 rounded-xl border border-indigo-150 space-y-1 shadow-2xs">
+              <div className="flex items-center gap-2 text-indigo-700 font-extrabold text-[12px]">
+                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">1</span>
+                <span>اختر العميل أو الأكونت مانجر</span>
+              </div>
+              <p className="text-slate-600 text-[11px] leading-relaxed">
+                عند إنشاء مهمة جديدة أو تعديل أي مهمة، افتح قسم <strong>"ربط المهمة بحساب العميل والأكونت مانجر"</strong> واختر اسم العميل أو اسم الأكونت مانجر المشرف (مثلاً: أميرة).
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-white p-3 rounded-xl border border-indigo-150 space-y-1 shadow-2xs">
+              <div className="flex items-center gap-2 text-indigo-700 font-extrabold text-[12px]">
+                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">2</span>
+                <span>حدّد الموظف المكلف بالتنفيذ</span>
+              </div>
+              <p className="text-slate-600 text-[11px] leading-relaxed">
+                عيّن الموظف المسؤول (مثل إسلام أو حازم أو ميبل). سيقوم السيستم فوراً بربط هذا الموظف بفريق الأكونت مانجر المشرف على هذا الحساب.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-white p-3 rounded-xl border border-indigo-150 space-y-1 shadow-2xs">
+              <div className="flex items-center gap-2 text-emerald-700 font-extrabold text-[12px]">
+                <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">3</span>
+                <span>عزل سري وفوري للمهام</span>
+              </div>
+              <p className="text-slate-600 text-[11px] leading-relaxed">
+                سيظهر الموظف في لوحة الأكونت مانجر حاملاً <strong>هذه المهمة فقط</strong>، بينما تظل جميع مهامه الأخرى في الحسابات الثانية <strong>مخفية ومحجوبة تماماً</strong>.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Top Header & Actions Ribbon */}
       <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -3749,6 +3855,90 @@ export const TasksView: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Account Manager & Client Linkage in Edit Task (تحديد نطاق الأكونت مانجر وعزل المهام) */}
+                  <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-200/80 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-extrabold text-slate-800 flex items-center gap-1.5 text-xs">
+                        <Building className="w-4 h-4 text-indigo-600" />
+                        <span>ربط المهمة بحساب العميل والأكونت مانجر (نظام عزل المهام)</span>
+                      </label>
+                      <span className="text-[10px] text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full font-bold">
+                        تحديد نطاق ظهور التاسك
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">حساب العميل (الشركة)</label>
+                        <select
+                          value={editFormData.clientRenewalId}
+                          onChange={e => {
+                            const val = e.target.value;
+                            const found = clientRenewals.find(c => c.id === val);
+                            setEditFormData(prev => ({
+                              ...prev,
+                              clientRenewalId: val,
+                              clientName: found?.clientName || '',
+                              company: found?.company || '',
+                              accountManagerId: found?.accountManagerId || prev.accountManagerId,
+                              accountManagerName: found?.accountManagerName || prev.accountManagerName
+                            }));
+                          }}
+                          className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                        >
+                          <option value="">عام (بدون عميل محدد / مهمة داخلية)</option>
+                          {clientRenewals.map(c => (
+                            <option key={c.id} value={c.id}>
+                              {c.company} — {c.clientName} {c.accountManagerName ? `(إشراف: ${c.accountManagerName})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">الأكونت مانجر المشرف على المهمة</label>
+                        <select
+                          value={editFormData.accountManagerId}
+                          onChange={e => {
+                            const val = e.target.value;
+                            const am = team.find(m => m.id === val);
+                            setEditFormData(prev => ({
+                              ...prev,
+                              accountManagerId: val,
+                              accountManagerName: am?.name || ''
+                            }));
+                          }}
+                          className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold focus:outline-none focus:border-indigo-500"
+                        >
+                          <option value="">بدون أكونت مانجر محدد</option>
+                          {team.map(m => (
+                            <option key={m.id} value={m.id}>
+                              {m.name} ({m.role})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {editFormData.clientRenewalId || editFormData.accountManagerId ? (
+                      <div className="p-2 bg-white/90 rounded-lg border border-indigo-200 text-indigo-950 text-[11px] leading-relaxed flex items-start gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 mt-0.5 shrink-0" />
+                        <div>
+                          <strong>نتيجة التخصيص:</strong> تظهر هذه المهمة في لوحة الأكونت مانجر المسؤول (
+                          <strong>{editFormData.accountManagerName || team.find(m => m.id === editFormData.accountManagerId)?.name || 'المشرف'}</strong>
+                          ) تحت عمود الموظف (
+                          <strong>{team.find(m => m.id === editFormData.assignedToId)?.name || 'المكلف'}</strong>
+                          ) فقط، بينما تظل باقي مهامه الأخرى محجوبة وسرية.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-2 bg-slate-100/70 rounded-lg text-slate-500 text-[10px] flex items-center gap-1.5">
+                        <Shield className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span>عند اختيار "عام"، لا تظهر المهمة لأي أكونت مانجر، بل للإدارة والموظف المكلف فقط.</span>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block font-bold text-slate-700 mb-1">الأولوية</label>
@@ -3949,6 +4139,39 @@ export const TasksView: React.FC = () => {
                     {selectedTask.description || 'لا يوجد وصف مفصل للمهمة.'}
                   </p>
                 </div>
+
+                {/* Account Manager & Client Scope Affiliation Badge */}
+                {(selectedTask.company || selectedTask.clientName || selectedTask.accountManagerName) && (
+                  <div className="p-3 bg-gradient-to-r from-indigo-50 to-amber-50 rounded-xl border border-indigo-200/90 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between font-bold text-slate-800 text-[11px]">
+                      <span className="flex items-center gap-1 text-indigo-900 font-extrabold">
+                        <Building className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>نطاق حساب العميل والأكونت مانجر المشرف:</span>
+                      </span>
+                      <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold">
+                        تخضع لنظام العزل الصارم
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      {(selectedTask.company || selectedTask.clientName) && (
+                        <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-slate-200 font-bold text-slate-800 text-[11px] shadow-2xs">
+                          <Building className="w-3 h-3 text-amber-600" />
+                          <span>العميل: {selectedTask.company || selectedTask.clientName}</span>
+                        </span>
+                      )}
+                      {selectedTask.accountManagerName && (
+                        <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-slate-200 font-bold text-slate-800 text-[11px] shadow-2xs">
+                          <Briefcase className="w-3 h-3 text-indigo-600" />
+                          <span>الأكونت مانجر: {selectedTask.accountManagerName}</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-600 pt-0.5 flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <span>تظهر هذه المهمة في لوحة الأكونت مانجر تحت اسم الموظف، مع حجب كامل لباقي مهام الموظف مع العملاء الآخرين.</span>
+                    </p>
+                  </div>
+                )}
 
               {/* Task Metrics Info */}
               <div className="grid grid-cols-3 gap-2.5 text-center">
