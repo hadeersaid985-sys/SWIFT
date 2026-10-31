@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../../context/CRMContext';
 import { Task, TaskPriority, TaskStatus, Meeting, CallLog, Lead, Deal, TeamMember } from '../../types/crm';
+import { isDemoWorkItem } from '../../utils/workQueueUtils';
 
 // Unified Work Item definition for the Work Queue
 export type WorkItemType = 'task' | 'meeting' | 'call' | 'lead' | 'deal' | 'approval';
@@ -172,8 +173,10 @@ export const WorkQueueView: React.FC = () => {
   const allUnifiedItems = useMemo<WorkQueueItem[]>(() => {
     const items: WorkQueueItem[] = [];
 
-    // 1. Tasks
+    // 1. Tasks (Excluding any demo template tasks)
     tasks.forEach(t => {
+      // Exclude demo tasks from work queue
+      if (isDemoWorkItem(t.id, t.title, t.clientName || t.relatedTo?.name)) return;
       // Exclude private tasks if not manager and not mine
       if (t.isPrivate && !isManager) return;
 
@@ -252,8 +255,10 @@ export const WorkQueueView: React.FC = () => {
       });
     });
 
-    // 2. Meetings (Scheduled / Upcoming / Today)
+    // 2. Meetings (Scheduled / Upcoming / Today - Excluding demo meetings)
     meetings.forEach(m => {
+      if (isDemoWorkItem(m.id, m.title, m.clientName || m.companyName)) return;
+
       const dateStatus = evaluateDateStatus(m.date);
       const isCompleted = m.status === 'مكتمل' || m.status === 'completed';
       const isCancelled = m.status === 'ملغي' || m.status === 'cancelled';
@@ -291,8 +296,10 @@ export const WorkQueueView: React.FC = () => {
       });
     });
 
-    // 3. Calls needing follow-up
+    // 3. Calls needing follow-up (Excluding demo calls)
     calls.forEach(c => {
+      if (isDemoWorkItem(c.id, c.clientName, c.companyName || c.purpose)) return;
+
       const callDateStatus = evaluateDateStatus(c.nextFollowUpDate || c.date);
       const caller = team.find(t => t.id === c.employeeId);
       const isDone = c.outcome === 'deal_agreed' || c.outcome === 'agreed' || (c.outcome === 'connected' && !c.nextFollowUpDate);
@@ -327,8 +334,9 @@ export const WorkQueueView: React.FC = () => {
       });
     });
 
-    // 4. Leads requiring action (New, uncontacted, or with followUpDate)
+    // 4. Leads requiring action (Excluding demo leads)
     leads.forEach(l => {
+      if (isDemoWorkItem(l.id, l.name, l.company)) return;
       if (l.isConvertedToClient || l.status === 'غير مؤهل' || l.status === 'صفقة ناجحة (Won)') return;
 
       const dateStatus = evaluateDateStatus(l.followUpDate || l.createdAt);
@@ -365,8 +373,9 @@ export const WorkQueueView: React.FC = () => {
       });
     });
 
-    // 5. Deals in negotiation / awaiting approval
+    // 5. Deals in negotiation / awaiting approval (Excluding demo deals)
     deals.forEach(d => {
+      if (isDemoWorkItem(d.id, d.title, d.company)) return;
       if (d.stage === 'مغلقة ناجحة' || d.stage === 'ملغاة') return;
 
       const dateStatus = evaluateDateStatus(d.expectedCloseDate);

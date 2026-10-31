@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { useCRM, isTaskAssignedToUser, isUserMentionedInTask } from '../context/CRMContext';
 import { useChat } from '../context/ChatContext';
+import { isDemoWorkItem } from '../utils/workQueueUtils';
 
 export interface SidebarProps {
   isMobileOpen?: boolean;
@@ -77,10 +78,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
   const [marketingOpen, setMarketingOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState('');
 
-  // Visible tasks for the current user in sidebar
+  // Visible tasks for the current user in sidebar (excluding demo tasks from queue count)
   const userVisibleTasks = isManager
-    ? tasks
-    : tasks.filter(t => !t.isPrivate && ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentionedInTask(t, currentUser)));
+    ? tasks.filter(t => !isDemoWorkItem(t.id, t.title, t.clientName))
+    : tasks.filter(t => !t.isPrivate && !isDemoWorkItem(t.id, t.title, t.clientName) && ((currentUser && isTaskAssignedToUser(t, currentUser)) || isUserMentionedInTask(t, currentUser)));
 
   const pendingTasksCount = userVisibleTasks.filter(t => t.status !== 'completed').length;
 
