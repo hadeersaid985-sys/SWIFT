@@ -46,7 +46,9 @@ import {
   Video,
   PhoneIncoming,
   PhoneOutgoing,
-  CalendarCheck
+  CalendarCheck,
+  Globe,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import {
@@ -222,7 +224,10 @@ export const ClientRenewalsView: React.FC = () => {
   const [selectedTeamMemberIdsForClient, setSelectedTeamMemberIdsForClient] = useState<string[]>([]);
 
   const [editingSheetClient, setEditingSheetClient] = useState<ClientRenewal | null>(null);
-  const [sheetModalTab, setSheetModalTab] = useState<'sheets' | 'upload_file'>('sheets');
+  const [sheetModalTab, setSheetModalTab] = useState<'sheets' | 'website_logo' | 'upload_file'>('sheets');
+  const [clientWebsiteInput, setClientWebsiteInput] = useState('');
+  const [clientLogoInput, setClientLogoInput] = useState('');
+  const [copiedWebsiteId, setCopiedWebsiteId] = useState<string | null>(null);
   const [modalSheets, setModalSheets] = useState<{ id: string; title: string; url: string }[]>([]);
   const [uploadedFileItem, setUploadedFileItem] = useState<{
     name: string;
@@ -416,6 +421,8 @@ export const ClientRenewalsView: React.FC = () => {
     phone: '',
     whatsappNumber: '',
     email: '',
+    websiteUrl: '',
+    logoUrl: '',
     serviceName: 'استضافة وسيرفرات سويفت (2 سيستم + 2 دومين)',
     planCycle: 'سنوي',
     amount: 2500,
@@ -526,6 +533,8 @@ export const ClientRenewalsView: React.FC = () => {
       phone: '',
       whatsappNumber: '',
       email: '',
+      websiteUrl: '',
+      logoUrl: '',
       serviceName: 'استضافة وسيرفرات سويفت (2 سيستم + 2 دومين)',
       planCycle: 'سنوي',
       amount: 2500,
@@ -543,6 +552,21 @@ export const ClientRenewalsView: React.FC = () => {
     });
   };
 
+  const handleFormDataLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('حجم ملف اللوجو كبير جداً، يرجى اختيار صورة أقل من 5 ميجابايت');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData(prev => ({ ...prev, logoUrl: reader.result as string }));
+      showToast('تم تحميل شعار العميل بنجاح 🖼️');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleOpenCreateModal = () => {
     setEditingRenewal(null);
     setFormData({
@@ -552,6 +576,8 @@ export const ClientRenewalsView: React.FC = () => {
       phone: '',
       whatsappNumber: '',
       email: '',
+      websiteUrl: '',
+      logoUrl: '',
       serviceName: 'استضافة وسيرفرات سويفت (2 سيستم + 2 دومين)',
       planCycle: 'سنوي',
       amount: 2500,
@@ -583,6 +609,8 @@ export const ClientRenewalsView: React.FC = () => {
       phone: ren.phone,
       whatsappNumber: ren.whatsappNumber,
       email: ren.email || '',
+      websiteUrl: ren.websiteUrl || '',
+      logoUrl: ren.logoUrl || '',
       serviceName: ren.serviceName,
       planCycle: ren.planCycle,
       amount: ren.amount,
@@ -691,8 +719,22 @@ export const ClientRenewalsView: React.FC = () => {
     setTimeout(() => setCopiedSheetId(null), 2500);
   };
 
-  // Open quick sheet and file manager modal (يدعم شيتات جوجل ورفع الملفات لكامل التيم)
-  const handleOpenEditSheet = (e: React.MouseEvent, client: ClientRenewal, initialTab: 'sheets' | 'upload_file' = 'sheets') => {
+  // 1-Click Copy Website link helper
+  const handleCopyWebsiteLink = (e: React.MouseEvent, client: ClientRenewal) => {
+    e.stopPropagation();
+    if (!client.websiteUrl) {
+      showToast('لا يوجد رابط موقع مسجل لهذا العميل حتى الآن');
+      return;
+    }
+    const targetUrl = client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`;
+    navigator.clipboard.writeText(targetUrl);
+    setCopiedWebsiteId(client.id);
+    showToast('تم نسخ رابط موقع العميل إلى الحافظة بنجاح! 🌐');
+    setTimeout(() => setCopiedWebsiteId(null), 2500);
+  };
+
+  // Open quick sheet, website/logo, and file manager modal (يدعم شيتات جوجل، موقع العميل واللوجو، ورفع الملفات لكامل التيم)
+  const handleOpenEditSheet = (e: React.MouseEvent, client: ClientRenewal, initialTab: 'sheets' | 'website_logo' | 'upload_file' = 'sheets') => {
     e.stopPropagation();
     setEditingSheetClient(client);
     setSheetModalTab(initialTab);
@@ -702,6 +744,8 @@ export const ClientRenewalsView: React.FC = () => {
     setModalSheets(existing);
     setSheetUrlInput(existing[0]?.url || '');
     setSheetTitleInput(existing[0]?.title || `شيت متابعة ${client.clientName}`);
+    setClientWebsiteInput(client.websiteUrl || '');
+    setClientLogoInput(client.logoUrl || '');
     setUploadedFileItem({
       name: '',
       category: 'بريف فني',
@@ -729,6 +773,40 @@ export const ClientRenewalsView: React.FC = () => {
     }
     setEditingSheetClient(null);
     showToast('تم حفظ وتحديث شيتات جوجل ومشاركتها مع التيم بنجاح! 📗');
+  };
+
+  // Save website and logo for client
+  const handleSaveWebsiteAndLogo = () => {
+    if (!editingSheetClient) return;
+    const updates: Partial<ClientRenewal> = {
+      websiteUrl: clientWebsiteInput.trim(),
+      logoUrl: clientLogoInput.trim()
+    };
+    updateClientRenewal(editingSheetClient.id, updates);
+    if (selectedClientForDossier && selectedClientForDossier.id === editingSheetClient.id) {
+      setSelectedClientForDossier({
+        ...selectedClientForDossier,
+        ...updates
+      });
+    }
+    setEditingSheetClient(null);
+    showToast('تم حفظ وتحديث رابط موقع العميل والشعار بنجاح! 🌐🎨');
+  };
+
+  // Quick logo file select for modal
+  const handleLogoFileSelectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('حجم ملف اللوجو كبير جداً، يرجى اختيار صورة أقل من 5 ميجابايت');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setClientLogoInput(reader.result as string);
+      showToast('تمت قراءة ومعاينة لوجو العميل بنجاح 🖼️');
+    };
+    reader.readAsDataURL(file);
   };
 
   // File upload input change
@@ -1266,9 +1344,33 @@ export const ClientRenewalsView: React.FC = () => {
                       {/* Top Row: Client Name, Company, Status */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-black text-base shadow-xs shrink-0">
-                            {client.clientName.charAt(0)}
-                          </div>
+                          {client.logoUrl ? (
+                            <div
+                              onClick={e => handleOpenEditSheet(e, client, 'website_logo')}
+                              className="w-11 h-11 rounded-xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-center p-1 shrink-0 cursor-pointer relative group/logo overflow-hidden"
+                              title="شعار العميل - انقر للتعديل أو التغيير"
+                            >
+                              <img
+                                src={client.logoUrl}
+                                alt={client.clientName}
+                                className="w-full h-full object-contain"
+                              />
+                              <div className="absolute inset-0 bg-slate-900/60 rounded-xl flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity text-white text-[9px] font-bold">
+                                تعديل
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              onClick={e => handleOpenEditSheet(e, client, 'website_logo')}
+                              className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-black text-base shadow-xs shrink-0 cursor-pointer relative group/avatar"
+                              title="انقر لإضافة لوجو وشعار للعميل"
+                            >
+                              <span>{client.clientName.charAt(0)}</span>
+                              <div className="absolute inset-0 bg-slate-900/70 rounded-xl flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity text-white text-[9px] font-bold">
+                                + لوجو
+                              </div>
+                            </div>
+                          )}
                           <div>
                             <h3
                               onClick={() => setSelectedClientForDossier(client)}
@@ -1277,9 +1379,24 @@ export const ClientRenewalsView: React.FC = () => {
                             >
                               {client.clientName}
                             </h3>
-                            <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1 mt-0.5">
-                              <Building className="w-3 h-3 text-slate-400" />
-                              <span>{client.company}</span>
+                            <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <Building className="w-3 h-3 text-slate-400" />
+                                <span>{client.company}</span>
+                              </span>
+                              {client.websiteUrl && (
+                                <a
+                                  href={client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-[10px] text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 px-1.5 py-0.2 rounded border border-sky-200 transition-colors"
+                                  title={`زيارة موقع العميل: ${client.websiteUrl}`}
+                                >
+                                  <Globe className="w-2.5 h-2.5 text-sky-600" />
+                                  <span>الموقع ↗</span>
+                                </a>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1411,6 +1528,76 @@ export const ClientRenewalsView: React.FC = () => {
                           </div>
                         );
                       })()}
+
+                      {/* 🌐 CLIENT WEBSITE & LOGO BOX (طلب المستخدم: إضافة لينك موقع العميل واللوجو زي الشيتات) */}
+                      <div className="mt-2.5 bg-gradient-to-br from-sky-50/90 to-blue-50/70 border-2 border-sky-300/80 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-extrabold text-sky-950 flex items-center gap-1.5">
+                            <Globe className="w-4 h-4 text-sky-600" />
+                            <span>موقع العميل (الويب سايت):</span>
+                            {client.websiteUrl && (
+                              <span className="text-[10px] bg-sky-200 text-sky-950 font-black px-1.5 py-0.2 rounded-full">
+                                نشط 🌐
+                              </span>
+                            )}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={e => handleOpenEditSheet(e, client, 'website_logo')}
+                              className="text-[10px] font-bold text-sky-800 hover:text-sky-950 underline cursor-pointer flex items-center gap-0.5 bg-white/70 px-1.5 py-0.5 rounded-md border border-sky-200"
+                              title="تعديل رابط موقع العميل أو الشعار"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>{client.websiteUrl || client.logoUrl ? 'تعديل / + لوجو وموقع' : '+ لوجو وموقع'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {client.websiteUrl ? (
+                          <div className="bg-white/90 p-2 rounded-xl border border-sky-200/90 shadow-2xs space-y-1.5">
+                            <div className="text-[11px] font-extrabold text-slate-800 truncate flex items-center gap-1.5 dir-ltr text-left" title={client.websiteUrl}>
+                              <Globe className="w-3 h-3 text-sky-500 shrink-0" />
+                              <span className="truncate">{client.websiteUrl.replace(/^https?:\/\//i, '')}</span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 pt-0.5">
+                              <a
+                                href={client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex-1 py-1.5 px-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-101"
+                                title="فتح موقع العميل في نافذة جديدة"
+                              >
+                                <Globe className="w-3.5 h-3.5" />
+                                <span>فتح الموقع (الويب سايت) ↗</span>
+                              </a>
+
+                              <button
+                                type="button"
+                                onClick={e => handleCopyWebsiteLink(e, client)}
+                                className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                                  copiedWebsiteId === client.id
+                                    ? 'bg-sky-200 text-sky-900 border-sky-400'
+                                    : 'bg-white hover:bg-sky-100 text-sky-800 border-sky-200'
+                                }`}
+                                title="نسخ رابط الموقع"
+                              >
+                                {copiedWebsiteId === client.id ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={e => handleOpenEditSheet(e, client, 'website_logo')}
+                            className="w-full py-2 px-3 bg-white hover:bg-sky-100/50 border border-dashed border-sky-300 rounded-lg text-xs font-bold text-sky-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>+ إضافة رابط الموقع الإلكتروني (الويب سايت) واللوجو</span>
+                          </button>
+                        )}
+                      </div>
 
                       {/* 📁 UPLOADED FILES LIST ON CARD */}
                       {client.folderFiles && client.folderFiles.length > 0 && (
@@ -1837,13 +2024,34 @@ export const ClientRenewalsView: React.FC = () => {
 
                       {/* Client & Company */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="font-extrabold text-slate-900 flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-blue-600" />
-                          <span>{ren.clientName}</span>
-                        </div>
-                        <div className="text-[11px] text-slate-500 font-bold flex items-center gap-1 mt-0.5">
-                          <Building className="w-3 h-3 text-slate-400" />
-                          <span>{ren.company}</span>
+                        <div className="flex items-center gap-2">
+                          {ren.logoUrl ? (
+                            <img src={ren.logoUrl} alt={ren.clientName} className="w-7 h-7 rounded-lg object-contain bg-white border border-slate-200 p-0.5 shrink-0 shadow-2xs" />
+                          ) : (
+                            <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                              {ren.clientName.charAt(0)}
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                              <span>{ren.clientName}</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-bold flex items-center gap-1.5 mt-0.5">
+                              <Building className="w-3 h-3 text-slate-400" />
+                              <span>{ren.company}</span>
+                              {ren.websiteUrl && (
+                                <a
+                                  href={ren.websiteUrl.startsWith('http') ? ren.websiteUrl : `https://${ren.websiteUrl}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-sky-600 hover:text-sky-800"
+                                  title={`زيارة موقع العميل: ${ren.websiteUrl}`}
+                                >
+                                  <Globe className="w-3 h-3 inline" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </td>
 
@@ -2454,6 +2662,75 @@ export const ClientRenewalsView: React.FC = () => {
                 </div>
               </div>
 
+              {/* قسم موقع العميل (الويب سايت) ولوجو الشركة */}
+              <div className="bg-sky-50/80 p-3.5 rounded-2xl border-2 border-sky-300 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-sky-950 flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-sky-600" />
+                    <span>موقع العميل (الويب سايت) وشعار الشركة (اللوجو):</span>
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Website URL */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-sky-950 mb-1">
+                      رابط الموقع الإلكتروني (الويب سايت):
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="url"
+                        value={formData.websiteUrl || ''}
+                        onChange={e => setFormData({ ...formData, websiteUrl: e.target.value })}
+                        placeholder="https://www.company-website.com"
+                        className="w-full bg-white border border-sky-200 rounded-xl pr-8 pl-3 py-2 text-xs focus:outline-none focus:border-sky-600 font-mono text-left dir-ltr"
+                      />
+                      <Globe className="w-3.5 h-3.5 text-sky-500 absolute right-2.5 top-2.5 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Client Logo */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-sky-950 mb-1">
+                      شعار / لوجو العميل:
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {formData.logoUrl ? (
+                        <div className="relative group/preview shrink-0">
+                          <img
+                            src={formData.logoUrl}
+                            alt="Logo preview"
+                            className="w-9 h-9 rounded-xl object-contain bg-white border border-sky-300 p-0.5 shadow-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, logoUrl: '' })}
+                            className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full p-0.5 shadow-xs cursor-pointer hover:bg-rose-700"
+                            title="إزالة اللوجو"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-9 h-9 rounded-xl bg-sky-100 border border-dashed border-sky-300 flex items-center justify-center text-sky-600 shrink-0">
+                          <ImageIcon className="w-4 h-4" />
+                        </div>
+                      )}
+                      <label className="flex-1 py-1.5 px-3 bg-white hover:bg-sky-100/60 border border-sky-300 rounded-xl text-xs font-bold text-sky-800 transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs">
+                        <Upload className="w-3 h-3 text-sky-600" />
+                        <span>{formData.logoUrl ? 'تغيير اللوجو 🖼️' : 'رفع اللوجو من الجهاز'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFormDataLogoChange}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block font-bold text-slate-700 mb-1">الخدمة أو الباقة المشترك بها: *</label>
                 <input
@@ -2816,9 +3093,19 @@ export const ClientRenewalsView: React.FC = () => {
             {/* Header */}
             <div className="flex items-start justify-between pb-3 border-b border-slate-100 gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">
-                  {currentDossierClient.clientName.charAt(0)}
-                </div>
+                {currentDossierClient.logoUrl ? (
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 p-1 shadow-md shrink-0 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={currentDossierClient.logoUrl}
+                      alt={currentDossierClient.clientName}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">
+                    {currentDossierClient.clientName.charAt(0)}
+                  </div>
+                )}
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-base sm:text-lg font-black text-slate-900">
@@ -2838,9 +3125,23 @@ export const ClientRenewalsView: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <div className="text-xs font-bold text-slate-500 flex items-center gap-1.5 mt-0.5">
-                    <Building className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{currentDossierClient.company}</span>
+                  <div className="text-xs font-bold text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <Building className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{currentDossierClient.company}</span>
+                    </span>
+                    {currentDossierClient.websiteUrl && (
+                      <a
+                        href={currentDossierClient.websiteUrl.startsWith('http') ? currentDossierClient.websiteUrl : `https://${currentDossierClient.websiteUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded-lg border border-sky-200 transition-colors"
+                        title="زيارة الموقع الإلكتروني للعميل"
+                      >
+                        <Globe className="w-3 h-3 text-sky-600" />
+                        <span>زيارة الموقع ↗</span>
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -4475,7 +4776,7 @@ export const ClientRenewalsView: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-900">
-                    إدارة شيتات المتابعة والمستندات (للتيم) 📗📎
+                    إدارة شيتات المتابعة، موقع العميل، واللوجو 📗🌐🎨
                   </h3>
                   <div className="text-[11px] text-slate-500">
                     العميل: <strong className="text-slate-900">{editingSheetClient.clientName}</strong> ({editingSheetClient.company})
@@ -4502,10 +4803,28 @@ export const ClientRenewalsView: React.FC = () => {
                 }`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>شيتات جوجل (Google Sheets)</span>
+                <span>شيتات جوجل</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${sheetModalTab === 'sheets' ? 'bg-emerald-800 text-white' : 'bg-slate-200 text-slate-700'}`}>
                   {modalSheets.length}
                 </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSheetModalTab('website_logo')}
+                className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  sheetModalTab === 'website_logo'
+                    ? 'bg-sky-600 text-white shadow-2xs font-black'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>الموقع واللوجو 🌐</span>
+                {(editingSheetClient.websiteUrl || editingSheetClient.logoUrl) && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${sheetModalTab === 'website_logo' ? 'bg-sky-800 text-white' : 'bg-sky-100 text-sky-800'}`}>
+                    ✓
+                  </span>
+                )}
               </button>
 
               <button
@@ -4518,7 +4837,7 @@ export const ClientRenewalsView: React.FC = () => {
                 }`}
               >
                 <Upload className="w-3.5 h-3.5" />
-                <span>رفع فايل أو مستند مباشر 📎</span>
+                <span>رفع فايل 📎</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${sheetModalTab === 'upload_file' ? 'bg-amber-800 text-white' : 'bg-slate-200 text-slate-700'}`}>
                   {editingSheetClient.folderFiles?.length || 0}
                 </span>
@@ -4634,6 +4953,140 @@ export const ClientRenewalsView: React.FC = () => {
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>حفظ وتعميم الشيتات على التيم</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: CLIENT WEBSITE & LOGO (طلب المستخدم: إضافة لينك موقع العميل واللوجو) */}
+            {sheetModalTab === 'website_logo' && (
+              <div className="space-y-4 animate-in fade-in">
+                {/* 1. Website Link Input */}
+                <div className="bg-sky-50/80 p-3.5 rounded-2xl border-2 border-sky-300 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-sky-950 flex items-center gap-1.5">
+                      <Globe className="w-4 h-4 text-sky-600" />
+                      <span>رابط الموقع الإلكتروني للعميل (Website URL):</span>
+                    </span>
+                    {clientWebsiteInput && (
+                      <a
+                        href={clientWebsiteInput.startsWith('http') ? clientWebsiteInput : `https://${clientWebsiteInput}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] font-bold text-sky-700 hover:text-sky-900 underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>فتح الموقع الآن ↗</span>
+                      </a>
+                    )}
+                  </div>
+
+                  <div>
+                    <input
+                      type="url"
+                      value={clientWebsiteInput}
+                      onChange={e => setClientWebsiteInput(e.target.value)}
+                      placeholder="https://powertech-eg.com أو www.client-domain.com"
+                      className="w-full bg-white border border-sky-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-600 font-mono text-left dir-ltr font-bold"
+                    />
+                    <p className="text-[10px] text-sky-800/80 mt-1">
+                      💡 يمكنك وضع رابط موقع العميل أو رابط الدومين المباشر لفتحه ونسخه بضغطة زر من كارت العميل.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 2. Client Logo Upload & Preview */}
+                <div className="bg-slate-50 p-3.5 rounded-2xl border-2 border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-blue-600" />
+                      <span>شعار / لوجو العميل (Client Logo):</span>
+                    </span>
+                    {clientLogoInput && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setClientLogoInput('');
+                          showToast('تمت إزالة الشعار واستعادة الحرف الافتراضي');
+                        }}
+                        className="text-[10px] text-rose-600 hover:text-rose-800 font-bold flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>إزالة اللوجو</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Logo Preview Card */}
+                  <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+                    {clientLogoInput ? (
+                      <div className="w-14 h-14 rounded-2xl bg-white border-2 border-emerald-300 p-1 shadow-xs flex items-center justify-center shrink-0 overflow-hidden">
+                        <img
+                          src={clientLogoInput}
+                          alt="Logo Preview"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-black text-xl shadow-xs shrink-0">
+                        {editingSheetClient.clientName.charAt(0)}
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="font-extrabold text-xs text-slate-900">
+                        {editingSheetClient.clientName}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-medium">
+                        {editingSheetClient.company}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        {clientLogoInput ? '✅ تم تعيين شعار مخصص سيظهر في كارت العميل والملف' : '⚠️ يظهر حالياً الحرف الأول كشعار افتراضي'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upload Controls */}
+                  <div className="space-y-2">
+                    <label className="w-full py-2.5 px-4 bg-blue-50 hover:bg-blue-100 border-2 border-dashed border-blue-300 rounded-xl text-xs font-bold text-blue-800 transition-all cursor-pointer flex items-center justify-center gap-2">
+                      <Upload className="w-4 h-4 text-blue-600" />
+                      <span>{clientLogoInput ? 'تغيير صورة الشعار (اختيار ملف من جهازك) 🖼️' : 'رفع صورة الشعار / اللوجو من جهازك 🖼️'}</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                        onChange={handleLogoFileSelectChange}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400 shrink-0">أو رابط صورة اللوجو:</span>
+                      <input
+                        type="url"
+                        value={clientLogoInput.startsWith('data:') ? '' : clientLogoInput}
+                        onChange={e => setClientLogoInput(e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                        className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-blue-500 font-mono text-[11px]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setEditingSheetClient(null)}
+                    className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveWebsiteAndLogo}
+                    className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl cursor-pointer shadow-xs flex items-center gap-1.5"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>حفظ موقع العميل واللوجو الآن ✓</span>
                   </button>
                 </div>
               </div>

@@ -474,6 +474,8 @@ export interface ClientRenewal {
   phone: string;
   whatsappNumber: string;
   email?: string;
+  websiteUrl?: string; // رابط موقع العميل / الويب سايت
+  logoUrl?: string; // شعار أو لوجو العميل (Base64 أو رابط صورة)
   serviceName: string; // e.g. "استضافة وسيرفرات 2 دومين", "باقة سيو وذكاء اصطناعي GEO", "نظام CRM وسيلز"
   planCycle: 'شهري' | 'ربع سنوي' | 'نصف سنوي' | 'سنوي';
   amount: number;

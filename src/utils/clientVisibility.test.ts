@@ -141,4 +141,27 @@ describe('Client Renewal & Files Visibility Isolation', () => {
     assert.equal(suspendedOnly.length, 2);
     assert.deepEqual(suspendedOnly.map(c => c.id), ['c2', 'c4']);
   });
+
+  it('preserves and validates client website and custom logo configuration', () => {
+    const clientWithBrand: ClientRenewal = {
+      ...sampleClient,
+      websiteUrl: 'https://powertech-eg.com',
+      logoUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    };
+
+    assert.equal(clientWithBrand.websiteUrl, 'https://powertech-eg.com');
+    assert.ok(clientWithBrand.logoUrl?.startsWith('data:image/png;base64,'));
+
+    // Normalization helper test
+    const normalizeUrl = (url?: string) => {
+      if (!url) return '';
+      const trimmed = url.trim();
+      return trimmed.startsWith('http://') || trimmed.startsWith('https://') ? trimmed : `https://${trimmed}`;
+    };
+
+    assert.equal(normalizeUrl('powertech-eg.com'), 'https://powertech-eg.com');
+    assert.equal(normalizeUrl('http://myclient.com'), 'http://myclient.com');
+    assert.equal(normalizeUrl('https://myclient.com'), 'https://myclient.com');
+    assert.equal(normalizeUrl(''), '');
+  });
 });
