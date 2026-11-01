@@ -87,21 +87,34 @@ async function startServer() {
             });
             parsed.tasks = Array.from(currentTasksMap.values());
           }
+
+          if (Array.isArray(latestParsed.team) && latestParsed.team.length > 0) {
+            const currentTeamMap = new Map<string, any>((parsed.team || []).map((m: any) => [m.id, m]));
+            latestParsed.team.forEach((m: any) => {
+              if (!currentTeamMap.has(m.id)) {
+                currentTeamMap.set(m.id, m);
+              }
+            });
+            parsed.team = Array.from(currentTeamMap.values());
+          }
         } catch {}
       }
 
-      // Normalize Islam canonical identity across tasks
+      // Normalize Islam and Mariam canonical identity across tasks
       if (Array.isArray(parsed.tasks)) {
         parsed.tasks = parsed.tasks.map((t: any) => {
           const aid = (t.assignedToId || '').toLowerCase();
           if (aid === 'user-1793025675186' || aid === 'user-1793016178916' || aid === 'islam') {
             t.assignedToId = 'user-islam';
           }
+          if (aid === 'user-1793097751331' || aid === 'user-1793016396281' || aid === 'mariam') {
+            t.assignedToId = 'user-mariam';
+          }
           return t;
         });
       }
 
-      // Normalize Islam in team
+      // Normalize Islam and Mariam in team
       if (Array.isArray(parsed.team)) {
         const islamInTeam = parsed.team.find((m: any) => m.id === 'user-islam' || (m.username || '').toLowerCase() === 'islam');
         if (islamInTeam) {
@@ -112,6 +125,18 @@ async function startServer() {
           islamInTeam.role = 'Video Editor';
           // Filter out temporary duplicate entries
           parsed.team = parsed.team.filter((m: any) => m.id !== 'user-1793025675186' && m.id !== 'user-1793016178916');
+        }
+
+        const mariamInTeam = parsed.team.find((m: any) => m.id === 'user-mariam' || m.id === 'user-1793097751331' || (m.username || '').toLowerCase() === 'mariam');
+        if (mariamInTeam) {
+          mariamInTeam.id = 'user-mariam';
+          mariamInTeam.username = 'Mariam';
+          mariamInTeam.name = 'Mariam';
+          mariamInTeam.role = 'Web Developer';
+          mariamInTeam.department = 'التطوير والتقنية';
+          mariamInTeam.employeeCode = 'SM-106';
+          // Filter out duplicate IDs
+          parsed.team = parsed.team.filter((m: any) => m === mariamInTeam || (m.id !== 'user-1793097751331' && m.id !== 'user-1793016396281'));
         }
       }
 

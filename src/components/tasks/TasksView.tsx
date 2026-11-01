@@ -104,6 +104,120 @@ export const TasksView: React.FC = () => {
   // How to show employee with specific tasks guide modal/card
   const [showAmHelpGuide, setShowAmHelpGuide] = useState(false);
 
+  // Simple Mode & Banner Visibility States (X & Lock icons with persistence)
+  // "خلي ال3 مربعات الاشعارات او الملخص يكون في علامه x وا قفل يخفيهم لان بتغلبط التيم وعايزه يكون ابسط"
+  const [isSimpleMode, setIsSimpleMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('swiftmynd_simple_view_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [hideWelcomeBanner, setHideWelcomeBanner] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('swiftmynd_hide_welcome_banner') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [hideTimerBanner, setHideTimerBanner] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('swiftmynd_hide_timer_banner') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [hideAmScopeBanner, setHideAmScopeBanner] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('swiftmynd_hide_am_scope_banner') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [hideTipBanner, setHideTipBanner] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('swiftmynd_hide_tip_banner') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [hideKpiCards, setHideKpiCards] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('swiftmynd_hide_kpi_cards') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSimpleMode = () => {
+    setIsSimpleMode(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('swiftmynd_simple_view_mode', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleSetHideWelcomeBanner = (hide: boolean) => {
+    setHideWelcomeBanner(hide);
+    try {
+      localStorage.setItem('swiftmynd_hide_welcome_banner', String(hide));
+    } catch {}
+  };
+
+  const handleSetHideTimerBanner = (hide: boolean) => {
+    setHideTimerBanner(hide);
+    try {
+      localStorage.setItem('swiftmynd_hide_timer_banner', String(hide));
+    } catch {}
+  };
+
+  const handleSetHideAmScopeBanner = (hide: boolean) => {
+    setHideAmScopeBanner(hide);
+    try {
+      localStorage.setItem('swiftmynd_hide_am_scope_banner', String(hide));
+    } catch {}
+  };
+
+  const handleSetHideTipBanner = (hide: boolean) => {
+    setHideTipBanner(hide);
+    try {
+      localStorage.setItem('swiftmynd_hide_tip_banner', String(hide));
+    } catch {}
+  };
+
+  const handleSetHideKpiCards = (hide: boolean) => {
+    setHideKpiCards(hide);
+    try {
+      localStorage.setItem('swiftmynd_hide_kpi_cards', String(hide));
+    } catch {}
+  };
+
+  const restoreAllBanners = () => {
+    setIsSimpleMode(false);
+    handleSetHideWelcomeBanner(false);
+    handleSetHideTimerBanner(false);
+    handleSetHideAmScopeBanner(false);
+    handleSetHideTipBanner(false);
+    handleSetHideKpiCards(false);
+    try {
+      localStorage.setItem('swiftmynd_simple_view_mode', 'false');
+    } catch {}
+  };
+
+  // Check how many banners/boxes are hidden
+  const hiddenBannersCount = (hideWelcomeBanner ? 1 : 0) +
+    (hideTimerBanner ? 1 : 0) +
+    (hideAmScopeBanner ? 1 : 0) +
+    (hideTipBanner ? 1 : 0) +
+    (hideKpiCards ? 1 : 0);
+
   // Tasks Trash Modal state
   const [isTasksTrashModalOpen, setIsTasksTrashModalOpen] = useState(false);
   // Daily Tasks Work Report Modal state
@@ -418,16 +532,22 @@ export const TasksView: React.FC = () => {
             if (task.isPrivate) return false;
             if (isAdminTask(task)) return false;
             const isAssigned = isTaskAssignedToUser(task, currentUser);
-            const isMentioned = isUserMentionedInTask(task, currentUser);
             const inAmScope = isTaskInAccountManagerScope(task, currentUser);
-            return isAssigned || isMentioned || inAmScope;
+            if (filterStatus === 'mentions') {
+              return isAssigned || inAmScope || isUserMentionedInTask(task, currentUser);
+            }
+            return isAssigned || inAmScope;
           }))
     : tasks.filter(task => {
         if (task.isPrivate) return false;
         if (isAdminTask(task)) return false;
         const isAssigned = isTaskAssignedToUser(task, currentUser);
-        const isMentioned = isUserMentionedInTask(task, currentUser);
-        return isAssigned || isMentioned;
+        // Strict account separation: In regular employee view, only tasks directly assigned to them are shown!
+        // Tasks where they are mentioned in a comment (e.g. Roaa's tasks or Eman's tasks) only appear if they explicitly select the mentions filter
+        if (filterStatus === 'mentions') {
+          return isAssigned || isUserMentionedInTask(task, currentUser);
+        }
+        return isAssigned;
       });
 
   // Filter tasks logic based on ROLE, Privacy, and user filters:
@@ -696,43 +816,153 @@ export const TasksView: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-12 animate-in fade-in text-xs">
+      {/* SLIM MINI-TIMER NOTIFICATION (When timer widget is closed/locked but timer is running or paused) */}
+      {(() => {
+        const activeRunningTask = userBaseTasks.find(t => t.isTimerRunning && t.assignedToId === currentUser.id);
+        const activePausedTask = userBaseTasks.find(t => t.isTimerPaused && t.assignedToId === currentUser.id);
+        const currentActiveTask = activeRunningTask || activePausedTask;
+
+        if (!currentActiveTask || (!isSimpleMode && !hideTimerBanner)) return null;
+
+        return (
+          <div className={`p-3 px-4 rounded-xl border flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in ${
+            activeRunningTask
+              ? 'bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 text-white border-emerald-500/50'
+              : 'bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 text-white border-amber-500/50'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              <span className={`w-3 h-3 rounded-full shrink-0 ${activeRunningTask ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
+              <span className="font-mono font-black text-sm text-emerald-300">
+                {formatLiveTimer(currentActiveTask)}
+              </span>
+              <span className="text-slate-300">
+                {activeRunningTask ? '⏱️ المؤقت يعمل الآن على:' : '⏸️ متوقف مؤقتاً على:'}
+              </span>
+              <strong className="text-white underline">{currentActiveTask.title}</strong>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {activeRunningTask && (
+                <button
+                  type="button"
+                  onClick={() => pauseTaskTimer(activeRunningTask.id)}
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow-xs cursor-pointer"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                  <span>إيقاف مؤقت</span>
+                </button>
+              )}
+              {activePausedTask && (
+                <button
+                  type="button"
+                  onClick={() => resumeTaskTimer(activePausedTask.id)}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow-xs cursor-pointer animate-pulse"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>استئناف</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setStopTimerTaskId(currentActiveTask.id)}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-lg text-xs flex items-center gap-1 shadow-xs cursor-pointer"
+              >
+                <Square className="w-3.5 h-3.5 fill-current" />
+                <span>إنهاء وحساب الوقت</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetHideTimerBanner(false)}
+                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[11px] flex items-center gap-1 border border-slate-700 cursor-pointer"
+                title="إعادة إظهار المربع الكبير للمؤقت"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>المربع الكبير</span>
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* SUBTLE NOTIFICATION BAR (When some banners are hidden by user) */}
+      {!isSimpleMode && hiddenBannersCount > 0 && (
+        <div className="bg-slate-100/90 border border-slate-200/90 rounded-xl px-3.5 py-1.5 flex items-center justify-between text-[11px] text-slate-600 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <span>
+              تم إخفاء {hiddenBannersCount} من مربعات الملخص والإشعارات لتسهيل الرؤية وتبسيط النظام للتيم.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={restoreAllBanners}
+            className="text-blue-600 hover:underline font-bold flex items-center gap-1 cursor-pointer shrink-0"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>إظهار الكل (فك القفل) 🔓</span>
+          </button>
+        </div>
+      )}
+
       {/* ROLE BANNER & LIVE TIMER FOR EMPLOYEE */}
       {!isManager ? (
         <div className="space-y-3">
-          <div className="bg-[#1e293b] text-white p-3.5 sm:p-4 rounded-2xl shadow-xs border border-slate-700/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
-              <span className="p-2 bg-blue-600 rounded-xl shrink-0 text-white shadow-xs">
-                <UserCheck className="w-5 h-5 text-white" />
-              </span>
-              <div className="min-w-0">
-                <div className="font-bold text-sm flex flex-wrap items-center gap-1.5">
-                  <span>مرحباً بك، {currentUser.name}</span>
-                  <span className="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded-full font-bold">
-                    واجهة الموظف: مهام العمل والمتابعة ومؤقت الإنجاز
-                  </span>
+          {/* Welcome Banner */}
+          {!isSimpleMode && !hideWelcomeBanner && (
+            <div className="bg-[#1e293b] text-white p-3.5 sm:p-4 rounded-2xl shadow-xs border border-slate-700/80 flex flex-col md:flex-row md:items-center justify-between gap-3 relative group">
+              <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+                <span className="p-2 bg-blue-600 rounded-xl shrink-0 text-white shadow-xs">
+                  <UserCheck className="w-5 h-5 text-white" />
+                </span>
+                <div className="min-w-0">
+                  <div className="font-bold text-sm flex flex-wrap items-center gap-1.5">
+                    <span>مرحباً بك، {currentUser.name}</span>
+                    <span className="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2 py-0.5 rounded-full font-bold">
+                      واجهة الموظف: مهام العمل والمتابعة ومؤقت الإنجاز
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                    تظهر لك هنا فقط <strong>مهامك المكلف بها ({assignedToMeCount})</strong> والمهام التي <strong>معمول لك فيها منشن (@) ({tasksWithMentionsCount})</strong> ومؤقت العمل ومواعيد التسليم.
+                  </p>
                 </div>
-                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                  تظهر لك هنا فقط <strong>مهامك المكلف بها ({assignedToMeCount})</strong> والمهام التي <strong>معمول لك فيها منشن (@) ({tasksWithMentionsCount})</strong> ومؤقت العمل ومواعيد التسليم.
-                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs bg-slate-800/90 text-blue-200 px-3 py-1.5 rounded-xl border border-slate-700 font-mono font-bold">
+                  كود الموظف: {currentUser.employeeCode || 'SM-Emp'}
+                </span>
+                {/* Close (X) and Lock icons */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleSetHideWelcomeBanner(true)}
+                    title="قفل وإخفاء هذا المربع لتبسيط الواجهة"
+                    className="p-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-amber-300 rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetHideWelcomeBanner(true)}
+                    title="إغلاق وإخفاء هذا المربع (X)"
+                    className="p-1.5 bg-slate-800/90 hover:bg-rose-900/60 text-slate-300 hover:text-rose-200 rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs bg-slate-800/90 text-blue-200 px-3 py-1.5 rounded-xl border border-slate-700 font-mono font-bold">
-                كود الموظف: {currentUser.employeeCode || 'SM-Emp'}
-              </span>
-            </div>
-          </div>
-
-          {/* EMPLOYEE LIVE TIMER & FOCUS WIDGET (التايمر وشغله ومواعيده مع ميزة الإيقاف المؤقت واستبعاد أوقات الراحة) */}
-          {(() => {
+          {/* EMPLOYEE LIVE TIMER & FOCUS WIDGET */}
+          {!isSimpleMode && !hideTimerBanner && (() => {
             const activeRunningTask = userBaseTasks.find(t => t.isTimerRunning && t.assignedToId === currentUser.id);
             const activePausedTask = userBaseTasks.find(t => t.isTimerPaused && t.assignedToId === currentUser.id);
             const currentActiveTask = activeRunningTask || activePausedTask;
             const myPendingTasks = userBaseTasks.filter(t => t.status !== 'completed' && t.assignedToId === currentUser.id);
 
             return (
-              <div className={`p-4 rounded-2xl border transition-all shadow-xs ${
+              <div className={`p-4 rounded-2xl border transition-all shadow-xs relative group ${
                 activeRunningTask
                   ? 'bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 text-white border-emerald-500/40 ring-2 ring-emerald-400/30'
                   : activePausedTask
@@ -794,7 +1024,7 @@ export const TasksView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Right: Timer Controls & Daily Summary */}
+                  {/* Right: Timer Controls & Daily Summary & Close Buttons */}
                   <div className="flex flex-wrap items-center gap-2">
                     {activeRunningTask && (
                       <>
@@ -862,6 +1092,26 @@ export const TasksView: React.FC = () => {
                         {totalLoggedHours} ساعة
                       </span>
                     </div>
+
+                    {/* Close (X) & Lock icon for Timer Widget */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleSetHideTimerBanner(true)}
+                        title="قفل وإخفاء مربع المؤقت لتبسيط الواجهة"
+                        className="p-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-amber-300 rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetHideTimerBanner(true)}
+                        title="إغلاق وإخفاء مربع المؤقت (X)"
+                        className="p-1.5 bg-slate-800/80 hover:bg-rose-900/60 text-slate-300 hover:text-rose-200 rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -919,7 +1169,6 @@ export const TasksView: React.FC = () => {
             </div>
 
             {/* Privacy Toggle: Public Team Tasks vs Secret Manager Only Tasks */}
-            {/* "وكمان انا كمدير اضيف مهاما للتيم ومهام ليا محدش يطلع عليها خالص" */}
             <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
               <button
                 onClick={() => setManagerPrivacyFilter('all')}
@@ -980,8 +1229,8 @@ export const TasksView: React.FC = () => {
       )}
 
       {/* Account Manager Scope Banner (shown when user is AM or when Manager simulates an AM) */}
-      {(isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && effectiveAccountManager && (
-        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl p-3.5 border border-indigo-500/40 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {!isSimpleMode && !hideAmScopeBanner && (isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && effectiveAccountManager && (
+        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-xl p-3.5 border border-indigo-500/40 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 relative group">
           <div className="flex items-start gap-3">
             <span className="p-2 bg-indigo-500/20 text-indigo-300 rounded-lg shrink-0 mt-0.5 border border-indigo-400/30">
               <Briefcase className="w-5 h-5" />
@@ -1018,111 +1267,151 @@ export const TasksView: React.FC = () => {
             </div>
           </div>
 
-          {/* Toggle: Scope vs Personal */}
-          <div className="flex items-center gap-1 bg-slate-800/90 p-1 rounded-lg border border-indigo-400/30 shrink-0 self-start md:self-auto">
-            <button
-              onClick={() => setAccountManagerViewScope('account_team')}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                accountManagerViewScope === 'account_team'
-                  ? 'bg-indigo-600 text-white shadow-2xs'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>فريق حساباتي وتاسكاتهم ({accountManagerScopeTasks.length})</span>
-            </button>
-            <button
-              onClick={() => setAccountManagerViewScope('my_personal')}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                accountManagerViewScope === 'my_personal'
-                  ? 'bg-indigo-600 text-white shadow-2xs'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>مهامي الشخصية فقط</span>
-            </button>
+          {/* Toggle: Scope vs Personal & Close (X) + Lock */}
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
+            <div className="flex items-center gap-1 bg-slate-800/90 p-1 rounded-lg border border-indigo-400/30">
+              <button
+                onClick={() => setAccountManagerViewScope('account_team')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  accountManagerViewScope === 'account_team'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>فريق حساباتي وتاسكاتهم ({accountManagerScopeTasks.length})</span>
+              </button>
+              <button
+                onClick={() => setAccountManagerViewScope('my_personal')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  accountManagerViewScope === 'my_personal'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>مهامي الشخصية فقط</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleSetHideAmScopeBanner(true)}
+                title="قفل وإخفاء هذا المربع لتبسيط الواجهة"
+                className="p-1.5 bg-slate-800/90 hover:bg-slate-700 text-indigo-200 hover:text-amber-300 rounded-lg border border-indigo-500/30 transition-colors cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetHideAmScopeBanner(true)}
+                title="إغلاق وإخفاء هذا المربع (X)"
+                className="p-1.5 bg-slate-800/90 hover:bg-rose-900/60 text-indigo-200 hover:text-rose-200 rounded-lg border border-indigo-500/30 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* HOW-TO GUIDE: كيف تظهر الموظف لأكونت مانجر بتاسكات معينة فقط؟ */}
-      <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-amber-50 rounded-xl border border-indigo-200/90 p-3.5 shadow-2xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0 shadow-2xs">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="font-extrabold text-slate-900 text-xs flex items-center gap-2">
-                <span>💡 كيف تظهر الموظف لأكونت مانجر بتاسكات معينة فقط؟</span>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.2 rounded-full border border-emerald-200">
-                  ميزة حصرية ومحمية بالخصوصية
-                </span>
+      {!isSimpleMode && !hideTipBanner && (
+        <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-amber-50 rounded-xl border border-indigo-200/90 p-3.5 shadow-2xs relative group">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                <Sparkles className="w-4 h-4" />
               </div>
-              <p className="text-[11px] text-slate-600 mt-0.5">
-                طريقة ربط موظفي الفريق (مثل إسلام أو حازم) بحسابات الأكونت مانجر وعزل باقي مهامهم وسريتها.
-              </p>
+              <div>
+                <div className="font-extrabold text-slate-900 text-xs flex items-center gap-2">
+                  <span>💡 كيف تظهر الموظف لأكونت مانجر بتاسكات معينة فقط؟</span>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.2 rounded-full border border-emerald-200">
+                    ميزة حصرية ومحمية بالخصوصية
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  طريقة ربط موظفي الفريق (مثل إسلام أو حازم) بحسابات الأكونت مانجر وعزل باقي مهامهم وسريتها.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowAmHelpGuide(prev => !prev)}
+                className="px-3 py-1.5 bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+                <span>{showAmHelpGuide ? 'إخفاء الشرح المختصر' : 'عرض خطوات العمل (3 خطوات)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpenQuickModal('task')}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ مهمة جديدة وربطها بحساب</span>
+              </button>
+              {/* Close (X) & Lock for Tip Guide */}
+              <button
+                type="button"
+                onClick={() => handleSetHideTipBanner(true)}
+                title="قفل وإخفاء هذا المربع لتبسيط الواجهة"
+                className="p-1.5 bg-white hover:bg-slate-100 text-slate-500 hover:text-amber-600 rounded-lg border border-indigo-200 transition-colors cursor-pointer"
+              >
+                <Lock className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetHideTipBanner(true)}
+                title="إغلاق وإخفاء هذا المربع (X)"
+                className="p-1.5 bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-lg border border-indigo-200 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowAmHelpGuide(prev => !prev)}
-              className="px-3 py-1.5 bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
-            >
-              <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
-              <span>{showAmHelpGuide ? 'إخفاء الشرح المختصر' : 'عرض خطوات العمل (3 خطوات)'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setOpenQuickModal('task')}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ مهمة جديدة وربطها بحساب</span>
-            </button>
-          </div>
+          {showAmHelpGuide && (
+            <div className="mt-3 pt-3 border-t border-indigo-200/70 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs animate-in fade-in">
+              {/* Step 1 */}
+              <div className="bg-white p-3 rounded-xl border border-indigo-150 space-y-1 shadow-2xs">
+                <div className="flex items-center gap-2 text-indigo-700 font-extrabold text-[12px]">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">1</span>
+                  <span>اختر العميل أو الأكونت مانجر</span>
+                </div>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  عند إنشاء مهمة جديدة أو تعديل أي مهمة، افتح قسم <strong>"ربط المهمة بحساب العميل والأكونت مانجر"</strong> واختر اسم العميل أو اسم الأكونت مانجر المشرف (مثلاً: أميرة).
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="bg-white p-3 rounded-xl border border-indigo-150 space-y-1 shadow-2xs">
+                <div className="flex items-center gap-2 text-indigo-700 font-extrabold text-[12px]">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">2</span>
+                  <span>حدّد الموظف المكلف بالتنفيذ</span>
+                </div>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  عيّن الموظف المسؤول (مثل إسلام أو حازم أو ميبل). سيقوم السيستم فوراً بربط هذا الموظف بفريق الأكونت مانجر المشرف على هذا الحساب.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="bg-white p-3 rounded-xl border border-indigo-150 space-y-1 shadow-2xs">
+                <div className="flex items-center gap-2 text-emerald-700 font-extrabold text-[12px]">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">3</span>
+                  <span>عزل سري وفوري للمهام</span>
+                </div>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  سيظهر الموظف في لوحة الأكونت مانجر حاملاً <strong>هذه المهمة فقط</strong>، بينما تظل جميع مهامه الأخرى في الحسابات الثانية <strong>مخفية ومحجوبة تماماً</strong>.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-
-        {showAmHelpGuide && (
-          <div className="mt-3 pt-3 border-t border-indigo-200/70 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs animate-in fade-in">
-            {/* Step 1 */}
-            <div className="bg-white p-3 rounded-xl border border-indigo-150 space-y-1 shadow-2xs">
-              <div className="flex items-center gap-2 text-indigo-700 font-extrabold text-[12px]">
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">1</span>
-                <span>اختر العميل أو الأكونت مانجر</span>
-              </div>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
-                عند إنشاء مهمة جديدة أو تعديل أي مهمة، افتح قسم <strong>"ربط المهمة بحساب العميل والأكونت مانجر"</strong> واختر اسم العميل أو اسم الأكونت مانجر المشرف (مثلاً: أميرة).
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="bg-white p-3 rounded-xl border border-indigo-150 space-y-1 shadow-2xs">
-              <div className="flex items-center gap-2 text-indigo-700 font-extrabold text-[12px]">
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">2</span>
-                <span>حدّد الموظف المكلف بالتنفيذ</span>
-              </div>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
-                عيّن الموظف المسؤول (مثل إسلام أو حازم أو ميبل). سيقوم السيستم فوراً بربط هذا الموظف بفريق الأكونت مانجر المشرف على هذا الحساب.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="bg-white p-3 rounded-xl border border-indigo-150 space-y-1 shadow-2xs">
-              <div className="flex items-center gap-2 text-emerald-700 font-extrabold text-[12px]">
-                <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">3</span>
-                <span>عزل سري وفوري للمهام</span>
-              </div>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
-                سيظهر الموظف في لوحة الأكونت مانجر حاملاً <strong>هذه المهمة فقط</strong>، بينما تظل جميع مهامه الأخرى في الحسابات الثانية <strong>مخفية ومحجوبة تماماً</strong>.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Top Header & Actions Ribbon */}
       <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1144,6 +1433,12 @@ export const TasksView: React.FC = () => {
                     <span>وضع المهام السرية للمدير فقط (مخفية 100%)</span>
                   </span>
                 )}
+                {isSimpleMode && (
+                  <span className="text-xs bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-emerald-700" />
+                    <span>وضع الواجهة المبسطة (مفعل)</span>
+                  </span>
+                )}
               </h1>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 متابعة المهام المحددة، التواريخ (من يوم إيه لإيه)، مؤقت العمل اللحظي، وإشعارات المنشن
@@ -1152,8 +1447,33 @@ export const TasksView: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Buttons: Add Task & Reset Data */}
+        {/* Action Buttons: Add Task & Simplified Mode Toggle & Reset Data */}
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          {/* Master Toggle: Simplified Mode / Lock Banners */}
+          <button
+            type="button"
+            onClick={toggleSimpleMode}
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl font-extrabold transition-all cursor-pointer text-xs shadow-2xs ${
+              isSimpleMode
+                ? 'bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 ring-2 ring-amber-400/40'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300'
+            }`}
+            title={isSimpleMode ? "فك القفل وإظهار كافة الإشعارات ومربعات الملخص" : "قفل المربعات وتفعيل الواجهة المبسطة للتيم"}
+          >
+            {isSimpleMode ? (
+              <>
+                <Unlock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                <span>🔓 إظهار الإشعارات والملخص</span>
+              </>
+            ) : (
+              <>
+                <Lock className="w-3.5 h-3.5 text-slate-700 shrink-0" />
+                <span className="hidden sm:inline">🔒 وضع الواجهة المبسطة (قفل المربعات)</span>
+                <span className="sm:hidden">🔒 واجهة مبسطة</span>
+              </>
+            )}
+          </button>
+
           {/* Prominent Reset Button - Admin Only */}
           {isManager && (
             <button
@@ -1223,48 +1543,76 @@ export const TasksView: React.FC = () => {
       </div>
 
       {/* KPI Cards: Tasks, Running Timers, and Total Logged Hours */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-          <div className="text-slate-400 font-bold text-[11px]">
-            {isManager && managerScope === 'all' ? 'إجمالي مهام الفريق' : 'مهامي المكلف بها'}
+      {!isSimpleMode && !hideKpiCards && (
+        <div className="relative group">
+          {/* Close (X) & Lock Controls for KPI Cards */}
+          <div className="flex items-center justify-between mb-1 px-1">
+            <span className="text-[10px] text-slate-400 font-bold">ملخص مؤشرات الإنجاز وساعات العمل:</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleSetHideKpiCards(true)}
+                title="قفل وإخفاء كروت الإحصائيات لتبسيط الواجهة"
+                className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-amber-700 rounded-md text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer border border-slate-200"
+              >
+                <Lock className="w-3 h-3" />
+                <span>قفل</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetHideKpiCards(true)}
+                title="إغلاق وإخفاء كروت الإحصائيات (X)"
+                className="p-1 bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-700 rounded-md text-[10px] font-bold transition-colors cursor-pointer border border-slate-200"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-1">{filteredTasks.length}</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">
-            {filteredTasks.filter(t => t.status === 'completed').length} مكتملة بنجاح
-          </div>
-        </div>
 
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-          <div className="text-slate-400 font-bold text-[11px]">المؤقتات الجارية حالياً</div>
-          <div className="text-2xl font-black text-emerald-600 mt-1 flex items-center gap-2">
-            {runningTimersCount}
-            {runningTimersCount > 0 && (
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-            )}
-          </div>
-          <div className="text-[10px] text-emerald-600 mt-0.5 font-bold">
-            {runningTimersCount > 0 ? 'أعضاء يعملون الآن ومؤقتهم نشط' : 'لا يوجد مؤقت نشط'}
-          </div>
-        </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+              <div className="text-slate-400 font-bold text-[11px]">
+                {isManager && managerScope === 'all' ? 'إجمالي مهام الفريق' : 'مهامي المكلف بها'}
+              </div>
+              <div className="text-2xl font-black text-slate-900 mt-1">{filteredTasks.length}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                {filteredTasks.filter(t => t.status === 'completed').length} مكتملة بنجاح
+              </div>
+            </div>
 
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-          <div className="text-slate-400 font-bold text-[11px]">ساعات العمل المسجلة</div>
-          <div className="text-2xl font-black text-blue-600 mt-1">{totalLoggedHours} س</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">
-            عبر {allTimeLogs.length} جلسة عمل مسجلة
-          </div>
-        </div>
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+              <div className="text-slate-400 font-bold text-[11px]">المؤقتات الجارية حالياً</div>
+              <div className="text-2xl font-black text-emerald-600 mt-1 flex items-center gap-2">
+                {runningTimersCount}
+                {runningTimersCount > 0 && (
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                )}
+              </div>
+              <div className="text-[10px] text-emerald-600 mt-0.5 font-bold">
+                {runningTimersCount > 0 ? 'أعضاء يعملون الآن ومؤقتهم نشط' : 'لا يوجد مؤقت نشط'}
+              </div>
+            </div>
 
-        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-          <div className="text-slate-400 font-bold text-[11px]">مستحق اليوم / متأخر</div>
-          <div className={`text-2xl font-black mt-1 ${overdueCount > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-            {overdueCount > 0 ? `${overdueCount} متأخرة!` : 'في المسار المحدد'}
-          </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">
-            تنبيهات المواعيد النهائية مفعلة
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+              <div className="text-slate-400 font-bold text-[11px]">ساعات العمل المسجلة</div>
+              <div className="text-2xl font-black text-blue-600 mt-1">{totalLoggedHours} س</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                عبر {allTimeLogs.length} جلسة عمل مسجلة
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+              <div className="text-slate-400 font-bold text-[11px]">مستحق اليوم / متأخر</div>
+              <div className={`text-2xl font-black mt-1 ${overdueCount > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                {overdueCount > 0 ? `${overdueCount} متأخرة!` : 'في المسار المحدد'}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">
+                تنبيهات المواعيد النهائية مفعلة
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Tabs Navigation Bar */}
       <div className="bg-white p-2 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">

@@ -519,7 +519,12 @@ export const ensureValidUser = (u: any): TeamMember => {
   };
 
   // Strictly enforce separation for Mariam (Web Developer) and Islam (Video Editor)
-  if (valid.id === 'user-mariam' || (valid.username && valid.username.toLowerCase() === 'mariam')) {
+  if (
+    valid.id === 'user-mariam' ||
+    valid.id === 'user-1793097751331' ||
+    valid.id === 'user-1793016396281' ||
+    (valid.username && valid.username.toLowerCase() === 'mariam')
+  ) {
     valid.id = 'user-mariam';
     valid.name = u.name || 'Mariam';
     valid.role = u.role || 'Web Developer';
@@ -568,10 +573,10 @@ export const TEAM_ALIASES: Record<string, string[]> = {
   'user-amira': ['user-amira', 'sm-110', 'amira', 'amira2', 'اميرة', 'أميرة', 'اميره'],
   'user-aya': ['user-aya', 'sm-103', 'aya', 'aya gaber', 'aya_gaber', 'اية', 'آية', 'ايه', 'اية جابر', 'آية جابر'],
   'user-maibel': ['user-maibel', 'sm-105', 'maibel', 'maibel emad', 'مايبل', 'ميبل', 'مايبل عماد'],
-  'user-mariam': ['user-mariam', 'user-1793016396281', 'sm-106', 'mariam', 'مريم'],
+  'user-mariam': ['user-mariam', 'user-1793097751331', 'user-1793016396281', 'sm-106', 'mariam', 'مريم'],
   'user-yomna': ['user-yomna', 'sm-107', 'yomna', 'يمنى', 'يمنا'],
   'user-islam': ['user-islam', 'user-1793025675186', 'user-1793016178916', 'sm-108', 'sm-111', 'islam', 'إسلام', 'اسلام'],
-  'user-roaa': ['user-roaa', 'sm-109', 'roaa', 'roaa_hetemy', 'رؤى', 'رؤى حتيمي', 'روءة', 'روءا'],
+  'user-roaa': ['user-roaa', 'sm-109', 'roaa', 'roaa_hetemy', 'رؤى', 'رؤى حتيمي', 'روءة', 'روءا', 'رواء'],
   'user-1': ['user-1', 'user-admin', 'hadeer', 'hadeer.admin', 'هدير', 'هدير سعيد', 'admin', 'المدير']
 };
 
@@ -804,6 +809,16 @@ export const matchUserCredentials = (
     (cleanUser === 'islam' || cleanUser === 'sm-108' || cleanUser === 'sm-111' || normInput === 'اسلام' || normInput === 'إسلام') &&
     (memberUsername === 'islam' || memberCode === 'sm-108' || memberCode === 'sm-111' || normName === 'اسلام' || normName === 'إسلام');
 
+  // Match Mariam specifically (Mariam, SM-106, Arabic مريم)
+  const isMariamUser =
+    (cleanUser === 'mariam' || cleanUser === 'sm-106' || normInput === 'مريم') &&
+    (memberUsername === 'mariam' || memberCode === 'sm-106' || normName === 'مريم' || member.id === 'user-mariam' || member.id === 'user-1793097751331');
+
+  // Match Roaa specifically (roaa_hetemy, SM-109, Arabic رواء / رؤى)
+  const isRoaaUser =
+    (cleanUser === 'roaa' || cleanUser === 'roaa_hetemy' || cleanUser === 'sm-109' || normInput === 'رواء' || normInput === 'رؤى') &&
+    (memberUsername === 'roaa_hetemy' || memberCode === 'sm-109' || member.id === 'user-roaa');
+
   // Strictly exact user match - NEVER use loose substring normName.includes(normInput) which confuses Islam with Mariam!
   const isUserMatch =
     memberUsername === cleanUser ||
@@ -817,6 +832,8 @@ export const matchUserCredentials = (
     isEmanUser ||
     isAmiraUser ||
     isIslamUser ||
+    isMariamUser ||
+    isRoaaUser ||
     (cleanUser === 'admin' && (member.accessLevel === 'admin' || member.id === 'user-1'));
 
   if (!isUserMatch) return false;
@@ -831,6 +848,8 @@ export const matchUserCredentials = (
     cleanPass === 'admin' ||
     (isAmiraUser && (cleanPass === 'Sw!ftC4gc4i#D6T' || cleanPass === 'Sw!ftbKMPddC@CL' || cleanPass.toLowerCase() === 'sw!ftc4gc4i#d6t' || cleanPass.toLowerCase() === 'sw!ftbkmpddc@cl')) ||
     (isIslamUser && (cleanPass === 'Sw!ftIHaiQ$Cka6' || cleanPass === 'Sw!ftiHaiQ$Cka6' || cleanPass.toLowerCase() === 'sw!ftihaiq$cka6')) ||
+    (isMariamUser && (cleanPass === 'Sw!ft5J8U%VgqiN' || cleanPass === 'Sw!ft5J8U%VgiN' || cleanPass.toLowerCase() === 'sw!ft5j8u%vgqin' || cleanPass.toLowerCase() === 'sw!ft5j8u%vgin')) ||
+    (isRoaaUser && (cleanPass === 'Sw!ftzg2scMrcNA' || cleanPass.toLowerCase() === 'sw!ftzg2scmrcna')) ||
     (member.accessLevel === 'admin' && (cleanPass === '8899' || cleanPass === 'Admin@Swift2026')) ||
     (isEmanUser && (cleanPass === 'Eman@Swift27526' || cleanPass.toLowerCase() === 'eman@swift27526')) ||
     cleanPass === 'User@Swift2026';
@@ -2587,7 +2606,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     lastLocalMutationTimeRef.current = Date.now();
     const assignedIds = (renewalData.assignedTeamMemberIds && renewalData.assignedTeamMemberIds.length > 0)
       ? renewalData.assignedTeamMemberIds.filter(id => id !== 'all')
-      : team.map(m => m.id);
+      : [renewalData.accountManagerId || currentUser.id].filter(Boolean);
 
     let validSheets = renewalData.googleSheets || [];
     if (validSheets.length === 0 && renewalData.sheetUrl) {
