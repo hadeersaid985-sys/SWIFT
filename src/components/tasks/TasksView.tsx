@@ -23,6 +23,7 @@ import {
   Users,
   Timer,
   ChevronDown,
+  ChevronUp,
   X,
   FileText,
   AtSign,
@@ -158,6 +159,29 @@ export const TasksView: React.FC = () => {
   const [quickAddDueDate, setQuickAddDueDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>('medium');
   const [quickAddIsPrivate, setQuickAddIsPrivate] = useState<boolean>(false);
+
+  // Team Board Organization State: Active vs Completed separation
+  const [globalTeamBoardFilter, setGlobalTeamBoardFilter] = useState<'all' | 'active_only' | 'completed_only'>('all');
+  const [memberTabFilter, setMemberTabFilter] = useState<Record<string, 'active' | 'completed' | 'all'>>({});
+  const [expandedCompletedMembers, setExpandedCompletedMembers] = useState<Record<string, boolean>>({});
+
+  const getMemberTab = (memberId: string): 'active' | 'completed' | 'all' => {
+    if (memberTabFilter[memberId]) return memberTabFilter[memberId];
+    if (globalTeamBoardFilter === 'active_only') return 'active';
+    if (globalTeamBoardFilter === 'completed_only') return 'completed';
+    return 'all';
+  };
+
+  const handleSetMemberTab = (memberId: string, tab: 'active' | 'completed' | 'all') => {
+    setMemberTabFilter(prev => ({ ...prev, [memberId]: tab }));
+  };
+
+  const toggleCollapseCompleted = (memberId: string) => {
+    setExpandedCompletedMembers(prev => ({
+      ...prev,
+      [memberId]: prev[memberId] === undefined ? true : !prev[memberId]
+    }));
+  };
 
   // Modals state
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -1726,9 +1750,9 @@ export const TasksView: React.FC = () => {
       {/* "وكل واحد من التيمل ليه list تاسكات انا احطها من عندي او يحطها بالايام زي تريللو ويعلم عليها صح اللي خلصت وانا اقدر او هو يضيف التاكسات ديه" */}
       {viewMode === 'team_boards' && (
         <div className="space-y-3">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-950 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-2.5">
-              <span className="p-2 bg-blue-600 text-white rounded-lg shadow-2xs">
+              <span className="p-2 bg-blue-600 text-white rounded-lg shadow-2xs shrink-0">
                 <Users className="w-4 h-4" />
               </span>
               <div>
@@ -1736,12 +1760,61 @@ export const TasksView: React.FC = () => {
                   لوحة توزيع المهام حسب الفريق:
                 </strong>
                 <p className="text-slate-600 text-[11px] mt-0.5">
-                  قائمة مهام مستقلة لكل موظف. يمكنك إضافة مهام فوراً، تشغيل مؤقت الإنجاز، وإتمام المهمة [✓] بنقرة واحدة.
+                  قوائم مهام منظمة لكل موظف مع فصل المهام الجارية عن المكتملة لسهولة المتابعة وسرعة الإنجاز.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
+            {/* Global Filter Buttons */}
+            <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+              <div className="flex items-center bg-white p-1 rounded-xl border border-blue-200/90 shadow-2xs text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGlobalTeamBoardFilter('active_only');
+                    setMemberTabFilter({});
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    globalTeamBoardFilter === 'active_only'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                  title="إظهار المهام الجارية والقادمة فقط وإخفاء المكتملة"
+                >
+                  <span>⚡ قيد العمل فقط</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGlobalTeamBoardFilter('all');
+                    setMemberTabFilter({});
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    globalTeamBoardFilter === 'all'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                  title="إظهار النشطة أولاً مع إمكانية طي أو فتح المنجزة"
+                >
+                  <span>📋 الكل (النشطة أولاً)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGlobalTeamBoardFilter('completed_only');
+                    setMemberTabFilter({});
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                    globalTeamBoardFilter === 'completed_only'
+                      ? 'bg-emerald-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                  title="مراجعة المهام المنجزة فقط لجميع الأعضاء"
+                >
+                  <span>✅ المنجزة فقط</span>
+                </button>
+              </div>
+
               {isManager && (
                 <button
                   type="button"
@@ -1802,327 +1875,462 @@ export const TasksView: React.FC = () => {
               );
             })().map(member => {
               const memberTasks = filteredTasks.filter(t => isTaskAssignedToUser(t, member));
-              const completedCount = memberTasks.filter(t => t.status === 'completed').length;
+              const activeTasks = memberTasks.filter(t => t.status !== 'completed');
+              const completedTasks = memberTasks.filter(t => t.status === 'completed');
+
+              // Intelligent sorting of active tasks:
+              // 1. Running/paused timer first
+              // 2. Due date ascending
+              const sortedActiveTasks = [...activeTasks].sort((a, b) => {
+                if (a.isTimerRunning && !b.isTimerRunning) return -1;
+                if (!a.isTimerRunning && b.isTimerRunning) return 1;
+                if (a.isTimerPaused && !b.isTimerPaused) return -1;
+                if (!a.isTimerPaused && b.isTimerPaused) return 1;
+                return (a.dueDate || '').localeCompare(b.dueDate || '');
+              });
+
+              const currentTab = getMemberTab(member.id);
+              const isCompletedExpanded = expandedCompletedMembers[member.id] ?? false;
               const isCurrentMemberOpen = quickAddColumn === member.id;
               const isCollaboratingOnAM = ((!isManager && isCurrentUserAccountManager) || (isManager && selectedSimulatedAccountManagerId !== 'all')) && member.id !== effectiveAccountManager?.id;
+
+              const renderTeamTaskCard = (task: Task) => {
+                const isDone = task.status === 'completed';
+                const deadline = getDeadlineStatus(task.dueDate, task.dueTime, task.status);
+                const isAllTeamTask =
+                  task.assignedToId === 'all' ||
+                  task.assignedToId === 'team' ||
+                  task.assignedToId === 'all_members' ||
+                  task.assignedToId === 'all_accounts';
+
+                return (
+                  <div
+                    key={task.id}
+                    className={`p-3 rounded-xl border transition-all text-xs space-y-2 select-text shadow-2xs hover:shadow-md ${
+                      isDone
+                        ? 'bg-emerald-50/50 border-emerald-200/90'
+                        : task.isTimerRunning
+                        ? 'bg-white border-emerald-300 ring-2 ring-emerald-100'
+                        : 'bg-white border-slate-200'
+                    }`}
+                  >
+                    {/* Card Top Bar: Checkbox [✓] + Deadline Badge on right, Actions (Copy / Edit / Move / Reorder) on left */}
+                    <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <button
+                          type="button"
+                          onClick={e => toggleTaskComplete(task.id, e)}
+                          className={`w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                            isDone
+                              ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-500'
+                              : 'border-2 border-slate-300 hover:border-blue-500 bg-white hover:bg-slate-50'
+                          }`}
+                          title={isDone ? 'إلغاء الإنجاز وإعادة المهمة جارية' : 'تعليم كمكتملة بنجاح ✓'}
+                        >
+                          {isDone && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </button>
+
+                        <span
+                          className={`text-[9px] px-1.5 py-0.2 rounded font-bold border ${deadline.badgeClass}`}
+                        >
+                          {deadline.label}
+                        </span>
+                      </div>
+
+                      {/* Card Action Controls: Copy, Edit, Move to Member, Reorder Up/Down */}
+                      <div className="flex items-center gap-0.5 shrink-0 bg-slate-50 p-0.5 rounded-lg border border-slate-200/60">
+                        <button
+                          type="button"
+                          onClick={e => handleCopyTaskText(task, e)}
+                          className={`p-1 rounded text-[10px] transition-all cursor-pointer ${
+                            copiedTaskId === task.id
+                              ? 'bg-emerald-100 text-emerald-700 font-bold'
+                              : 'text-slate-500 hover:text-slate-800 hover:bg-white'
+                          }`}
+                          title="نسخ نص المهمة وتفاصيلها (Copy)"
+                        >
+                          {copiedTaskId === task.id ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={e => {
+                            handleStartEditTask(task, e);
+                            setSelectedTaskId(task.id);
+                          }}
+                          className="p-1 rounded text-slate-500 hover:text-blue-600 hover:bg-white transition-all cursor-pointer"
+                          title="تعديل المهمة (Edit)"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+
+                        <div className="relative inline-block">
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setMoveDropdownTaskId(moveDropdownTaskId === task.id ? null : task.id);
+                            }}
+                            className="p-1 rounded text-slate-500 hover:text-amber-600 hover:bg-white transition-all cursor-pointer"
+                            title="نقل لموظف آخر بالتيم (Move)"
+                          >
+                            <Move className="w-3 h-3" />
+                          </button>
+                          {moveDropdownTaskId === task.id && (
+                            <div
+                              onClick={e => e.stopPropagation()}
+                              className="absolute left-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-30 animate-in fade-in zoom-in-95 text-right"
+                            >
+                              <div className="px-3 py-1 text-[10px] font-black text-slate-400 border-b border-slate-100">
+                                نقل المهمة إلى:
+                              </div>
+                              <div className="max-h-40 overflow-y-auto">
+                                {availableMoveMembers.map(m => (
+                                  <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={e => handleMoveTaskMember(task.id, m.id, e)}
+                                    className={`w-full text-right px-3 py-1.5 text-xs font-bold hover:bg-slate-50 flex items-center justify-between transition-colors ${
+                                      m.id === task.assignedToId ? 'text-blue-600 bg-blue-50/50' : 'text-slate-700'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-1.5 truncate">
+                                      <img src={m.avatar} alt={m.name} className="w-4 h-4 rounded-full object-cover" />
+                                      <span className="truncate">{m.name}</span>
+                                    </div>
+                                    {m.id === task.assignedToId && <span className="text-[9px] text-blue-500">الحالي</span>}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={e => handleReorderTaskItem(task.id, 'up', e)}
+                          className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-white transition-all cursor-pointer"
+                          title="تحريك لأعلى ⬆️"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={e => handleReorderTaskItem(task.id, 'down', e)}
+                          className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-white transition-all cursor-pointer"
+                          title="تحريك لأسفل ⬇️"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Task Title: Full width of the card, full sentences */}
+                    <div
+                      onClick={() => setSelectedTaskId(task.id)}
+                      className={`w-full font-bold text-xs sm:text-[13px] leading-relaxed cursor-pointer hover:text-blue-600 transition-colors text-right select-text py-0.5 ${
+                        isDone ? 'line-through text-slate-400' : 'text-slate-900'
+                      }`}
+                      style={{ wordBreak: 'normal', overflowWrap: 'break-word', whiteSpace: 'normal' }}
+                    >
+                      {renderTaskTitleWithMentions(task.title)}
+                    </div>
+
+                    {/* Meta Badges */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                      {isAllTeamTask && (
+                        <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                          <span>🌟 مهمة لجميع الفريق</span>
+                        </span>
+                      )}
+                      {task.clientName && (
+                        <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
+                          <Building className="w-2.5 h-2.5 text-blue-600" />
+                          <span className="truncate max-w-[110px]">{task.clientName}</span>
+                        </span>
+                      )}
+                      {(isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && (task.accountManagerId || task.createdById === effectiveAccountManager?.id) && (
+                        <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
+                          <CheckCircle className="w-2.5 h-2.5 text-indigo-600" />
+                          <span>تكليف الأكونت مانجر</span>
+                        </span>
+                      )}
+                      {task.isPrivate && (
+                        <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                          <Lock className="w-2.5 h-2.5 text-amber-700" />
+                          <span>سرية للمدير</span>
+                        </span>
+                      )}
+                      {isUserMentionedInTask(task, currentUser) && (
+                        <span className="text-[9px] bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                          <AtSign className="w-2.5 h-2.5 text-purple-700" />
+                          <span>منشن لك</span>
+                        </span>
+                      )}
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold">
+                        {task.category}
+                      </span>
+                      <span className="text-[9px] text-slate-500 font-mono font-medium flex items-center gap-0.5">
+                        <Clock className="w-2.5 h-2.5 text-slate-400" />
+                        <span>تسليم: {task.dueDate}</span>
+                      </span>
+                    </div>
+
+                    {/* Card Footer: Timer Start/End + Time logged */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        {task.isTimerRunning ? (
+                          <div className="flex items-center gap-1">
+                            <span className="px-2 py-0.5 bg-emerald-600 text-white rounded-md font-mono text-[10px] font-bold flex items-center gap-1 animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                              <span>{formatLiveTimer(task)}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => pauseTaskTimer(task.id)}
+                              className="px-1.5 py-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
+                              title="إيقاف مؤقت للاستراحة - لن يتم احتساب وقت التوقف"
+                            >
+                              <Pause className="w-2.5 h-2.5" />
+                              <span>إيقاف مؤقت</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStopTimerTaskId(task.id)}
+                              className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
+                              title="إنهاء الجلسة وحساب الوقت الفعلي"
+                            >
+                              <Square className="w-2.5 h-2.5 fill-current" />
+                              <span>إنهاء</span>
+                            </button>
+                          </div>
+                        ) : task.isTimerPaused ? (
+                          <div className="flex items-center gap-1">
+                            <span className="px-2 py-0.5 bg-amber-500 text-white rounded-md font-mono text-[10px] font-bold flex items-center gap-1">
+                              <span>⏸️ {formatLiveTimer(task)}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => resumeTaskTimer(task.id)}
+                              className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
+                              title="استئناف العمل الفعلي"
+                            >
+                              <Play className="w-2.5 h-2.5 fill-current" />
+                              <span>استئناف</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStopTimerTaskId(task.id)}
+                              className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
+                              title="إنهاء الجلسة وحساب الوقت الفعلي"
+                            >
+                              <Square className="w-2.5 h-2.5 fill-current" />
+                              <span>إنهاء</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startTaskTimer(task.id)}
+                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                            title="بدء مؤقت العمل الفعلي"
+                          >
+                            <Play className="w-2.5 h-2.5" />
+                            <span>بدء (Start)</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          ⏱️ {formatDurationMinutes(task.totalLoggedMinutes || 0)}
+                        </span>
+                        <button
+                          onClick={() => setSelectedTaskId(task.id)}
+                          className="text-slate-400 hover:text-blue-600 p-0.5"
+                          title="فتح التفاصيل والمنشنات"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              };
 
               return (
                 <div
                   key={member.id}
-                  className="bg-slate-100/85 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col max-h-[80vh] overflow-hidden"
+                  className="bg-slate-100/85 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col max-h-[85vh] overflow-hidden"
                 >
                   {/* Column Header */}
-                  <div className="bg-white p-3.5 border-b border-slate-200/90 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="relative">
-                        <img
-                          src={member.avatar}
-                          alt={member.name}
-                          className="w-8 h-8 rounded-full object-cover border border-slate-200"
-                        />
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full border border-white absolute bottom-0 right-0 ${
-                            memberTasks.some(t => t.isTimerRunning)
-                              ? 'bg-emerald-500 animate-ping'
-                              : 'bg-emerald-500'
-                          }`}
-                        />
-                      </div>
-                      <div>
-                        <div className="font-extrabold text-slate-900 text-xs flex items-center gap-1">
-                          <span>{member.name}</span>
-                          {member.id === currentUser.id && (
-                            <span className="text-[9px] bg-blue-100 text-blue-700 px-1 rounded font-bold">
-                              أنت
-                            </span>
-                          )}
-                          {isCollaboratingOnAM && (
-                            <span className="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded font-bold border border-indigo-200">
-                              فريق حساباتك
-                            </span>
-                          )}
+                  <div className="bg-white p-3 border-b border-slate-200/90 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="relative shrink-0">
+                          <img
+                            src={member.avatar}
+                            alt={member.name}
+                            className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                          />
+                          <span
+                            className={`w-2.5 h-2.5 rounded-full border border-white absolute bottom-0 right-0 ${
+                              memberTasks.some(t => t.isTimerRunning)
+                                ? 'bg-emerald-500 animate-ping'
+                                : 'bg-emerald-500'
+                            }`}
+                          />
                         </div>
-                        <div className="text-[10px] text-slate-500">{member.role}</div>
+                        <div className="min-w-0">
+                          <div className="font-extrabold text-slate-900 text-xs flex items-center gap-1 truncate">
+                            <span className="truncate">{member.name}</span>
+                            {member.id === currentUser.id && (
+                              <span className="text-[9px] bg-blue-100 text-blue-700 px-1 rounded font-bold shrink-0">
+                                أنت
+                              </span>
+                            )}
+                            {isCollaboratingOnAM && (
+                              <span className="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded font-bold border border-indigo-200 shrink-0">
+                                فريق حساباتك
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-500 truncate">{member.role}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold border border-slate-200">
+                          {completedTasks.length}/{memberTasks.length} منجزة
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold border">
-                        {completedCount}/{memberTasks.length} منجزة
-                      </span>
+                    {/* Member Column Sub-Tabs */}
+                    <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl text-[10px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => handleSetMemberTab(member.id, 'active')}
+                        className={`py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          currentTab === 'active'
+                            ? 'bg-white text-blue-700 shadow-2xs font-extrabold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                        title="عرض المهام الجارية فقط"
+                      >
+                        <span>⚡ قيد العمل</span>
+                        <span className={`px-1 rounded-full text-[9px] ${currentTab === 'active' ? 'bg-blue-100 text-blue-800' : 'bg-slate-200 text-slate-700'}`}>
+                          {activeTasks.length}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSetMemberTab(member.id, 'completed')}
+                        className={`py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          currentTab === 'completed'
+                            ? 'bg-white text-emerald-700 shadow-2xs font-extrabold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                        title="عرض المهام المكتملة فقط"
+                      >
+                        <span>✅ المنجزة</span>
+                        <span className={`px-1 rounded-full text-[9px] ${currentTab === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
+                          {completedTasks.length}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSetMemberTab(member.id, 'all')}
+                        className={`py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                          currentTab === 'all'
+                            ? 'bg-white text-slate-900 shadow-2xs font-extrabold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                        title="عرض الكل (النشطة أولاً ثم المنجزة)"
+                      >
+                        <span>الكل</span>
+                        <span className={`px-1 rounded-full text-[9px] ${currentTab === 'all' ? 'bg-slate-200 text-slate-800' : 'bg-slate-200 text-slate-700'}`}>
+                          {memberTasks.length}
+                        </span>
+                      </button>
                     </div>
                   </div>
 
                   {/* Task Cards List */}
                   <div className="p-2.5 space-y-2.5 overflow-y-auto flex-1">
-                    {memberTasks.length === 0 ? (
-                      <div className="py-8 text-center text-slate-400 bg-white/70 rounded-xl border border-dashed border-slate-200 text-xs">
-                        لا توجد مهام مسندة حالياً
-                      </div>
-                    ) : (
-                      memberTasks.map(task => {
-                        const isDone = task.status === 'completed';
-                        const deadline = getDeadlineStatus(task.dueDate, task.dueTime, task.status);
-                        const isAllTeamTask =
-                          task.assignedToId === 'all' ||
-                          task.assignedToId === 'team' ||
-                          task.assignedToId === 'all_members' ||
-                          task.assignedToId === 'all_accounts';
+                    {currentTab === 'active' && (
+                      sortedActiveTasks.length === 0 ? (
+                        <div className="py-8 text-center text-slate-500 bg-white/70 rounded-xl border border-dashed border-slate-200 text-xs px-3">
+                          {completedTasks.length > 0 ? (
+                            <div className="space-y-1">
+                              <span className="text-base">🎉</span>
+                              <p className="font-bold text-slate-700">رائع! جميع مهام هذا العضو مكتملة بنجاح</p>
+                              <p className="text-[11px] text-slate-400">يمكنك مشاهدتها في تبويب "المنجزة"</p>
+                            </div>
+                          ) : (
+                            <p>لا توجد مهام قيد العمل مسندة حالياً</p>
+                          )}
+                        </div>
+                      ) : (
+                        sortedActiveTasks.map(renderTeamTaskCard)
+                      )
+                    )}
 
-                        return (
-                          <div
-                            key={task.id}
-                            className={`p-3 rounded-xl border transition-all text-xs space-y-2 select-text shadow-2xs hover:shadow-md ${
-                              isDone
-                                ? 'bg-emerald-50/50 border-emerald-200/90'
-                                : task.isTimerRunning
-                                ? 'bg-white border-emerald-300 ring-2 ring-emerald-100'
-                                : 'bg-white border-slate-200'
-                            }`}
-                          >
-                            {/* Card Top Bar: Checkbox [✓] + Deadline Badge on right, Actions (Copy / Edit / Move / Reorder) on left */}
-                            <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <button
-                                  type="button"
-                                  onClick={e => toggleTaskComplete(task.id, e)}
-                                  className={`w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-                                    isDone
-                                      ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-500'
-                                      : 'border-2 border-slate-300 hover:border-blue-500 bg-white hover:bg-slate-50'
-                                  }`}
-                                  title={isDone ? 'إلغاء الإنجاز وإعادة المهمة جارية' : 'تعليم كمكتملة بنجاح ✓'}
-                                >
-                                  {isDone && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                                </button>
+                    {currentTab === 'completed' && (
+                      completedTasks.length === 0 ? (
+                        <div className="py-8 text-center text-slate-400 bg-white/70 rounded-xl border border-dashed border-slate-200 text-xs">
+                          لا توجد مهام منجزة بعد
+                        </div>
+                      ) : (
+                        completedTasks.map(renderTeamTaskCard)
+                      )
+                    )}
 
-                                <span
-                                  className={`text-[9px] px-1.5 py-0.2 rounded font-bold border ${deadline.badgeClass}`}
-                                >
-                                  {deadline.label}
-                                </span>
-                              </div>
+                    {currentTab === 'all' && (
+                      memberTasks.length === 0 ? (
+                        <div className="py-8 text-center text-slate-400 bg-white/70 rounded-xl border border-dashed border-slate-200 text-xs">
+                          لا توجد مهام مسندة حالياً
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {sortedActiveTasks.length === 0 && (
+                            <div className="py-3 px-3 text-center bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 font-bold">
+                              🎉 لا توجد مهام معلقة، جميع المهام مكتملة بنجاح!
+                            </div>
+                          )}
 
-                              {/* Card Action Controls: Copy, Edit, Move to Member, Reorder Up/Down */}
-                              <div className="flex items-center gap-0.5 shrink-0 bg-slate-50 p-0.5 rounded-lg border border-slate-200/60">
-                                <button
-                                  type="button"
-                                  onClick={e => handleCopyTaskText(task, e)}
-                                  className={`p-1 rounded text-[10px] transition-all cursor-pointer ${
-                                    copiedTaskId === task.id
-                                      ? 'bg-emerald-100 text-emerald-700 font-bold'
-                                      : 'text-slate-500 hover:text-slate-800 hover:bg-white'
-                                  }`}
-                                  title="نسخ نص المهمة وتفاصيلها (Copy)"
-                                >
-                                  {copiedTaskId === task.id ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                                </button>
+                          {/* Active tasks first */}
+                          {sortedActiveTasks.map(renderTeamTaskCard)}
 
-                                <button
-                                  type="button"
-                                  onClick={e => {
-                                    handleStartEditTask(task, e);
-                                    setSelectedTaskId(task.id);
-                                  }}
-                                  className="p-1 rounded text-slate-500 hover:text-blue-600 hover:bg-white transition-all cursor-pointer"
-                                  title="تعديل المهمة (Edit)"
-                                >
-                                  <Edit3 className="w-3 h-3" />
-                                </button>
-
-                                <div className="relative inline-block">
-                                  <button
-                                    type="button"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      setMoveDropdownTaskId(moveDropdownTaskId === task.id ? null : task.id);
-                                    }}
-                                    className="p-1 rounded text-slate-500 hover:text-amber-600 hover:bg-white transition-all cursor-pointer"
-                                    title="نقل لموظف آخر بالتيم (Move)"
-                                  >
-                                    <Move className="w-3 h-3" />
-                                  </button>
-                                  {moveDropdownTaskId === task.id && (
-                                    <div
-                                      onClick={e => e.stopPropagation()}
-                                      className="absolute left-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 z-30 animate-in fade-in zoom-in-95 text-right"
-                                    >
-                                      <div className="px-3 py-1 text-[10px] font-black text-slate-400 border-b border-slate-100">
-                                        نقل المهمة إلى:
-                                      </div>
-                                      <div className="max-h-40 overflow-y-auto">
-                                        {availableMoveMembers.map(m => (
-                                          <button
-                                            key={m.id}
-                                            type="button"
-                                            onClick={e => handleMoveTaskMember(task.id, m.id, e)}
-                                            className={`w-full text-right px-3 py-1.5 text-xs font-bold hover:bg-slate-50 flex items-center justify-between transition-colors ${
-                                              m.id === task.assignedToId ? 'text-blue-600 bg-blue-50/50' : 'text-slate-700'
-                                            }`}
-                                          >
-                                            <div className="flex items-center gap-1.5 truncate">
-                                              <img src={m.avatar} alt={m.name} className="w-4 h-4 rounded-full object-cover" />
-                                              <span className="truncate">{m.name}</span>
-                                            </div>
-                                            {m.id === task.assignedToId && <span className="text-[9px] text-blue-500">الحالي</span>}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
+                          {/* Completed tasks accordion */}
+                          {completedTasks.length > 0 && (
+                            <div className="pt-2 border-t border-slate-200/80">
+                              <button
+                                type="button"
+                                onClick={() => toggleCollapseCompleted(member.id)}
+                                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-200 text-slate-700 hover:text-emerald-800 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>المهام المنجزة والمكتملة ({completedTasks.length})</span>
                                 </div>
+                                <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                                  <span>{isCompletedExpanded ? 'طي المهام' : 'عرض المهام'}</span>
+                                  {isCompletedExpanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-600" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-600" />}
+                                </div>
+                              </button>
 
-                                <button
-                                  type="button"
-                                  onClick={e => handleReorderTaskItem(task.id, 'up', e)}
-                                  className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-white transition-all cursor-pointer"
-                                  title="تحريك لأعلى ⬆️"
-                                >
-                                  <ArrowUp className="w-3 h-3" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={e => handleReorderTaskItem(task.id, 'down', e)}
-                                  className="p-1 rounded text-slate-500 hover:text-slate-900 hover:bg-white transition-all cursor-pointer"
-                                  title="تحريك لأسفل ⬇️"
-                                >
-                                  <ArrowDown className="w-3 h-3" />
-                                </button>
-                              </div>
+                              {isCompletedExpanded && (
+                                <div className="space-y-2 mt-2.5 animate-in fade-in">
+                                  {completedTasks.map(renderTeamTaskCard)}
+                                </div>
+                              )}
                             </div>
-
-                            {/* Task Title: Full width of the card, full sentences */}
-                            <div
-                              onClick={() => setSelectedTaskId(task.id)}
-                              className={`w-full font-bold text-xs sm:text-[13px] leading-relaxed cursor-pointer hover:text-blue-600 transition-colors text-right select-text py-0.5 ${
-                                isDone ? 'line-through text-slate-400' : 'text-slate-900'
-                              }`}
-                              style={{ wordBreak: 'normal', overflowWrap: 'break-word', whiteSpace: 'normal' }}
-                            >
-                              {renderTaskTitleWithMentions(task.title)}
-                            </div>
-
-                            {/* Meta Badges */}
-                            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                              {isAllTeamTask && (
-                                <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
-                                  <span>🌟 مهمة لجميع الفريق</span>
-                                </span>
-                              )}
-                              {task.clientName && (
-                                <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
-                                  <Building className="w-2.5 h-2.5 text-blue-600" />
-                                  <span className="truncate max-w-[110px]">{task.clientName}</span>
-                                </span>
-                              )}
-                              {(isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && (task.accountManagerId || task.createdById === effectiveAccountManager?.id) && (
-                                <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
-                                  <CheckCircle className="w-2.5 h-2.5 text-indigo-600" />
-                                  <span>تكليف الأكونت مانجر</span>
-                                </span>
-                              )}
-                              {task.isPrivate && (
-                                <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
-                                  <Lock className="w-2.5 h-2.5 text-amber-700" />
-                                  <span>سرية للمدير</span>
-                                </span>
-                              )}
-                              {isUserMentionedInTask(task, currentUser) && (
-                                <span className="text-[9px] bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
-                                  <AtSign className="w-2.5 h-2.5 text-purple-700" />
-                                  <span>منشن لك</span>
-                                </span>
-                              )}
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold">
-                                {task.category}
-                              </span>
-                              <span className="text-[9px] text-slate-500 font-mono font-medium flex items-center gap-0.5">
-                                <Clock className="w-2.5 h-2.5 text-slate-400" />
-                                <span>تسليم: {task.dueDate}</span>
-                              </span>
-                            </div>
-
-                            {/* Card Footer: Timer Start/End + Time logged */}
-                            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                              <div className="flex items-center gap-1.5">
-                                {task.isTimerRunning ? (
-                                  <div className="flex items-center gap-1">
-                                    <span className="px-2 py-0.5 bg-emerald-600 text-white rounded-md font-mono text-[10px] font-bold flex items-center gap-1 animate-pulse">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                                      <span>{formatLiveTimer(task)}</span>
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => pauseTaskTimer(task.id)}
-                                      className="px-1.5 py-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
-                                      title="إيقاف مؤقت للاستراحة - لن يتم احتساب وقت التوقف"
-                                    >
-                                      <Pause className="w-2.5 h-2.5" />
-                                      <span>إيقاف مؤقت</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setStopTimerTaskId(task.id)}
-                                      className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
-                                      title="إنهاء الجلسة وحساب الوقت الفعلي"
-                                    >
-                                      <Square className="w-2.5 h-2.5 fill-current" />
-                                      <span>إنهاء</span>
-                                    </button>
-                                  </div>
-                                ) : task.isTimerPaused ? (
-                                  <div className="flex items-center gap-1">
-                                    <span className="px-2 py-0.5 bg-amber-500 text-white rounded-md font-mono text-[10px] font-bold flex items-center gap-1">
-                                      <span>⏸️ {formatLiveTimer(task)}</span>
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => resumeTaskTimer(task.id)}
-                                      className="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
-                                      title="استئناف العمل الفعلي"
-                                    >
-                                      <Play className="w-2.5 h-2.5 fill-current" />
-                                      <span>استئناف</span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setStopTimerTaskId(task.id)}
-                                      className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-0.5"
-                                      title="إنهاء الجلسة وحساب الوقت الفعلي"
-                                    >
-                                      <Square className="w-2.5 h-2.5 fill-current" />
-                                      <span>إنهاء</span>
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => startTaskTimer(task.id)}
-                                    className="px-2 py-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1"
-                                    title="بدء مؤقت العمل الفعلي"
-                                  >
-                                    <Play className="w-2.5 h-2.5" />
-                                    <span>بدء (Start)</span>
-                                  </button>
-                                )}
-                              </div>
-
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] text-slate-500 font-mono">
-                                  ⏱️ {formatDurationMinutes(task.totalLoggedMinutes || 0)}
-                                </span>
-                                <button
-                                  onClick={() => setSelectedTaskId(task.id)}
-                                  className="text-slate-400 hover:text-blue-600 p-0.5"
-                                  title="فتح التفاصيل والمنشنات"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
+                          )}
+                        </div>
+                      )
                     )}
                   </div>
 
