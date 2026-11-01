@@ -4955,6 +4955,28 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (payload.type === 'TASK_MUTATION' || payload.type === 'FULL_SYNC') {
             const serverDeletedSet = new Set((payload.deletedTasks || []).map((t: any) => t.id));
             
+            // Check if incoming task is newly assigned or mentions currentUser
+            if (payload.task && currentUser) {
+              const incomingTask = payload.task;
+              const isAssigned = isTaskAssignedToUser(incomingTask, currentUser);
+              const isMentioned = Array.isArray(incomingTask.mentionedUserIds) &&
+                incomingTask.mentionedUserIds.some((mId: string) => isTaskAssignedToUser({ assignedToId: mId } as any, currentUser));
+              const isCreatedByOther = incomingTask.createdBy !== currentUser.name && incomingTask.creatorId !== currentUser.id;
+
+              if ((isAssigned || isMentioned) && isCreatedByOther) {
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(
+                    new CustomEvent('swiftmynd:task_notification', {
+                      detail: {
+                        task: incomingTask,
+                        creatorName: incomingTask.createdBy || 'إدارة المهام'
+                      }
+                    })
+                  );
+                }
+              }
+            }
+
             if (Array.isArray(payload.tasks)) {
               const cleanTasks = payload.tasks.filter((t: any) => !serverDeletedSet.has(t.id));
               setTasks(prev => {

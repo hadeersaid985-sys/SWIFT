@@ -97,8 +97,21 @@ async function startServer() {
             });
             parsed.team = Array.from(currentTeamMap.values());
           }
+
+          if (Array.isArray(latestParsed.chatMessages) && latestParsed.chatMessages.length > 0) {
+            const currentChatMap = new Map<string, any>((parsed.chatMessages || []).map((m: any) => [m.id, m]));
+            latestParsed.chatMessages.forEach((m: any) => {
+              if (!currentChatMap.has(m.id)) {
+                currentChatMap.set(m.id, m);
+              }
+            });
+            parsed.chatMessages = Array.from(currentChatMap.values());
+          }
         } catch {}
       }
+
+      parsed.chatMessages = Array.isArray(parsed.chatMessages) ? parsed.chatMessages : [];
+      parsed.chatChannels = Array.isArray(parsed.chatChannels) ? parsed.chatChannels : [];
 
       // Normalize Islam and Mariam canonical identity across tasks
       if (Array.isArray(parsed.tasks)) {
@@ -481,6 +494,7 @@ async function startServer() {
       // Broadcast immediately to all connected devices in 0ms
       broadcastLiveSync({
         type: 'TASK_MUTATION',
+        task,
         tasks: current.tasks,
         deletedTasks: current.deletedTasks,
         notifications: current.notifications,
@@ -655,6 +669,144 @@ async function startServer() {
       return res.json({ success: true, taskId });
     } catch (err) {
       return res.status(500).json({ error: 'Failed to add comment' });
+    }
+  });
+
+  // ==================== TEAM CHAT API (Real-time Cross-Device Sync) ====================
+  // Get Chat Messages and Channels
+  app.get('/api/chat', (_req, res) => {
+    try {
+      const data = readCurrentData();
+      return res.json({
+        messages: data.chatMessages || [],
+        channels: data.chatChannels || [],
+        updatedAt: data.updatedAt
+      });
+    } catch (err: any) {
+      console.error('Error in GET /api/chat:', err);
+      return res.status(500).json({ error: 'Failed to read chat data' });
+    }
+  });
+
+  // Send a new Chat Message with Instant Live SSE Broadcast across all devices
+  app.post('/api/chat', (req, res) => {
+    try {
+      const { message } = req.body;
+      if (!message || !message.id || (!message.text && (!message.attachments || message.attachments.length === 0))) {
+        return res.status(400).json({ error: 'Valid chat message required' });
+      }
+
+      const current = readCurrentData();
+      const messages: any[] = current.chatMessages || [];
+
+      // Avoid duplicates
+      const existingIdx = messages.findIndex((m: any) => m.id === message.id);
+      if (existingIdx >= 0) {
+        messages[existingIdx] = { ...messages[existingIdx], ...message };
+      } else {
+        messages.push(message);
+      }
+
+      current.chatMessages = messages;
+      saveData(current);
+      console.log(`[SWIFTMYND] Chat message broadcast: "${message.senderName}" -> "${message.channelId || message.recipientId}"`);
+
+      // Broadcast immediately to all connected browsers in 0ms
+      broadcastLiveSync({
+        type: 'CHAT_MESSAGE',
+        message,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, message });
+    } catch (err: any) {
+      console.error('Error saving chat message:', err);
+      return res.status(500).json({ error: 'Failed to save chat message' });
+    }
+  });
+
+  // Toggle reaction on a chat message
+  app.post('/api/chat/reaction', (req, res) => {
+    try {
+      const { messageId, reactions } = req.body;
+      if (!messageId) return res.status(400).json({ error: 'messageId required' });
+
+      const current = readCurrentData();
+      const messages: any[] = current.chatMessages || [];
+      const msg = messages.find((m: any) => m.id === messageId);
+      if (msg) {
+        msg.reactions = reactions;
+        saveData(current);
+
+        broadcastLiveSync({
+          type: 'CHAT_REACTION',
+          messageId,
+          reactions,
+          updatedAt: current.updatedAt
+        });
+      }
+
+      return res.json({ success: true, messageId, reactions });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to update reaction' });
+    }
+  });
+
+  // Delete chat message
+  app.post('/api/chat/delete', (req, res) => {
+    try {
+      const { messageId } = req.body;
+      if (!messageId) return res.status(400).json({ error: 'messageId required' });
+
+      const current = readCurrentData();
+      current.chatMessages = (current.chatMessages || []).filter((m: any) => m.id !== messageId);
+      saveData(current);
+
+      broadcastLiveSync({
+        type: 'CHAT_DELETE',
+        messageId,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, messageId });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to delete message' });
+    }
+  });
+
+  // Clear chat (Admin / User)
+  app.post('/api/chat/clear', (req, res) => {
+    try {
+      const { channelId, directPairKey } = req.body;
+      const current = readCurrentData();
+
+      if (channelId) {
+        current.chatMessages = (current.chatMessages || []).filter((m: any) => m.channelId !== channelId);
+      } else if (directPairKey) {
+        const [id1, id2] = directPairKey.split('__');
+        current.chatMessages = (current.chatMessages || []).filter((m: any) => {
+          if (m.channelId) return true;
+          return !(
+            (m.senderId === id1 && m.recipientId === id2) ||
+            (m.senderId === id2 && m.recipientId === id1)
+          );
+        });
+      } else {
+        current.chatMessages = [];
+      }
+
+      saveData(current);
+
+      broadcastLiveSync({
+        type: 'CHAT_CLEAR',
+        channelId,
+        directPairKey,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to clear chat' });
     }
   });
 

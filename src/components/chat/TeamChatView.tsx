@@ -188,9 +188,7 @@ export const TeamChatView: React.FC = () => {
     );
   }, [channels, searchQuery]);
 
-  // Displayed team members in sidebar:
-  // للموظف: يظهر فقط الشات للأشخاص الذين تحدث معهم أو المدير
-  // للأدمن: يظهر جميع أعضاء الفريق
+  // Displayed team members in sidebar (جميع أعضاء الفريق متاحين للمراسلة الفورية)
   const filteredTeamMembers = useMemo(() => {
     return getVisibleTeamMembersForUser({
       team,
@@ -198,7 +196,8 @@ export const TeamChatView: React.FC = () => {
       messages,
       activeChatId,
       activeChatType,
-      searchQuery
+      searchQuery,
+      includeAllTeam: true
     });
   }, [team, currentUser, messages, activeChatId, activeChatType, searchQuery]);
 

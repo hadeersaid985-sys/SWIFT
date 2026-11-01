@@ -17,11 +17,42 @@ export function isUserChatAdmin(user?: TeamMember | null): boolean {
 }
 
 /**
+/**
+ * Checks if two user IDs represent the same canonical team member (accounting for legacy IDs and aliases).
+ */
+export function isSameUserId(idA?: string | null, idB?: string | null): boolean {
+  if (!idA || !idB) return false;
+  if (idA === idB) return true;
+  const a = idA.trim().toLowerCase();
+  const b = idB.trim().toLowerCase();
+  if (a === b) return true;
+
+  const aliases: Record<string, string[]> = {
+    'user-mariam': ['user-mariam', 'user-1793097751331', 'user-1793016396281', 'mariam', 'مريم'],
+    'user-islam': ['user-islam', 'user-1793025675186', 'user-1793016178916', 'islam', 'اسلام', 'إسلام'],
+    'user-roaa': ['user-roaa', 'user-1793016462810', 'roaa', 'رواء'],
+    'user-eman': ['user-eman', 'eman', 'eman ashraf', 'ايمان', 'إيمان'],
+    'user-aya': ['user-aya', 'user-1793016503819', 'aya', 'aya gaber', 'آية', 'ايه', 'آيه'],
+    'user-yomna': ['user-yomna', 'yomna', 'يمنى', 'يمنه'],
+    'user-amira': ['user-amira', 'amira', 'اميرة', 'أميرة', 'اميره'],
+    'user-1': ['user-1', 'user-admin', 'hadeer', 'hadeer said', 'هدير', 'هدير سعيد', 'admin']
+  };
+
+  for (const list of Object.values(aliases)) {
+    const hasA = list.includes(a);
+    const hasB = list.includes(b);
+    if (hasA && hasB) return true;
+  }
+
+  return false;
+}
+
+/**
  * Checks if a given message involves the user as sender or recipient.
  */
 export function isUserParticipantInMessage(message: ChatMessage, userId: string): boolean {
   if (!userId) return false;
-  return message.senderId === userId || message.recipientId === userId;
+  return isSameUserId(message.senderId, userId) || isSameUserId(message.recipientId, userId);
 }
 
 /**
@@ -55,8 +86,8 @@ export function getVisibleMessagesForChat({
       .filter(
         m =>
           !m.channelId &&
-          ((m.senderId === memberAId && m.recipientId === memberBId) ||
-            (m.senderId === memberBId && m.recipientId === memberAId))
+          ((isSameUserId(m.senderId, memberAId) && isSameUserId(m.recipientId, memberBId)) ||
+            (isSameUserId(m.senderId, memberBId) && isSameUserId(m.recipientId, memberAId)))
       )
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }
@@ -70,13 +101,13 @@ export function getVisibleMessagesForChat({
 
   // 3. 1-on-1 Direct Messages
   // Security rule: If not admin, currentUser MUST be either sender or recipient with activeChatId
-  if (!isAdmin && activeChatId !== currentUser.id) {
+  if (!isAdmin && !isSameUserId(activeChatId, currentUser.id)) {
     return messages
       .filter(
         m =>
           !m.channelId &&
-          ((m.senderId === currentUser.id && m.recipientId === activeChatId) ||
-            (m.senderId === activeChatId && m.recipientId === currentUser.id))
+          ((isSameUserId(m.senderId, currentUser.id) && isSameUserId(m.recipientId, activeChatId)) ||
+            (isSameUserId(m.senderId, activeChatId) && isSameUserId(m.recipientId, currentUser.id)))
       )
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }
@@ -86,8 +117,8 @@ export function getVisibleMessagesForChat({
     .filter(
       m =>
         !m.channelId &&
-        ((m.senderId === currentUser.id && m.recipientId === activeChatId) ||
-          (m.senderId === activeChatId && m.recipientId === currentUser.id))
+        ((isSameUserId(m.senderId, currentUser.id) && isSameUserId(m.recipientId, activeChatId)) ||
+          (isSameUserId(m.senderId, activeChatId) && isSameUserId(m.recipientId, currentUser.id)))
     )
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 }
@@ -163,7 +194,8 @@ export function getVisibleTeamMembersForUser({
   messages,
   activeChatId,
   activeChatType,
-  searchQuery = ''
+  searchQuery = '',
+  includeAllTeam = false
 }: {
   team: TeamMember[];
   currentUser: TeamMember | null;
@@ -171,14 +203,16 @@ export function getVisibleTeamMembersForUser({
   activeChatId?: string;
   activeChatType?: 'channel' | 'dm';
   searchQuery?: string;
+  includeAllTeam?: boolean;
 }): TeamMember[] {
   if (!currentUser) return [];
 
   const isAdmin = isUserChatAdmin(currentUser);
+  const myId = currentUser.id;
 
-  if (isAdmin) {
+  if (isAdmin || includeAllTeam) {
     return team
-      .filter(m => m.id !== currentUser.id)
+      .filter(m => !isSameUserId(m.id, myId))
       .filter(m => {
         if (!searchQuery.trim()) return true;
         const q = searchQuery.toLowerCase();
@@ -190,33 +224,38 @@ export function getVisibleTeamMembersForUser({
       });
   }
 
-  // Non-admin employee: only colleagues they chatted with, plus admin, plus currently selected DM
-  const myId = currentUser.id;
+  // Non-admin employee: colleagues they chatted with, plus admin, plus currently selected DM
   const chattedMemberIds = new Set<string>();
 
   messages.forEach(m => {
     if (!m.channelId) {
-      if (m.senderId === myId && m.recipientId) {
-        chattedMemberIds.add(m.recipientId);
-      } else if (m.recipientId === myId && m.senderId) {
-        chattedMemberIds.add(m.senderId);
+      if (isSameUserId(m.senderId, myId) && m.recipientId) {
+        team.forEach(t => {
+          if (isSameUserId(t.id, m.recipientId)) chattedMemberIds.add(t.id);
+        });
+      } else if (isSameUserId(m.recipientId, myId) && m.senderId) {
+        team.forEach(t => {
+          if (isSameUserId(t.id, m.senderId)) chattedMemberIds.add(t.id);
+        });
       }
     }
   });
 
   // Always include admin so the employee has an open direct line
   const adminMember = team.find(m => m.id === 'user-1' || m.accessLevel === 'admin');
-  if (adminMember && adminMember.id !== myId) {
+  if (adminMember && !isSameUserId(adminMember.id, myId)) {
     chattedMemberIds.add(adminMember.id);
   }
 
   // Include current active DM if user initiated it via "محادثة جديدة"
-  if (activeChatType === 'dm' && activeChatId && activeChatId !== myId) {
-    chattedMemberIds.add(activeChatId);
+  if (activeChatType === 'dm' && activeChatId && !isSameUserId(activeChatId, myId)) {
+    team.forEach(t => {
+      if (isSameUserId(t.id, activeChatId)) chattedMemberIds.add(t.id);
+    });
   }
 
   return team
-    .filter(m => m.id !== myId && chattedMemberIds.has(m.id))
+    .filter(m => !isSameUserId(m.id, myId) && chattedMemberIds.has(m.id))
     .filter(m => {
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();

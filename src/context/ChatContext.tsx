@@ -9,6 +9,7 @@ import {
   purgeDemoChatMessagesFromFirestore,
   clearAllChatMessagesFromFirestore
 } from '../firebase';
+import { isSameUserId } from '../utils/chatSecurity';
 import { useCRM } from './CRMContext';
 
 interface SendMessagePayload {
@@ -141,30 +142,134 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Read message targets tracked by user
   const [readTargets, setReadTargets] = useState<Record<string, number>>({});
 
-  // Real-time synchronization with Firestore
+  // Real-time synchronization with Server SSE & Firestore (Dual-Engine Live Sync)
   useEffect(() => {
-    // 1. Purge any legacy demo messages from Firestore and local cache
+    // 1. Purge legacy demo messages
     purgeDemoChatMessagesFromFirestore();
     try {
       localStorage.removeItem('swiftmynd_team_chat_messages_v1');
     } catch {}
 
-    // 2. Listen to real-time updates (ignoring any demo messages)
-    const unsubscribe = onChatMessagesSnapshot(remoteMessages => {
-      const cleanMessages = (remoteMessages || [])
-        .filter(m => m?.id && !isDemoMessage(m.id))
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-
-      setMessages(cleanMessages);
+    // 2. Initial fetch from server store to catch up immediately
+    const fetchServerChat = async () => {
       try {
-        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(cleanMessages));
-      } catch {}
+        const res = await fetch('/api/chat', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.messages) && data.messages.length > 0) {
+            setMessages(prev => {
+              const map = new Map<string, ChatMessage>();
+              prev.forEach(m => {
+                if (m?.id && !isDemoMessage(m.id)) map.set(m.id, m);
+              });
+              data.messages.forEach((m: any) => {
+                if (m?.id && !isDemoMessage(m.id)) map.set(m.id, m);
+              });
+              const sorted = Array.from(map.values()).sort(
+                (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              );
+              try {
+                localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(sorted));
+              } catch {}
+              return sorted;
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[Chat] Initial fetch notice:', err);
+      }
+    };
+    fetchServerChat();
+
+    // 3. Connect to live server SSE stream for 0ms cross-device delivery
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource('/api/live-sync');
+      eventSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+
+          if (payload.type === 'CHAT_MESSAGE' && payload.message) {
+            const incoming: ChatMessage = payload.message;
+            if (isDemoMessage(incoming.id)) return;
+
+            setMessages(prev => {
+              if (prev.some(m => m.id === incoming.id)) return prev;
+              const next = [...prev, incoming].sort(
+                (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              );
+              try {
+                localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+
+            // If message was sent by someone else, trigger live toast & chime
+            if (currentUser && !isSameUserId(incoming.senderId, currentUser.id)) {
+              const isDirectToMe = isSameUserId(incoming.recipientId, currentUser.id);
+              const isChannel = Boolean(incoming.channelId);
+
+              if (isDirectToMe || isChannel) {
+                if (soundEnabled) playTone();
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(
+                    new CustomEvent('swiftmynd:chat_notification', {
+                      detail: { message: incoming, isDirect: isDirectToMe }
+                    })
+                  );
+                }
+              }
+            }
+          } else if (payload.type === 'CHAT_REACTION') {
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === payload.messageId ? { ...m, reactions: payload.reactions } : m
+              )
+            );
+          } else if (payload.type === 'CHAT_DELETE') {
+            setMessages(prev => prev.filter(m => m.id !== payload.messageId));
+          } else if (payload.type === 'CHAT_CLEAR') {
+            if (payload.channelId) {
+              setMessages(prev => prev.filter(m => m.channelId !== payload.channelId));
+            } else {
+              setMessages([]);
+            }
+          }
+        } catch {}
+      };
+    } catch (e) {
+      console.warn('[Chat] EventSource SSE connection notice:', e);
+    }
+
+    // 4. Polling fallback every 3 seconds to guarantee 100% sync
+    const pollInterval = setInterval(() => {
+      fetchServerChat();
+    }, 3000);
+
+    // 5. Firestore real-time listener as secondary redundancy
+    const unsubscribeFirestore = onChatMessagesSnapshot(remoteMessages => {
+      if (Array.isArray(remoteMessages) && remoteMessages.length > 0) {
+        setMessages(prev => {
+          const map = new Map<string, ChatMessage>();
+          prev.forEach(m => {
+            if (m?.id && !isDemoMessage(m.id)) map.set(m.id, m);
+          });
+          remoteMessages.forEach(m => {
+            if (m?.id && !isDemoMessage(m.id)) map.set(m.id, m);
+          });
+          return Array.from(map.values()).sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+        });
+      }
     });
 
     return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
+      if (eventSource) eventSource.close();
+      clearInterval(pollInterval);
+      if (typeof unsubscribeFirestore === 'function') unsubscribeFirestore();
     };
-  }, []);
+  }, [currentUser, soundEnabled]);
 
   // Save messages to local storage whenever updated
   useEffect(() => {
@@ -203,7 +308,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentUserId = currentUser.id;
 
     messages.forEach(msg => {
-      if (msg.senderId === currentUserId) return; // My own messages are not unread
+      if (isSameUserId(msg.senderId, currentUserId)) return; // My own messages are not unread
 
       if (msg.channelId) {
         // Channel message
@@ -212,7 +317,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (msgTime > lastRead) {
           res[msg.channelId] = (res[msg.channelId] || 0) + 1;
         }
-      } else if (msg.recipientId === currentUserId) {
+      } else if (isSameUserId(msg.recipientId, currentUserId)) {
         // Direct message sent to me
         const lastRead = readTargets[msg.senderId] || 0;
         const msgTime = new Date(msg.timestamp).getTime();
@@ -265,7 +370,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       playTone();
     }
 
-    // Save to Firestore
+    // 1. Post to Server API for zero-latency SSE broadcast to all devices
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: newMessage })
+    }).catch(err => console.warn('[Chat] Server broadcast notice:', err));
+
+    // 2. Save to Firestore in parallel
     try {
       await saveChatMessageToFirestore(newMessage);
     } catch (e) {
@@ -278,6 +390,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentUser) return;
     const userId = currentUser.id;
 
+    let updatedReactions: any[] = [];
     setMessages(prev =>
       prev.map(msg => {
         if (msg.id !== messageId) return msg;
@@ -287,11 +400,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (existingRxIndex > -1) {
           const rx = currentReactions[existingRxIndex];
-          const hasUser = rx.userIds.includes(userId);
+          const hasUser = rx.userIds.some(u => isSameUserId(u, userId));
 
           if (hasUser) {
             // Remove user reaction
-            const newUserIds = rx.userIds.filter(u => u !== userId);
+            const newUserIds = rx.userIds.filter(u => !isSameUserId(u, userId));
             if (newUserIds.length === 0) {
               currentReactions.splice(existingRxIndex, 1);
             } else {
@@ -318,12 +431,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
 
+        updatedReactions = currentReactions;
         const updatedMsg: ChatMessage = {
           ...msg,
           reactions: currentReactions
         };
 
-        // Async sync to Firestore
+        // Async sync to server & Firestore
+        fetch('/api/chat/reaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messageId, reactions: currentReactions })
+        }).catch(() => {});
+
         saveChatMessageToFirestore(updatedMsg).catch(() => {});
         return updatedMsg;
       })
@@ -333,6 +453,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Delete message
   const deleteMessage = useCallback(async (messageId: string) => {
     setMessages(prev => prev.filter(m => m.id !== messageId));
+
+    fetch('/api/chat/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messageId })
+    }).catch(() => {});
+
     try {
       await deleteChatMessageFromFirestore(messageId);
     } catch {}
@@ -357,6 +484,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify([]));
     } catch {}
+
+    fetch('/api/chat/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    }).catch(() => {});
+
     await clearAllChatMessagesFromFirestore();
   }, []);
 
@@ -366,11 +500,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       activeChatType === 'channel'
         ? m.channelId === activeChatId
         : !m.channelId &&
-          ((m.senderId === currentUser?.id && m.recipientId === activeChatId) ||
-            (m.senderId === activeChatId && m.recipientId === currentUser?.id))
+          ((isSameUserId(m.senderId, currentUser?.id) && isSameUserId(m.recipientId, activeChatId)) ||
+            (isSameUserId(m.senderId, activeChatId) && isSameUserId(m.recipientId, currentUser?.id)))
     );
 
     setMessages(prev => prev.filter(m => !toDelete.some(d => d.id === m.id)));
+
+    if (activeChatType === 'channel') {
+      fetch('/api/chat/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelId: activeChatId })
+      }).catch(() => {});
+    }
 
     for (const msg of toDelete) {
       await deleteChatMessageFromFirestore(msg.id);
