@@ -37,7 +37,9 @@ import { ChatMessage, TeamMember, ChatAttachment } from '../../types/crm';
 import {
   buildAllTeamConversations,
   getVisibleTeamMembersForUser,
-  getVisibleMessagesForChat
+  getVisibleMessagesForChat,
+  isMessageReadByRecipient,
+  isSameUserId
 } from '../../utils/chatSecurity';
 
 const QUICK_EMOJIS = ['👍', '❤️', '🔥', '👏', '🎉', '🚀', '🙌', '💡', '✅', '😂', '💯', '🌸'];
@@ -56,6 +58,7 @@ export const TeamChatView: React.FC = () => {
     clearAllMessages,
     clearCurrentChat,
     unreadPerTarget,
+    markAsRead,
     soundEnabled,
     setSoundEnabled,
     activeTargetName,
@@ -1055,7 +1058,8 @@ export const TeamChatView: React.FC = () => {
 
                   {/* Messages */}
                   {group.items.map(msg => {
-                    const isMe = msg.senderId === currentUser?.id;
+                    const isMe = isSameUserId(msg.senderId, currentUser?.id);
+                    const isRead = isMessageReadByRecipient(msg, currentUser?.id);
 
                     return (
                       <div
@@ -1149,14 +1153,29 @@ export const TeamChatView: React.FC = () => {
                               </div>
                             )}
 
-                            {/* Footer: Time & Status */}
+                            {/* Footer: Time & Status (WhatsApp-style: 1 tick for sent, 2 ticks when viewed) */}
                             <div
-                              className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${
+                              className={`flex items-center justify-end gap-1.5 mt-1 text-[10px] select-none ${
                                 isMe ? 'text-blue-100' : 'text-slate-400'
                               }`}
                             >
-                              <span>{formatTime(msg.timestamp)}</span>
-                              {isMe && <CheckCheck className="w-3.5 h-3.5 text-blue-200" />}
+                              <span dir="ltr">{formatTime(msg.timestamp)}</span>
+                              {isMe && (
+                                <span
+                                  className="inline-flex items-center transition-all"
+                                  title={
+                                    isRead
+                                      ? (msg.channelId ? 'تمت القراءة من أعضاء الفريق (شوهدت)' : 'تمت القراءة من المستلم (شاهد الرسالة ✓✓)')
+                                      : 'تم الإرسال - في انتظار قراءة المستلم (✓)'
+                                  }
+                                >
+                                  {isRead ? (
+                                    <CheckCheck className="w-3.5 h-3.5 text-sky-300 drop-shadow-xs" />
+                                  ) : (
+                                    <Check className="w-3.5 h-3.5 text-blue-200/80" />
+                                  )}
+                                </span>
+                              )}
                             </div>
                           </div>
 

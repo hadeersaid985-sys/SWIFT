@@ -220,6 +220,34 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             }
+          } else if (payload.type === 'CHAT_MESSAGES_READ') {
+            const updatedIds = new Set<string>(payload.messageIds || []);
+            const readerId = payload.readerId;
+            setMessages(prev => {
+              let changed = false;
+              const next = prev.map(m => {
+                if (updatedIds.has(m.id)) {
+                  const currentReadBy = m.readBy || [];
+                  if (!currentReadBy.some(u => isSameUserId(u, readerId))) {
+                    changed = true;
+                    return {
+                      ...m,
+                      readBy: [...currentReadBy, readerId],
+                      status: 'read' as const,
+                      readAt: m.readAt || payload.readAt
+                    };
+                  }
+                }
+                return m;
+              });
+              if (changed) {
+                try {
+                  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(next));
+                } catch {}
+                return next;
+              }
+              return prev;
+            });
           } else if (payload.type === 'CHAT_REACTION') {
             setMessages(prev =>
               prev.map(m =>
@@ -285,13 +313,63 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {}
   }, [channels]);
 
-  // Mark target as read
-  const markAsRead = useCallback((targetId: string) => {
+  // Mark target conversation as read by currentUser
+  const markAsRead = useCallback(async (targetId: string) => {
+    if (!currentUser || !targetId) return;
+    const readerId = currentUser.id;
+
     setReadTargets(prev => ({
       ...prev,
       [targetId]: Date.now()
     }));
-  }, []);
+
+    // Optimistically mark messages as read locally
+    let updatedCount = 0;
+    setMessages(prev => {
+      let changed = false;
+      const next = prev.map(msg => {
+        // Direct message from target to currentUser
+        const isDMFromTargetToMe =
+          !msg.channelId &&
+          isSameUserId(msg.senderId, targetId) &&
+          isSameUserId(msg.recipientId, readerId);
+        // Channel message
+        const isChannelTarget = msg.channelId === targetId && !isSameUserId(msg.senderId, readerId);
+
+        if (isDMFromTargetToMe || isChannelTarget) {
+          const alreadyRead = msg.readBy && msg.readBy.some(id => isSameUserId(id, readerId));
+          if (!alreadyRead) {
+            changed = true;
+            updatedCount++;
+            return {
+              ...msg,
+              readBy: [...(msg.readBy || []), readerId],
+              status: 'read' as const,
+              readAt: msg.readAt || new Date().toISOString()
+            };
+          }
+        }
+        return msg;
+      });
+
+      if (changed) {
+        try {
+          localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(next));
+        } catch {}
+        return next;
+      }
+      return prev;
+    });
+
+    // Notify backend & broadcast to sender in real time
+    try {
+      fetch('/api/chat/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ readerId, targetId })
+      }).catch(err => console.warn('[Chat] Server read sync notice:', err));
+    } catch {}
+  }, [currentUser]);
 
   // Switch chat
   const setActiveChat = useCallback((id: string, type: 'channel' | 'dm') => {
@@ -299,6 +377,27 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveChatType(type);
     markAsRead(id);
   }, [markAsRead]);
+
+  // Auto-mark as read when user is actively viewing a conversation with unread incoming messages
+  useEffect(() => {
+    if (!currentUser || !activeChatId) return;
+    const currentUserId = currentUser.id;
+    const hasUnread = messages.some(msg => {
+      const isFromOtherToMe =
+        activeChatType === 'dm'
+          ? !msg.channelId &&
+            isSameUserId(msg.senderId, activeChatId) &&
+            isSameUserId(msg.recipientId, currentUserId)
+          : msg.channelId === activeChatId && !isSameUserId(msg.senderId, currentUserId);
+
+      const notReadByMe = !(msg.readBy && msg.readBy.some(id => isSameUserId(id, currentUserId)));
+      return isFromOtherToMe && notReadByMe;
+    });
+
+    if (hasUnread) {
+      markAsRead(activeChatId);
+    }
+  }, [currentUser, activeChatId, activeChatType, messages, markAsRead]);
 
   // Compute unread counts per channel or DM
   const unreadPerTarget = useMemo(() => {
@@ -360,7 +459,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       attachments,
       replyTo,
       reactions: [],
-      readBy: [currentUser.id]
+      readBy: [currentUser.id],
+      status: 'sent'
     };
 
     // Optimistic update

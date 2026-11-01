@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ChatMessage } from '../types/crm';
+import { isMessageReadByRecipient } from './chatSecurity';
 
 // Pure logic helper functions for Chat
 export function toggleMessageReaction(
@@ -109,4 +110,54 @@ test('filterMessagesForChat correctly separates channel messages and 1-on-1 DMs'
   const dmAmira = filterMessagesForChat(messages, 'user-1', 'user-2', 'dm');
   assert.equal(dmAmira.length, 1);
   assert.equal(dmAmira[0].id, '3');
+});
+
+test('WhatsApp receipts: newly sent message returns false for read by recipient (single tick ✓)', () => {
+  const msg: ChatMessage = {
+    id: 'msg-test-1',
+    recipientId: 'user-amira',
+    senderId: 'user-1',
+    senderName: 'Hadeer',
+    senderAvatar: '',
+    text: 'hi',
+    timestamp: new Date().toISOString(),
+    readBy: ['user-1'],
+    status: 'sent'
+  };
+
+  const isRead = isMessageReadByRecipient(msg, 'user-1');
+  assert.equal(isRead, false); // Single tick!
+});
+
+test('WhatsApp receipts: returns true when recipient has viewed message (double ticks ✓✓)', () => {
+  const msg: ChatMessage = {
+    id: 'msg-test-2',
+    recipientId: 'user-amira',
+    senderId: 'user-1',
+    senderName: 'Hadeer',
+    senderAvatar: '',
+    text: 'hi',
+    timestamp: new Date().toISOString(),
+    readBy: ['user-1', 'user-amira'],
+    status: 'read'
+  };
+
+  const isRead = isMessageReadByRecipient(msg, 'user-1');
+  assert.equal(isRead, true); // Double ticks!
+});
+
+test('WhatsApp receipts: accounts for user aliases (e.g. "amira" and "user-amira")', () => {
+  const msg: ChatMessage = {
+    id: 'msg-test-3',
+    recipientId: 'amira',
+    senderId: 'user-1',
+    senderName: 'Hadeer',
+    senderAvatar: '',
+    text: 'hello',
+    timestamp: new Date().toISOString(),
+    readBy: ['user-1', 'user-amira']
+  };
+
+  const isRead = isMessageReadByRecipient(msg, 'user-1');
+  assert.equal(isRead, true);
 });

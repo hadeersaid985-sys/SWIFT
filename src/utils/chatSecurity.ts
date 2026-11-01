@@ -266,3 +266,37 @@ export function getVisibleTeamMembersForUser({
       );
     });
 }
+
+/**
+ * WhatsApp-style read receipt calculation:
+ * - Direct 1-on-1: has the recipient viewed the message?
+ *   Returns true if recipient is present in readBy array or status is 'read'.
+ * - Channel: has anyone other than the sender read the message?
+ */
+export function isMessageReadByRecipient(
+  msg?: ChatMessage | null,
+  currentUserId?: string | null
+): boolean {
+  if (!msg) return false;
+  if (msg.status === 'read') return true;
+
+  // In Channels: read by any member other than the sender
+  if (msg.channelId) {
+    if (!msg.readBy || msg.readBy.length === 0) return false;
+    return msg.readBy.some(readerId => !isSameUserId(readerId, msg.senderId));
+  }
+
+  // In Direct Messages (DMs):
+  // Check if recipient is recorded in readBy
+  if (msg.recipientId) {
+    if (!msg.readBy || msg.readBy.length === 0) return false;
+    return msg.readBy.some(readerId => isSameUserId(readerId, msg.recipientId));
+  }
+
+  // Fallback if no recipientId explicit: read by anyone other than sender
+  if (msg.readBy && msg.readBy.length > 0) {
+    return msg.readBy.some(readerId => !isSameUserId(readerId, msg.senderId));
+  }
+
+  return false;
+}

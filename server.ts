@@ -728,6 +728,31 @@ async function startServer() {
   });
 
   // ==================== TEAM CHAT API (Real-time Cross-Device Sync) ====================
+  // Helper to compare user IDs canonical aliases
+  function isSameUserId(idA?: string | null, idB?: string | null): boolean {
+    if (!idA || !idB) return false;
+    if (idA === idB) return true;
+    const a = idA.trim().toLowerCase();
+    const b = idB.trim().toLowerCase();
+    if (a === b) return true;
+
+    const aliases: Record<string, string[]> = {
+      'user-mariam': ['user-mariam', 'user-1793097751331', 'user-1793016396281', 'mariam', 'مريم'],
+      'user-islam': ['user-islam', 'user-1793025675186', 'user-1793016178916', 'islam', 'اسلام', 'إسلام'],
+      'user-roaa': ['user-roaa', 'user-1793016462810', 'roaa', 'رواء'],
+      'user-eman': ['user-eman', 'eman', 'eman ashraf', 'ايمان', 'إيمان'],
+      'user-aya': ['user-aya', 'user-1793016503819', 'aya', 'aya gaber', 'آية', 'ايه', 'آيه'],
+      'user-yomna': ['user-yomna', 'yomna', 'يمنى', 'يمنه'],
+      'user-amira': ['user-amira', 'amira', 'اميرة', 'أميرة', 'اميره'],
+      'user-1': ['user-1', 'user-admin', 'hadeer', 'hadeer said', 'هدير', 'هدير سعيد', 'admin']
+    };
+
+    for (const list of Object.values(aliases)) {
+      if (list.includes(a) && list.includes(b)) return true;
+    }
+    return false;
+  }
+
   // Get Chat Messages and Channels
   app.get('/api/chat', (_req, res) => {
     try {
@@ -754,6 +779,12 @@ async function startServer() {
       const current = readCurrentData();
       const messages: any[] = current.chatMessages || [];
 
+      // Ensure status and readBy defaults
+      message.status = message.status || 'sent';
+      if (!Array.isArray(message.readBy) || message.readBy.length === 0) {
+        message.readBy = [message.senderId];
+      }
+
       // Avoid duplicates
       const existingIdx = messages.findIndex((m: any) => m.id === message.id);
       if (existingIdx >= 0) {
@@ -777,6 +808,69 @@ async function startServer() {
     } catch (err: any) {
       console.error('Error saving chat message:', err);
       return res.status(500).json({ error: 'Failed to save chat message' });
+    }
+  });
+
+  // Mark chat messages as read by reader with instant SSE broadcast
+  app.post('/api/chat/read', (req, res) => {
+    try {
+      const { readerId, targetId, channelId } = req.body;
+      if (!readerId || !targetId) {
+        return res.status(400).json({ error: 'readerId and targetId are required' });
+      }
+
+      const current = readCurrentData();
+      const messages: any[] = current.chatMessages || [];
+      const updatedIds: string[] = [];
+      const readAt = new Date().toISOString();
+
+      messages.forEach((msg: any) => {
+        // Channel message
+        if (channelId || msg.channelId === targetId) {
+          if (!Array.isArray(msg.readBy)) msg.readBy = [msg.senderId];
+          const alreadyRead = msg.readBy.some((u: string) => isSameUserId(u, readerId));
+          if (!alreadyRead) {
+            msg.readBy.push(readerId);
+            msg.status = 'read';
+            msg.readAt = msg.readAt || readAt;
+            updatedIds.push(msg.id);
+          }
+        } else if (!msg.channelId) {
+          // Direct 1-on-1 message: from target to reader
+          const isFromTargetToReader =
+            isSameUserId(msg.senderId, targetId) && isSameUserId(msg.recipientId, readerId);
+          if (isFromTargetToReader) {
+            if (!Array.isArray(msg.readBy)) msg.readBy = [msg.senderId];
+            const alreadyRead = msg.readBy.some((u: string) => isSameUserId(u, readerId));
+            if (!alreadyRead) {
+              msg.readBy.push(readerId);
+              msg.status = 'read';
+              msg.readAt = msg.readAt || readAt;
+              updatedIds.push(msg.id);
+            }
+          }
+        }
+      });
+
+      if (updatedIds.length > 0) {
+        current.chatMessages = messages;
+        saveData(current);
+        console.log(`[SWIFTMYND] Chat messages marked read by "${readerId}" for target "${targetId}": ${updatedIds.length} messages`);
+
+        broadcastLiveSync({
+          type: 'CHAT_MESSAGES_READ',
+          readerId,
+          targetId,
+          messageIds: updatedIds,
+          readAt,
+          updatedAt: current.updatedAt
+        });
+      }
+
+      return res.json({ success: true, updatedCount: updatedIds.length, updatedIds });
+    } catch (err: any) {
+      console.error('Error in /api/chat/read:', err);
+      return res.status(500).json({ error: 'Failed to mark messages as read' });
     }
   });
 
