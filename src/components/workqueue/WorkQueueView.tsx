@@ -49,6 +49,7 @@ import {
   extractClientFromTask,
   WaitingClientGroup
 } from '../../utils/workQueueUtils';
+import { QuickAttendanceWidget } from '../attendance/QuickAttendanceWidget';
 
 // Unified Work Item definition for the Work Queue
 export type WorkItemType = 'task' | 'meeting' | 'call' | 'lead' | 'deal' | 'approval';
@@ -696,8 +697,13 @@ export const WorkQueueView: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons & Shift Attendance */}
         <div className="flex items-center gap-2 self-stretch md:self-auto justify-end flex-wrap">
+          {/* Quick Attendance Widget for Instant Shift Management */}
+          <div className="bg-slate-900/40 p-0.5 sm:p-1 rounded-xl border border-slate-700/60">
+            <QuickAttendanceWidget />
+          </div>
+
           <button
             onClick={() => setIsAddWorkModalOpen(true)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition-all shadow-md hover:shadow-blue-600/30 cursor-pointer"

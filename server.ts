@@ -107,11 +107,35 @@ async function startServer() {
             });
             parsed.chatMessages = Array.from(currentChatMap.values());
           }
+
+          if (Array.isArray(latestParsed.attendanceRecords) && latestParsed.attendanceRecords.length > 0) {
+            const currentAttMap = new Map<string, any>((parsed.attendanceRecords || []).map((a: any) => [a.id || `${a.memberId}_${a.date}`, a]));
+            latestParsed.attendanceRecords.forEach((a: any) => {
+              const key = a.id || `${a.memberId}_${a.date}`;
+              currentAttMap.set(key, { ...(currentAttMap.get(key) || {}), ...a });
+            });
+            parsed.attendanceRecords = Array.from(currentAttMap.values());
+          }
         } catch {}
       }
 
       parsed.chatMessages = Array.isArray(parsed.chatMessages) ? parsed.chatMessages : [];
       parsed.chatChannels = Array.isArray(parsed.chatChannels) ? parsed.chatChannels : [];
+      parsed.attendanceRecords = Array.isArray(parsed.attendanceRecords) ? parsed.attendanceRecords : [];
+
+      // Normalize Mariam and Islam canonical identity across attendance records
+      parsed.attendanceRecords = parsed.attendanceRecords.map((a: any) => {
+        const mid = (a.memberId || '').toLowerCase();
+        if (mid === 'user-1793097751331' || mid === 'user-1793016396281' || mid === 'mariam') {
+          a.memberId = 'user-mariam';
+          a.employeeCode = a.employeeCode || 'SM-106';
+        }
+        if (mid === 'user-1793025675186' || mid === 'user-1793016178916' || mid === 'islam') {
+          a.memberId = 'user-islam';
+          a.employeeCode = a.employeeCode || 'SM-108';
+        }
+        return a;
+      });
 
       // Normalize Islam and Mariam canonical identity across tasks
       if (Array.isArray(parsed.tasks)) {
@@ -290,7 +314,7 @@ async function startServer() {
     }
   });
 
-  // Get tasks, renewals and notifications (lightweight endpoint for fast polling across all devices)
+  // Get tasks, renewals, notifications, and attendance (lightweight endpoint for fast polling across all devices)
   app.get('/api/tasks', (_req, res) => {
     try {
       const data = readCurrentData();
@@ -300,10 +324,120 @@ async function startServer() {
         notifications: data.notifications || [],
         team: data.team || [],
         clientRenewals: data.clientRenewals || [],
+        attendanceRecords: data.attendanceRecords || [],
         updatedAt: data.updatedAt
       });
     } catch (err: any) {
       return res.status(500).json({ error: 'Failed to get tasks' });
+    }
+  });
+
+  // Get Attendance Records specifically (for fast zero-latency polling & refresh across Mobile & PC)
+  app.get('/api/attendance', (_req, res) => {
+    try {
+      const data = readCurrentData();
+      return res.json({
+        attendanceRecords: data.attendanceRecords || [],
+        updatedAt: data.updatedAt
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: 'Failed to get attendance records' });
+    }
+  });
+
+  // Atomic Attendance Check-In / Check-Out / Mutation (Instant cross-device 0ms broadcast)
+  app.post('/api/attendance', (req, res) => {
+    try {
+      const { record, records } = req.body;
+      const current = readCurrentData();
+      let list: any[] = current.attendanceRecords || [];
+      const attMap = new Map<string, any>(list.map((r: any) => [r.id || `${r.memberId}_${r.date}`, r]));
+
+      const itemsToMerge = Array.isArray(records) ? records : (record ? [record] : []);
+      if (itemsToMerge.length === 0) {
+        return res.status(400).json({ error: 'record or records required' });
+      }
+
+      itemsToMerge.forEach((rec: any) => {
+        if (!rec) return;
+        // Normalize member ID if Mariam or Islam
+        const mid = (rec.memberId || '').toLowerCase();
+        if (mid === 'user-1793097751331' || mid === 'user-1793016396281' || mid === 'mariam') {
+          rec.memberId = 'user-mariam';
+          rec.employeeCode = rec.employeeCode || 'SM-106';
+        }
+        if (mid === 'user-1793025675186' || mid === 'user-1793016178916' || mid === 'islam') {
+          rec.memberId = 'user-islam';
+          rec.employeeCode = rec.employeeCode || 'SM-108';
+        }
+
+        // Primary key lookup by id OR by (memberId + date) OR (employeeCode + date)
+        const primaryKey = rec.id || `${rec.memberId}_${rec.date}`;
+        let matchedKey = primaryKey;
+        for (const [key, existing] of attMap.entries()) {
+          if (
+            (rec.id && existing.id === rec.id) ||
+            (existing.memberId === rec.memberId && existing.date === rec.date) ||
+            (existing.employeeCode && rec.employeeCode && existing.employeeCode === rec.employeeCode && existing.date === rec.date)
+          ) {
+            matchedKey = key;
+            break;
+          }
+        }
+
+        const existing = attMap.get(matchedKey) || {};
+        const mergedItem = {
+          ...existing,
+          ...rec,
+          id: existing.id || rec.id || ('att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4)),
+          updatedAt: new Date().toISOString()
+        };
+        attMap.set(matchedKey, mergedItem);
+      });
+
+      current.attendanceRecords = Array.from(attMap.values());
+      saveData(current);
+      console.log(`[SWIFTMYND] Attendance synced across devices: ${itemsToMerge.length} record(s)`);
+
+      broadcastLiveSync({
+        type: 'ATTENDANCE_MUTATION',
+        record: record || itemsToMerge[0],
+        attendanceRecords: current.attendanceRecords,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({
+        success: true,
+        record: record || itemsToMerge[0],
+        attendanceRecords: current.attendanceRecords,
+        updatedAt: current.updatedAt
+      });
+    } catch (err: any) {
+      console.error('Error saving attendance:', err);
+      return res.status(500).json({ error: 'Failed to save attendance' });
+    }
+  });
+
+  // Atomic Attendance Delete
+  app.delete('/api/attendance/:id', (req, res) => {
+    try {
+      const recordId = req.params.id;
+      if (!recordId) return res.status(400).json({ error: 'recordId required' });
+
+      const current = readCurrentData();
+      current.attendanceRecords = (current.attendanceRecords || []).filter((r: any) => r.id !== recordId);
+      saveData(current);
+
+      broadcastLiveSync({
+        type: 'ATTENDANCE_MUTATION',
+        attendanceRecords: current.attendanceRecords,
+        deletedId: recordId,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, recordId });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to delete attendance record' });
     }
   });
 
@@ -1100,6 +1234,18 @@ async function startServer() {
           }));
       }
 
+      // Smart merge attendance records: preserve existing, update or append incoming
+      let mergedAttendance = currentData.attendanceRecords || [];
+      if (Array.isArray(incoming.attendanceRecords)) {
+        const attMap = new Map<string, any>(mergedAttendance.map((a: any) => [a.id || `${a.memberId}_${a.date}`, a]));
+        incoming.attendanceRecords.forEach((a: any) => {
+          if (!a) return;
+          const key = a.id || `${a.memberId}_${a.date}`;
+          attMap.set(key, { ...(attMap.get(key) || {}), ...a });
+        });
+        mergedAttendance = Array.from(attMap.values());
+      }
+
       const merged = {
         ...currentData,
         ...incoming,
@@ -1108,6 +1254,7 @@ async function startServer() {
         team: mergedTeam,
         deletedTeamMemberIds: Array.from(deletedMemberIds),
         clientRenewals: mergedRenewals,
+        attendanceRecords: mergedAttendance,
         deletedTasks: Array.from(explicitDeletedSet).map(id => ({ id })),
         deletedMarketingCardIds,
         deletedMarketingListIds,
@@ -1122,6 +1269,7 @@ async function startServer() {
         notifications: mergedNotifications,
         team: mergedTeam,
         clientRenewals: mergedRenewals,
+        attendanceRecords: mergedAttendance,
         updatedAt: merged.updatedAt
       });
 

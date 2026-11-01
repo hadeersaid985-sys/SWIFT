@@ -253,13 +253,24 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           )}
         </button>
 
-        <SwiftMyndLogo
-          variant="horizontal"
-          size="sm"
-          isDark={false}
-          showSubtitle={false}
-          onClick={() => setActiveTab(isManagerUser ? 'home' : 'tasks')}
-        />
+        <div className="hidden sm:block">
+          <SwiftMyndLogo
+            variant="horizontal"
+            size="sm"
+            isDark={false}
+            showSubtitle={false}
+            onClick={() => setActiveTab(isManagerUser ? 'home' : 'tasks')}
+          />
+        </div>
+        <div className="sm:hidden">
+          <SwiftMyndLogo
+            variant="icon"
+            size="xs"
+            isDark={false}
+            showSubtitle={false}
+            onClick={() => setActiveTab(isManagerUser ? 'home' : 'tasks')}
+          />
+        </div>
         {isManagerUser && (
           <button
             onClick={() => setIsBrandModalOpen(true)}
@@ -798,7 +809,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
             setSoundNotificationEnabled(next);
             if (next) playAudioNotification('chat');
           }}
-          className={`p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
+          className={`hidden sm:block p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
             isSoundOn
               ? 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50'
               : 'text-rose-500 hover:text-rose-700 hover:bg-rose-50'
@@ -1333,10 +1344,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           )}
         </div>
 
-        {/* 9 Dots Grid (App Launcher) */}
+        {/* 9 Dots Grid (App Launcher) - Desktop only to save mobile header space */}
         <button
           onClick={() => setActiveTab(isManagerUser ? 'home' : 'tasks')}
-          className="text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          className="hidden sm:block text-slate-500 hover:text-slate-800 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           title="كافة التطبيقات"
         >
           <Grid className="w-4 h-4" />

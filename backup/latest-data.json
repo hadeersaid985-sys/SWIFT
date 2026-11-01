@@ -569,7 +569,7 @@
       "description": "📌 المطلوب بالتحديد:\nتصميم وتجهيز كفرات السوشيال ميديا لشركة جولدن بجودة احترافية متوافقة مع الهوية البصرية المعتمدة.\n\n👥 توزيع الأدوار والمسؤوليات:\n• دور آية (Aya):\n  - تنفيذ وتصميم الكفرات وتسليم الملفات المفتوحة وصيغ العرض عالية الجودة في الموعد المحدد.\n\n• دور يمنى (Yomna) والأكاونت مانجر (Amira):\n  - المراجعة الفنية، التنسيق مع العميل، وتدوين الملاحظات وإدارة الموافقة والاعتماد النهائي.",
       "startDate": "2026-10-26",
       "isPrivate": false,
-      "updatedAt": "2026-11-01T13:13:51.193Z",
+      "updatedAt": "2026-11-01T13:13:51.133Z",
       "timeLogs": [],
       "completedAt": "2026-10-31",
       "timerLastResumedAt": 1793300910863,
@@ -1131,7 +1131,7 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-10-27",
-      "updatedAt": "2026-11-01T13:13:51.193Z",
+      "updatedAt": "2026-11-01T13:13:51.133Z",
       "timerStartedAt": 1793194785013,
       "isTimerRunning": false,
       "clientName": "ا/اسلام",
@@ -3304,6 +3304,15 @@
   ],
   "activities": [
     {
+      "id": "act-1793542289426",
+      "type": "team",
+      "title": "تسجيل حضور / غياب موظف",
+      "description": "Mariam: حاضر",
+      "timestamp": "الآن",
+      "userName": "Mariam",
+      "userAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+    },
+    {
       "id": "act-1793260855085",
       "type": "task",
       "title": "إنجاز تاسك شهري بالحساب ✅",
@@ -3470,15 +3479,6 @@
       "type": "team",
       "title": "حذف موظف من الفريق",
       "description": "تم حذف الموظف من المنظومة بنجاح",
-      "timestamp": "الآن",
-      "userName": "هدير سعيد",
-      "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-    },
-    {
-      "id": "act-1793024696154",
-      "type": "deal",
-      "title": "إضافة موعد تجديد اشتراك عميل",
-      "description": "عمر - باقة السيو",
       "timestamp": "الآن",
       "userName": "هدير سعيد",
       "userAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
@@ -3778,6 +3778,18 @@
       "status": "present",
       "checkInTime": "09:00",
       "checkOutTime": "17:00"
+    },
+    {
+      "id": "att-1793542289422-fsod",
+      "createdAt": "2026-11-01T14:11:29.422Z",
+      "updatedAt": "2026-11-01T14:11:29.465Z",
+      "employeeCode": "SM-106",
+      "memberId": "user-mariam",
+      "memberName": "Mariam",
+      "date": "2026-11-01",
+      "status": "present",
+      "checkInTime": "٤:١١ م",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة"
     }
   ],
   "companyExpenses": [
@@ -3990,7 +4002,7 @@
       "id": "task-1793483160666"
     }
   ],
-  "updatedAt": "2026-11-01T13:08:32.936Z",
+  "updatedAt": "2026-11-01T14:14:18.908Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": [],
   "calls": [],

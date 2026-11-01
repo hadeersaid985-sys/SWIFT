@@ -61,6 +61,7 @@ import { exportTasksToExcel } from '../../utils/excelExport';
 import { DailyTasksWorkReportModal } from '../reports/DailyTasksWorkReportModal';
 import { isAdminMember, isAdminTask } from '../../utils/accountManagerScope';
 import { isTaskDescriptionVague, generateStructuredTaskTemplate, DEFAULT_BOILERPLATE_DESCRIPTION } from '../../utils/taskDescriptionUtils';
+import { QuickAttendanceWidget } from '../attendance/QuickAttendanceWidget';
 
 export const TasksView: React.FC = () => {
   const {
@@ -956,10 +957,16 @@ export const TasksView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                 <span className="text-xs bg-slate-800/90 text-blue-200 px-3 py-1.5 rounded-xl border border-slate-700 font-mono font-bold">
                   كود الموظف: {currentUser.employeeCode || 'SM-Emp'}
                 </span>
+
+                {/* Direct quick attendance widget for employee on both mobile and PC */}
+                <div className="bg-slate-800/60 p-0.5 rounded-xl border border-slate-700/80">
+                  <QuickAttendanceWidget />
+                </div>
+
                 {/* Close (X) and Lock icons */}
                 <div className="flex items-center gap-1">
                   <button

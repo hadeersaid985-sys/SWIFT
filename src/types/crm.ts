@@ -602,6 +602,7 @@ export interface AttendanceRecord {
   id: string;
   memberId: string;
   memberName: string;
+  employeeCode?: string;
   date: string; // YYYY-MM-DD
   status: AttendanceStatus;
   checkInTime?: string; // e.g. "09:00"
@@ -610,6 +611,7 @@ export interface AttendanceRecord {
   isExcused?: boolean; // معفي من الخصم
   notes?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 // Monthly Payroll & Net Salaries Sheet (كشف مسير الرواتب وصافي المستحقات)

@@ -38,6 +38,27 @@
         "recipientUserId": { "type": "string" }
       },
       "required": ["id", "title", "recipientUserId"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily employee attendance, check-in, and check-out records synchronized across all devices",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "memberId": { "type": "string" },
+        "memberName": { "type": "string" },
+        "employeeCode": { "type": "string" },
+        "date": { "type": "string" },
+        "status": { "type": "string" },
+        "checkInTime": { "type": "string" },
+        "checkOutTime": { "type": "string" },
+        "lateMinutes": { "type": "number" },
+        "isExcused": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "memberId", "date", "status"]
     }
   },
   "firestore": {
@@ -60,6 +81,10 @@
     "/clientRenewals/{renewalId}": {
       "schema": "ClientRenewal",
       "description": "Client renewals, subscriptions, and assigned team members"
+    },
+    "/attendance/{attendanceId}": {
+      "schema": "Attendance",
+      "description": "Real-time employee attendance shifts and check-in status"
     }
   }
 }

@@ -140,6 +140,50 @@ const AppContent: React.FC = () => {
     };
   }, []);
 
+  // Sync custom favicon dynamically
+  useEffect(() => {
+    if (brandConfig?.customFaviconUrl) {
+      try {
+        let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.head.appendChild(link);
+        }
+        link.href = brandConfig.customFaviconUrl;
+      } catch (e) {}
+    }
+  }, [brandConfig?.customFaviconUrl]);
+
+  // Security & Role check: Non-admin employees ONLY see their allowed personal tabs
+  // موظف المبيعات (مثل مايبل Maibel) يظهر له قسم العملاء المحتملين 'leads'
+  const allowedEmployeeTabs = [
+    'work_queue',
+    'tasks',
+    'renewals',
+    'meetings',
+    'calls',
+    'mail',
+    'chat',
+    'profile',
+    ...(isSalesUser ? ['leads'] : [])
+  ];
+  
+  // Compute safe effective tab immediately to prevent blank content on role switch
+  const effectiveTab = React.useMemo(() => {
+    if (!isAuthenticated) return 'work_queue';
+    if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
+      return 'work_queue';
+    }
+    return activeTab || (isManager ? 'reports' : 'work_queue');
+  }, [isAuthenticated, isManager, activeTab, isSalesUser]);
+
+  useEffect(() => {
+    if (isAuthenticated && !isManager && !allowedEmployeeTabs.includes(activeTab)) {
+      setActiveTab('work_queue');
+    }
+  }, [isAuthenticated, isManager, activeTab, setActiveTab, isSalesUser]);
+
   const handleLogout = () => {
     // Return directly to the main landing/home page (https://tazkoraio.com / /)
     setShowLoginView(false);
@@ -197,49 +241,6 @@ const AppContent: React.FC = () => {
       />
     );
   }
-
-  // Sync custom favicon dynamically
-  useEffect(() => {
-    if (brandConfig?.customFaviconUrl) {
-      try {
-        let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-        if (!link) {
-          link = document.createElement('link');
-          link.rel = 'icon';
-          document.head.appendChild(link);
-        }
-        link.href = brandConfig.customFaviconUrl;
-      } catch (e) {}
-    }
-  }, [brandConfig?.customFaviconUrl]);
-
-  // Security & Role check: Non-admin employees ONLY see their allowed personal tabs
-  // موظف المبيعات (مثل مايبل Maibel) يظهر له قسم العملاء المحتملين 'leads'
-  const allowedEmployeeTabs = [
-    'work_queue',
-    'tasks',
-    'renewals',
-    'meetings',
-    'calls',
-    'mail',
-    'chat',
-    'profile',
-    ...(isSalesUser ? ['leads'] : [])
-  ];
-  
-  // Compute safe effective tab immediately to prevent blank content on role switch
-  const effectiveTab = React.useMemo(() => {
-    if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
-      return 'work_queue';
-    }
-    return activeTab || (isManager ? 'reports' : 'work_queue');
-  }, [isManager, activeTab, isSalesUser]);
-
-  useEffect(() => {
-    if (!isManager && !allowedEmployeeTabs.includes(activeTab)) {
-      setActiveTab('work_queue');
-    }
-  }, [isManager, activeTab, setActiveTab, isSalesUser]);
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] w-full overflow-hidden bg-[#f4f6f9] text-slate-800 flex flex-row selection:bg-blue-600 selection:text-white">

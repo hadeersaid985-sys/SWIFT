@@ -97,11 +97,15 @@ import {
   saveTeamMemberToFirestore,
   saveTeamPasswordToFirestore,
   onTeamMembersSnapshot,
-  seedInitialTeamIfEmpty
+  seedInitialTeamIfEmpty,
+  saveAttendanceToFirestore,
+  deleteAttendanceFromFirestore,
+  onAttendanceSnapshot
 } from '../firebase';
 import { resolveActiveTab, normalizeTabName } from '../utils/navigationState';
 import { GOLDEN_TASK_YOMNA_DESC, GOLDEN_TASK_AYA_DESC } from '../utils/taskDescriptionUtils';
 import { triggerUniversalNotification } from '../utils/notificationSystem';
+import { getSystemDateString } from '../utils/timeUtils';
 
 interface DeadlineStatus {
   label: string;
@@ -1747,57 +1751,133 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [attendanceRecords]);
 
   const recordAttendance = (recordData: Omit<AttendanceRecord, 'id' | 'createdAt'>) => {
-    const todayStr = recordData.date || new Date().toISOString().split('T')[0];
+    lastLocalMutationTimeRef.current = Date.now();
+    const todayStr = recordData.date || getSystemDateString();
+    const fullRecord: AttendanceRecord = {
+      id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      employeeCode: currentUser?.employeeCode,
+      ...recordData,
+      date: todayStr
+    };
+
     setAttendanceRecords(prev => {
-      const existingIdx = prev.findIndex(r => r.memberId === recordData.memberId && r.date === todayStr);
+      const existingIdx = prev.findIndex(r =>
+        (r.memberId === recordData.memberId || (r.employeeCode && recordData.employeeCode && r.employeeCode === recordData.employeeCode)) &&
+        r.date === todayStr
+      );
+      let updated: AttendanceRecord[];
       if (existingIdx !== -1) {
-        const updated = [...prev];
+        updated = [...prev];
+        const existing = updated[existingIdx];
         updated[existingIdx] = {
-          ...updated[existingIdx],
-          ...recordData
+          ...existing,
+          ...fullRecord,
+          id: existing.id // preserve original id
         };
-        return updated;
+      } else {
+        updated = [fullRecord, ...prev];
       }
-      return [
-        {
-          id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-          createdAt: new Date().toISOString(),
-          ...recordData
-        },
-        ...prev
-      ];
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(updated));
+      return updated;
     });
+
+    // Real-time server sync (instant 0ms cross-device SSE broadcast)
+    try {
+      fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ record: fullRecord })
+      }).catch(() => {});
+    } catch {}
+
+    // Cloud Firestore persistence & real-time sync
+    saveAttendanceToFirestore(fullRecord);
+
     logActivity('team', 'تسجيل حضور / غياب موظف', `${recordData.memberName}: ${recordData.status === 'present' ? 'حاضر' : recordData.status === 'late' ? 'متأخر' : recordData.status === 'absent' ? 'غائب' : 'إجازة'}`);
   };
 
   const batchMarkAttendance = (records: Omit<AttendanceRecord, 'id' | 'createdAt'>[]) => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    lastLocalMutationTimeRef.current = Date.now();
+    const todayStr = getSystemDateString();
+    const fullRecords: AttendanceRecord[] = records.map(newRec => ({
+      id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...newRec,
+      date: newRec.date || todayStr
+    }));
+
     setAttendanceRecords(prev => {
       const updated = [...prev];
-      records.forEach(newRec => {
-        const recDate = newRec.date || todayStr;
-        const idx = updated.findIndex(r => r.memberId === newRec.memberId && r.date === recDate);
+      fullRecords.forEach(newRec => {
+        const idx = updated.findIndex(r => r.memberId === newRec.memberId && r.date === newRec.date);
         if (idx !== -1) {
-          updated[idx] = { ...updated[idx], ...newRec };
+          updated[idx] = { ...updated[idx], ...newRec, id: updated[idx].id };
         } else {
-          updated.unshift({
-            id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-            createdAt: new Date().toISOString(),
-            ...newRec
-          });
+          updated.unshift(newRec);
         }
       });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(updated));
       return updated;
     });
+
+    // Real-time server sync
+    try {
+      fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ records: fullRecords })
+      }).catch(() => {});
+    } catch {}
+
+    // Cloud Firestore
+    fullRecords.forEach(r => saveAttendanceToFirestore(r));
+
     logActivity('team', 'تحضير سريع للفريق', `تم تسجيل وتحديث حضور ${records.length} موظف بنجاح`);
   };
 
   const updateAttendanceRecord = (id: string, updates: Partial<AttendanceRecord>) => {
-    setAttendanceRecords(prev => prev.map(r => (r.id === id ? { ...r, ...updates } : r)));
+    lastLocalMutationTimeRef.current = Date.now();
+    let targetRecord: AttendanceRecord | null = null;
+    setAttendanceRecords(prev => {
+      const next = prev.map(r => {
+        if (r.id === id) {
+          const fresh = { ...r, ...updates, updatedAt: new Date().toISOString() };
+          targetRecord = fresh;
+          return fresh;
+        }
+        return r;
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(next));
+      return next;
+    });
+
+    if (targetRecord) {
+      try {
+        fetch('/api/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ record: targetRecord })
+        }).catch(() => {});
+      } catch {}
+      saveAttendanceToFirestore(targetRecord);
+    }
   };
 
   const deleteAttendanceRecord = (id: string) => {
-    setAttendanceRecords(prev => prev.filter(r => r.id !== id));
+    lastLocalMutationTimeRef.current = Date.now();
+    setAttendanceRecords(prev => {
+      const next = prev.filter(r => r.id !== id);
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(next));
+      return next;
+    });
+
+    try {
+      fetch('/api/attendance/' + id, { method: 'DELETE' }).catch(() => {});
+    } catch {}
+    deleteAttendanceFromFirestore(id);
   };
 
   // Company Operating Expenses (المصروفات التشغيلية لحساب صافي الأرباح والمكسب)
@@ -4961,10 +5041,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let unsubscribeNotifications: (() => void) | null = null;
     let unsubscribeRenewals: (() => void) | null = null;
     let unsubscribeTeam: (() => void) | null = null;
+    let unsubscribeAttendance: (() => void) | null = null;
 
     try {
       // Seed initial team if Firestore collection is empty
       seedInitialTeamIfEmpty(team);
+
+      unsubscribeAttendance = onAttendanceSnapshot(remoteAttendance => {
+        if (Array.isArray(remoteAttendance) && remoteAttendance.length > 0) {
+          if (Date.now() - lastLocalMutationTimeRef.current < 2000) return;
+          setAttendanceRecords(prev => {
+            const map = new Map<string, AttendanceRecord>(prev.map(r => [r.id || `${r.memberId}_${r.date}`, r]));
+            remoteAttendance.forEach(r => {
+              const key = r.id || `${r.memberId}_${r.date}`;
+              map.set(key, { ...(map.get(key) || {}), ...r });
+            });
+            const merged = Array.from(map.values());
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      });
 
       unsubscribeTeam = onTeamMembersSnapshot(remoteTeam => {
         if (Array.isArray(remoteTeam) && remoteTeam.length > 0) {
@@ -5046,6 +5143,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (unsubscribeNotifications) unsubscribeNotifications();
       if (unsubscribeRenewals) unsubscribeRenewals();
       if (unsubscribeTeam) unsubscribeTeam();
+      if (unsubscribeAttendance) unsubscribeAttendance();
     };
   }, []);
 
@@ -5187,6 +5285,31 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               setMarketingBoards(sanitized);
             }
           }
+
+          if (payload.type === 'ATTENDANCE_MUTATION' || payload.type === 'FULL_SYNC') {
+            if (Array.isArray(payload.attendanceRecords)) {
+              setAttendanceRecords(prev => {
+                const map = new Map<string, AttendanceRecord>(prev.map(r => [r.id || `${r.memberId}_${r.date}`, r]));
+                payload.attendanceRecords.forEach((r: AttendanceRecord) => {
+                  const key = r.id || `${r.memberId}_${r.date}`;
+                  map.set(key, { ...(map.get(key) || {}), ...r });
+                });
+                const merged = Array.from(map.values());
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(merged));
+                return merged;
+              });
+            } else if (payload.record) {
+              setAttendanceRecords(prev => {
+                const r = payload.record;
+                const map = new Map<string, AttendanceRecord>(prev.map(item => [item.id || `${item.memberId}_${item.date}`, item]));
+                const key = r.id || `${r.memberId}_${r.date}`;
+                map.set(key, { ...(map.get(key) || {}), ...r });
+                const merged = Array.from(map.values());
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(merged));
+                return merged;
+              });
+            }
+          }
         } catch {}
       };
     } catch {}
@@ -5258,6 +5381,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           if (Array.isArray(serverData.emails) && serverData.emails.length > 0) {
             setEmails(serverData.emails);
+          }
+          if (Array.isArray(serverData.attendanceRecords) && serverData.attendanceRecords.length > 0) {
+            setAttendanceRecords(prev => {
+              const map = new Map<string, AttendanceRecord>(prev.map(r => [r.id || `${r.memberId}_${r.date}`, r]));
+              serverData.attendanceRecords.forEach((r: AttendanceRecord) => {
+                const key = r.id || `${r.memberId}_${r.date}`;
+                map.set(key, { ...(map.get(key) || {}), ...r });
+              });
+              const merged = Array.from(map.values());
+              safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(merged));
+              return merged;
+            });
           }
           if (serverData.brandConfig && typeof serverData.brandConfig === 'object') {
             setBrandConfig(ensureValidBrandConfig(serverData.brandConfig));
@@ -5338,6 +5473,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             notifications,
             clientRenewals,
             marketingBoards,
+            attendanceRecords,
             deletedMarketingCardIds,
             deletedMarketingListIds
           })
@@ -5345,7 +5481,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e) {}
     }, 800);
     return () => clearTimeout(timer);
-  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications, clientRenewals, marketingBoards, deletedMarketingCardIds, deletedMarketingListIds, currentUser]);
+  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications, clientRenewals, marketingBoards, attendanceRecords, deletedMarketingCardIds, deletedMarketingListIds, currentUser]);
 
   // Real-time polling & window focus listener to guarantee fresh tasks across all devices
   useEffect(() => {
@@ -5410,6 +5546,26 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 isSyncingFromServerRef.current = true;
                 safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}client_renewals`, JSON.stringify(cleanRenewals));
                 return cleanRenewals;
+              }
+              return prev;
+            });
+          }
+          if (serverData && Array.isArray(serverData.attendanceRecords) && serverData.attendanceRecords.length > 0) {
+            setAttendanceRecords(prev => {
+              const map = new Map<string, AttendanceRecord>(prev.map(r => [r.id || `${r.memberId}_${r.date}`, r]));
+              let hasChange = false;
+              serverData.attendanceRecords.forEach((r: AttendanceRecord) => {
+                const key = r.id || `${r.memberId}_${r.date}`;
+                const current = map.get(key);
+                if (!current || JSON.stringify(current) !== JSON.stringify(r)) {
+                  hasChange = true;
+                  map.set(key, { ...(current || {}), ...r });
+                }
+              });
+              if (hasChange) {
+                const merged = Array.from(map.values());
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(merged));
+                return merged;
               }
               return prev;
             });

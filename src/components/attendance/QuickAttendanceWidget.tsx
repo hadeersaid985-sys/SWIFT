@@ -22,9 +22,43 @@ export const QuickAttendanceWidget: React.FC = () => {
   const todayStr = getSystemDateString();
   const nowTimeStr = formatSystemTimeAr();
 
+  // Robust canonical alias & employee code matcher across mobile and desktop
+  const isMatchingUser = (r: AttendanceRecord): boolean => {
+    if (!r) return false;
+    if (r.memberId === currentUser.id) return true;
+
+    const aliases: Record<string, string[]> = {
+      'user-mariam': ['user-mariam', 'user-1793097751331', 'user-1793016396281', 'mariam', 'مريم'],
+      'user-islam': ['user-islam', 'user-1793025675186', 'user-1793016178916', 'islam', 'اسلام', 'إسلام'],
+      'user-roaa': ['user-roaa', 'user-1793016462810', 'roaa', 'رواء'],
+      'user-eman': ['user-eman', 'eman', 'eman ashraf', 'ايمان', 'إيمان'],
+      'user-aya': ['user-aya', 'user-1793016503819', 'aya', 'aya gaber', 'آية', 'ايه', 'آيه'],
+      'user-yomna': ['user-yomna', 'yomna', 'يمنى', 'يمنه'],
+      'user-amira': ['user-amira', 'amira', 'اميرة', 'أميرة', 'اميره'],
+      'user-maibel': ['user-maibel', 'maibel', 'مايبل'],
+      'user-1': ['user-1', 'user-admin', 'hadeer', 'hadeer said', 'هدير', 'هدير سعيد', 'admin']
+    };
+
+    const mid = (r.memberId || '').toLowerCase().trim();
+    const cid = (currentUser.id || '').toLowerCase().trim();
+    for (const list of Object.values(aliases)) {
+      if (list.includes(mid) && list.includes(cid)) return true;
+    }
+
+    if (currentUser.employeeCode && r.employeeCode && currentUser.employeeCode === r.employeeCode) {
+      return true;
+    }
+
+    if (currentUser.name && r.memberName && currentUser.name.trim().toLowerCase() === r.memberName.trim().toLowerCase()) {
+      return true;
+    }
+
+    return false;
+  };
+
   // Find today's record for this user
   const todayRecord = attendanceRecords.find(
-    r => r.memberId === currentUser.id && r.date === todayStr
+    r => isMatchingUser(r) && r.date === todayStr
   );
 
   const showToast = (msg: string) => {
@@ -36,6 +70,7 @@ export const QuickAttendanceWidget: React.FC = () => {
     const newRecord: Omit<AttendanceRecord, 'id' | 'createdAt'> = {
       memberId: currentUser.id,
       memberName: currentUser.name,
+      employeeCode: currentUser.employeeCode || '',
       date: todayStr,
       status: 'present',
       checkInTime: nowTimeStr,
@@ -87,28 +122,28 @@ export const QuickAttendanceWidget: React.FC = () => {
         <button
           type="button"
           onClick={handleCheckIn}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs hover:scale-102 shrink-0 active:scale-98"
+          className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer shadow-xs hover:scale-102 shrink-0 active:scale-98 whitespace-nowrap"
           title="اضغط هنا لتسجيل بداية الدوام اليوم"
         >
           <span className="w-2 h-2 rounded-full bg-emerald-200 animate-pulse shrink-0" />
-          <Clock className="w-3.5 h-3.5 text-white shrink-0" />
+          <Clock className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-white shrink-0" />
           <span>بداية الدوام 🟢</span>
         </button>
       )}
 
       {/* الحالة 2: تم تسجيل بداية الدوام وهو قيد العمل الآن ولم يضغط على نهاية الدوام */}
       {todayRecord && !todayRecord.checkOutTime && (
-        <div className="flex items-center gap-1.5 bg-emerald-50/90 border border-emerald-300 rounded-lg p-1 shadow-2xs shrink-0">
-          <div className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold text-emerald-900">
+        <div className="flex items-center gap-1 sm:gap-1.5 bg-emerald-50/95 border border-emerald-300 rounded-lg p-0.5 sm:p-1 shadow-2xs shrink-0 whitespace-nowrap">
+          <div className="flex items-center gap-1 px-1 sm:px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-emerald-900">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            <span className="hidden sm:inline">في الدوام منذ:</span>
+            <span className="hidden xs:inline">في الدوام:</span>
             <span className="font-mono text-emerald-700 text-[10px] sm:text-[11px]">{todayRecord.checkInTime}</span>
           </div>
 
           <button
             type="button"
             onClick={handleCheckOut}
-            className="flex items-center gap-1 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[11px] font-bold transition-all cursor-pointer shadow-xs hover:scale-102 shrink-0 active:scale-98"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[10px] sm:text-[11px] font-bold transition-all cursor-pointer shadow-xs hover:scale-102 shrink-0 active:scale-98"
             title="اضغط هنا لتسجيل نهاية الدوام والانصراف"
           >
             <LogOut className="w-3 h-3 text-white shrink-0" />
@@ -120,18 +155,18 @@ export const QuickAttendanceWidget: React.FC = () => {
       {/* الحالة 3: تم الضغط على نهاية الدوام واكتمل دوام اليوم */}
       {todayRecord && todayRecord.checkOutTime && (
         <div
-          className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg text-[10px] sm:text-[11px] font-bold shrink-0"
+          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg text-[10px] sm:text-[11px] font-bold shrink-0 whitespace-nowrap"
           title={`اكتمل دوام اليوم: بداية الدوام ${todayRecord.checkInTime} ونهاية الدوام ${todayRecord.checkOutTime}`}
         >
-          <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-          <span>اكتمل الدوام اليوم</span>
+          <CheckCircle2 className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-blue-600 shrink-0" />
+          <span>اكتمل الدوام</span>
           <span className="font-mono text-[9px] sm:text-[10px] text-blue-700 hidden md:inline">
             ({todayRecord.checkInTime} - {todayRecord.checkOutTime})
           </span>
           <button
             type="button"
             onClick={handleResumeShift}
-            className="text-[9px] sm:text-[10px] bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+            className="text-[9px] sm:text-[10px] bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 px-1 sm:px-1.5 py-0.5 rounded cursor-pointer transition-colors"
             title="تراجع عن الانصراف واستئناف الدوام إذا ضغطت بالخطأ"
           >
             استئناف

@@ -14,7 +14,7 @@ import {
   getDocFromServer
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { Task, AppNotification, ClientRenewal, ChatMessage, TeamMember } from './types/crm';
+import { Task, AppNotification, ClientRenewal, ChatMessage, TeamMember, AttendanceRecord } from './types/crm';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -550,3 +550,64 @@ export async function seedInitialTeamIfEmpty(initialTeam: TeamMember[]): Promise
     console.warn('[Firebase] Team seeding check notice:', err);
   }
 }
+
+const ATTENDANCE_COLLECTION = 'attendance';
+
+/**
+ * Save / Update an Attendance record in Firestore database in real-time
+ */
+export async function saveAttendanceToFirestore(record: AttendanceRecord): Promise<void> {
+  if (!record || !record.id) return;
+  try {
+    const recordRef = doc(db, ATTENDANCE_COLLECTION, record.id);
+    const cleanPayload: any = { ...record };
+    Object.keys(cleanPayload).forEach(key => {
+      if (cleanPayload[key] === undefined) {
+        delete cleanPayload[key];
+      }
+    });
+    cleanPayload.updatedAt = new Date().toISOString();
+    await setDoc(recordRef, cleanPayload, { merge: true });
+    console.log(`[Firebase] Attendance record for ${record.memberName} (${record.date}) synced to Firestore`);
+  } catch (error) {
+    console.error('[Firebase] Error saving attendance record to Firestore:', error);
+  }
+}
+
+/**
+ * Delete an Attendance record in Firestore
+ */
+export async function deleteAttendanceFromFirestore(recordId: string): Promise<void> {
+  if (!recordId) return;
+  try {
+    const recordRef = doc(db, ATTENDANCE_COLLECTION, recordId);
+    await deleteDoc(recordRef);
+  } catch (error) {
+    console.error('[Firebase] Error deleting attendance record from Firestore:', error);
+  }
+}
+
+/**
+ * Real-time listener for Attendance records across all devices (Mobile & Desktop)
+ */
+export function onAttendanceSnapshot(onUpdate: (records: AttendanceRecord[]) => void) {
+  try {
+    const q = collection(db, ATTENDANCE_COLLECTION);
+    return onSnapshot(
+      q,
+      snapshot => {
+        const list: AttendanceRecord[] = [];
+        snapshot.forEach(docSnap => {
+          list.push(docSnap.data() as AttendanceRecord);
+        });
+        if (list.length > 0) {
+          onUpdate(list);
+        }
+      },
+      err => console.warn('[Firebase] Attendance snapshot notice:', err)
+    );
+  } catch {
+    return () => {};
+  }
+}
+
