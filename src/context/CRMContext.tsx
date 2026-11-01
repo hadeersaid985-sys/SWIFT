@@ -100,6 +100,7 @@ import {
   seedInitialTeamIfEmpty
 } from '../firebase';
 import { resolveActiveTab, normalizeTabName } from '../utils/navigationState';
+import { GOLDEN_TASK_YOMNA_DESC, GOLDEN_TASK_AYA_DESC } from '../utils/taskDescriptionUtils';
 
 interface DeadlineStatus {
   label: string;
@@ -1169,6 +1170,26 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 updated.assignedToId === 'اسلام'
               ) {
                 updated.assignedToId = 'user-islam';
+              }
+
+              // Update Golden tasks with explicit role breakdown between Aya (design) and Yomna (review & delivery)
+              if (
+                updated.id === 'task-1793102029195' ||
+                (updated.title === 'جولدن' && updated.assignedToId === 'user-yomna')
+              ) {
+                updated.title = 'متابعة ومراجعة كفرات جولدن والتنسيق مع العميل (آية ويمنى)';
+                if (!updated.description || updated.description === 'مهمة مضافة عبر بورد وقائمة الفريق') {
+                  updated.description = GOLDEN_TASK_YOMNA_DESC;
+                }
+              }
+              if (
+                updated.id === 'task-1793014855063' ||
+                (updated.title === 'تصميمات جولدن كفرات' && updated.assignedToId === 'user-aya')
+              ) {
+                updated.title = 'تصميمات كفرات جولدن (تسليم آية - مراجعة يمنى وأميرة)';
+                if (!updated.description || updated.description === 'مهمة مضافة عبر بورد وقائمة الفريق') {
+                  updated.description = GOLDEN_TASK_AYA_DESC;
+                }
               }
 
               return updated;

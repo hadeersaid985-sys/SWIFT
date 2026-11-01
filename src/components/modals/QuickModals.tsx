@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { TaskPriority, TaskStatus, DealStage, TeamMember } from '../../types/crm';
+import { generateStructuredTaskTemplate, isTaskDescriptionVague } from '../../utils/taskDescriptionUtils';
 
 export const QuickModals: React.FC = () => {
   const {
@@ -221,10 +222,23 @@ export const QuickModals: React.FC = () => {
 
     const selectedClient = clientRenewals.find(c => c.id === taskClientRenewalId);
     const selectedAM = team.find(m => m.id === taskAccountManagerId);
+    const selectedMember = team.find(m => m.id === taskAssignee);
+
+    // Ensure description is never empty or missing - automatically provide structured template if blank
+    let finalDesc = taskDesc.trim();
+    if (!finalDesc) {
+      finalDesc = generateStructuredTaskTemplate({
+        title: taskTitle.trim(),
+        assigneeName: selectedMember?.name,
+        reviewerName: selectedAM?.name || (currentUser.role.includes('مدير') ? currentUser.name : undefined),
+        company: selectedClient?.company,
+        clientName: selectedClient?.clientName
+      });
+    }
 
     addTask({
       title: taskTitle.trim(),
-      description: taskDesc.trim(),
+      description: finalDesc,
       assignedToId: taskAssignee,
       priority: taskPriority,
       status: 'todo',
@@ -546,14 +560,43 @@ export const QuickModals: React.FC = () => {
 
               {/* Task Details and Assignee */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">تفاصيل وملاحظات المهمة</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold text-slate-700 text-xs">
+                    وصف المهمة والمطلوب تفصيلياً (مسؤولية كل موظف)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const selectedClient = clientRenewals.find(c => c.id === taskClientRenewalId);
+                      const selectedAM = team.find(m => m.id === taskAccountManagerId);
+                      const selectedMember = team.find(m => m.id === taskAssignee);
+                      setTaskDesc(generateStructuredTaskTemplate({
+                        title: taskTitle.trim() || 'المهمة المطلوبة',
+                        assigneeName: selectedMember?.name,
+                        reviewerName: selectedAM?.name || (currentUser.role.includes('مدير') ? currentUser.name : undefined),
+                        company: selectedClient?.company,
+                        clientName: selectedClient?.clientName
+                      }));
+                    }}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg border border-blue-200 transition-colors cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3 text-blue-600" />
+                    <span>قالب الوصف وتوزيع الأدوار ✨</span>
+                  </button>
+                </div>
                 <textarea
-                  rows={2}
+                  rows={4}
                   value={taskDesc}
                   onChange={e => setTaskDesc(e.target.value)}
-                  placeholder="أدخل الشروط، المعايير المطلوب استيفاؤها، أو الملاحظات..."
-                  className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500"
+                  placeholder="وضح ما المطلوب بالتحديد، وما دور الموظف المكلف بالتنفيذ وما دور المراجع لتجنب أي لبس أثناء العمل والتسليم..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 text-xs leading-relaxed"
                 />
+                {(!taskDesc.trim() || isTaskDescriptionVague(taskDesc)) && (
+                  <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 p-1.5 rounded-lg font-semibold mt-1 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>تنبيه: العنوان وحده لا يكفي. يرجى توضيح المطلوب ومسؤولية كل فرد لمنع الخلط بين المهام والتسليمات.</span>
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

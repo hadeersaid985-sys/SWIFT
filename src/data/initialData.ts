@@ -785,7 +785,7 @@ export const INITIAL_TASKS: Task[] = [
   {
     id: 'task-1792938244638',
     title: 'رفع 3 مقالات الدرب',
-    description: 'مهمة مضافة عبر بورد وقائمة الفريق',
+    description: 'مراجعة وتنسيق ورفع 3 مقالات متوافقة مع قواعد السيو لموقع الدرب مع إضافة الصور والروابط الداخلية.',
     assignedToId: 'user-eman',
     priority: 'medium',
     status: 'todo',
@@ -815,7 +815,7 @@ export const INITIAL_TASKS: Task[] = [
   {
     id: 'task-1792934640413',
     title: 'باك لينك ساوث كوست',
-    description: 'مهمة مضافة عبر بورد وقائمة الفريق',
+    description: 'إنشاء باك لينك عالي الجودة لموقع ساوث كوست ومراجعة المؤشرات في أدوات السيو.',
     assignedToId: 'user-eman',
     priority: 'medium',
     status: 'todo',
@@ -834,7 +834,7 @@ export const INITIAL_TASKS: Task[] = [
   {
     id: 'task-1792934620837',
     title: 'باك لينك جودلن وابديت للمحتوي',
-    description: 'مهمة مضافة عبر بورد وقائمة الفريق',
+    description: 'بناء روابط خلفية (Backlinks) عالية الجودة لموقع جولدن وتحديث محتوى الصفحات والمقالات المستهدفة لتحسين ترتيب محركات البحث.',
     assignedToId: 'user-eman',
     priority: 'medium',
     status: 'todo',
@@ -853,7 +853,7 @@ export const INITIAL_TASKS: Task[] = [
   {
     id: 'task-1792934453877',
     title: 'رفع gx المقالات + باك لينك',
-    description: 'مهمة مضافة عبر بورد وقائمة الفريق',
+    description: 'رفع وتنسيق المقالات لموقع gx وبناء الروابط الخلفية المطلوبة وفق خطة الشهر.',
     assignedToId: 'user-eman',
     priority: 'medium',
     status: 'todo',
@@ -872,7 +872,7 @@ export const INITIAL_TASKS: Task[] = [
   {
     id: 'task-1792934402381',
     title: 'باك لينك موقع باورتك',
-    description: 'مهمة مضافة عبر بورد وقائمة الفريق',
+    description: 'تنفيذ استراتيجية الروابط الخارجية لموقع باورتك لزيادة الدومين أثورتي.',
     assignedToId: 'user-eman',
     priority: 'medium',
     status: 'todo',
@@ -891,7 +891,7 @@ export const INITIAL_TASKS: Task[] = [
   {
     id: 'task-1792934381326',
     title: 'رفع 3 مقالات الدرب',
-    description: 'مهمة مضافة عبر بورد وقائمة الفريق',
+    description: 'استكمال نشر وتنسيق مقالات موقع الدرب والتدقيق الإملائي وتوزيع الكلمات المفتاحية.',
     assignedToId: 'user-eman',
     priority: 'medium',
     status: 'todo',

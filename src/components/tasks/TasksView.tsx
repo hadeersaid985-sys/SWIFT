@@ -60,6 +60,7 @@ import { Task, TaskPriority, TaskStatus, TimeLogEntry, TeamMember, EvaluationTyp
 import { exportTasksToExcel } from '../../utils/excelExport';
 import { DailyTasksWorkReportModal } from '../reports/DailyTasksWorkReportModal';
 import { isAdminMember, isAdminTask } from '../../utils/accountManagerScope';
+import { isTaskDescriptionVague, generateStructuredTaskTemplate, DEFAULT_BOILERPLATE_DESCRIPTION } from '../../utils/taskDescriptionUtils';
 
 export const TasksView: React.FC = () => {
   const {
@@ -270,6 +271,7 @@ export const TasksView: React.FC = () => {
   // Quick inline add task state for boards
   const [quickAddColumn, setQuickAddColumn] = useState<string | null>(null);
   const [quickAddTitle, setQuickAddTitle] = useState<string>('');
+  const [quickAddDescription, setQuickAddDescription] = useState<string>('');
   const [quickAddDueDate, setQuickAddDueDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [quickAddPriority, setQuickAddPriority] = useState<TaskPriority>('medium');
   const [quickAddIsPrivate, setQuickAddIsPrivate] = useState<boolean>(false);
@@ -396,9 +398,13 @@ export const TasksView: React.FC = () => {
   // Start Edit Task
   const handleStartEditTask = (task: Task, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    const cleanDesc = task.description === DEFAULT_BOILERPLATE_DESCRIPTION
+      ? ''
+      : (task.description || '');
+
     setEditFormData({
       title: task.title,
-      description: task.description || '',
+      description: cleanDesc,
       assignedToId: task.assignedToId,
       category: task.category || 'إداري',
       priority: task.priority,
@@ -429,9 +435,22 @@ export const TasksView: React.FC = () => {
     }
     const selectedClient = clientRenewals.find(c => c.id === editFormData.clientRenewalId);
     const selectedAM = team.find(m => m.id === editFormData.accountManagerId);
+    const targetMember = team.find(m => m.id === editFormData.assignedToId);
+
+    let finalDesc = editFormData.description.trim();
+    if (!finalDesc || finalDesc === DEFAULT_BOILERPLATE_DESCRIPTION) {
+      finalDesc = generateStructuredTaskTemplate({
+        title: editFormData.title.trim(),
+        assigneeName: targetMember?.name,
+        reviewerName: selectedAM?.name || (currentUser.role.includes('مدير') ? currentUser.name : undefined),
+        company: editFormData.company || selectedClient?.company,
+        clientName: editFormData.clientName || selectedClient?.clientName
+      });
+    }
 
     updateTask(editingTaskId, {
       ...editFormData,
+      description: finalDesc,
       qualityRating: (editFormData.qualityRating || undefined) as any,
       reviewOutcome: (editFormData.reviewOutcome || undefined) as any,
       delayResponsibleParty: (editFormData.delayResponsibleParty || undefined) as any,
@@ -724,9 +743,18 @@ export const TasksView: React.FC = () => {
   // "وانا اقدر او هو يضيف التاكسات ديه"
   const handleInlineQuickAdd = (targetMemberId: string, customDueDate?: string) => {
     if (!quickAddTitle.trim()) return;
+    const targetMember = team.find(m => m.id === targetMemberId);
+    let finalDesc = quickAddDescription.trim();
+    if (!finalDesc) {
+      finalDesc = generateStructuredTaskTemplate({
+        title: quickAddTitle.trim(),
+        assigneeName: targetMember?.name
+      });
+    }
+
     addTask({
       title: quickAddTitle.trim(),
-      description: 'مهمة مضافة عبر بورد وقائمة الفريق',
+      description: finalDesc,
       assignedToId: targetMemberId,
       priority: quickAddPriority,
       status: 'todo',
@@ -740,6 +768,7 @@ export const TasksView: React.FC = () => {
       isPrivate: isManager ? quickAddIsPrivate : false
     });
     setQuickAddTitle('');
+    setQuickAddDescription('');
     setQuickAddColumn(null);
     setQuickAddIsPrivate(false);
   };
@@ -2418,6 +2447,27 @@ export const TasksView: React.FC = () => {
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold">
                         {task.category}
                       </span>
+                      {isTaskDescriptionVague(task.description) && (
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTaskId(task.id);
+                            handleStartEditTask(task, e);
+                            const m = team.find(mem => mem.id === task.assignedToId);
+                            setEditFormData(prev => ({
+                              ...prev,
+                              description: task.description === DEFAULT_BOILERPLATE_DESCRIPTION
+                                ? generateStructuredTaskTemplate({ title: task.title, assigneeName: m?.name, company: task.company, clientName: task.clientName })
+                                : (task.description || generateStructuredTaskTemplate({ title: task.title, assigneeName: m?.name, company: task.company, clientName: task.clientName }))
+                            }));
+                          }}
+                          title="المهمة بدون وصف تفصيلي يوضح المطلوب ومسؤولية الموظف (انقر للإضافة)"
+                          className="text-[9px] bg-amber-50 text-amber-800 border border-amber-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5 hover:bg-amber-100 transition-colors cursor-pointer"
+                        >
+                          <AlertTriangle className="w-2.5 h-2.5 text-amber-600" />
+                          <span>بدون وصف ⚠️</span>
+                        </span>
+                      )}
                       <span className="text-[9px] text-slate-500 font-mono font-medium flex items-center gap-0.5">
                         <Clock className="w-2.5 h-2.5 text-slate-400" />
                         <span>تسليم: {task.dueDate}</span>
@@ -2697,6 +2747,32 @@ export const TasksView: React.FC = () => {
                             if (e.key === 'Enter') handleInlineQuickAdd(member.id);
                           }}
                         />
+
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="font-bold text-slate-600">وصف المهمة ومسؤولية {member.name}:</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setQuickAddDescription(generateStructuredTaskTemplate({
+                                  title: quickAddTitle.trim() || 'مهمة جديدة',
+                                  assigneeName: member.name
+                                }));
+                              }}
+                              className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>قالب الوصف</span>
+                            </button>
+                          </div>
+                          <textarea
+                            rows={2}
+                            value={quickAddDescription}
+                            onChange={e => setQuickAddDescription(e.target.value)}
+                            placeholder={`وضح ما المطلوب من ${member.name} بالتحديد (العنوان وحده لا يكفي)...`}
+                            className="w-full p-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 font-normal leading-relaxed"
+                          />
+                        </div>
 
                         <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
                           <div className="flex items-center gap-1">
@@ -4443,14 +4519,45 @@ export const TasksView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">وصف المهمة والمطلوب تفصيلياً</label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block font-bold text-slate-700 text-xs">
+                        وصف المهمة والمطلوب تفصيلياً (مسؤولية كل موظف) *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetMember = team.find(m => m.id === editFormData.assignedToId);
+                          const amMember = team.find(m => m.id === editFormData.accountManagerId);
+                          setEditFormData(prev => ({
+                            ...prev,
+                            description: generateStructuredTaskTemplate({
+                              title: editFormData.title || 'المهمة',
+                              assigneeName: targetMember?.name,
+                              reviewerName: amMember?.name || (currentUser.role.includes('مدير') ? currentUser.name : undefined),
+                              company: editFormData.company,
+                              clientName: editFormData.clientName
+                            })
+                          }));
+                        }}
+                        className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200 transition-colors cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                        <span>إدراج قالب الوصف وتوزيع الأدوار ✨</span>
+                      </button>
+                    </div>
                     <textarea
                       value={editFormData.description}
                       onChange={e => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
-                      rows={4}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500 leading-relaxed"
-                      placeholder="اكتب المطلوب بدقة أو انسخ وألصق النص هنا..."
+                      rows={6}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500 leading-relaxed font-sans text-xs"
+                      placeholder="اكتب المطلوب بدقة وحدد دور كل موظف (من ينفذ، ومن يراجع أو ينسق مع العميل)..."
                     />
+                    {isTaskDescriptionVague(editFormData.description) && (
+                      <div className="mt-1.5 p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-[11px] flex items-center gap-1.5 font-semibold">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>تنبيه: لا تكتفِ بعنوان فقط. كتابة وصف تفصيلي وتحديد دور كل شخص يمنع التداخل والخلط أثناء التسليم.</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -4752,22 +4859,96 @@ export const TasksView: React.FC = () => {
               </div>
             ) : (
               <div className="p-5 overflow-y-auto space-y-4 text-xs">
+                {/* Warning if task lacks proper description */}
+                {isTaskDescriptionVague(selectedTask.description) && (
+                  <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-xl space-y-2 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-amber-900 text-xs flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>تنبيه: المهمة تفتقر إلى وصف تفصيلي وتوزيع للأدوار</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const m = team.find(mem => mem.id === selectedTask.assignedToId);
+                          const am = team.find(mem => mem.id === selectedTask.accountManagerId);
+                          handleStartEditTask(selectedTask);
+                          setEditFormData(prev => ({
+                            ...prev,
+                            description: selectedTask.description === DEFAULT_BOILERPLATE_DESCRIPTION
+                              ? generateStructuredTaskTemplate({
+                                  title: selectedTask.title,
+                                  assigneeName: m?.name,
+                                  reviewerName: am?.name,
+                                  company: selectedTask.company,
+                                  clientName: selectedTask.clientName
+                                })
+                              : (selectedTask.description || generateStructuredTaskTemplate({
+                                  title: selectedTask.title,
+                                  assigneeName: m?.name,
+                                  reviewerName: am?.name,
+                                  company: selectedTask.company,
+                                  clientName: selectedTask.clientName
+                                }))
+                          }));
+                        }}
+                        className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-all"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>إضافة وتفصيل الوصف الآن</span>
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                      العنوان وحده لا يوضح المطلوب. يجب كتابة ما هو مطلوب بدقة من كل فرد في الفريق (مثل: ما المطلوب من المصمم بالتحديد، وما المطلوب من المراجع أو المنسق) لمنع الخلط وتأخير التسليم.
+                    </p>
+                  </div>
+                )}
+
                 {/* Description */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-slate-500 text-[10px]">وصف المهمة والمطلوب:</span>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyTaskText(selectedTask)}
-                      className="text-blue-600 hover:underline text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                    >
-                      <Copy className="w-3 h-3" />
-                      <span>نسخ الوصف</span>
-                    </button>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-extrabold text-slate-700 text-xs flex items-center gap-1">
+                      <FileText className="w-3.5 h-3.5 text-blue-600" />
+                      <span>وصف المهمة والمطلوب تفصيلياً:</span>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const m = team.find(mem => mem.id === selectedTask.assignedToId);
+                          const am = team.find(mem => mem.id === selectedTask.accountManagerId);
+                          handleStartEditTask(selectedTask);
+                          setEditFormData(prev => ({
+                            ...prev,
+                            description: isTaskDescriptionVague(selectedTask.description)
+                              ? generateStructuredTaskTemplate({
+                                  title: selectedTask.title,
+                                  assigneeName: m?.name,
+                                  reviewerName: am?.name,
+                                  company: selectedTask.company,
+                                  clientName: selectedTask.clientName
+                                })
+                              : selectedTask.description
+                          }));
+                        }}
+                        className="text-blue-600 hover:text-blue-800 text-[10px] font-bold flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 cursor-pointer"
+                      >
+                        <Sparkles className="w-2.5 h-2.5" />
+                        <span>تعديل الوصف وتوزيع الأدوار</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyTaskText(selectedTask)}
+                        className="text-slate-600 hover:text-slate-900 text-[10px] font-bold flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded cursor-pointer"
+                      >
+                        <Copy className="w-2.5 h-2.5" />
+                        <span>نسخ</span>
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-slate-800 mt-1 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="text-slate-800 mt-1 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200/90 whitespace-pre-wrap font-sans text-xs select-text">
                     {selectedTask.description || 'لا يوجد وصف مفصل للمهمة.'}
-                  </p>
+                  </div>
                 </div>
 
                 {/* Account Manager & Client Scope Affiliation Badge */}
