@@ -1880,13 +1880,13 @@ export const TasksView: React.FC = () => {
                                 : 'bg-white border-slate-200'
                             }`}
                           >
-                            {/* Card Top: Checkbox [✓] + Title + Actions (Copy / Edit / Move / Reorder) */}
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-start gap-2 flex-1 min-w-0">
+                            {/* Card Top Bar: Checkbox [✓] + Deadline Badge on right, Actions (Copy / Edit / Move / Reorder) on left */}
+                            <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100">
+                              <div className="flex items-center gap-2 min-w-0">
                                 <button
                                   type="button"
                                   onClick={e => toggleTaskComplete(task.id, e)}
-                                  className={`w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 mt-0.5 ${
+                                  className={`w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                                     isDone
                                       ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-500'
                                       : 'border-2 border-slate-300 hover:border-blue-500 bg-white hover:bg-slate-50'
@@ -1896,60 +1896,11 @@ export const TasksView: React.FC = () => {
                                   {isDone && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                                 </button>
 
-                                <div className="flex-1 min-w-0">
-                                  <div
-                                    onClick={() => setSelectedTaskId(task.id)}
-                                    className={`font-extrabold cursor-pointer leading-snug hover:text-blue-600 transition-colors ${
-                                      isDone ? 'line-through text-slate-400' : 'text-slate-900'
-                                    }`}
-                                  >
-                                    {renderTaskTitleWithMentions(task.title)}
-                                  </div>
-
-                                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                                    {isAllTeamTask && (
-                                      <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
-                                        <span>🌟 مهمة لجميع الفريق</span>
-                                      </span>
-                                    )}
-                                    {task.clientName && (
-                                      <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
-                                        <Building className="w-2.5 h-2.5 text-blue-600" />
-                                        <span>{task.clientName}</span>
-                                      </span>
-                                    )}
-                                    {(isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && (task.accountManagerId || task.createdById === effectiveAccountManager?.id) && (
-                                      <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
-                                        <CheckCircle className="w-2.5 h-2.5 text-indigo-600" />
-                                        <span>تكليف الأكونت مانجر</span>
-                                      </span>
-                                    )}
-                                    {task.isPrivate && (
-                                      <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
-                                        <Lock className="w-2.5 h-2.5 text-amber-700" />
-                                        <span>سرية للمدير</span>
-                                      </span>
-                                    )}
-                                    {isUserMentionedInTask(task, currentUser) && (
-                                      <span className="text-[9px] bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
-                                        <AtSign className="w-2.5 h-2.5 text-purple-700" />
-                                        <span>منشن لك</span>
-                                      </span>
-                                    )}
-                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold">
-                                      {task.category}
-                                    </span>
-                                    <span
-                                      className={`text-[9px] px-1.5 py-0.2 rounded font-bold border ${deadline.badgeClass}`}
-                                    >
-                                      {deadline.label}
-                                    </span>
-                                    <span className="text-[9px] text-slate-500 font-mono font-medium flex items-center gap-0.5">
-                                      <Clock className="w-2.5 h-2.5 text-slate-400" />
-                                      <span>تسليم: {task.dueDate}</span>
-                                    </span>
-                                  </div>
-                                </div>
+                                <span
+                                  className={`text-[9px] px-1.5 py-0.2 rounded font-bold border ${deadline.badgeClass}`}
+                                >
+                                  {deadline.label}
+                                </span>
                               </div>
 
                               {/* Card Action Controls: Copy, Edit, Move to Member, Reorder Up/Down */}
@@ -2038,6 +1989,57 @@ export const TasksView: React.FC = () => {
                                   <ArrowDown className="w-3 h-3" />
                                 </button>
                               </div>
+                            </div>
+
+                            {/* Task Title: Full width of the card, full sentences */}
+                            <div
+                              onClick={() => setSelectedTaskId(task.id)}
+                              className={`w-full font-bold text-xs sm:text-[13px] leading-relaxed cursor-pointer hover:text-blue-600 transition-colors text-right select-text py-0.5 ${
+                                isDone ? 'line-through text-slate-400' : 'text-slate-900'
+                              }`}
+                              style={{ wordBreak: 'normal', overflowWrap: 'break-word', whiteSpace: 'normal' }}
+                            >
+                              {renderTaskTitleWithMentions(task.title)}
+                            </div>
+
+                            {/* Meta Badges */}
+                            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                              {isAllTeamTask && (
+                                <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                                  <span>🌟 مهمة لجميع الفريق</span>
+                                </span>
+                              )}
+                              {task.clientName && (
+                                <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
+                                  <Building className="w-2.5 h-2.5 text-blue-600" />
+                                  <span className="truncate max-w-[110px]">{task.clientName}</span>
+                                </span>
+                              )}
+                              {(isCurrentUserAccountManager || (isManager && selectedSimulatedAccountManagerId !== 'all')) && (task.accountManagerId || task.createdById === effectiveAccountManager?.id) && (
+                                <span className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
+                                  <CheckCircle className="w-2.5 h-2.5 text-indigo-600" />
+                                  <span>تكليف الأكونت مانجر</span>
+                                </span>
+                              )}
+                              {task.isPrivate && (
+                                <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                                  <Lock className="w-2.5 h-2.5 text-amber-700" />
+                                  <span>سرية للمدير</span>
+                                </span>
+                              )}
+                              {isUserMentionedInTask(task, currentUser) && (
+                                <span className="text-[9px] bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                                  <AtSign className="w-2.5 h-2.5 text-purple-700" />
+                                  <span>منشن لك</span>
+                                </span>
+                              )}
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold">
+                                {task.category}
+                              </span>
+                              <span className="text-[9px] text-slate-500 font-mono font-medium flex items-center gap-0.5">
+                                <Clock className="w-2.5 h-2.5 text-slate-400" />
+                                <span>تسليم: {task.dueDate}</span>
+                              </span>
                             </div>
 
                             {/* Card Footer: Timer Start/End + Time logged */}
@@ -2332,13 +2334,13 @@ export const TasksView: React.FC = () => {
                                   : 'bg-white border-slate-200'
                               }`}
                             >
-                              {/* Top: Checkbox [✓] + Title + Actions (Copy / Edit / Move / Reorder) */}
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-start gap-2 flex-1 min-w-0">
+                              {/* Top Bar: Checkbox [✓] + Assignee info on right, Actions (Copy / Edit / Move / Reorder) on left */}
+                              <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100">
+                                <div className="flex items-center gap-2 min-w-0">
                                   <button
                                     type="button"
                                     onClick={e => toggleTaskComplete(task.id, e)}
-                                    className={`w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 mt-0.5 ${
+                                    className={`w-5 h-5 rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                                       isDone
                                         ? 'bg-emerald-600 text-white shadow-2xs ring-1 ring-emerald-500'
                                         : 'border-2 border-slate-300 hover:border-blue-500 bg-white hover:bg-slate-50'
@@ -2348,36 +2350,19 @@ export const TasksView: React.FC = () => {
                                     {isDone && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                                   </button>
 
-                                  <div className="flex-1 min-w-0">
-                                    <div
-                                      onClick={() => setSelectedTaskId(task.id)}
-                                      className={`font-extrabold cursor-pointer leading-snug hover:text-blue-600 transition-colors break-words break-all [overflow-wrap:anywhere] min-w-0 max-w-full ${
-                                        isDone ? 'line-through text-slate-400' : 'text-slate-900'
-                                      }`}
-                                    >
-                                      {renderTaskTitleWithMentions(task.title)}
-                                    </div>
-
-                                    <div className="flex items-center gap-1.5 mt-1.5">
-                                      <img
-                                        src={assignee.avatar}
-                                        alt={assignee.name}
-                                        className="w-4 h-4 rounded-full object-cover border"
-                                      />
-                                      <span className="text-[10px] font-bold text-slate-700 truncate max-w-[90px]">
-                                        {assignee.name}
-                                      </span>
-                                      {task.isPrivate && (
-                                        <span className="text-[8px] bg-amber-100 text-amber-900 border border-amber-300 px-1 rounded font-black flex items-center gap-0.5">
-                                          <Lock className="w-2 h-2 text-amber-700" />
-                                          <span>سرية</span>
-                                        </span>
-                                      )}
-                                    </div>
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <img
+                                      src={assignee.avatar}
+                                      alt={assignee.name}
+                                      className="w-4 h-4 rounded-full object-cover border border-slate-200 shrink-0"
+                                    />
+                                    <span className="text-[10px] font-bold text-slate-700 truncate max-w-[85px]">
+                                      {assignee.name}
+                                    </span>
                                   </div>
                                 </div>
 
-                                {/* Actions */}
+                                {/* Actions Toolbar */}
                                 <div className="flex items-center gap-0.5 shrink-0 bg-slate-50 p-0.5 rounded-lg border border-slate-200/60">
                                   <button
                                     type="button"
@@ -2465,6 +2450,48 @@ export const TasksView: React.FC = () => {
                                 </div>
                               </div>
 
+                              {/* Task Title: Full width across the entire card, readable full sentences */}
+                              <div
+                                onClick={() => setSelectedTaskId(task.id)}
+                                className={`w-full font-bold text-xs sm:text-[13px] leading-relaxed cursor-pointer hover:text-blue-600 transition-colors text-right select-text py-0.5 ${
+                                  isDone ? 'line-through text-slate-400' : 'text-slate-900'
+                                }`}
+                                style={{ wordBreak: 'normal', overflowWrap: 'break-word', whiteSpace: 'normal' }}
+                              >
+                                {renderTaskTitleWithMentions(task.title)}
+                              </div>
+
+                              {/* Meta Badges */}
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {task.isPrivate && (
+                                  <span className="text-[9px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                                    <Lock className="w-2.5 h-2.5 text-amber-700" />
+                                    <span>سرية للمدير</span>
+                                  </span>
+                                )}
+                                {task.clientName && (
+                                  <span className="text-[9px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.2 rounded font-bold flex items-center gap-0.5">
+                                    <Building className="w-2.5 h-2.5 text-blue-600" />
+                                    <span className="truncate max-w-[110px]">{task.clientName}</span>
+                                  </span>
+                                )}
+                                {task.category && (
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold">
+                                    {task.category}
+                                  </span>
+                                )}
+                                {task.priority === 'urgent' && (
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 font-black">
+                                    عاجل جداً 🔥
+                                  </span>
+                                )}
+                                {task.priority === 'high' && (
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-bold">
+                                    أولوية مرتفعة
+                                  </span>
+                                )}
+                              </div>
+
                               {/* Footer: Timer Start/End */}
                               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1">
@@ -2525,8 +2552,19 @@ export const TasksView: React.FC = () => {
                                   )}
                                 </div>
 
-                                <div className="text-[10px] text-slate-400 font-mono">
-                                  {task.dueDate}
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                                    <Clock className="w-2.5 h-2.5 text-slate-400" />
+                                    <span>{task.dueDate}</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedTaskId(task.id)}
+                                    className="text-slate-400 hover:text-blue-600 p-0.5 transition-colors cursor-pointer"
+                                    title="فتح التفاصيل والمنشنات"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -3106,13 +3144,13 @@ export const TasksView: React.FC = () => {
                         onClick={() => setSelectedTaskId(task.id)}
                         className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs hover:shadow-md transition-all cursor-pointer space-y-2.5"
                       >
-                        {/* Top: Checkbox [✓] + Title + Actions */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-start gap-2 flex-1 min-w-0">
+                        {/* Top Bar: Checkbox [✓] + Dates on right, Quick Toolbar on left */}
+                        <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100">
+                          <div className="flex items-center gap-2 min-w-0">
                             <button
                               type="button"
                               onClick={e => toggleTaskComplete(task.id, e)}
-                              className={`w-4 h-4 rounded flex items-center justify-center transition-all cursor-pointer shrink-0 mt-0.5 ${
+                              className={`w-4 h-4 rounded flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                                 task.status === 'completed'
                                   ? 'bg-emerald-600 text-white shadow-2xs'
                                   : 'border border-slate-300 hover:border-blue-500 bg-white'
@@ -3122,23 +3160,9 @@ export const TasksView: React.FC = () => {
                               {task.status === 'completed' && <Check className="w-3 h-3 stroke-[3]" />}
                             </button>
 
-                            <div className="flex-1 min-w-0">
-                              <div className={`font-extrabold text-slate-900 text-xs leading-snug ${task.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
-                                {renderTaskTitleWithMentions(task.title)}
-                              </div>
-
-                              <div className="flex items-center gap-1.5 mt-1">
-                                {task.isPrivate && (
-                                  <span className="text-[8px] bg-amber-100 text-amber-900 border border-amber-300 px-1 rounded font-black flex items-center gap-0.5">
-                                    <Lock className="w-2 h-2 text-amber-700" />
-                                    <span>سرية</span>
-                                  </span>
-                                )}
-                                <span className="text-[10px] text-slate-500 font-mono">
-                                  من: {task.startDate || 'اليوم'} | إلى: {task.dueDate}
-                                </span>
-                              </div>
-                            </div>
+                            <span className="text-[10px] text-slate-500 font-mono">
+                              من: {task.startDate || 'اليوم'} | إلى: {task.dueDate}
+                            </span>
                           </div>
 
                           {/* Quick Toolbar */}
@@ -3228,6 +3252,26 @@ export const TasksView: React.FC = () => {
                             </button>
                           </div>
                         </div>
+
+                        {/* Task Title: Full width of card, full sentences */}
+                        <div
+                          onClick={() => setSelectedTaskId(task.id)}
+                          className={`w-full font-bold text-xs sm:text-[13px] leading-relaxed cursor-pointer hover:text-blue-600 transition-colors text-right select-text py-0.5 ${
+                            task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-900'
+                          }`}
+                          style={{ wordBreak: 'normal', overflowWrap: 'break-word', whiteSpace: 'normal' }}
+                        >
+                          {renderTaskTitleWithMentions(task.title)}
+                        </div>
+
+                        {task.isPrivate && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[8px] bg-amber-100 text-amber-900 border border-amber-300 px-1 rounded font-black flex items-center gap-0.5">
+                              <Lock className="w-2 h-2 text-amber-700" />
+                              <span>سرية للمدير</span>
+                            </span>
+                          </div>
+                        )}
 
                         {/* Move Between Stages in Kanban (MOVE [الموقع بين الكارت والتاني) */}
                         <div className="flex items-center justify-between bg-slate-50/90 px-2 py-1 rounded-lg border border-slate-100 text-[10px]" onClick={e => e.stopPropagation()}>

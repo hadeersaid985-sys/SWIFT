@@ -46,8 +46,8 @@
       "bio": "مسؤولة إدارة العمليات والمبيعات وتنسيق المهام بين فرق العمل.",
       "socialAccounts": {
         "slack": "@hadeer.said",
-        "whatsapp": "+966501234567",
-        "linkedin": "linkedin.com/in/hadeer-said"
+        "linkedin": "linkedin.com/in/hadeer-said",
+        "whatsapp": "+966501234567"
       },
       "updatedAt": "2026-10-28T11:39:52.242Z"
     },
@@ -2110,6 +2110,171 @@
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
       "category": "إداري",
       "startDate": "2026-10-31"
+    },
+    {
+      "title": "تصميم بوست مابيل",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-aya",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-11-01",
+      "dueDate": "2026-11-01",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793522197563",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-11-01"
+    },
+    {
+      "title": "رفع 7 مقالات موقع gx",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "in_progress",
+      "startDate": "2026-11-01",
+      "dueDate": "2026-11-01",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793520484412",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-11-01",
+      "updatedAt": "2026-11-01T08:31:43.265Z",
+      "timerAccumulatedMs": 0,
+      "timerLastResumedAt": 1793521903264,
+      "timerStartedAt": 1793521903264,
+      "isTimerRunning": true,
+      "isTimerPaused": false
+    },
+    {
+      "title": "المرتبات والصيانه",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-1",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-31",
+      "dueDate": "2026-10-31",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793469223804",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-31",
+      "updatedAt": "2026-10-31T17:53:43.804Z"
+    },
+    {
+      "title": "ميتنج مع عميل الساعه 4",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-1",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-31",
+      "dueDate": "2026-10-31",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793468951675",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-31",
+      "updatedAt": "2026-10-31T17:49:11.675Z"
+    },
+    {
+      "title": "ميتنج مع عميل الساعه 3",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-1",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-31",
+      "dueDate": "2026-10-31",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793468948469",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-31",
+      "updatedAt": "2026-10-31T17:49:08.470Z"
+    },
+    {
+      "title": "كفرات موقع الكشفيه",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-aya",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-11-03",
+      "dueDate": "2026-11-03",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793462613830",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-31",
+      "revisionsCount": 0,
+      "updatedAt": "2026-10-31T16:03:54.022Z"
+    },
+    {
+      "title": "تصميم لوجو لسويفتورا برايم الجديد",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "assignedToId": "user-aya",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-10-31",
+      "dueDate": "2026-11-05",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793462601111",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-10-31",
+      "updatedAt": "2026-10-31T16:03:21.112Z"
+    },
+    {
+      "assignedToId": "user-mariam",
+      "estimatedHours": 2,
+      "updatedAt": "2026-11-01T08:31:27.183Z",
+      "isPrivate": false,
+      "createdAt": "2026-11-01",
+      "startDate": "2026-11-01",
+      "description": "مهمة مضافة عبر بورد وقائمة الفريق",
+      "mentionedUserIds": [],
+      "subtasks": [],
+      "status": "todo",
+      "category": "إداري",
+      "dueTime": "18:00",
+      "timeLogs": [],
+      "priority": "medium",
+      "dueDate": "2026-11-01",
+      "title": "south coast رحلات",
+      "id": "task-1793521887183",
+      "comments": []
     }
   ],
   "leads": [
@@ -2146,10 +2311,10 @@
         }
       ],
       "notes": "يبحثون عن أتمتة لجميع فروعهم الـ 14 مع تتبع فوري لمواعيد التسليم.",
-      "followUpDate": "2026-10-31",
+      "followUpDate": "2026-11-01",
       "followUpTime": "13:00",
       "followUpNotes": "الاتصال الهاتفي النهائي لمناقشة تعديل شروط الدفع وتوقيع العقد المبدئي.",
-      "createdAt": "2026-10-28"
+      "createdAt": "2026-10-29"
     },
     {
       "id": "lead-302",
@@ -2184,10 +2349,10 @@
         }
       ],
       "notes": "تحتاج لربط برامج العيادات مع نظام إدارة مهام الأطباء ومواعيد الزيارات.",
-      "followUpDate": "2026-10-31",
+      "followUpDate": "2026-11-01",
       "followUpTime": "15:30",
       "followUpNotes": "متابعة قرار مجلس الإدارة ومناقشة تفاصيل الربط التقني.",
-      "createdAt": "2026-10-31"
+      "createdAt": "2026-11-01"
     },
     {
       "id": "lead-303",
@@ -2222,10 +2387,10 @@
         }
       ],
       "notes": "طلب إعادة الاتصال بعد دراسة الميزانية السنوية الجديدة للشركة.",
-      "followUpDate": "2026-11-01",
+      "followUpDate": "2026-11-02",
       "followUpTime": "11:00",
       "followUpNotes": "مكالمة هاتفية للمتابعة بعد مراجعة الإدارة المالية للميزانية.",
-      "createdAt": "2026-10-29"
+      "createdAt": "2026-10-30"
     },
     {
       "id": "lead-304",
@@ -2260,7 +2425,7 @@
         }
       ],
       "notes": "طلبوا تجربة عملية ديمو للربط مع نظام إدارة الأسطول والمخازن.",
-      "createdAt": "2026-10-26"
+      "createdAt": "2026-10-27"
     }
   ],
   "deals": [
@@ -2275,9 +2440,9 @@
       "currency": "ج.م",
       "stage": "تفاوض",
       "probability": 85,
-      "expectedCloseDate": "2026-11-05",
+      "expectedCloseDate": "2026-11-06",
       "assignedToId": "user-1",
-      "createdAt": "2026-10-16",
+      "createdAt": "2026-10-17",
       "notes": "الصفقة في مرحلة الصياغة القانونية النهائية للعقد."
     },
     {
@@ -2291,9 +2456,9 @@
       "currency": "ج.م",
       "stage": "عرض سعر",
       "probability": 60,
-      "expectedCloseDate": "2026-11-12",
+      "expectedCloseDate": "2026-11-13",
       "assignedToId": "user-2",
-      "createdAt": "2026-10-21",
+      "createdAt": "2026-10-22",
       "notes": "العرض يشمل التخصيص والأمان العالي وربط الفروع المصرفية."
     },
     {
@@ -2307,9 +2472,9 @@
       "currency": "ج.م",
       "stage": "مؤهل",
       "probability": 40,
-      "expectedCloseDate": "2026-11-20",
+      "expectedCloseDate": "2026-11-21",
       "assignedToId": "user-3",
-      "createdAt": "2026-10-27",
+      "createdAt": "2026-10-28",
       "notes": "تم تقديم العرض الأولي والمقارنة مع الحلول المنافسة."
     },
     {
@@ -2323,9 +2488,9 @@
       "currency": "ج.م",
       "stage": "مغلقة ناجحة",
       "probability": 100,
-      "expectedCloseDate": "2026-10-28",
+      "expectedCloseDate": "2026-10-29",
       "assignedToId": "user-2",
-      "createdAt": "2026-10-01",
+      "createdAt": "2026-10-02",
       "notes": "تم توقيع العقد رسمياً واستلام الدفعة الأولى بنجاح!"
     }
   ],
@@ -2334,7 +2499,7 @@
       "id": "meet-1",
       "title": "الاجتماع الصباحي اليومي لفريق المبيعات والحسابات (Daily Standup)",
       "meetingType": "internal",
-      "date": "2026-10-31",
+      "date": "2026-11-01",
       "time": "10:00",
       "startTime": "10:00",
       "endTime": "10:30",
@@ -2360,7 +2525,7 @@
           "title": "إرسال عرض سعر العقد المعدل لشركة إعمار",
           "assignedToId": "user-2",
           "assignedToName": "أحمد الشريف",
-          "dueDate": "2026-11-01",
+          "dueDate": "2026-11-02",
           "dueTime": "15:00",
           "taskId": "task-3",
           "isCompleted": false
@@ -2374,7 +2539,7 @@
       "id": "meet-2",
       "title": "عرض ديمو تفاعلي واجتماع استراتيجي مع مسؤولي بنك الرياض للاستثمار",
       "meetingType": "client",
-      "date": "2026-11-01",
+      "date": "2026-11-02",
       "time": "12:30",
       "startTime": "12:30",
       "endTime": "13:15",
@@ -2404,7 +2569,7 @@
           "title": "تجهيز ملف متطلبات الأمان وتشفير البيانات وإرساله للبنك",
           "assignedToId": "user-4",
           "assignedToName": "خالد ناصر",
-          "dueDate": "2026-11-02",
+          "dueDate": "2026-11-03",
           "dueTime": "12:00",
           "taskId": "task-4",
           "isCompleted": false
@@ -2418,7 +2583,7 @@
       "id": "meet-3",
       "title": "جلسة التخطيط المالي وتوزيع ميزانية الربع الرابع مع الإدارة",
       "meetingType": "internal",
-      "date": "2026-11-04",
+      "date": "2026-11-05",
       "time": "14:00",
       "startTime": "14:00",
       "endTime": "15:00",
@@ -2442,7 +2607,7 @@
       "id": "meet-4",
       "title": "اجتماع مراجعة تسليمات خطة السوشيال والمونتاج مع شركة جولدن",
       "meetingType": "client",
-      "date": "2026-10-29",
+      "date": "2026-10-30",
       "time": "11:00",
       "startTime": "11:00",
       "endTime": "11:45",
@@ -2471,7 +2636,7 @@
           "title": "تعديل شعار المقدمة في ريلز شركة جولدن",
           "assignedToId": "user-islam",
           "assignedToName": "Islam",
-          "dueDate": "2026-11-01",
+          "dueDate": "2026-11-02",
           "dueTime": "13:00",
           "isCompleted": true
         }
@@ -3811,7 +3976,7 @@
     "user-1793016396281"
   ],
   "deletedTasks": [],
-  "updatedAt": "2026-10-31T16:52:51.843Z",
+  "updatedAt": "2026-11-01T08:57:47.400Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": [],
   "calls": []
