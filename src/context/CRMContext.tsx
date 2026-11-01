@@ -518,7 +518,7 @@ export const ensureValidUser = (u: any): TeamMember => {
     avatar: u.avatar || CURRENT_USER.avatar
   };
 
-  // Strictly enforce separation for Mariam (Web Developer) and Islam (Video Editor)
+  // Strictly enforce separation for Mariam (Web Developer), Roaa (Content Creator), and Islam (Video Editor)
   if (
     valid.id === 'user-mariam' ||
     valid.id === 'user-1793097751331' ||
@@ -532,6 +532,20 @@ export const ensureValidUser = (u: any): TeamMember => {
     valid.username = 'Mariam';
     valid.employeeCode = u.employeeCode || 'SM-106';
     valid.avatar = u.avatar || valid.avatar;
+    valid.password = u.password || 'Sw!ft5J8U%VgqiN';
+  } else if (
+    valid.id === 'user-roaa' ||
+    valid.id === 'user-1793016462810' ||
+    (valid.username && (valid.username.toLowerCase() === 'roaa_hetemy' || valid.username.toLowerCase() === 'roaa'))
+  ) {
+    valid.id = 'user-roaa';
+    valid.name = u.name || 'رواء';
+    valid.role = u.role || 'content creator';
+    valid.department = u.department || 'التطوير والتقنية';
+    valid.username = 'roaa_hetemy';
+    valid.employeeCode = u.employeeCode || 'SM-109';
+    valid.avatar = u.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80';
+    valid.password = u.password || 'Sw!ftzg2scMrcNA';
   } else if (
     valid.id === 'user-islam' ||
     valid.id === 'user-1793025675186' ||
@@ -634,6 +648,18 @@ export const isTaskAssignedToUser = (task: Task, user: TeamMember): boolean => {
   ) {
     return true;
   }
+
+  // Strict Account Isolation Guard: Mariam and Roaa (Rawaa) must NEVER cross-match under any circumstances
+  const isMariamUser = user.id === 'user-mariam' || (user.username && user.username.toLowerCase() === 'mariam') || user.employeeCode === 'SM-106';
+  const isRoaaUser = user.id === 'user-roaa' || (user.username && (user.username.toLowerCase() === 'roaa_hetemy' || user.username.toLowerCase() === 'roaa')) || user.employeeCode === 'SM-109';
+
+  const isMariamTask = aid === 'user-mariam' || aid === 'mariam' || aid === 'مريم' || aid === 'sm-106' || aid === 'user-1793097751331' || aid === 'user-1793016396281';
+  const isRoaaTask = aid === 'user-roaa' || aid === 'roaa' || aid === 'roaa_hetemy' || aid === 'رواء' || aid === 'رؤى' || aid === 'sm-109' || aid === 'user-1793016462810';
+
+  if (isMariamUser && isRoaaTask) return false;
+  if (isRoaaUser && isMariamTask) return false;
+  if (isMariamUser && isMariamTask) return true;
+  if (isRoaaUser && isRoaaTask) return true;
 
   // 1. Direct ID match (highest priority, strictly isolated)
   if (user.id && aid === user.id.toLowerCase()) return true;
@@ -817,7 +843,14 @@ export const matchUserCredentials = (
   // Match Roaa specifically (roaa_hetemy, SM-109, Arabic رواء / رؤى)
   const isRoaaUser =
     (cleanUser === 'roaa' || cleanUser === 'roaa_hetemy' || cleanUser === 'sm-109' || normInput === 'رواء' || normInput === 'رؤى') &&
-    (memberUsername === 'roaa_hetemy' || memberCode === 'sm-109' || member.id === 'user-roaa');
+    (memberUsername === 'roaa_hetemy' || memberCode === 'sm-109' || member.id === 'user-roaa' || normName === 'رواء' || normName === 'رؤى');
+
+  // Strictly prevent cross-matching between Mariam and Roaa / Rawaa
+  const isInputMariam = cleanUser === 'mariam' || cleanUser === 'sm-106' || normInput === 'مريم';
+  const isInputRoaa = cleanUser === 'roaa' || cleanUser === 'roaa_hetemy' || cleanUser === 'sm-109' || normInput === 'رواء' || normInput === 'رؤى';
+
+  if (isInputMariam && member.id !== 'user-mariam' && memberUsername !== 'mariam') return false;
+  if (isInputRoaa && member.id !== 'user-roaa' && memberUsername !== 'roaa_hetemy') return false;
 
   // Strictly exact user match - NEVER use loose substring normName.includes(normInput) which confuses Islam with Mariam!
   const isUserMatch =
@@ -1166,13 +1199,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [team, setTeam] = useState<TeamMember[]>(() => {
     try {
-      const deletedIds = new Set<string>(['user-mariam', 'user-1793016396281']);
+      const deletedIds = new Set<string>();
       const savedDeleted = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`);
       if (savedDeleted) {
         try {
           const parsedDel = JSON.parse(savedDeleted);
           if (Array.isArray(parsedDel)) {
-            parsedDel.forEach((id: string) => deletedIds.add(id));
+            parsedDel.forEach((id: string) => {
+              // Never treat core members Mariam or Roaa as deleted
+              if (id !== 'user-mariam' && id !== 'user-roaa' && id !== 'user-1793016396281' && id !== 'user-1793097751331') {
+                deletedIds.add(id);
+              }
+            });
           }
         } catch {}
       }
@@ -1210,6 +1248,41 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               username: m.username || initM.username
             } : { ...m, salaryCurrency: salCurr };
 
+            // Mariam (Web Developer)
+            if (
+              memberObj.id === 'user-mariam' ||
+              memberObj.id === 'user-1793097751331' ||
+              memberObj.id === 'user-1793016396281' ||
+              (memberObj.username || '').toLowerCase() === 'mariam'
+            ) {
+              memberObj.id = 'user-mariam';
+              memberObj.name = 'Mariam';
+              memberObj.role = 'Web Developer';
+              memberObj.username = 'Mariam';
+              memberObj.department = 'التطوير والتقنية';
+              memberObj.employeeCode = 'SM-106';
+              memberObj.isAccountActive = true;
+              memberObj.password = m.password || memberObj.password || 'Sw!ft5J8U%VgqiN';
+            }
+
+            // Roaa / Rawaa (Content Creator)
+            if (
+              memberObj.id === 'user-roaa' ||
+              memberObj.id === 'user-1793016462810' ||
+              (memberObj.username || '').toLowerCase() === 'roaa_hetemy' ||
+              (memberObj.username || '').toLowerCase() === 'roaa'
+            ) {
+              memberObj.id = 'user-roaa';
+              memberObj.name = memberObj.name?.includes('رواء') ? memberObj.name : 'رواء';
+              memberObj.role = 'content creator';
+              memberObj.username = 'roaa_hetemy';
+              memberObj.department = 'التطوير والتقنية';
+              memberObj.employeeCode = 'SM-109';
+              memberObj.isAccountActive = true;
+              memberObj.password = m.password || memberObj.password || 'Sw!ftzg2scMrcNA';
+            }
+
+            // Islam (Video Editor)
             if (
               memberObj.id === 'user-islam' ||
               memberObj.id === 'user-1793025675186' ||
@@ -1232,7 +1305,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
     } catch {}
-    return INITIAL_TEAM.filter(m => m.id !== 'user-mariam' && (m.username || '').toLowerCase() !== 'mariam');
+    return INITIAL_TEAM;
   });
 
   const [emails, setEmails] = useState<EmailMessage[]>(() => {
@@ -4391,6 +4464,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteTeamMember = (id: string) => {
+    // Strictly protect core team members (Admin, Mariam, Roaa) from deletion
+    if (id === 'user-mariam' || id === 'user-roaa' || id === adminUserId || id === 'user-1') {
+      console.warn(`[Team] Protected account cannot be deleted: ${id}`);
+      return;
+    }
+
     try {
       const savedDeleted = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`);
       const delList: string[] = savedDeleted ? JSON.parse(savedDeleted) : [];
@@ -4414,29 +4493,33 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteTeamMembers = (ids: string[]) => {
-    // Keep admin protected
+    // Keep protected members safe
+    const protectedIds = new Set(['user-mariam', 'user-roaa', adminUserId, 'user-1']);
+    const targetIds = ids.filter(id => !protectedIds.has(id));
+    if (targetIds.length === 0) return;
+
     try {
       const savedDeleted = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`);
       const delList: string[] = savedDeleted ? JSON.parse(savedDeleted) : [];
-      ids.forEach(id => {
+      targetIds.forEach(id => {
         if (!delList.includes(id)) delList.push(id);
       });
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`, JSON.stringify(delList));
     } catch {}
 
     setTeam(prev => {
-      const updated = prev.filter(m => !ids.includes(m.id) || m.id === adminUserId);
+      const updated = prev.filter(m => !targetIds.includes(m.id) || protectedIds.has(m.id));
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
       return updated;
     });
 
-    ids.forEach(id => {
+    targetIds.forEach(id => {
       try {
         fetch(`/api/team/${id}`, { method: 'DELETE' }).catch(() => {});
       } catch {}
     });
 
-    logActivity('team', 'حذف أعضاء من الفريق', `تم حذف ${ids.length} عضو من الفريق`);
+    logActivity('team', 'حذف أعضاء من الفريق', `تم حذف ${targetIds.length} عضو من الفريق`);
   };
 
   const clearTeamExceptAdmin = () => {

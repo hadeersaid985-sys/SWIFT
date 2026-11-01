@@ -174,9 +174,9 @@
     {
       "id": "user-roaa",
       "employeeCode": "SM-109",
-      "name": "roaa_hetemy",
-      "role": "content creator",
-      "department": "التطوير والتقنية",
+      "name": "رواء",
+      "role": "Content Creator",
+      "department": "صناع المحتوى",
       "email": "roaa_hetemy@swiftmynd.com",
       "phone": "201271895754",
       "whatsappNumber": "201271895754",
@@ -218,6 +218,20 @@
       "workingHours": "8 ساعات يومياً",
       "bankIban": "SA84200000011827461926",
       "updatedAt": "2026-10-28T11:39:52.243Z"
+    },
+    {
+      "id": "user-mariam",
+      "name": "Mariam",
+      "username": "Mariam",
+      "role": "Web Developer",
+      "department": "التطوير والتقنية",
+      "employeeCode": "SM-106",
+      "phone": "01012345678",
+      "email": "mariam@swiftmynd.com",
+      "joinedDate": "2026-03-01",
+      "status": "active",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+      "password": "Sw!ft5J8U%VgqiN"
     }
   ],
   "tasks": [
@@ -515,7 +529,7 @@
       "updatedAt": "2026-10-27T09:00:01.127Z",
       "dueTime": "18:00",
       "subtasks": [],
-      "assignedToId": "user-eman"
+      "assignedToId": "user-roaa"
     },
     {
       "status": "completed",
@@ -723,7 +737,7 @@
       "updatedAt": "2026-10-28T13:35:32.883Z",
       "status": "completed",
       "createdAt": "2026-10-26",
-      "assignedToId": "user-yomna",
+      "assignedToId": "user-roaa",
       "dueDate": "2026-10-28",
       "mentionedUserIds": [],
       "estimatedHours": 2,
@@ -845,7 +859,7 @@
           ]
         }
       ],
-      "assignedToId": "user-eman",
+      "assignedToId": "user-roaa",
       "isTimerRunning": false,
       "totalLoggedMinutes": 139,
       "timerStartedAt": 1793091603237,
@@ -864,7 +878,7 @@
       "comments": [],
       "mentionedUserIds": [],
       "dueDate": "2026-10-27",
-      "assignedToId": "user-eman",
+      "assignedToId": "user-roaa",
       "timerStartedAt": 1793089288497,
       "isPrivate": false,
       "timeLogs": [
@@ -1278,7 +1292,7 @@
       "createdAt": "2026-10-28",
       "isPrivate": false,
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
-      "assignedToId": "user-eman",
+      "assignedToId": "user-roaa",
       "subtasks": [],
       "category": "إداري",
       "timeLogs": [
@@ -1579,7 +1593,7 @@
     {
       "title": "تنفيذ فيديو عميل بيوشار",
       "description": "حاليا",
-      "assignedToId": "user-islam",
+      "assignedToId": "user-roaa",
       "priority": "medium",
       "status": "todo",
       "startDate": "2026-10-29",
@@ -1649,7 +1663,7 @@
     {
       "title": "تقفيل موقع gx",
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
-      "assignedToId": "user-yomna",
+      "assignedToId": "user-roaa",
       "priority": "medium",
       "status": "completed",
       "startDate": "2026-10-29",
@@ -1884,7 +1898,7 @@
       "startDate": "2026-10-31",
       "timerLastResumedAt": 1793524472648,
       "timerStartedAt": 1793437995732,
-      "assignedToId": "user-amira",
+      "assignedToId": "user-roaa",
       "priority": "medium",
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
       "isPrivate": false,
@@ -1962,7 +1976,7 @@
     {
       "title": "رفع 7 مقالات موقع gx",
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
-      "assignedToId": "user-eman",
+      "assignedToId": "user-roaa",
       "priority": "medium",
       "status": "in_progress",
       "startDate": "2026-11-01",
@@ -2047,7 +2061,7 @@
     {
       "title": "كفرات موقع الكشفيه",
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
-      "assignedToId": "user-aya",
+      "assignedToId": "user-roaa",
       "priority": "medium",
       "status": "todo",
       "startDate": "2026-11-03",
@@ -3805,10 +3819,7 @@
     }
   ],
   "monthlyPayrolls": [],
-  "deletedTeamMemberIds": [
-    "user-mariam",
-    "user-1793016396281"
-  ],
+  "deletedTeamMemberIds": [],
   "deletedTasks": [
     {
       "id": "contact-0"
@@ -3979,7 +3990,7 @@
       "id": "task-1793483160666"
     }
   ],
-  "updatedAt": "2026-11-01T10:22:57.528Z",
+  "updatedAt": "2026-11-01T10:47:05.093Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": [],
   "calls": [],

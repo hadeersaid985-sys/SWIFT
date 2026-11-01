@@ -39,7 +39,8 @@ export const QuickAttendanceWidget: React.FC = () => {
       date: todayStr,
       status: 'present',
       checkInTime: nowTimeStr,
-      notes: 'تسجيل حضور تلقائي من شريط المنظومة'
+      checkOutTime: undefined,
+      notes: 'تسجيل بداية الدوام من شريط المنظومة'
     };
 
     recordAttendance(newRecord);
@@ -48,17 +49,27 @@ export const QuickAttendanceWidget: React.FC = () => {
       confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
     } catch (e) {}
 
-    showToast(`صباح الخير يا ${currentUser.name}! تم تسجيل حضورك اليوم الساعة (${nowTimeStr}) 🟢`);
+    showToast(`صباح الخير يا ${currentUser.name}! تم تسجيل بداية دوامك اليوم الساعة (${nowTimeStr}) 🟢`);
   };
 
   const handleCheckOut = () => {
     if (!todayRecord) return;
     updateAttendanceRecord(todayRecord.id, {
       checkOutTime: nowTimeStr,
-      notes: (todayRecord.notes ? todayRecord.notes + ' • ' : '') + `انصراف: ${nowTimeStr}`
+      notes: (todayRecord.notes ? todayRecord.notes + ' • ' : '') + `نهاية الدوام: ${nowTimeStr}`
     });
 
-    showToast(`يعطيك العافية يا ${currentUser.name}! تم تسجيل انصرافك الساعة (${nowTimeStr}) 🔴`);
+    showToast(`يعطيك العافية يا ${currentUser.name}! تم تسجيل نهاية الدوام والانصراف الساعة (${nowTimeStr}) 🔴`);
+  };
+
+  const handleResumeShift = () => {
+    if (!todayRecord) return;
+    updateAttendanceRecord(todayRecord.id, {
+      checkOutTime: undefined,
+      notes: (todayRecord.notes ? todayRecord.notes + ' • ' : '') + `تم استئناف الدوام`
+    });
+
+    showToast(`تم استئناف الدوام بنجاح يا ${currentUser.name} 🟢`);
   };
 
   return (
@@ -71,53 +82,60 @@ export const QuickAttendanceWidget: React.FC = () => {
         </div>
       )}
 
-      {/* Case 1: Not checked in yet today */}
+      {/* الحالة 1: لم يتم الضغط على بداية الدوام بعد */}
       {!todayRecord && (
         <button
           type="button"
           onClick={handleCheckIn}
-          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs hover:scale-102 shrink-0"
-          title="تسجيل حضور اليوم في منظومة العمل"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs hover:scale-102 shrink-0 active:scale-98"
+          title="اضغط هنا لتسجيل بداية الدوام اليوم"
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-          <span className="hidden xl:inline">تسجيل حضور 🟢</span>
-          <span className="xl:hidden text-[11px]">حضور 🟢</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-200 animate-pulse shrink-0" />
+          <Clock className="w-3.5 h-3.5 text-white shrink-0" />
+          <span>بداية الدوام 🟢</span>
         </button>
       )}
 
-      {/* Case 2: Checked in and currently on duty */}
+      {/* الحالة 2: تم تسجيل بداية الدوام وهو قيد العمل الآن ولم يضغط على نهاية الدوام */}
       {todayRecord && !todayRecord.checkOutTime && (
-        <div className="flex items-center gap-1 bg-slate-100/90 border border-slate-200/90 rounded-lg p-0.5 shadow-2xs shrink-0">
-          <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 text-[11px] font-bold text-slate-700">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-            <span className="hidden sm:inline">في الدوام:</span>
+        <div className="flex items-center gap-1.5 bg-emerald-50/90 border border-emerald-300 rounded-lg p-1 shadow-2xs shrink-0">
+          <div className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold text-emerald-900">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="hidden sm:inline">في الدوام منذ:</span>
             <span className="font-mono text-emerald-700 text-[10px] sm:text-[11px]">{todayRecord.checkInTime}</span>
           </div>
 
           <button
             type="button"
             onClick={handleCheckOut}
-            className="flex items-center gap-0.5 sm:gap-1 px-1.5 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-md text-[10px] sm:text-[11px] font-bold transition-colors cursor-pointer shrink-0"
-            title="تسجيل انصراف نهاية يوم العمل"
+            className="flex items-center gap-1 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-md text-[11px] font-bold transition-all cursor-pointer shadow-xs hover:scale-102 shrink-0 active:scale-98"
+            title="اضغط هنا لتسجيل نهاية الدوام والانصراف"
           >
-            <LogOut className="w-3 h-3 text-rose-600 shrink-0" />
-            <span className="hidden sm:inline">انصراف 🔴</span>
-            <span className="sm:hidden">انصراف</span>
+            <LogOut className="w-3 h-3 text-white shrink-0" />
+            <span>نهاية الدوام 🔴</span>
           </button>
         </div>
       )}
 
-      {/* Case 3: Completed work day */}
+      {/* الحالة 3: تم الضغط على نهاية الدوام واكتمل دوام اليوم */}
       {todayRecord && todayRecord.checkOutTime && (
         <div
-          className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[10px] sm:text-[11px] font-bold shrink-0"
-          title={`اكتمل دوام اليوم: من ${todayRecord.checkInTime} إلى ${todayRecord.checkOutTime}`}
+          className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg text-[10px] sm:text-[11px] font-bold shrink-0"
+          title={`اكتمل دوام اليوم: بداية الدوام ${todayRecord.checkInTime} ونهاية الدوام ${todayRecord.checkOutTime}`}
         >
           <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-          <span className="hidden sm:inline">اكتمل الدوام اليوم</span>
-          <span className="sm:hidden">دوام مكتمل</span>
-          <span className="font-mono text-[9px] sm:text-[10px] hidden sm:inline">({todayRecord.checkInTime})</span>
+          <span>اكتمل الدوام اليوم</span>
+          <span className="font-mono text-[9px] sm:text-[10px] text-blue-700 hidden md:inline">
+            ({todayRecord.checkInTime} - {todayRecord.checkOutTime})
+          </span>
+          <button
+            type="button"
+            onClick={handleResumeShift}
+            className="text-[9px] sm:text-[10px] bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+            title="تراجع عن الانصراف واستئناف الدوام إذا ضغطت بالخطأ"
+          >
+            استئناف
+          </button>
         </div>
       )}
     </div>

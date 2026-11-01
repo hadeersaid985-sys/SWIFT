@@ -30,11 +30,13 @@ import {
   Sparkles,
   PieChart,
   Sliders,
+  LogOut,
   X
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { TeamMember, AttendanceRecord, AttendanceStatus, CompanyExpense, MonthlyPayrollRecord } from '../../types/crm';
 import confetti from 'canvas-confetti';
+import { formatSystemTimeAr } from '../../utils/timeUtils';
 
 export const PayrollAttendanceView: React.FC = () => {
   const {
@@ -233,13 +235,14 @@ export const PayrollAttendanceView: React.FC = () => {
 
   // Handlers
   const handleQuickPresentAll = () => {
+    const nowTime = formatSystemTimeAr();
     const newRecords = team.map(m => ({
       memberId: m.id,
       memberName: m.name,
       date: selectedDate,
       status: 'present' as AttendanceStatus,
-      checkInTime: '09:00',
-      checkOutTime: '17:00'
+      checkInTime: nowTime || '09:00',
+      checkOutTime: undefined
     }));
     batchMarkAttendance(newRecords);
     confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
@@ -251,16 +254,25 @@ export const PayrollAttendanceView: React.FC = () => {
     lateMinutes = 0,
     notes = ''
   ) => {
+    const nowTime = formatSystemTimeAr();
     recordAttendance({
       memberId: member.id,
       memberName: member.name,
       date: selectedDate,
       status,
-      checkInTime: status === 'present' ? '09:00' : status === 'late' ? '09:35' : undefined,
-      checkOutTime: status === 'present' || status === 'late' ? '17:00' : undefined,
+      checkInTime: status === 'present' ? nowTime || '09:00' : status === 'late' ? nowTime || '09:35' : undefined,
+      checkOutTime: undefined, // لا يتم تحديد نهاية الدوام تلقائياً حتى يضغط عليها
       lateMinutes: status === 'late' ? lateMinutes || 35 : 0,
       notes,
       isExcused: false
+    });
+  };
+
+  const handleCheckOutMember = (record: AttendanceRecord) => {
+    const nowTime = formatSystemTimeAr();
+    updateAttendanceRecord(record.id, {
+      checkOutTime: nowTime || '17:00',
+      notes: (record.notes ? record.notes + ' • ' : '') + `نهاية الدوام: ${nowTime || '17:00'}`
     });
   };
 
@@ -1093,7 +1105,7 @@ export const PayrollAttendanceView: React.FC = () => {
                 <tbody className="divide-y divide-slate-100">
                   {filteredTeam.map(member => {
                     const rec = selectedDateAttendanceMap[member.id];
-                    const status = rec?.status || 'present';
+                    const status = rec?.status;
 
                     return (
                       <tr key={member.id} className="hover:bg-slate-50/70 transition-colors">
@@ -1120,11 +1132,23 @@ export const PayrollAttendanceView: React.FC = () => {
 
                         {/* Status Badge */}
                         <td className="py-3 px-3 text-center">
-                          {status === 'present' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px]">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              <span>حاضر (Present)</span>
+                          {!status ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-bold text-[10px]">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              <span>لم يبدأ الدوام بعد</span>
                             </span>
+                          ) : status === 'present' ? (
+                            rec?.checkOutTime ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[10px]">
+                                <CheckCircle2 className="w-3 h-3 text-blue-600" />
+                                <span>اكتمل الدوام ✓</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-[10px]">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                <span>في الدوام الآن</span>
+                              </span>
+                            )
                           ) : status === 'late' ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold text-[10px]">
                               <Clock className="w-3 h-3 text-amber-600" />
@@ -1144,12 +1168,12 @@ export const PayrollAttendanceView: React.FC = () => {
 
                         {/* Check-in */}
                         <td className="py-3 px-3 text-center font-mono font-bold text-slate-700">
-                          {rec?.checkInTime || (status === 'present' ? '09:00' : status === 'late' ? '09:35' : '--')}
+                          {rec?.checkInTime || '--'}
                         </td>
 
                         {/* Check-out */}
                         <td className="py-3 px-3 text-center font-mono font-bold text-slate-700">
-                          {rec?.checkOutTime || (status === 'present' || status === 'late' ? '17:00' : '--')}
+                          {rec?.checkOutTime ? rec.checkOutTime : (rec?.checkInTime ? <span className="text-emerald-600 text-[11px]">قيد الدوام...</span> : '--')}
                         </td>
 
                         {/* Late Minutes & Deduction */}
@@ -1175,40 +1199,52 @@ export const PayrollAttendanceView: React.FC = () => {
 
                         {/* Actions */}
                         <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleSetMemberAttendance(member, 'present')}
-                              className={`p-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
-                                status === 'present'
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-slate-100 hover:bg-emerald-100 text-emerald-800'
-                              }`}
-                              title="تسجيل حاضر"
-                            >
-                              حاضر ✓
-                            </button>
-                            <button
-                              onClick={() => handleSetMemberAttendance(member, 'late', 40, 'تأخير')}
-                              className={`p-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
-                                status === 'late'
-                                  ? 'bg-amber-600 text-white'
-                                  : 'bg-slate-100 hover:bg-amber-100 text-amber-800'
-                              }`}
-                              title="تسجيل متأخر"
-                            >
-                              تأخير ⏱️
-                            </button>
-                            <button
-                              onClick={() => handleSetMemberAttendance(member, 'absent', 0, 'غياب بدون إذن')}
-                              className={`p-1.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
-                                status === 'absent'
-                                  ? 'bg-rose-600 text-white'
-                                  : 'bg-slate-100 hover:bg-rose-100 text-rose-800'
-                              }`}
-                              title="تسجيل غائب (خصم يوم)"
-                            >
-                              غياب ✕
-                            </button>
+                          <div className="flex items-center justify-center gap-1 flex-wrap">
+                            {!rec ? (
+                              <>
+                                <button
+                                  onClick={() => handleSetMemberAttendance(member, 'present')}
+                                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-2xs hover:scale-102"
+                                  title="تسجيل بداية الدوام"
+                                >
+                                  <Clock className="w-3 h-3" />
+                                  <span>بداية الدوام 🟢</span>
+                                </button>
+                                <button
+                                  onClick={() => handleSetMemberAttendance(member, 'late', 40, 'تأخير')}
+                                  className="p-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all bg-slate-100 hover:bg-amber-100 text-amber-800"
+                                  title="تسجيل متأخر"
+                                >
+                                  تأخير ⏱️
+                                </button>
+                                <button
+                                  onClick={() => handleSetMemberAttendance(member, 'absent', 0, 'غياب بدون إذن')}
+                                  className="p-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all bg-slate-100 hover:bg-rose-100 text-rose-800"
+                                  title="تسجيل غائب (خصم يوم)"
+                                >
+                                  غياب ✕
+                                </button>
+                              </>
+                            ) : !rec.checkOutTime ? (
+                              <>
+                                <button
+                                  onClick={() => handleCheckOutMember(rec)}
+                                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1 shadow-2xs hover:scale-102"
+                                  title="تسجيل نهاية الدوام والانصراف"
+                                >
+                                  <LogOut className="w-3 h-3" />
+                                  <span>نهاية الدوام 🔴</span>
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => updateAttendanceRecord(rec.id, { checkOutTime: undefined })}
+                                className="px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all bg-slate-100 hover:bg-blue-100 text-blue-700 border border-slate-200"
+                                title="استئناف الدوام وإلغاء الانصراف إذا تم الضغط بالخطأ"
+                              >
+                                استئناف
+                              </button>
+                            )}
                             {status === 'late' && (
                               <button
                                 onClick={() => {

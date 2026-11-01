@@ -127,7 +127,14 @@ async function startServer() {
         });
       }
 
-      // Normalize Islam and Mariam in team
+      // Remove protected members from deletedTeamMemberIds if present
+      if (Array.isArray(parsed.deletedTeamMemberIds)) {
+        parsed.deletedTeamMemberIds = parsed.deletedTeamMemberIds.filter(
+          (id: string) => id !== 'user-mariam' && id !== 'user-1793016396281' && id !== 'user-roaa' && id !== 'user-1'
+        );
+      }
+
+      // Normalize Islam, Mariam, and Roaa in team with strict isolation
       if (Array.isArray(parsed.team)) {
         const islamInTeam = parsed.team.find((m: any) => m.id === 'user-islam' || (m.username || '').toLowerCase() === 'islam');
         if (islamInTeam) {
@@ -140,16 +147,59 @@ async function startServer() {
           parsed.team = parsed.team.filter((m: any) => m.id !== 'user-1793025675186' && m.id !== 'user-1793016178916');
         }
 
-        const mariamInTeam = parsed.team.find((m: any) => m.id === 'user-mariam' || m.id === 'user-1793097751331' || (m.username || '').toLowerCase() === 'mariam');
-        if (mariamInTeam) {
+        let mariamInTeam = parsed.team.find((m: any) => m.id === 'user-mariam' || m.id === 'user-1793097751331' || (m.username || '').toLowerCase() === 'mariam');
+        if (!mariamInTeam) {
+          mariamInTeam = {
+            id: 'user-mariam',
+            name: 'Mariam',
+            username: 'Mariam',
+            role: 'Web Developer',
+            department: 'التطوير والتقنية',
+            employeeCode: 'SM-106',
+            phone: '01012345678',
+            email: 'mariam@swiftmynd.com',
+            joinedDate: '2026-03-01',
+            status: 'active',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+            password: 'Sw!ft5J8U%VgqiN'
+          };
+          parsed.team.push(mariamInTeam);
+        } else {
           mariamInTeam.id = 'user-mariam';
           mariamInTeam.username = 'Mariam';
           mariamInTeam.name = 'Mariam';
           mariamInTeam.role = 'Web Developer';
           mariamInTeam.department = 'التطوير والتقنية';
           mariamInTeam.employeeCode = 'SM-106';
-          // Filter out duplicate IDs
-          parsed.team = parsed.team.filter((m: any) => m === mariamInTeam || (m.id !== 'user-1793097751331' && m.id !== 'user-1793016396281'));
+        }
+        // Filter out duplicate IDs for Mariam
+        parsed.team = parsed.team.filter((m: any) => m === mariamInTeam || (m.id !== 'user-1793097751331' && m.id !== 'user-1793016396281'));
+
+        // Roaa isolation & normalization
+        let roaaInTeam = parsed.team.find((m: any) => m.id === 'user-roaa' || (m.username || '').toLowerCase() === 'roaa_hetemy' || (m.username || '').toLowerCase() === 'roaa');
+        if (!roaaInTeam) {
+          roaaInTeam = {
+            id: 'user-roaa',
+            name: 'رواء',
+            username: 'roaa_hetemy',
+            role: 'Content Creator',
+            department: 'صناع المحتوى',
+            employeeCode: 'SM-109',
+            phone: '01011223344',
+            email: 'roaa@swiftmynd.com',
+            joinedDate: '2026-03-01',
+            status: 'active',
+            avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+            password: 'Sw!ftzg2scMrcNA'
+          };
+          parsed.team.push(roaaInTeam);
+        } else {
+          roaaInTeam.id = 'user-roaa';
+          roaaInTeam.name = 'رواء';
+          roaaInTeam.username = 'roaa_hetemy';
+          roaaInTeam.role = 'Content Creator';
+          roaaInTeam.department = 'صناع المحتوى';
+          roaaInTeam.employeeCode = 'SM-109';
         }
       }
 
@@ -425,6 +475,11 @@ async function startServer() {
     try {
       const memberId = req.params.id;
       if (!memberId) return res.status(400).json({ error: 'memberId required' });
+
+      // Core protected members cannot be deleted
+      if (memberId === 'user-1' || memberId === 'user-mariam' || memberId === 'user-roaa') {
+        return res.status(403).json({ error: 'Cannot delete protected account' });
+      }
 
       const current = readCurrentData();
       const teamList: any[] = current.team || [];
