@@ -501,6 +501,20 @@ export async function saveTeamPasswordToFirestore(memberId: string, newPassword:
 }
 
 /**
+ * Delete a Team Member from Firestore database
+ */
+export async function deleteTeamMemberFromFirestore(memberId: string): Promise<void> {
+  if (!memberId) return;
+  try {
+    const memberRef = doc(db, TEAM_COLLECTION, memberId);
+    await deleteDoc(memberRef);
+    console.log(`[Firebase] Team member deleted from Firestore: ${memberId}`);
+  } catch (error) {
+    console.error('[Firebase] Error deleting team member from Firestore:', error);
+  }
+}
+
+/**
  * Real-time listener for Team Members and Passwords across all devices
  */
 export function onTeamMembersSnapshot(onUpdate: (team: TeamMember[]) => void) {

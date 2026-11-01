@@ -60,6 +60,46 @@ async function startServer() {
     });
   }
 
+  function sanitizeTeam(list: any[]): any[] {
+    if (!Array.isArray(list)) return [];
+    const seenUsernames = new Set<string>();
+    const sanitized: any[] = [];
+    for (const m of list) {
+      if (!m) continue;
+      const uname = (m.username || '').toLowerCase().trim();
+      const id = m.id || '';
+      const code = (m.employeeCode || '').trim();
+      const name = (m.name || '').trim();
+
+      // Permanently eliminate duplicate SM-109 Mariam account
+      if (id === 'user-1793097751331') continue;
+      if (code === 'SM-109' && (uname === 'mariam' || name.toLowerCase().includes('mariam'))) continue;
+
+      // Mariam canonical enforcement: must be SM-106, Web Developer
+      if (uname === 'mariam' || id === 'user-mariam') {
+        if (seenUsernames.has('mariam')) continue;
+        seenUsernames.add('mariam');
+        sanitized.push({
+          ...m,
+          id: 'user-mariam',
+          name: 'Mariam',
+          username: 'Mariam',
+          employeeCode: 'SM-106',
+          role: 'Web Developer',
+          department: 'التطوير والتقنية'
+        });
+        continue;
+      }
+
+      if (uname) {
+        if (seenUsernames.has(uname)) continue;
+        seenUsernames.add(uname);
+      }
+      sanitized.push(m);
+    }
+    return sanitized;
+  }
+
   // Safe file reader with fallback and automatic sync
   function readCurrentData(): any {
     try {
@@ -89,13 +129,17 @@ async function startServer() {
           }
 
           if (Array.isArray(latestParsed.team) && latestParsed.team.length > 0) {
+            const delIds = new Set([
+              ...((parsed.deletedTeamMemberIds || [])),
+              ...((latestParsed.deletedTeamMemberIds || []))
+            ]);
             const currentTeamMap = new Map<string, any>((parsed.team || []).map((m: any) => [m.id, m]));
             latestParsed.team.forEach((m: any) => {
-              if (!currentTeamMap.has(m.id)) {
+              if (m && m.id && !currentTeamMap.has(m.id) && !delIds.has(m.id) && m.id !== 'user-1793097751331') {
                 currentTeamMap.set(m.id, m);
               }
             });
-            parsed.team = Array.from(currentTeamMap.values());
+            parsed.team = Array.from(currentTeamMap.values()).filter((m: any) => !delIds.has(m.id) && m.id !== 'user-1793097751331');
           }
 
           if (Array.isArray(latestParsed.chatMessages) && latestParsed.chatMessages.length > 0) {
@@ -151,15 +195,22 @@ async function startServer() {
         });
       }
 
-      // Remove protected members from deletedTeamMemberIds if present
+      // Only keep primary admin protected from deletion list
       if (Array.isArray(parsed.deletedTeamMemberIds)) {
         parsed.deletedTeamMemberIds = parsed.deletedTeamMemberIds.filter(
-          (id: string) => id !== 'user-mariam' && id !== 'user-1793016396281' && id !== 'user-roaa' && id !== 'user-1'
+          (id: string) => id !== 'user-1'
         );
       }
+      const delMemberIdsSet = new Set<string>([
+        ...(parsed.deletedTeamMemberIds || []),
+        'user-1793097751331' // Always keep duplicate SM-109 account deleted
+      ]);
 
-      // Normalize Islam, Mariam, and Roaa in team with strict isolation
+      // Normalize team members and strictly exclude deleted members
       if (Array.isArray(parsed.team)) {
+        // Strip out permanently deleted member IDs and duplicate SM-109 account
+        parsed.team = parsed.team.filter((m: any) => !delMemberIdsSet.has(m.id) && m.id !== 'user-1793097751331');
+
         const islamInTeam = parsed.team.find((m: any) => m.id === 'user-islam' || (m.username || '').toLowerCase() === 'islam');
         if (islamInTeam) {
           islamInTeam.id = 'user-islam';
@@ -171,24 +222,8 @@ async function startServer() {
           parsed.team = parsed.team.filter((m: any) => m.id !== 'user-1793025675186' && m.id !== 'user-1793016178916');
         }
 
-        let mariamInTeam = parsed.team.find((m: any) => m.id === 'user-mariam' || m.id === 'user-1793097751331' || (m.username || '').toLowerCase() === 'mariam');
-        if (!mariamInTeam) {
-          mariamInTeam = {
-            id: 'user-mariam',
-            name: 'Mariam',
-            username: 'Mariam',
-            role: 'Web Developer',
-            department: 'التطوير والتقنية',
-            employeeCode: 'SM-106',
-            phone: '01012345678',
-            email: 'mariam@swiftmynd.com',
-            joinedDate: '2026-03-01',
-            status: 'active',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-            password: 'Sw!ft5J8U%VgqiN'
-          };
-          parsed.team.push(mariamInTeam);
-        } else {
+        let mariamInTeam = parsed.team.find((m: any) => m.id === 'user-mariam' || (m.username || '').toLowerCase() === 'mariam');
+        if (mariamInTeam && !delMemberIdsSet.has(mariamInTeam.id)) {
           mariamInTeam.id = 'user-mariam';
           mariamInTeam.username = 'Mariam';
           mariamInTeam.name = 'Mariam';
@@ -196,8 +231,8 @@ async function startServer() {
           mariamInTeam.department = 'التطوير والتقنية';
           mariamInTeam.employeeCode = 'SM-106';
         }
-        // Filter out duplicate IDs for Mariam
-        parsed.team = parsed.team.filter((m: any) => m === mariamInTeam || (m.id !== 'user-1793097751331' && m.id !== 'user-1793016396281'));
+        // Filter out duplicate IDs for Mariam and any deleted members
+        parsed.team = parsed.team.filter((m: any) => !delMemberIdsSet.has(m.id) && m.id !== 'user-1793097751331' && m.id !== 'user-1793016396281');
 
         // Roaa isolation & normalization
         let roaaInTeam = parsed.team.find((m: any) => m.id === 'user-roaa' || (m.username || '').toLowerCase() === 'roaa_hetemy' || (m.username || '').toLowerCase() === 'roaa');
@@ -247,6 +282,7 @@ async function startServer() {
               }))
           }));
       }
+      parsed.team = sanitizeTeam(parsed.team || []);
       return parsed;
     } catch (e) {
       console.error('[SWIFTMYND] Error reading data store:', e);
@@ -258,6 +294,9 @@ async function startServer() {
   function saveData(data: any): boolean {
     try {
       data.updatedAt = new Date().toISOString();
+      if (Array.isArray(data.team)) {
+        data.team = sanitizeTeam(data.team);
+      }
       const serialized = JSON.stringify(data, null, 2);
       fs.writeFileSync(DATA_FILE, serialized, 'utf-8');
       fs.writeFileSync(LATEST_FILE, serialized, 'utf-8');
@@ -610,17 +649,20 @@ async function startServer() {
       const memberId = req.params.id;
       if (!memberId) return res.status(400).json({ error: 'memberId required' });
 
-      // Core protected members cannot be deleted
-      if (memberId === 'user-1' || memberId === 'user-mariam' || memberId === 'user-roaa') {
-        return res.status(403).json({ error: 'Cannot delete protected account' });
+      // Only primary admin account cannot be deleted
+      if (memberId === 'user-1' || memberId === 'user-admin') {
+        return res.status(403).json({ error: 'Cannot delete primary admin account' });
       }
 
       const current = readCurrentData();
       const teamList: any[] = current.team || [];
-      current.team = teamList.filter((m: any) => m.id !== memberId && m.id !== 'user-1');
+      current.team = teamList.filter((m: any) => m.id !== memberId && m.employeeCode !== memberId && m.id !== 'user-1');
 
       const deletedSet = new Set(current.deletedTeamMemberIds || []);
       deletedSet.add(memberId);
+      if (memberId === 'user-1793097751331' || memberId === 'SM-109') {
+        deletedSet.add('user-1793097751331');
+      }
       current.deletedTeamMemberIds = Array.from(deletedSet);
 
       saveData(current);
@@ -1192,14 +1234,16 @@ async function startServer() {
       // Smart merge team: incoming team array from admin represents active team members.
       const deletedMemberIds = new Set([
         ...((currentData.deletedTeamMemberIds || [])),
-        ...((incoming.deletedTeamMemberIds || []))
+        ...((incoming.deletedTeamMemberIds || [])),
+        'user-1793097751331'
       ]);
       let mergedTeam = currentData.team || [];
       if (Array.isArray(incoming.team)) {
-        mergedTeam = incoming.team.filter((m: any) => !deletedMemberIds.has(m.id));
+        mergedTeam = incoming.team.filter((m: any) => !deletedMemberIds.has(m.id) && m.id !== 'user-1793097751331');
       } else {
-        mergedTeam = mergedTeam.filter((m: any) => !deletedMemberIds.has(m.id));
+        mergedTeam = mergedTeam.filter((m: any) => !deletedMemberIds.has(m.id) && m.id !== 'user-1793097751331');
       }
+      mergedTeam = sanitizeTeam(mergedTeam);
 
       // Smart merge client renewals: incoming clientRenewals from admin take precedence
       let mergedRenewals = cleanClientRenewals(currentData.clientRenewals || []);

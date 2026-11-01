@@ -95,6 +95,7 @@ import {
   deleteClientRenewalFromFirestore,
   onClientRenewalsSnapshot,
   saveTeamMemberToFirestore,
+  deleteTeamMemberFromFirestore,
   saveTeamPasswordToFirestore,
   onTeamMembersSnapshot,
   seedInitialTeamIfEmpty,
@@ -569,6 +570,47 @@ export const ensureValidUser = (u: any): TeamMember => {
   }
 
   return valid;
+};
+
+export const sanitizeTeamList = (list: any[]): TeamMember[] => {
+  if (!Array.isArray(list)) return [];
+  const seenUsernames = new Set<string>();
+  const sanitized: TeamMember[] = [];
+
+  for (const m of list) {
+    if (!m) continue;
+    const uname = (m.username || '').toLowerCase().trim();
+    const id = m.id || '';
+    const code = (m.employeeCode || '').trim();
+    const name = (m.name || '').trim();
+
+    // Permanently eliminate duplicate SM-109 Mariam account
+    if (id === 'user-1793097751331') continue;
+    if (code === 'SM-109' && (uname === 'mariam' || name.toLowerCase().includes('mariam'))) continue;
+
+    // Mariam canonical enforcement: must be SM-106, Web Developer
+    if (uname === 'mariam' || id === 'user-mariam') {
+      if (seenUsernames.has('mariam')) continue;
+      seenUsernames.add('mariam');
+      sanitized.push({
+        ...m,
+        id: 'user-mariam',
+        name: 'Mariam',
+        username: 'Mariam',
+        employeeCode: 'SM-106',
+        role: 'Web Developer',
+        department: 'التطوير والتقنية'
+      });
+      continue;
+    }
+
+    if (uname) {
+      if (seenUsernames.has(uname)) continue;
+      seenUsernames.add(uname);
+    }
+    sanitized.push(m);
+  }
+  return sanitized;
 };
 
 export const ensureValidBrandConfig = (b: any): BrandConfig => {
@@ -1232,14 +1274,14 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const parsedDel = JSON.parse(savedDeleted);
           if (Array.isArray(parsedDel)) {
             parsedDel.forEach((id: string) => {
-              // Never treat core members Mariam or Roaa as deleted
-              if (id !== 'user-mariam' && id !== 'user-roaa' && id !== 'user-1793016396281' && id !== 'user-1793097751331') {
+              if (id !== 'user-1' && id !== 'user-admin') {
                 deletedIds.add(id);
               }
             });
           }
         } catch {}
       }
+      deletedIds.add('user-1793097751331');
 
       const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}team`);
       if (saved) {
@@ -1327,11 +1369,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
             return memberObj;
           });
-          return [...merged, ...missingMembers];
+          const sanitized = sanitizeTeamList([...merged, ...missingMembers]);
+          safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(sanitized));
+          return sanitized;
         }
       }
     } catch {}
-    return INITIAL_TEAM;
+    const defaultTeam = sanitizeTeamList(INITIAL_TEAM);
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(defaultTeam));
+    return defaultTeam;
   });
 
   const [emails, setEmails] = useState<EmailMessage[]>(() => {
@@ -4566,9 +4612,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteTeamMember = (id: string) => {
-    // Strictly protect core team members (Admin, Mariam, Roaa) from deletion
-    if (id === 'user-mariam' || id === 'user-roaa' || id === adminUserId || id === 'user-1') {
-      console.warn(`[Team] Protected account cannot be deleted: ${id}`);
+    // Only protect primary admin account from deletion
+    if (id === adminUserId || id === 'user-1' || id === 'user-admin') {
+      console.warn(`[Team] Protected admin account cannot be deleted: ${id}`);
       return;
     }
 
@@ -4577,15 +4623,25 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const delList: string[] = savedDeleted ? JSON.parse(savedDeleted) : [];
       if (!delList.includes(id)) {
         delList.push(id);
-        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`, JSON.stringify(delList));
       }
+      if (id === 'user-1793097751331' || id === 'SM-109') {
+        if (!delList.includes('user-1793097751331')) delList.push('user-1793097751331');
+      }
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`, JSON.stringify(delList));
     } catch {}
 
     setTeam(prev => {
-      const updated = prev.filter(m => m.id !== id);
+      const updated = prev.filter(m => m.id !== id && m.employeeCode !== id && (id !== 'user-1793097751331' || m.id !== 'user-1793097751331'));
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
       return updated;
     });
+
+    try {
+      deleteTeamMemberFromFirestore(id);
+      if (id === 'user-1793097751331') {
+        deleteTeamMemberFromFirestore('user-1793097751331');
+      }
+    } catch {}
 
     try {
       fetch(`/api/team/${id}`, { method: 'DELETE' }).catch(() => {});
@@ -4595,8 +4651,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteTeamMembers = (ids: string[]) => {
-    // Keep protected members safe
-    const protectedIds = new Set(['user-mariam', 'user-roaa', adminUserId, 'user-1']);
+    // Only protect primary admin
+    const protectedIds = new Set([adminUserId, 'user-1', 'user-admin']);
     const targetIds = ids.filter(id => !protectedIds.has(id));
     if (targetIds.length === 0) return;
 
@@ -4610,12 +4666,16 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
 
     setTeam(prev => {
-      const updated = prev.filter(m => !targetIds.includes(m.id) || protectedIds.has(m.id));
+      const targetSet = new Set(targetIds);
+      const updated = prev.filter(m => !targetSet.has(m.id) && !targetSet.has(m.employeeCode));
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(updated));
       return updated;
     });
 
     targetIds.forEach(id => {
+      try {
+        deleteTeamMemberFromFirestore(id);
+      } catch {}
       try {
         fetch(`/api/team/${id}`, { method: 'DELETE' }).catch(() => {});
       } catch {}
@@ -5065,15 +5125,19 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       unsubscribeTeam = onTeamMembersSnapshot(remoteTeam => {
         if (Array.isArray(remoteTeam) && remoteTeam.length > 0) {
+          const savedDeleted = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_team_ids`);
+          const delSet = new Set<string>(savedDeleted ? JSON.parse(savedDeleted) : []);
+          delSet.add('user-1793097751331');
+
           setTeam(prev => {
-            const memberMap = new Map(prev.map(m => [m.id, m]));
+            const memberMap = new Map(prev.filter(m => !delSet.has(m.id)).map(m => [m.id, m]));
             remoteTeam.forEach(m => {
-              if (m && m.id) {
+              if (m && m.id && !delSet.has(m.id) && m.id !== 'user-1793097751331') {
                 const existing = memberMap.get(m.id);
                 memberMap.set(m.id, { ...(existing || {}), ...m });
               }
             });
-            const merged = Array.from(memberMap.values());
+            const merged = sanitizeTeamList(Array.from(memberMap.values()).filter(m => !delSet.has(m.id) && m.id !== 'user-1793097751331'));
             safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(merged));
             return merged;
           });
@@ -5237,11 +5301,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           if (payload.type === 'TEAM_MUTATION' || payload.type === 'FULL_SYNC') {
             if (Array.isArray(payload.team) && payload.team.length > 0) {
+              const cleanTeam = sanitizeTeamList(payload.team);
               setTeam(prev => {
-                if (JSON.stringify(prev) !== JSON.stringify(payload.team)) {
+                if (JSON.stringify(prev) !== JSON.stringify(cleanTeam)) {
                   isSyncingFromServerRef.current = true;
-                  safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(payload.team));
-                  return payload.team;
+                  safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(cleanTeam));
+                  return cleanTeam;
                 }
                 return prev;
               });
@@ -5345,8 +5410,9 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_tasks`, JSON.stringify(serverData.deletedTasks));
           }
           if (Array.isArray(serverData.team) && serverData.team.length > 0) {
-            setTeam(serverData.team);
-            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(serverData.team));
+            const cleanTeam = sanitizeTeamList(serverData.team);
+            setTeam(cleanTeam);
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(cleanTeam));
 
             // Sync currentUser with serverData.team while preserving active avatar and credentials
             setCurrentUser(prevUser => {
@@ -5530,11 +5596,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
           }
           if (serverData && Array.isArray(serverData.team) && serverData.team.length > 0) {
+            const cleanTeam = sanitizeTeamList(serverData.team);
             setTeam(prev => {
-              if (prev.length !== serverData.team.length) {
+              if (JSON.stringify(prev) !== JSON.stringify(cleanTeam)) {
                 isSyncingFromServerRef.current = true;
-                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(serverData.team));
-                return serverData.team;
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}team`, JSON.stringify(cleanTeam));
+                return cleanTeam;
               }
               return prev;
             });
