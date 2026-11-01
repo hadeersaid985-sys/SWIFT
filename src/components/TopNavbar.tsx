@@ -41,7 +41,9 @@ import {
   FolderGit2,
   UserCheck,
   MessagesSquare,
-  Menu
+  Menu,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { useCRM } from '../context/CRMContext';
 import { useChat } from '../context/ChatContext';
@@ -49,6 +51,14 @@ import { SwiftMyndLogo } from './common/SwiftMyndLogo';
 import { QuickAttendanceWidget } from './attendance/QuickAttendanceWidget';
 import { SystemClockWidget } from './common/SystemClockWidget';
 import { WeeklyExecutiveModal } from './reports/WeeklyExecutiveModal';
+import {
+  isSoundNotificationEnabled,
+  setSoundNotificationEnabled,
+  playAudioNotification,
+  requestNotificationPermission,
+  getNotificationPermissionStatus,
+  triggerUniversalNotification
+} from '../utils/notificationSystem';
 
 interface TopNavbarProps {
   onOpenLoginModal?: () => void;
@@ -139,6 +149,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showSearchPopover, setShowSearchPopover] = useState(false);
   const [showWeeklyModal, setShowWeeklyModal] = useState(false);
+  const [isSoundOn, setIsSoundOn] = useState<boolean>(() => isSoundNotificationEnabled());
 
   // Top action confirmation modal
   const [confirmModal, setConfirmModal] = useState<{
@@ -779,6 +790,24 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
           )}
         </button>
 
+        {/* Quick Audio Mute/Unmute */}
+        <button
+          onClick={() => {
+            const next = !isSoundOn;
+            setIsSoundOn(next);
+            setSoundNotificationEnabled(next);
+            if (next) playAudioNotification('chat');
+          }}
+          className={`p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
+            isSoundOn
+              ? 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50'
+              : 'text-rose-500 hover:text-rose-700 hover:bg-rose-50'
+          }`}
+          title={isSoundOn ? 'صوت التنبيهات مفعّل 🔊 (انقر للكتم)' : 'صوت التنبيهات مكتوم 🔇 (انقر للتشغيل)'}
+        >
+          {isSoundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+        </button>
+
         {/* Notifications Bell */}
         <div className="relative shrink-0" ref={notifRef}>
           <button
@@ -807,6 +836,62 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
                 >
                   تحديد الكل كمقروء
                 </button>
+              </div>
+
+              {/* Sound & Push Notification status bar */}
+              <div className="p-2 my-2 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-extrabold text-indigo-950 flex items-center gap-1">
+                    <Volume2 className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>تنبيهات الصوت والتطبيق:</span>
+                  </span>
+                  <button
+                    onClick={async () => {
+                      const res = await requestNotificationPermission();
+                      if (res === 'granted') {
+                        triggerUniversalNotification({
+                          kind: 'task',
+                          title: '✅ تم تفعيل إشعارات سويفت مايند',
+                          body: 'تصلك تنبيهات المهام، المنشن، والشات بالصوت على الموبايل والكمبيوتر.'
+                        });
+                      } else {
+                        playAudioNotification('task');
+                      }
+                    }}
+                    className="text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2 py-0.5 rounded-lg shadow-2xs cursor-pointer transition-colors"
+                  >
+                    تفعيل على الجهاز 📲
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-[10px] pt-0.5">
+                  <span className="text-slate-500 font-medium">تجربة نغمات التنبيه:</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); playAudioNotification('task'); }}
+                      className="px-1.5 py-0.5 bg-white hover:bg-amber-100 text-amber-900 border border-slate-200 rounded font-bold cursor-pointer transition-colors"
+                      title="تجربة رنة المهمة"
+                    >
+                      📋 تاسك
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); playAudioNotification('mention'); }}
+                      className="px-1.5 py-0.5 bg-white hover:bg-purple-100 text-purple-900 border border-slate-200 rounded font-bold cursor-pointer transition-colors"
+                      title="تجربة رنة المنشن"
+                    >
+                      🔔 منشن
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); playAudioNotification('chat'); }}
+                      className="px-1.5 py-0.5 bg-white hover:bg-emerald-100 text-emerald-900 border border-slate-200 rounded font-bold cursor-pointer transition-colors"
+                      title="تجربة رنة الشات"
+                    >
+                      💬 شات
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 mt-1">

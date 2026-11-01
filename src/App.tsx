@@ -38,6 +38,7 @@ import { SwiftMyndLogo } from './components/common/SwiftMyndLogo';
 import { MobileBottomNav } from './components/navigation/MobileBottomNav';
 import { WorkQueueView } from './components/workqueue/WorkQueueView';
 import { GlobalLiveNotification } from './components/common/GlobalLiveNotification';
+import { NotificationPermissionBanner } from './components/common/NotificationPermissionBanner';
 import { ShieldAlert, ArrowLeft, UserCheck, KeyRound, LogIn, LogOut, BellRing, Sparkles } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -268,6 +269,9 @@ const AppContent: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* Notification Permission & Audio Chimes Banner for Mobile & PC */}
+        <NotificationPermissionBanner />
 
         {/* Top Navbar */}
         <TopNavbar

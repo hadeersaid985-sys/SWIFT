@@ -10,6 +10,7 @@ import {
   clearAllChatMessagesFromFirestore
 } from '../firebase';
 import { isSameUserId } from '../utils/chatSecurity';
+import { triggerUniversalNotification, playAudioNotification } from '../utils/notificationSystem';
 import { useCRM } from './CRMContext';
 
 interface SendMessagePayload {
@@ -69,23 +70,7 @@ const isDemoMessage = (id: string) =>
 
 // Pleasant short tone synthesized with Web Audio API
 const playTone = () => {
-  try {
-    if (typeof window === 'undefined') return;
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.25);
-  } catch {}
+  playAudioNotification('chat');
 };
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -204,19 +189,39 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return next;
             });
 
-            // If message was sent by someone else, trigger live toast & chime
+            // If message was sent by someone else, trigger live toast, audio chime, and push notification
             if (currentUser && !isSameUserId(incoming.senderId, currentUser.id)) {
               const isDirectToMe = isSameUserId(incoming.recipientId, currentUser.id);
               const isChannel = Boolean(incoming.channelId);
 
               if (isDirectToMe || isChannel) {
-                if (soundEnabled) playTone();
-                if (typeof window !== 'undefined') {
-                  window.dispatchEvent(
-                    new CustomEvent('swiftmynd:chat_notification', {
-                      detail: { message: incoming, isDirect: isDirectToMe }
-                    })
-                  );
+                // Check if currentUser was mentioned in this chat message
+                const isMentioned = Boolean(
+                  (incoming.text && currentUser.name && incoming.text.includes(currentUser.name)) ||
+                  (Array.isArray(incoming.mentionedUserIds) && incoming.mentionedUserIds.some(id => isSameUserId(id, currentUser.id)))
+                );
+
+                if (isMentioned) {
+                  triggerUniversalNotification({
+                    kind: 'mention',
+                    title: `🔔 منشن لك من ${incoming.senderName || 'عضو الفريق'}`,
+                    body: incoming.text || 'قام بالإشارة إليك في محادثة الفريق',
+                    senderName: incoming.senderName,
+                    senderAvatar: incoming.senderAvatar,
+                    channelId: incoming.channelId,
+                    data: incoming
+                  });
+                } else {
+                  triggerUniversalNotification({
+                    kind: 'chat',
+                    title: isDirectToMe ? `💬 رسالة خاصة من ${incoming.senderName || 'عضو الفريق'}` : `💬 رسالة جديدة في #${incoming.channelId || 'عام'}`,
+                    body: incoming.text || (incoming.attachments?.length ? '📎 مرفق ملف / صورة' : 'رسالة جديدة'),
+                    senderName: incoming.senderName,
+                    senderAvatar: incoming.senderAvatar,
+                    channelId: incoming.channelId,
+                    recipientId: incoming.recipientId,
+                    data: incoming
+                  });
                 }
               }
             }

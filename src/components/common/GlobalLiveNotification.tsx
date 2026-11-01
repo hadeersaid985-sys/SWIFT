@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MessageSquare, CheckSquare, X, ArrowLeft, BellRing } from 'lucide-react';
+import { MessageSquare, CheckSquare, X, ArrowLeft, BellRing, AtSign } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { useChat } from '../../context/ChatContext';
 import { ChatMessage, Task } from '../../types/crm';
+import {
+  playAudioNotification,
+  triggerUniversalNotification,
+  NotificationKind,
+  NotificationPayload
+} from '../../utils/notificationSystem';
 
 interface LiveToast {
   id: string;
-  type: 'chat' | 'task';
+  type: NotificationKind;
   title: string;
   subtitle: string;
   senderName: string;
@@ -15,46 +21,9 @@ interface LiveToast {
   data: any;
 }
 
-// Crisp dual-tone notification sound via Web Audio API
+// Export for legacy callers
 export const playNotificationChime = (kind: 'chat' | 'task' = 'chat') => {
-  try {
-    if (typeof window === 'undefined') return;
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-
-    if (kind === 'task') {
-      // Triumphant 3-note ascending chime for new task assignment
-      const notes = [440, 554.37, 659.25]; // A4, C#5, E5
-      notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.3);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.1);
-        osc.stop(ctx.currentTime + idx * 0.1 + 0.3);
-      });
-    } else {
-      // Pleasant dual chime for chat message
-      const notes = [587.33, 880]; // D5, A5
-      notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime + idx * 0.08);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.22);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.08);
-        osc.stop(ctx.currentTime + idx * 0.08 + 0.22);
-      });
-    }
-  } catch {}
+  playAudioNotification(kind);
 };
 
 export const GlobalLiveNotification: React.FC = () => {
@@ -89,12 +58,25 @@ export const GlobalLiveNotification: React.FC = () => {
 
   // Listen to window custom events
   useEffect(() => {
+    const handleUniversalNotif = (e: Event) => {
+      const customEvent = e as CustomEvent<NotificationPayload>;
+      const payload = customEvent.detail;
+      if (!payload) return;
+
+      addToast({
+        type: payload.kind,
+        title: payload.title,
+        subtitle: payload.body,
+        senderName: payload.senderName || 'سويفت مايند',
+        senderAvatar: payload.senderAvatar,
+        data: payload.data || payload
+      });
+    };
+
     const handleChatNotif = (e: Event) => {
       const customEvent = e as CustomEvent<{ message: ChatMessage; isDirect: boolean }>;
       const msg = customEvent.detail?.message;
       if (!msg) return;
-
-      playNotificationChime('chat');
 
       const isDirect = customEvent.detail.isDirect;
       addToast({
@@ -112,8 +94,6 @@ export const GlobalLiveNotification: React.FC = () => {
       const task = customEvent.detail?.task;
       if (!task) return;
 
-      playNotificationChime('task');
-
       addToast({
         type: 'task',
         title: 'تم تكليفك بمهمة جديدة!',
@@ -124,12 +104,31 @@ export const GlobalLiveNotification: React.FC = () => {
       });
     };
 
+    const handleMentionNotif = (e: Event) => {
+      const customEvent = e as CustomEvent<{ title?: string; message?: string; senderName?: string; senderAvatar?: string; taskId?: string }>;
+      const detail = customEvent.detail;
+      if (!detail) return;
+
+      addToast({
+        type: 'mention',
+        title: detail.title || `منشن لك من ${detail.senderName || 'عضو الفريق'}`,
+        subtitle: detail.message || 'تمت الإشارة إليك في تعليق أو مهمة جديدة',
+        senderName: detail.senderName || 'تنبيه منشن',
+        senderAvatar: detail.senderAvatar,
+        data: detail
+      });
+    };
+
+    window.addEventListener('swiftmynd:universal_notification', handleUniversalNotif);
     window.addEventListener('swiftmynd:chat_notification', handleChatNotif);
     window.addEventListener('swiftmynd:task_notification', handleTaskNotif);
+    window.addEventListener('swiftmynd:mention_notification', handleMentionNotif);
 
     return () => {
+      window.removeEventListener('swiftmynd:universal_notification', handleUniversalNotif);
       window.removeEventListener('swiftmynd:chat_notification', handleChatNotif);
       window.removeEventListener('swiftmynd:task_notification', handleTaskNotif);
+      window.removeEventListener('swiftmynd:mention_notification', handleMentionNotif);
       Object.values(timeoutsRef.current).forEach(clearTimeout);
     };
   }, [addToast]);
@@ -138,12 +137,14 @@ export const GlobalLiveNotification: React.FC = () => {
     if (toast.type === 'chat') {
       const msg: ChatMessage = toast.data;
       setActiveTab('chat');
-      if (msg.channelId) {
+      if (msg?.channelId) {
         setActiveChat(msg.channelId, 'channel');
-      } else if (msg.senderId) {
+      } else if (msg?.senderId) {
         setActiveChat(msg.senderId, 'dm');
       }
     } else if (toast.type === 'task') {
+      setActiveTab('tasks');
+    } else if (toast.type === 'mention') {
       setActiveTab('tasks');
     }
     removeToast(toast.id);
@@ -159,23 +160,33 @@ export const GlobalLiveNotification: React.FC = () => {
     >
       {toasts.map(toast => {
         const isChat = toast.type === 'chat';
+        const isMention = toast.type === 'mention';
+        const isTask = toast.type === 'task';
+
+        let badgeColor = 'text-emerald-400';
+        let borderColor = 'border-emerald-500/40';
+        let barGradient = 'from-emerald-400 via-teal-400 to-cyan-400';
+        let btnGradient = 'from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500';
+
+        if (isMention) {
+          badgeColor = 'text-purple-400';
+          borderColor = 'border-purple-500/50';
+          barGradient = 'from-purple-400 via-violet-400 to-indigo-400';
+          btnGradient = 'from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500';
+        } else if (isTask) {
+          badgeColor = 'text-amber-400';
+          borderColor = 'border-amber-500/40';
+          barGradient = 'from-amber-400 via-orange-400 to-rose-400';
+          btnGradient = 'from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500';
+        }
+
         return (
           <div
             key={toast.id}
-            className={`relative overflow-hidden rounded-2xl border p-4 shadow-2xl transition-all duration-300 transform translate-y-0 backdrop-blur-xl ${
-              isChat
-                ? 'bg-slate-900/95 border-emerald-500/40 text-white'
-                : 'bg-slate-900/95 border-amber-500/40 text-white'
-            }`}
+            className={`relative overflow-hidden rounded-2xl border p-4 shadow-2xl transition-all duration-300 transform translate-y-0 backdrop-blur-xl bg-slate-900/95 text-white ${borderColor}`}
           >
             {/* Top gradient accent line */}
-            <div
-              className={`absolute top-0 right-0 left-0 h-1 ${
-                isChat
-                  ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400'
-                  : 'bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400'
-              }`}
-            />
+            <div className={`absolute top-0 right-0 left-0 h-1 bg-gradient-to-r ${barGradient}`} />
 
             <div className="flex items-start gap-3">
               {/* Avatar or Icon */}
@@ -188,18 +199,30 @@ export const GlobalLiveNotification: React.FC = () => {
                   />
                 ) : (
                   <div
-                    className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-white shadow-inner ${
-                      isChat
-                        ? 'bg-gradient-to-br from-emerald-600 to-teal-700'
-                        : 'bg-gradient-to-br from-amber-600 to-orange-700'
+                    className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-white shadow-inner bg-gradient-to-br ${
+                      isMention
+                        ? 'from-purple-600 to-indigo-700'
+                        : isTask
+                        ? 'from-amber-600 to-orange-700'
+                        : 'from-emerald-600 to-teal-700'
                     }`}
                   >
-                    {isChat ? <MessageSquare className="w-5 h-5" /> : <CheckSquare className="w-5 h-5" />}
+                    {isMention ? (
+                      <AtSign className="w-5 h-5" />
+                    ) : isTask ? (
+                      <CheckSquare className="w-5 h-5" />
+                    ) : (
+                      <MessageSquare className="w-5 h-5" />
+                    )}
                   </div>
                 )}
                 <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-slate-900"></span>
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                    isMention ? 'bg-purple-400' : isTask ? 'bg-amber-400' : 'bg-emerald-400'
+                  }`}></span>
+                  <span className={`relative inline-flex rounded-full h-4 w-4 border-2 border-slate-900 ${
+                    isMention ? 'bg-purple-500' : isTask ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`}></span>
                 </span>
               </div>
 
@@ -207,12 +230,12 @@ export const GlobalLiveNotification: React.FC = () => {
               <div className="flex-1 min-w-0 pr-1">
                 <div className="flex items-center justify-between gap-2 mb-0.5">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                    <span className={`text-xs font-semibold flex items-center gap-1 ${badgeColor}`}>
                       <BellRing className="w-3.5 h-3.5" />
                       {toast.title}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700/60">
+                  <span className="text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700/60 font-mono">
                     الآن
                   </span>
                 </div>
@@ -229,19 +252,17 @@ export const GlobalLiveNotification: React.FC = () => {
                 <div className="mt-3 flex items-center gap-2 pt-1">
                   <button
                     onClick={() => handleActionClick(toast)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 ${
-                      isChat
-                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
-                        : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white'
-                    }`}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold transition-all shadow-md active:scale-95 text-white bg-gradient-to-r ${btnGradient}`}
                   >
-                    <span>{isChat ? 'فتح المحادثة والرد' : 'عرض المهمة في لوحة العمل'}</span>
+                    <span>
+                      {isChat ? 'فتح المحادثة والرد' : isMention ? 'عرض المنشن والمهمة' : 'عرض المهمة في لوحة العمل'}
+                    </span>
                     <ArrowLeft className="w-3.5 h-3.5" />
                   </button>
 
                   <button
                     onClick={() => removeToast(toast.id)}
-                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                     title="إغلاق"
                   >
                     <X className="w-4 h-4" />

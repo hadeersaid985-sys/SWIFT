@@ -101,6 +101,7 @@ import {
 } from '../firebase';
 import { resolveActiveTab, normalizeTabName } from '../utils/navigationState';
 import { GOLDEN_TASK_YOMNA_DESC, GOLDEN_TASK_AYA_DESC } from '../utils/taskDescriptionUtils';
+import { triggerUniversalNotification } from '../utils/notificationSystem';
 
 interface DeadlineStatus {
   label: string;
@@ -5067,17 +5068,46 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 incomingTask.mentionedUserIds.some((mId: string) => isTaskAssignedToUser({ assignedToId: mId } as any, currentUser));
               const isCreatedByOther = incomingTask.createdBy !== currentUser.name && incomingTask.creatorId !== currentUser.id;
 
-              if ((isAssigned || isMentioned) && isCreatedByOther) {
-                if (typeof window !== 'undefined') {
-                  window.dispatchEvent(
-                    new CustomEvent('swiftmynd:task_notification', {
-                      detail: {
-                        task: incomingTask,
-                        creatorName: incomingTask.createdBy || 'إدارة المهام'
-                      }
-                    })
-                  );
-                }
+              if (isMentioned && isCreatedByOther) {
+                triggerUniversalNotification({
+                  kind: 'mention',
+                  title: `🔔 منشن لك في مهمة جديدة: ${incomingTask.title}`,
+                  body: `قام ${incomingTask.createdBy || 'عضو الفريق'} بذكرك في مهمة "${incomingTask.title}"`,
+                  senderName: incomingTask.createdBy || 'إدارة المهام',
+                  taskId: incomingTask.id,
+                  data: incomingTask
+                });
+              } else if (isAssigned && isCreatedByOther) {
+                triggerUniversalNotification({
+                  kind: 'task',
+                  title: `📋 مهمة جديدة لك: ${incomingTask.title}`,
+                  body: `المكلف: أنت | موعد التسليم: ${incomingTask.dueDate || 'اليوم'} | الأولوية: ${incomingTask.priority}`,
+                  senderName: incomingTask.createdBy || 'إدارة المهام',
+                  taskId: incomingTask.id,
+                  data: incomingTask
+                });
+              }
+            }
+
+            // Check if incoming comment mentions currentUser
+            if (payload.comment && currentUser) {
+              const incomingComment = payload.comment;
+              const isAuthorOther = incomingComment.authorId !== currentUser.id;
+              const isMentionedInComment = isAuthorOther && (
+                (Array.isArray(incomingComment.mentionedUserIds) && incomingComment.mentionedUserIds.some((id: string) => isTaskAssignedToUser({ assignedToId: id } as any, currentUser))) ||
+                (incomingComment.content && currentUser.name && incomingComment.content.includes(currentUser.name))
+              );
+
+              if (isMentionedInComment) {
+                triggerUniversalNotification({
+                  kind: 'mention',
+                  title: `🔔 منشن لك من ${incomingComment.authorName || 'عضو الفريق'}`,
+                  body: `"${incomingComment.content}" في مهمة بالسيستم`,
+                  senderName: incomingComment.authorName || 'عضو الفريق',
+                  senderAvatar: incomingComment.authorAvatar,
+                  taskId: payload.taskId,
+                  data: incomingComment
+                });
               }
             }
 

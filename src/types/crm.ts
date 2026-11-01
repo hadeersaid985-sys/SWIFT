@@ -681,6 +681,7 @@ export interface ChatMessage {
   };
   isPinned?: boolean;
   readBy?: string[]; // user IDs
+  mentionedUserIds?: string[]; // user IDs mentioned in message
   status?: 'sent' | 'delivered' | 'read';
   readAt?: string; // ISO string when first read by recipient
 }
