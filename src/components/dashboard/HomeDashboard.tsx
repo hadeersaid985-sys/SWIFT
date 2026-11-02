@@ -532,28 +532,35 @@ export const HomeDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-3 mt-3">
-              {meetings.slice(0, 3).map(meet => (
+              {meetings
+                .filter(m => m.status !== 'ملغي')
+                .slice(0, 4)
+                .map(meet => (
                 <div
                   key={meet.id}
-                  className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs space-y-1.5"
+                  onClick={() => setActiveTab('meetings')}
+                  className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs space-y-1.5 hover:border-blue-300 hover:bg-blue-50/20 transition-all cursor-pointer"
                 >
                   <div className="flex items-center justify-between font-bold text-slate-900">
                     <span className="truncate">{meet.title}</span>
                     <span className="text-[10px] text-blue-600 font-semibold shrink-0">
-                      {meet.time} ({meet.duration})
+                      {meet.date} | {meet.time || meet.startTime}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-slate-500">
-                    <span>المكان: {meet.location}</span>
-                    {meet.meetingLink && (
+                    <span className="truncate">المكان: {meet.location || meet.clientName || 'أونلاين'}</span>
+                    {meet.meetingLink ? (
                       <a
                         href={meet.meetingLink}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-blue-600 hover:underline font-bold flex items-center gap-1"
+                        onClick={e => e.stopPropagation()}
+                        className="text-blue-600 hover:underline font-bold flex items-center gap-1 shrink-0"
                       >
                         انضمام للجلسة
                       </a>
+                    ) : (
+                      <span className="text-slate-400 font-medium">({meet.duration || '45 دقيقة'})</span>
                     )}
                   </div>
                 </div>

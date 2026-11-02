@@ -14,7 +14,7 @@ import {
   getDocFromServer
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { Task, AppNotification, ClientRenewal, ChatMessage, TeamMember, AttendanceRecord } from './types/crm';
+import { Task, AppNotification, ClientRenewal, ChatMessage, TeamMember, AttendanceRecord, Meeting } from './types/crm';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -624,4 +624,93 @@ export function onAttendanceSnapshot(onUpdate: (records: AttendanceRecord[]) => 
     return () => {};
   }
 }
+
+const MEETINGS_COLLECTION = 'meetings';
+
+/**
+ * Save / Update a Meeting in Firestore database in real-time
+ */
+export async function saveMeetingToFirestore(meeting: Meeting): Promise<void> {
+  if (!meeting || !meeting.id) return;
+  try {
+    const meetingRef = doc(db, MEETINGS_COLLECTION, meeting.id);
+    const cleanPayload: any = { ...meeting };
+    Object.keys(cleanPayload).forEach(key => {
+      if (cleanPayload[key] === undefined) {
+        delete cleanPayload[key];
+      }
+    });
+    cleanPayload.updatedAt = new Date().toISOString();
+    await setDoc(meetingRef, cleanPayload, { merge: true });
+    console.log(`[Firebase] Meeting "${meeting.title}" synced to Firestore across all accounts & devices`);
+  } catch (error) {
+    console.error('[Firebase] Error saving meeting to Firestore:', error);
+  }
+}
+
+/**
+ * Delete a Meeting in Firestore
+ */
+export async function deleteMeetingFromFirestore(meetingId: string): Promise<void> {
+  if (!meetingId) return;
+  try {
+    const meetingRef = doc(db, MEETINGS_COLLECTION, meetingId);
+    await deleteDoc(meetingRef);
+    console.log(`[Firebase] Meeting deleted from Firestore: ${meetingId}`);
+  } catch (error) {
+    console.error('[Firebase] Error deleting meeting from Firestore:', error);
+  }
+}
+
+/**
+ * Real-time listener for Meetings across all devices (Admin and all team members)
+ */
+export function onMeetingsSnapshot(onUpdate: (meetings: Meeting[]) => void) {
+  try {
+    const q = collection(db, MEETINGS_COLLECTION);
+    return onSnapshot(
+      q,
+      snapshot => {
+        const list: Meeting[] = [];
+        snapshot.forEach(docSnap => {
+          list.push(docSnap.data() as Meeting);
+        });
+        if (list.length > 0) {
+          onUpdate(list);
+        }
+      },
+      err => console.warn('[Firebase] Meetings snapshot notice:', err)
+    );
+  } catch {
+    return () => {};
+  }
+}
+
+/**
+ * Seed initial meetings to Firestore if collection is empty
+ */
+export async function seedInitialMeetingsIfEmpty(initialMeetings: Meeting[]): Promise<void> {
+  try {
+    const colRef = collection(db, MEETINGS_COLLECTION);
+    const snap = await getDocs(colRef);
+    if (snap.empty && Array.isArray(initialMeetings) && initialMeetings.length > 0) {
+      console.log('[Firebase] Seeding initial meetings to Firestore...');
+      const batch = writeBatch(db);
+      initialMeetings.forEach(m => {
+        const mRef = doc(db, MEETINGS_COLLECTION, m.id);
+        const clean: any = { ...m };
+        Object.keys(clean).forEach(k => {
+          if (clean[k] === undefined) delete clean[k];
+        });
+        clean.updatedAt = new Date().toISOString();
+        batch.set(mRef, clean);
+      });
+      await batch.commit();
+      console.log('[Firebase] Seeded meetings to Firestore successfully!');
+    }
+  } catch (err) {
+    console.warn('[Firebase] Meetings seeding check notice:', err);
+  }
+}
+
 

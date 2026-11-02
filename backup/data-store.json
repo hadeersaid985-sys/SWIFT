@@ -2782,6 +2782,46 @@
       "isTimerPaused": false,
       "timerAccumulatedMs": 0,
       "timerLastResumedAt": 1793614434210
+    },
+    {
+      "status": "todo",
+      "category": "إداري",
+      "dueTime": "18:00",
+      "description": "monthly report \nهيكون الساعة 12",
+      "mentionedUserIds": [],
+      "startDate": "2026-11-02",
+      "subtasks": [],
+      "updatedAt": "2026-11-02T11:10:17.972Z",
+      "dueDate": "2026-11-04",
+      "title": "gx meeting",
+      "isPrivate": false,
+      "comments": [],
+      "assignedToId": "user-yomna",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "priority": "medium",
+      "createdAt": "2026-11-02",
+      "id": "task-1793617817971"
+    },
+    {
+      "updatedAt": "2026-11-02T11:11:07.548Z",
+      "description": "الساعة 12",
+      "category": "إداري",
+      "startDate": "2026-11-02",
+      "assignedToId": "user-eman",
+      "id": "task-1793617867548",
+      "subtasks": [],
+      "dueTime": "18:00",
+      "comments": [],
+      "estimatedHours": 2,
+      "status": "todo",
+      "createdAt": "2026-11-02",
+      "isPrivate": false,
+      "priority": "medium",
+      "timeLogs": [],
+      "dueDate": "2026-11-04",
+      "title": "gx meeting",
+      "mentionedUserIds": []
     }
   ],
   "leads": [
@@ -3003,6 +3043,49 @@
   ],
   "meetings": [
     {
+      "id": "meet-gx-report",
+      "title": "gx monthly report",
+      "meetingType": "client",
+      "date": "2026-11-04",
+      "time": "12:00",
+      "startTime": "12:00",
+      "endTime": "12:45",
+      "duration": "45 دقيقة",
+      "locationType": "online",
+      "location": "موقع gx",
+      "meetingLink": "https://meet.google.com/gx-monthly-report",
+      "hostId": "user-1",
+      "hostName": "هدير سعيد",
+      "attendees": [
+        "user-1",
+        "user-amira",
+        "user-2",
+        "user-3"
+      ],
+      "clientAttendees": [
+        "مسؤول موقع gx"
+      ],
+      "clientId": "ren-1793022923682",
+      "clientName": "موقع gx",
+      "companyName": "موقع gx",
+      "agenda": "1. مراجعة تقرير أداء موقع gx الشهري\n2. تدقيق التقرير الشهري ونتائج الزيارات والتحويلات\n3. مراجعة خطة العمل للشهر القادم واعتمادها",
+      "summary": "تقرير شهري مفصل لموقع gx واستعراض نتائج الحملات والزيارات والطلبات.",
+      "decisions": "تقديم التوصيات التقنية والتسويقية لفريق gx واعتماد خطة الربع القادم.",
+      "notes": "اجتماع هام لمراجعة تقرير gx الشهري ومناقشة مؤشرات الأداء.",
+      "status": "قادم",
+      "reminderMinutes": [
+        60,
+        30,
+        15,
+        0
+      ],
+      "alarmSoundEnabled": true,
+      "createdBy": "Amira",
+      "creatorId": "user-amira",
+      "createdAt": "2026-11-02T10:00:00Z",
+      "updatedAt": "2026-11-02T12:23:18.772Z"
+    },
+    {
       "id": "meet-1",
       "title": "الاجتماع الصباحي اليومي لفريق المبيعات والحسابات (Daily Standup)",
       "meetingType": "internal",
@@ -3040,7 +3123,8 @@
       ],
       "notes": "مراجعة أهداف اليوم، التحديات، ومتابعة التاسكات الحرجة المستحقة.",
       "status": "قادم",
-      "createdAt": "2026-10-25T08:00:00Z"
+      "createdAt": "2026-10-25T08:00:00Z",
+      "updatedAt": "2026-11-02T12:23:18.774Z"
     },
     {
       "id": "meet-2",
@@ -3084,7 +3168,8 @@
       ],
       "notes": "التركيز على ميزات الأمان، سرعة الاستجابة، وتصدير التقارير الآلية.",
       "status": "قادم",
-      "createdAt": "2026-10-26T11:00:00Z"
+      "createdAt": "2026-10-26T11:00:00Z",
+      "updatedAt": "2026-11-02T12:23:18.774Z"
     },
     {
       "id": "meet-3",
@@ -3108,7 +3193,8 @@
       "summary": "اعتماد الموازنة التشغيلية لفريق المبيعات والتسويق وتحديد مؤشرات النجاح الرئيسية.",
       "status": "قادم",
       "notes": "مناقشة الحوافز الشهرية لفريق المبيعات ونفقات الحملات الجديدة.",
-      "createdAt": "2026-10-24T14:00:00Z"
+      "createdAt": "2026-10-24T14:00:00Z",
+      "updatedAt": "2026-11-02T12:23:18.775Z"
     },
     {
       "id": "meet-4",
@@ -3149,7 +3235,8 @@
         }
       ],
       "status": "مكتمل",
-      "createdAt": "2026-10-28T09:00:00Z"
+      "createdAt": "2026-10-28T09:00:00Z",
+      "updatedAt": "2026-11-02T12:23:18.775Z"
     }
   ],
   "emails": [
@@ -4349,6 +4436,15 @@
       "type": "task_mention",
       "timestamp": "الآن",
       "senderName": "Eman Ashraf"
+    },
+    {
+      "id": "notif-renewal-alert-ren-1793024696154-2026-11-06",
+      "title": "🚨 تنبيه تجديد اشتراك: عمر (الدرب)",
+      "message": "موعد تجديد اشتراك \"باقة السيو\" مستحق خلال 4 أيام (تاريخ: 2026-11-06). القيمة: 0 ج.م. اضغط للتواصل السريع وسداد الفاتورة.",
+      "timestamp": "الآن",
+      "type": "renewal_alert",
+      "isRead": false,
+      "linkTab": "renewals"
     }
   ],
   "attendanceRecords": [
@@ -4537,7 +4633,7 @@
     {
       "id": "att-1793609220564-1qbr",
       "createdAt": "2026-11-02T08:47:00.564Z",
-      "updatedAt": "2026-11-02T08:47:00.564Z",
+      "updatedAt": "2026-11-02T08:47:00.565Z",
       "employeeCode": "SM-107",
       "memberId": "user-yomna",
       "memberName": "Yomna",
@@ -4777,7 +4873,7 @@
       "id": "task-1793483160666"
     }
   ],
-  "updatedAt": "2026-11-02T10:25:44.137Z",
+  "updatedAt": "2026-11-02T12:25:27.867Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": [],
   "calls": [],

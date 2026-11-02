@@ -8,7 +8,7 @@
  * 3. Incoming Chat Message ('chat')
  */
 
-export type NotificationKind = 'task' | 'mention' | 'chat';
+export type NotificationKind = 'task' | 'mention' | 'chat' | 'meeting' | 'meeting_reminder';
 
 export interface NotificationPayload {
   kind: NotificationKind;

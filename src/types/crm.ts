@@ -264,6 +264,10 @@ export interface Meeting {
   isVip?: boolean;
   notes?: string;
   status: MeetingStatus; // حالة الاجتماع: مجدول (قادم)، تم (مكتمل)، أُلغي، أو أُعيدت جدولته (مؤجل)
+  reminderMinutes?: number[]; // فواصل التنبيه بالدقائق: 60 (ساعة قبل)، 30 (نصف ساعة قبل)، 15، 0 (الآن)
+  alarmSoundEnabled?: boolean; // تشغيل صوت المنبه التلقائي
+  createdBy?: string; // اسم منشئ الاجتماع (e.g. Amira)
+  creatorId?: string; // معرف منشئ الاجتماع
   createdAt?: string;
   updatedAt?: string;
 }
@@ -327,7 +331,7 @@ export interface AppNotification {
   title: string;
   message: string;
   timestamp: string;
-  type: 'task_deadline' | 'email' | 'deal_won' | 'lead' | 'system' | 'task_mention' | 'renewal_alert' | 'daily_digest';
+  type: 'task_deadline' | 'email' | 'deal_won' | 'lead' | 'system' | 'task_mention' | 'renewal_alert' | 'daily_digest' | 'meeting' | 'meeting_reminder';
   isRead: boolean;
   linkTab?: string;
   taskId?: string;

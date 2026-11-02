@@ -39,6 +39,7 @@ import { MobileBottomNav } from './components/navigation/MobileBottomNav';
 import { WorkQueueView } from './components/workqueue/WorkQueueView';
 import { GlobalLiveNotification } from './components/common/GlobalLiveNotification';
 import { NotificationPermissionBanner } from './components/common/NotificationPermissionBanner';
+import { MeetingAlarmModal } from './components/meetings/MeetingAlarmModal';
 import { ShieldAlert, ArrowLeft, UserCheck, KeyRound, LogIn, LogOut, BellRing, Sparkles } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -407,6 +408,9 @@ const AppContent: React.FC = () => {
 
       {/* Global Live Notification Toasts (Instant Alerts for Tasks & Chat Messages) */}
       <GlobalLiveNotification />
+
+      {/* Meeting Alarm & Reminders Modal (Alerts 1h, 30m, and start time like an alarm clock) */}
+      <MeetingAlarmModal />
     </div>
   );
 };

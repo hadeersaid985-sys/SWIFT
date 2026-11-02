@@ -33,9 +33,12 @@ import {
   ChevronRight,
   ChevronLeft,
   Briefcase,
-  AlertCircle
+  AlertCircle,
+  Bell,
+  Volume2
 } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
+import { meetingAlarm } from '../../utils/meetingAlarmSound';
 import {
   Meeting,
   MeetingType,
@@ -127,7 +130,9 @@ export const MeetingsView: React.FC = () => {
     notes: '',
     status: 'قادم' as MeetingStatus,
     actionItemsText: '', // Format: Task Title | AssigneeName or Code | DueDate (optional)
-    autoCreateTasks: true
+    autoCreateTasks: true,
+    reminderMinutes: [60, 30, 0] as number[],
+    alarmSoundEnabled: true
   });
 
   // Form State for Call Log
@@ -482,7 +487,9 @@ export const MeetingsView: React.FC = () => {
       decisions: meetingForm.decisions,
       notes: meetingForm.notes,
       status: meetingForm.status,
-      actionItems: parsedActionItems
+      actionItems: parsedActionItems,
+      reminderMinutes: meetingForm.reminderMinutes,
+      alarmSoundEnabled: meetingForm.alarmSoundEnabled
     };
 
     if (editingMeeting) {
@@ -540,7 +547,9 @@ export const MeetingsView: React.FC = () => {
       notes: '',
       status: 'قادم',
       actionItemsText: '',
-      autoCreateTasks: true
+      autoCreateTasks: true,
+      reminderMinutes: [60, 30, 0],
+      alarmSoundEnabled: true
     });
   };
 
@@ -572,7 +581,9 @@ export const MeetingsView: React.FC = () => {
       actionItemsText: (m.actionItems || [])
         .map(a => `${a.title} | ${a.assignedToName} | ${a.dueDate}`)
         .join('\n'),
-      autoCreateTasks: false
+      autoCreateTasks: false,
+      reminderMinutes: m.reminderMinutes || [60, 30, 0],
+      alarmSoundEnabled: m.alarmSoundEnabled !== undefined ? m.alarmSoundEnabled : true
     });
     setIsAddMeetingModalOpen(true);
   };
@@ -1025,6 +1036,28 @@ export const MeetingsView: React.FC = () => {
                             </a>
                           )}
                         </div>
+
+                        {/* Alarm and Countdown Status */}
+                        {m.status === 'قادم' && (
+                          <div className="mt-2.5 flex items-center justify-between text-[11px] bg-amber-50/70 border border-amber-200/80 text-amber-900 px-2.5 py-1.5 rounded-xl">
+                            <span className="flex items-center gap-1.5 font-bold">
+                              <Bell className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              <span>منبه نشط: تنبيه قبل ساعة ونصف ساعة</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                meetingAlarm.playAlarm('bell');
+                              }}
+                              title="تجربة صوت منبه الاجتماع"
+                              className="px-2 py-0.5 bg-amber-200/80 hover:bg-amber-300 text-amber-900 rounded-md font-bold text-[10px] flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <Volume2 className="w-3 h-3" />
+                              <span>رنين تجريبي</span>
+                            </button>
+                          </div>
+                        )}
 
                         {/* Host & Attendees */}
                         <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between">
@@ -1839,47 +1872,86 @@ export const MeetingsView: React.FC = () => {
               </div>
 
               {/* Date, Time, Duration */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">التاريخ *</label>
-                  <input
-                    type="date"
-                    required
-                    value={meetingForm.date}
-                    onChange={e => setMeetingForm({ ...meetingForm, date: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden"
-                  />
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">التاريخ *</label>
+                    <input
+                      type="date"
+                      required
+                      value={meetingForm.date}
+                      onChange={e => setMeetingForm({ ...meetingForm, date: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">وقت البداية</label>
+                    <input
+                      type="time"
+                      value={meetingForm.startTime}
+                      onChange={e => setMeetingForm({ ...meetingForm, startTime: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">وقت النهاية</label>
+                    <input
+                      type="time"
+                      value={meetingForm.endTime}
+                      onChange={e => setMeetingForm({ ...meetingForm, endTime: e.target.value })}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">المدة التقديرية</label>
+                    <input
+                      type="text"
+                      value={meetingForm.duration}
+                      onChange={e => setMeetingForm({ ...meetingForm, duration: e.target.value })}
+                      placeholder="45 دقيقة"
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">وقت البداية</label>
-                  <input
-                    type="time"
-                    value={meetingForm.startTime}
-                    onChange={e => setMeetingForm({ ...meetingForm, startTime: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">وقت النهاية</label>
-                  <input
-                    type="time"
-                    value={meetingForm.endTime}
-                    onChange={e => setMeetingForm({ ...meetingForm, endTime: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">المدة التقديرية</label>
-                  <input
-                    type="text"
-                    value={meetingForm.duration}
-                    onChange={e => setMeetingForm({ ...meetingForm, duration: e.target.value })}
-                    placeholder="45 دقيقة"
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden"
-                  />
+                {/* Quick Time Selector Chips */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-500">أوقات سريعة:</span>
+                  {[
+                    { label: '10:00 ص', value: '10:00' },
+                    { label: '11:00 ص', value: '11:00' },
+                    { label: '12:00 م (الظهر ⭐)', value: '12:00' },
+                    { label: '13:00 م', value: '13:00' },
+                    { label: '14:00 م', value: '14:00' },
+                    { label: '15:00 م', value: '15:00' },
+                    { label: '16:00 م', value: '16:00' }
+                  ].map(item => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => {
+                        const [h, m] = item.value.split(':').map(Number);
+                        const endH = (h + Math.floor((m + 45) / 60)) % 24;
+                        const endM = (m + 45) % 60;
+                        const endStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+                        setMeetingForm({
+                          ...meetingForm,
+                          startTime: item.value,
+                          endTime: endStr
+                        });
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                        meetingForm.startTime === item.value
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1922,6 +1994,99 @@ export const MeetingsView: React.FC = () => {
                     }}
                     className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden"
                   />
+                </div>
+              </div>
+
+              {/* Meeting Alarm & System Reminder Settings (زي المنبه والصوت) */}
+              <div className="bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center">
+                      <Bell className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-amber-950 text-xs">نظام المنبه والإشعار الصوتي للاجتماع (Alarm)</h4>
+                      <p className="text-[10px] text-amber-700">يرن المنبه وتظهر نافذة تنبيه تفاعلية قبل موعد الاجتماع بصوت منبه واضح</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => meetingAlarm.playAlarm('bell')}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-amber-200/90 hover:bg-amber-300 text-amber-900 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                    <span>تجربة صوت المنبه</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                  <label className="flex items-center gap-2 text-xs font-bold text-amber-950 bg-white/90 p-2 rounded-xl border border-amber-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={meetingForm.reminderMinutes?.includes(60)}
+                      onChange={(e) => {
+                        const current = meetingForm.reminderMinutes || [];
+                        const next = e.target.checked ? [...current, 60] : current.filter(m => m !== 60);
+                        setMeetingForm({ ...meetingForm, reminderMinutes: next });
+                      }}
+                      className="rounded text-amber-600 cursor-pointer"
+                    />
+                    <span>قبل ساعة (60 دقيقة)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs font-bold text-amber-950 bg-white/90 p-2 rounded-xl border border-amber-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={meetingForm.reminderMinutes?.includes(30)}
+                      onChange={(e) => {
+                        const current = meetingForm.reminderMinutes || [];
+                        const next = e.target.checked ? [...current, 30] : current.filter(m => m !== 30);
+                        setMeetingForm({ ...meetingForm, reminderMinutes: next });
+                      }}
+                      className="rounded text-amber-600 cursor-pointer"
+                    />
+                    <span>قبل نصف ساعة (30 دقيقة)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs font-bold text-amber-950 bg-white/90 p-2 rounded-xl border border-amber-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={meetingForm.reminderMinutes?.includes(15)}
+                      onChange={(e) => {
+                        const current = meetingForm.reminderMinutes || [];
+                        const next = e.target.checked ? [...current, 15] : current.filter(m => m !== 15);
+                        setMeetingForm({ ...meetingForm, reminderMinutes: next });
+                      }}
+                      className="rounded text-amber-600 cursor-pointer"
+                    />
+                    <span>قبل 15 دقيقة</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs font-bold text-amber-950 bg-white/90 p-2 rounded-xl border border-amber-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={meetingForm.reminderMinutes?.includes(0)}
+                      onChange={(e) => {
+                        const current = meetingForm.reminderMinutes || [];
+                        const next = e.target.checked ? [...current, 0] : current.filter(m => m !== 0);
+                        setMeetingForm({ ...meetingForm, reminderMinutes: next });
+                      }}
+                      className="rounded text-amber-600 cursor-pointer"
+                    />
+                    <span>عند موعد الاجتماع</span>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between pt-1 border-t border-amber-200/60">
+                  <label className="flex items-center gap-2 text-xs font-bold text-amber-900 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={meetingForm.alarmSoundEnabled}
+                      onChange={(e) => setMeetingForm({ ...meetingForm, alarmSoundEnabled: e.target.checked })}
+                      className="rounded text-amber-600 cursor-pointer"
+                    />
+                    <span>تشغيل رنين المنبه الصوتي في المنظومة لجميع المشاركين والمسؤولين</span>
+                  </label>
                 </div>
               </div>
 

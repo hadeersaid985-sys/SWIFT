@@ -101,7 +101,11 @@ import {
   seedInitialTeamIfEmpty,
   saveAttendanceToFirestore,
   deleteAttendanceFromFirestore,
-  onAttendanceSnapshot
+  onAttendanceSnapshot,
+  saveMeetingToFirestore,
+  deleteMeetingFromFirestore,
+  onMeetingsSnapshot,
+  seedInitialMeetingsIfEmpty
 } from '../firebase';
 import { resolveActiveTab, normalizeTabName } from '../utils/navigationState';
 import { GOLDEN_TASK_YOMNA_DESC, GOLDEN_TASK_AYA_DESC } from '../utils/taskDescriptionUtils';
@@ -4902,22 +4906,134 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [calls]);
 
   const addMeeting = (meetingData: Omit<Meeting, 'id'>): Meeting => {
+    lastLocalMutationTimeRef.current = Date.now();
+    const newMeetingId = 'meet-' + Date.now();
     const newMeeting: Meeting = {
       ...meetingData,
-      id: 'meet-' + Date.now(),
-      createdAt: meetingData.createdAt || new Date().toISOString()
+      id: newMeetingId,
+      createdAt: meetingData.createdAt || new Date().toISOString(),
+      createdBy: meetingData.createdBy || currentUser.name,
+      creatorId: meetingData.creatorId || currentUser.id,
+      reminderMinutes: meetingData.reminderMinutes || [60, 30, 15, 0],
+      alarmSoundEnabled: meetingData.alarmSoundEnabled !== undefined ? meetingData.alarmSoundEnabled : true
     };
-    setMeetings(prev => [newMeeting, ...prev]);
-    logActivity('meeting', 'تم جدولة اجتماع جديد', `${newMeeting.title} (${newMeeting.date} ${newMeeting.time || newMeeting.startTime || ''})`);
+
+    // Generate notifications for mentioned attendees and host
+    const newNotifs: AppNotification[] = [];
+    const formattedTime = newMeeting.time || newMeeting.startTime || '12:00';
+
+    // 1. Notify the assigned host if host is someone else
+    if (newMeeting.hostId && newMeeting.hostId !== currentUser.id) {
+      newNotifs.push({
+        id: 'notif-meet-host-' + Date.now(),
+        title: '📅 دعوة وتعيين كمسؤول عن اجتماع جديد',
+        message: `قام ${currentUser.name} بجدولة اجتماع "${newMeeting.title}" وتعيينك مسؤولاً عنه (الموعد: ${newMeeting.date} الساعة ${formattedTime})`,
+        timestamp: 'الآن',
+        type: 'meeting',
+        linkTab: 'meetings',
+        recipientUserId: newMeeting.hostId,
+        isRead: false
+      });
+    }
+
+    // 2. Notify each attendee in the meeting
+    (newMeeting.attendees || []).forEach(attId => {
+      if (attId !== currentUser.id && attId !== newMeeting.hostId) {
+        const attMember = team.find(m => m.id === attId);
+        newNotifs.push({
+          id: 'notif-meet-att-' + attId + '-' + Date.now(),
+          title: '👥 دعوة لحضور اجتماع جديد',
+          message: `تمت دعوتك لحضور اجتماع "${newMeeting.title}" مع ${newMeeting.hostName || 'الفريق'} في ${newMeeting.date} الساعة ${formattedTime} (${newMeeting.location || 'Google Meet'})`,
+          timestamp: 'الآن',
+          type: 'meeting',
+          linkTab: 'meetings',
+          recipientUserId: attId,
+          isRead: false
+        });
+      }
+    });
+
+    setMeetings(prev => {
+      const filtered = prev.filter(m => m.id !== newMeeting.id);
+      const updated = [newMeeting, ...filtered];
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(updated));
+      return updated;
+    });
+
+    if (newNotifs.length > 0) {
+      setNotifications(prev => {
+        const notifMap = new Map<string, AppNotification>(prev.map(n => [n.id, n]));
+        newNotifs.forEach(n => notifMap.set(n.id, n));
+        return Array.from(notifMap.values());
+      });
+      newNotifs.forEach(n => saveNotificationToFirestore(n));
+    }
+
+    // Sync to Server immediately
+    try {
+      fetch('/api/meetings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meeting: newMeeting, notifications: newNotifs })
+      }).catch(err => console.warn('[Server] Meeting sync notice:', err));
+    } catch {}
+
+    // Sync to Firestore immediately
+    saveMeetingToFirestore(newMeeting);
+
+    logActivity(
+      'meeting',
+      'تم جدولة اجتماع جديد ومزامنة التنبيهات 📅',
+      `${newMeeting.title} (${newMeeting.date} ${formattedTime}) - المسؤول: ${newMeeting.hostName || 'غير محدد'}`
+    );
     return newMeeting;
   };
 
   const updateMeeting = (id: string, updates: Partial<Meeting>) => {
-    setMeetings(prev => prev.map(m => (m.id === id ? { ...m, ...updates, updatedAt: new Date().toISOString() } : m)));
+    lastLocalMutationTimeRef.current = Date.now();
+    let updatedMeeting: Meeting | null = null;
+    setMeetings(prev => {
+      const updated = prev.map(m => {
+        if (m.id === id) {
+          const fresh = { ...m, ...updates, updatedAt: new Date().toISOString() };
+          updatedMeeting = fresh;
+          return fresh;
+        }
+        return m;
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(updated));
+      return updated;
+    });
+
+    if (updatedMeeting) {
+      try {
+        fetch('/api/meetings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ meeting: updatedMeeting })
+        }).catch(() => {});
+      } catch {}
+      saveMeetingToFirestore(updatedMeeting);
+    }
   };
 
   const deleteMeeting = (id: string) => {
-    setMeetings(prev => prev.filter(m => m.id !== id));
+    lastLocalMutationTimeRef.current = Date.now();
+    setMeetings(prev => {
+      const updated = prev.filter(m => m.id !== id);
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(updated));
+      return updated;
+    });
+
+    try {
+      fetch('/api/meetings/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meetingId: id })
+      }).catch(() => {});
+    } catch {}
+    deleteMeetingFromFirestore(id);
+    logActivity('meeting', 'حذف اجتماع', `تم إلغاء وحذف الاجتماع من المنظومة`);
   };
 
   // Calls Actions (سجل المكالمات)
@@ -5102,10 +5218,25 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let unsubscribeRenewals: (() => void) | null = null;
     let unsubscribeTeam: (() => void) | null = null;
     let unsubscribeAttendance: (() => void) | null = null;
+    let unsubscribeMeetings: (() => void) | null = null;
 
     try {
       // Seed initial team if Firestore collection is empty
       seedInitialTeamIfEmpty(team);
+      seedInitialMeetingsIfEmpty(meetings);
+
+      unsubscribeMeetings = onMeetingsSnapshot(remoteMeetings => {
+        if (Array.isArray(remoteMeetings) && remoteMeetings.length > 0) {
+          if (Date.now() - lastLocalMutationTimeRef.current < 2000) return;
+          setMeetings(prev => {
+            const map = new Map<string, Meeting>(prev.map(m => [m.id, m]));
+            remoteMeetings.forEach(m => map.set(m.id, { ...(map.get(m.id) || {}), ...m }));
+            const merged = Array.from(map.values());
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      });
 
       unsubscribeAttendance = onAttendanceSnapshot(remoteAttendance => {
         if (Array.isArray(remoteAttendance) && remoteAttendance.length > 0) {
@@ -5208,6 +5339,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (unsubscribeRenewals) unsubscribeRenewals();
       if (unsubscribeTeam) unsubscribeTeam();
       if (unsubscribeAttendance) unsubscribeAttendance();
+      if (unsubscribeMeetings) unsubscribeMeetings();
     };
   }, []);
 
@@ -5375,6 +5507,51 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               });
             }
           }
+
+          if (payload.type === 'MEETING_MUTATION' || payload.type === 'FULL_SYNC') {
+            if (payload.deletedMeetingId) {
+              setMeetings(prev => {
+                const next = prev.filter(m => m.id !== payload.deletedMeetingId);
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(next));
+                return next;
+              });
+            }
+            if (Array.isArray(payload.meetings)) {
+              setMeetings(prev => {
+                const meetMap = new Map<string, Meeting>(prev.map(m => [m.id, m]));
+                payload.meetings.forEach((m: Meeting) => meetMap.set(m.id, { ...(meetMap.get(m.id) || {}), ...m }));
+                const merged = Array.from(meetMap.values());
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(merged));
+                return merged;
+              });
+            } else if (payload.meeting) {
+              const m = payload.meeting;
+              setMeetings(prev => {
+                const map = new Map<string, Meeting>(prev.map(item => [item.id, item]));
+                map.set(m.id, { ...(map.get(m.id) || {}), ...m });
+                const merged = Array.from(map.values());
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(merged));
+                return merged;
+              });
+
+              // Check if currentUser is involved and not the creator
+              const isCreator = m.creatorId === currentUser?.id || m.createdBy === currentUser?.name;
+              const isHost = m.hostId === currentUser?.id || (m.hostName && currentUser?.name && m.hostName.includes(currentUser.name));
+              const isAttendee = Array.isArray(m.attendees) && m.attendees.includes(currentUser?.id);
+              const isInvited = isHost || isAttendee || isManager;
+
+              if (isInvited && !isCreator) {
+                triggerUniversalNotification({
+                  kind: 'meeting',
+                  title: `📅 دعوة لاجتماع: ${m.title}`,
+                  body: `المسؤول: ${m.hostName || 'غير محدد'} | الموعد: ${m.date} ${m.time || ''} (${m.location || 'Google Meet'})`,
+                  senderName: m.createdBy || m.hostName || 'إدارة الاجتماعات',
+                  taskId: m.id,
+                  data: m
+                });
+              }
+            }
+          }
         } catch {}
       };
     } catch {}
@@ -5447,6 +5624,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           if (Array.isArray(serverData.emails) && serverData.emails.length > 0) {
             setEmails(serverData.emails);
+          }
+          if (Array.isArray(serverData.meetings) && serverData.meetings.length > 0) {
+            setMeetings(prev => {
+              const meetMap = new Map<string, Meeting>(prev.map(m => [m.id, m]));
+              serverData.meetings.forEach((m: Meeting) => meetMap.set(m.id, { ...(meetMap.get(m.id) || {}), ...m }));
+              const merged = Array.from(meetMap.values());
+              safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(merged));
+              return merged;
+            });
           }
           if (Array.isArray(serverData.attendanceRecords) && serverData.attendanceRecords.length > 0) {
             setAttendanceRecords(prev => {
@@ -5632,6 +5818,25 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               if (hasChange) {
                 const merged = Array.from(map.values());
                 safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}attendance_records`, JSON.stringify(merged));
+                return merged;
+              }
+              return prev;
+            });
+          }
+          if (serverData && Array.isArray(serverData.meetings) && serverData.meetings.length > 0) {
+            setMeetings(prev => {
+              const meetMap = new Map<string, Meeting>(prev.map(m => [m.id, m]));
+              let hasChange = false;
+              serverData.meetings.forEach((m: Meeting) => {
+                const current = meetMap.get(m.id);
+                if (!current || JSON.stringify(current) !== JSON.stringify(m)) {
+                  hasChange = true;
+                  meetMap.set(m.id, { ...(current || {}), ...m });
+                }
+              });
+              if (hasChange) {
+                const merged = Array.from(meetMap.values());
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(merged));
                 return merged;
               }
               return prev;
