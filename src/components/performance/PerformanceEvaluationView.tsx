@@ -32,13 +32,17 @@ import {
   Layers,
   ArrowRight,
   Send,
-  HelpCircle
+  HelpCircle,
+  UserX,
+  CalendarDays,
+  Ban
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useCRM } from '../../context/CRMContext';
 import {
   PerformanceEvaluationRecord,
   DelayRecord,
+  AttendanceRecord,
   CompanyRule,
   RuleViolationRecord,
   MonthlyPerformanceReview,
@@ -56,7 +60,8 @@ import {
   calculateDelayMinutes,
   getDelayRangeCategory,
   calculateEmployeeKPIs,
-  qualityRatingToScore
+  qualityRatingToScore,
+  getArabicDayInfo
 } from '../../utils/performanceLogic';
 
 export interface PerformanceEvaluationViewProps {
@@ -94,7 +99,11 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
     addViolationClarification,
     monthlyPerformanceReviews,
     saveMonthlyPerformanceReview,
-    deleteMonthlyPerformanceReview
+    deleteMonthlyPerformanceReview,
+    attendanceRecords,
+    recordAttendance,
+    updateAttendanceRecord,
+    deleteAttendanceRecord
   } = useCRM();
 
   // Active top-level subtab synced with activeTab & initialTab
@@ -137,8 +146,9 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
     pointsWeight: 5
   });
 
-  // Delay form modal state
+  // Delay & Absence unified modal state
   const [isAddDelayModalOpen, setIsAddDelayModalOpen] = useState(false);
+  const [incidentModalType, setIncidentModalType] = useState<'delay' | 'absence'>('delay');
   const [delayFormData, setDelayFormData] = useState({
     employeeId: '',
     date: new Date().toISOString().split('T')[0],
@@ -149,6 +159,20 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
     reviewStatus: 'pending' as DelayReviewStatus,
     actionTaken: ''
   });
+
+  // Absence form modal state (تسجيل الغيابات وربطها باليوم والموظف)
+  const [isAddAbsenceModalOpen, setIsAddAbsenceModalOpen] = useState(false);
+  const [absenceFormData, setAbsenceFormData] = useState({
+    employeeId: '',
+    date: new Date().toISOString().split('T')[0],
+    isExcused: false,
+    reasonCategory: 'unexcused',
+    notes: '',
+    actionTaken: ''
+  });
+
+  // Delays & Absences sub-filter (الكل / غيابات فقط / تأخيرات فقط / معتمد / بانتظار المراجعة)
+  const [recordsFilterType, setRecordsFilterType] = useState<'all' | 'absences' | 'delays' | 'excused' | 'unexcused'>('all');
 
   // Rule form modal state
   const [isAddRuleModalOpen, setIsAddRuleModalOpen] = useState(false);
@@ -266,6 +290,23 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
     });
   }, [delays, isManager, currentUser, effectiveEmployeeId, selectedMonth]);
 
+  // Filtered absences (سجل الغيابات المسجلة بالسيستم)
+  const filteredAbsences = useMemo(() => {
+    return (attendanceRecords || []).filter(r => {
+      if (r.status !== 'absent') return false;
+      if (!isManager && r.memberId !== currentUser?.id) return false;
+      if (effectiveEmployeeId !== 'all') {
+        const emp = team.find(m => m.id === effectiveEmployeeId);
+        const match = r.memberId === effectiveEmployeeId ||
+                      (emp?.employeeCode && r.employeeCode === emp.employeeCode) ||
+                      (emp?.name && r.memberName.toLowerCase().trim() === emp.name.toLowerCase().trim());
+        if (!match) return false;
+      }
+      if (selectedMonth && !r.date.startsWith(selectedMonth)) return false;
+      return true;
+    });
+  }, [attendanceRecords, isManager, currentUser, effectiveEmployeeId, team, selectedMonth]);
+
   // Filtered rules
   const filteredRules = useMemo(() => {
     return companyRules.filter(r => {
@@ -312,6 +353,7 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
     const delayRows = filteredDelays.map(d => ({
       'الموظف': d.employeeName,
       'القسم': d.department,
+      'اليوم': getArabicDayInfo(d.date).dayName,
       'التاريخ': d.date,
       'بداية الدوام': d.scheduledStartTime,
       'وقت الحضور': d.actualArrivalTime,
@@ -323,13 +365,31 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
       'الإجراء': d.actionTaken || '-'
     }));
 
+    const absenceRows = filteredAbsences.map(a => {
+      const dayInfo = getArabicDayInfo(a.date);
+      const member = team.find(m => m.id === a.memberId);
+      return {
+        'الموظف': a.memberName,
+        'كود الموظف': a.employeeCode || member?.employeeCode || '-',
+        'القسم': member?.department || '-',
+        'الوظيفة': member?.role || '-',
+        'اليوم': dayInfo.dayName,
+        'التاريخ': a.date,
+        'نوع السجل': 'غياب كامل عن الدوام',
+        'حالة العذر': a.isExcused ? 'عذر معتمد (معفى من الخصم)' : 'بدون إذن مسبق (غير معتمد)',
+        'الملاحظات والعذر': a.notes || '-'
+      };
+    });
+
     const wb = XLSX.utils.book_new();
     const wsEvals = XLSX.utils.json_to_sheet(rows);
     const wsDelays = XLSX.utils.json_to_sheet(delayRows);
+    const wsAbsences = XLSX.utils.json_to_sheet(absenceRows);
     XLSX.utils.book_append_sheet(wb, wsEvals, 'تقييمات_الأداء');
     XLSX.utils.book_append_sheet(wb, wsDelays, 'سجل_التأخيرات');
+    XLSX.utils.book_append_sheet(wb, wsAbsences, 'سجل_الغيابات');
 
-    XLSX.writeFile(wb, `تقرير_أداء_سويفت_مايند_${selectedMonth}.xlsx`);
+    XLSX.writeFile(wb, `تقرير_أداء_وحضور_سويفت_مايند_${selectedMonth}.xlsx`);
   };
 
   // Submit new evaluation
@@ -409,6 +469,59 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
       reviewStatus: 'pending',
       actionTaken: ''
     });
+  };
+
+  // Submit new absence
+  const handleCreateAbsence = (e: React.FormEvent) => {
+    e.preventDefault();
+    const emp = team.find(m => m.id === absenceFormData.employeeId) || visibleTeamMembers[0];
+    if (!emp) return;
+
+    const categoryLabel = 
+      absenceFormData.reasonCategory === 'emergency' ? 'ظرف طارئ' :
+      absenceFormData.reasonCategory === 'medical' ? 'عذر مرضي / تقرير طبي' :
+      absenceFormData.reasonCategory === 'leave' ? 'إجازة اعتيادية / مأذونة' :
+      absenceFormData.reasonCategory === 'personal' ? 'ظرف عائلي / شخصي' :
+      absenceFormData.reasonCategory === 'unexcused' ? 'غياب بدون إذن مسبق' : 'أخرى';
+
+    const fullNotes = absenceFormData.notes 
+      ? `[${categoryLabel}] ${absenceFormData.notes}` 
+      : categoryLabel;
+
+    recordAttendance({
+      memberId: emp.id,
+      memberName: emp.name,
+      employeeCode: emp.employeeCode,
+      date: absenceFormData.date,
+      status: 'absent',
+      isExcused: absenceFormData.isExcused,
+      notes: fullNotes,
+      checkInTime: '',
+      checkOutTime: '',
+      lateMinutes: 0
+    });
+
+    setIsAddAbsenceModalOpen(false);
+    setAbsenceFormData({
+      employeeId: '',
+      date: new Date().toISOString().split('T')[0],
+      isExcused: false,
+      reasonCategory: 'unexcused',
+      notes: '',
+      actionTaken: ''
+    });
+  };
+
+  // Toggle absence excuse status (اعتماد العذر أو إلغاؤه)
+  const handleToggleAbsenceExcuse = (absenceRecord: AttendanceRecord) => {
+    updateAttendanceRecord(absenceRecord.id, {
+      isExcused: !absenceRecord.isExcused
+    });
+  };
+
+  // Delete absence record
+  const handleDeleteAbsence = (id: string) => {
+    deleteAttendanceRecord(id);
   };
 
   // Submit new company rule
@@ -563,11 +676,25 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
                   <span>تسجيل تقييم</span>
                 </button>
                 <button
-                  onClick={() => setIsAddDelayModalOpen(true)}
-                  className="bg-slate-800/90 hover:bg-slate-700/90 border border-slate-600 text-slate-100 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                  onClick={() => {
+                    setIncidentModalType('delay');
+                    setIsAddDelayModalOpen(true);
+                  }}
+                  className="bg-slate-800/90 hover:bg-slate-700/90 border border-slate-600 text-slate-100 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
                   <Clock className="w-4 h-4 text-amber-400" />
                   <span>سجل تأخير</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIncidentModalType('absence');
+                    setIsAddDelayModalOpen(true);
+                  }}
+                  className="bg-rose-900/80 hover:bg-rose-800 border border-rose-500/50 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+                  title="تسجيل غياب موظف وتوثيق يوم الغياب"
+                >
+                  <UserX className="w-4 h-4 text-rose-300" />
+                  <span>تسجيل غياب</span>
                 </button>
                 <button
                   onClick={() => setIsAddRuleModalOpen(true)}
@@ -697,10 +824,15 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
           }`}
         >
           <Clock className="w-4 h-4 text-rose-500" />
-          <span>متابعة التأخيرات والأعذار</span>
+          <span>متابعة التأخيرات والغياب والأعذار</span>
           <span className="bg-slate-200/80 text-slate-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-            {filteredDelays.length}
+            {filteredDelays.length + filteredAbsences.length}
           </span>
+          {filteredAbsences.length > 0 && (
+            <span className="bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse">
+              {filteredAbsences.length} غياب
+            </span>
+          )}
         </button>
 
         <button
@@ -1275,135 +1407,420 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
       )}
 
       {/* ========================================================================= */}
-      {/* 3. متابعة التأخيرات والأعذار (ATTENDANCE & DELAYS LOG) */}
+      {/* 3. متابعة التأخيرات والغياب والأعذار (ATTENDANCE, ABSENCES & DELAYS LOG) */}
       {/* ========================================================================= */}
       {activeSubTab === 'delays' && (
         <div className="space-y-5">
-          {/* Delays Summary Header Banner */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs text-amber-900">
+          {/* Delays & Absences Summary Header Banner */}
+          <div className="bg-gradient-to-l from-amber-50 via-slate-50 to-rose-50 border border-slate-200 rounded-2xl p-4.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs">
             <div className="flex items-center gap-3">
-              <span className="p-2 bg-amber-100 rounded-xl text-amber-800 shrink-0">
-                <Clock className="w-6 h-6" />
+              <span className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 shadow-xs shrink-0 flex items-center gap-1">
+                <Clock className="w-5 h-5 text-amber-500" />
+                <UserX className="w-5 h-5 text-rose-500" />
               </span>
               <div>
-                <h4 className="font-bold text-sm text-amber-950">سياسة وضوابط متابعة التأخيرات</h4>
-                <p className="text-amber-800/90 text-xs mt-0.5">
-                  السيستم يعتمد آلية الفصل بين تسجيل الواقعة واعتماد العذر. <strong>لا تطبق أي خصومات أو جزاءات تلقائية</strong> قبل مراجعة الحالة واعتماد الإجراء من الإدارة.
+                <h4 className="font-black text-sm text-slate-900 flex items-center gap-2">
+                  <span>سياسة وضوابط متابعة التأخيرات والانصراف والغياب</span>
+                  <span className="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded-full font-bold">توثيق شامل</span>
+                </h4>
+                <p className="text-slate-600 text-xs mt-0.5 max-w-2xl leading-relaxed">
+                  السيستم يوثّق حالات التأخير عن الدوام وأيام الغياب مع <strong>اسم الموظف ويوم الواقعة (يوم إيه بالتحديد)</strong>. يعتمد السيستم آلية الفصل بين تسجيل الواقعة واعتماد العذر لضمان العدالة وعدم تطبيق خصومات جزافية.
                 </p>
               </div>
             </div>
 
             {isManager && (
-              <button
-                onClick={() => setIsAddDelayModalOpen(true)}
-                className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-3.5 py-2 rounded-xl text-xs shrink-0 cursor-pointer shadow-sm"
-              >
-                + تسجيل واقعة تأخير
-              </button>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setIncidentModalType('absence');
+                    setIsAddDelayModalOpen(true);
+                  }}
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3.5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all active:scale-95"
+                >
+                  <UserX className="w-4 h-4" />
+                  <span>+ تسجيل غياب موظف</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIncidentModalType('delay');
+                    setIsAddDelayModalOpen(true);
+                  }}
+                  className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-3.5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all active:scale-95"
+                >
+                  <Clock className="w-4 h-4" />
+                  <span>+ تسجيل واقعة تأخير</span>
+                </button>
+              </div>
             )}
           </div>
 
-          {/* Delays Table / Cards */}
+          {/* Quick Stats KPI Cards (3 Cards) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Card 1: Delays Stats */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                <span className="font-bold flex items-center gap-1.5 text-amber-700">
+                  <Clock className="w-4 h-4" />
+                  <span>سجل التأخيرات</span>
+                </span>
+                <span className="bg-amber-50 text-amber-700 font-mono text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  {filteredDelays.length} حالات
+                </span>
+              </div>
+              <div className="text-xl font-black text-slate-900 mt-2">
+                {filteredDelays.reduce((s, d) => s + d.delayMinutes, 0)}{' '}
+                <span className="text-xs font-normal text-slate-500">دقيقة مسجلة</span>
+              </div>
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                <span>معتمد: <strong className="text-emerald-700">{filteredDelays.filter(d => d.reviewStatus === 'excused').length}</strong></span>
+                <span>بانتظار المراجعة: <strong className="text-amber-700">{filteredDelays.filter(d => d.reviewStatus === 'pending').length}</strong></span>
+                <span>مرفوض: <strong className="text-rose-700">{filteredDelays.filter(d => d.reviewStatus === 'unexcused').length}</strong></span>
+              </div>
+            </div>
+
+            {/* Card 2: Absences Stats */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                <span className="font-bold flex items-center gap-1.5 text-rose-700">
+                  <UserX className="w-4 h-4" />
+                  <span>سجل الغيابات</span>
+                </span>
+                <span className="bg-rose-50 text-rose-700 font-mono text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  {filteredAbsences.length} أيام
+                </span>
+              </div>
+              <div className="text-xl font-black text-rose-700 mt-2">
+                {filteredAbsences.length}{' '}
+                <span className="text-xs font-normal text-slate-500">يوم غياب للموظفين</span>
+              </div>
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                <span>بعذر معتمد: <strong className="text-emerald-700">{filteredAbsences.filter(a => a.isExcused).length}</strong></span>
+                <span>بدون إذن مسبق: <strong className="text-rose-700">{filteredAbsences.filter(a => !a.isExcused).length}</strong></span>
+              </div>
+            </div>
+
+            {/* Card 3: Total Month Incidents */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                <span className="font-bold flex items-center gap-1.5 text-blue-700">
+                  <CalendarDays className="w-4 h-4" />
+                  <span>إجمالي وقائع الحضور والانصراف</span>
+                </span>
+                <span className="bg-blue-50 text-blue-700 font-mono text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  {selectedMonth}
+                </span>
+              </div>
+              <div className="text-xl font-black text-slate-900 mt-2">
+                {filteredDelays.length + filteredAbsences.length}{' '}
+                <span className="text-xs font-normal text-slate-500">واقعة مسجلة بالشهر</span>
+              </div>
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                <span>تصفية الموظف: <strong className="text-slate-800">{effectiveEmployeeId === 'all' ? 'الكل' : targetEmployee?.name}</strong></span>
+                <span className="text-emerald-600 font-bold">سجلات فورية ومحدثة</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sub-Filter Pills Bar */}
+          <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={() => setRecordsFilterType('all')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  recordsFilterType === 'all'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                الكل ({filteredDelays.length + filteredAbsences.length})
+              </button>
+              <button
+                onClick={() => setRecordsFilterType('absences')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  recordsFilterType === 'absences'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                }`}
+              >
+                <UserX className="w-3.5 h-3.5" />
+                <span>الغيابات فقط ({filteredAbsences.length})</span>
+              </button>
+              <button
+                onClick={() => setRecordsFilterType('delays')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  recordsFilterType === 'delays'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>التأخيرات فقط ({filteredDelays.length})</span>
+              </button>
+              <button
+                onClick={() => setRecordsFilterType('excused')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  recordsFilterType === 'excused'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                }`}
+              >
+                أعذار معتمدة
+              </button>
+              <button
+                onClick={() => setRecordsFilterType('unexcused')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                  recordsFilterType === 'unexcused'
+                    ? 'bg-rose-700 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                بدون إذن / بانتظار المراجعة
+              </button>
+            </div>
+
+            <span className="text-[11px] text-slate-500 font-medium">
+              الشهر المختار: <strong className="font-mono text-slate-800 font-bold">{selectedMonth}</strong>
+            </span>
+          </div>
+
+          {/* Unified Records Table / Cards */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-slate-200 flex items-center justify-between">
               <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <span>سجل حالات التأخير المسجلة لشهر:</span>
+                <span>سجل حالات الغياب والتأخيرات المسجلة:</span>
                 <span className="bg-slate-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">{selectedMonth}</span>
               </h3>
-              <span className="text-xs text-slate-500 font-medium">
-                إجمالي الدقائق المسجلة: <strong className="text-rose-600 font-bold">{filteredDelays.reduce((s, d) => s + d.delayMinutes, 0)} دقيقة</strong>
-              </span>
+              <div className="flex items-center gap-3 text-xs text-slate-500">
+                <span>إجمالي الغيابات: <strong className="text-rose-600 font-bold">{filteredAbsences.length} يوم</strong></span>
+                <span>•</span>
+                <span>إجمالي التأخيرات: <strong className="text-amber-600 font-bold">{filteredDelays.length} حالة</strong></span>
+              </div>
             </div>
 
             <div className="divide-y divide-slate-100">
-              {filteredDelays.map(delay => (
-                <div key={delay.id} className="p-4 hover:bg-slate-50/70 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2">
-                      <strong className="text-sm font-bold text-slate-900">{delay.employeeName}</strong>
-                      <span className="text-xs text-slate-500">({delay.department})</span>
-                      <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
-                        {delay.date}
-                      </span>
-                      <span className="text-xs bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full">
-                        تأخير {delay.delayMinutes} دقيقة ({delay.delayRange} د)
-                      </span>
+              {/* Combine and render records */}
+              {(() => {
+                // Build unified list
+                const delayItems = (recordsFilterType === 'absences') ? [] : filteredDelays
+                  .filter(d => {
+                    if (recordsFilterType === 'excused') return d.reviewStatus === 'excused';
+                    if (recordsFilterType === 'unexcused') return d.reviewStatus !== 'excused';
+                    return true;
+                  })
+                  .map(d => ({ kind: 'delay' as const, data: d, date: d.date }));
+
+                const absenceItems = (recordsFilterType === 'delays') ? [] : filteredAbsences
+                  .filter(a => {
+                    if (recordsFilterType === 'excused') return a.isExcused;
+                    if (recordsFilterType === 'unexcused') return !a.isExcused;
+                    return true;
+                  })
+                  .map(a => ({ kind: 'absence' as const, data: a, date: a.date }));
+
+                const combined = [...delayItems, ...absenceItems].sort((a, b) => b.date.localeCompare(a.date));
+
+                if (combined.length === 0) {
+                  return (
+                    <div className="p-12 text-center text-slate-400 text-xs space-y-2">
+                      <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                      <p className="font-bold text-slate-700 text-sm">سجل نظيف ومنتظم!</p>
+                      <p>لا توجد أي حالات تأخير أو غياب مطابقة لهذا الفلتر خلال شهر {selectedMonth}.</p>
                     </div>
+                  );
+                }
 
-                    <div className="text-xs text-slate-500 flex items-center gap-4">
-                      <span>بداية الدوام: <strong className="text-slate-700">{delay.scheduledStartTime}</strong></span>
-                      <span>وقت الحضور الفعلي: <strong className="text-slate-700">{delay.actualArrivalTime}</strong></span>
-                      <span>تصنيف السبب: <strong className="text-slate-700">{
-                        delay.reasonCategory === 'traffic_commute' ? 'ازدحام مواصلات' :
-                        delay.reasonCategory === 'emergency' ? 'ظرف طارئ' :
-                        delay.reasonCategory === 'personal' ? 'سبب شخصي' :
-                        delay.reasonCategory === 'attendance_device_issue' ? 'مشكلة تسجيل حضور' : 'أخرى'
-                      }</strong></span>
+                return combined.map(item => {
+                  if (item.kind === 'absence') {
+                    const absence = item.data;
+                    const dayInfo = getArabicDayInfo(absence.date);
+                    const member = team.find(m => m.id === absence.memberId);
+
+                    return (
+                      <div key={absence.id} className="p-4 hover:bg-slate-50/80 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Prominent Day & Date Badge (يوم إيه) */}
+                            <span className="text-xs bg-blue-50 text-blue-900 border border-blue-200/80 font-black px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">
+                              <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
+                              <span>{dayInfo.dayName || 'يوم غير محدد'}</span>
+                              <span className="font-mono text-blue-600 text-[11px] font-semibold">({absence.date})</span>
+                            </span>
+
+                            {/* Absence Badge */}
+                            <span className="text-xs bg-rose-600 text-white font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs">
+                              <UserX className="w-3.5 h-3.5" />
+                              <span>غياب كامل عن الدوام</span>
+                            </span>
+
+                            {/* Employee Info */}
+                            <div className="flex items-center gap-1.5 mr-1">
+                              <img
+                                src={member?.avatar || '/assets/aistudio/PROFILE2_3fe3b3a5.png'}
+                                alt={absence.memberName}
+                                className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                              />
+                              <strong className="text-sm font-black text-slate-900">{absence.memberName}</strong>
+                              <span className="text-xs text-slate-500 font-mono">
+                                (كود: {absence.employeeCode || member?.employeeCode || '-'})
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                - {member?.department || 'كل الأقسام'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Absence Details & Reason */}
+                          <div className="text-xs text-slate-700 bg-rose-50/50 p-2.5 rounded-lg border border-rose-200/60 leading-relaxed flex items-start gap-2">
+                            <Info className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-bold text-slate-800">العذر وملاحظات الغياب: </span>
+                              <span className="text-slate-700">{absence.notes || 'لم يتم تسجيل ملاحظات أو عذر رسمي'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status & Manager Actions */}
+                        <div className="flex flex-col sm:flex-row md:flex-col items-end gap-2 shrink-0">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                            absence.isExcused
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                              : 'bg-rose-100 text-rose-800 border-rose-300'
+                          }`}>
+                            {absence.isExcused ? '✓ غياب بعذر معتمد (معفى من الخصم)' : '✕ غياب بدون إذن مسبق (غير معتمد)'}
+                          </span>
+
+                          {isManager && (
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <button
+                                onClick={() => handleToggleAbsenceExcuse(absence)}
+                                className={`text-[11px] font-bold px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                                  absence.isExcused
+                                    ? 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                                    : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                }`}
+                                title={absence.isExcused ? 'إلغاء اعتماد العذر' : 'اعتماد العذر وإعفاء الموظف من الخصم'}
+                              >
+                                {absence.isExcused ? 'إلغاء الاعتماد' : 'اعتماد العذر ✓'}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAbsence(absence.id)}
+                                className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer transition-colors"
+                                title="حذف سجل الغياب"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // DELAY RECORD
+                  const delay = item.data;
+                  const dayInfo = getArabicDayInfo(delay.date);
+                  const member = team.find(m => m.id === delay.employeeId);
+
+                  return (
+                    <div key={delay.id} className="p-4 hover:bg-slate-50/70 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Prominent Day & Date Badge (يوم إيه) */}
+                          <span className="text-xs bg-amber-50 text-amber-900 border border-amber-200/80 font-black px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">
+                            <CalendarDays className="w-3.5 h-3.5 text-amber-600" />
+                            <span>{dayInfo.dayName || 'يوم غير محدد'}</span>
+                            <span className="font-mono text-amber-700 text-[11px] font-semibold">({delay.date})</span>
+                          </span>
+
+                          {/* Delay Badge */}
+                          <span className="text-xs bg-amber-500 text-slate-950 font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>تأخير {delay.delayMinutes} دقيقة ({delay.delayRange} د)</span>
+                          </span>
+
+                          {/* Employee Info */}
+                          <div className="flex items-center gap-1.5 mr-1">
+                            <img
+                              src={member?.avatar || '/assets/aistudio/PROFILE2_3fe3b3a5.png'}
+                              alt={delay.employeeName}
+                              className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                            />
+                            <strong className="text-sm font-bold text-slate-900">{delay.employeeName}</strong>
+                            <span className="text-xs text-slate-500">({delay.department})</span>
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-slate-500 flex flex-wrap items-center gap-4">
+                          <span>بداية الدوام: <strong className="text-slate-700">{delay.scheduledStartTime}</strong></span>
+                          <span>وقت الحضور الفعلي: <strong className="text-slate-700">{delay.actualArrivalTime}</strong></span>
+                          <span>تصنيف السبب: <strong className="text-slate-700">{
+                            delay.reasonCategory === 'traffic_commute' ? 'ازدحام مواصلات' :
+                            delay.reasonCategory === 'emergency' ? 'ظرف طارئ' :
+                            delay.reasonCategory === 'personal' ? 'سبب شخصي' :
+                            delay.reasonCategory === 'attendance_device_issue' ? 'مشكلة تسجيل حضور' : 'أخرى'
+                          }</strong></span>
+                        </div>
+
+                        <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 leading-relaxed">
+                          العذر والتوضيح: <strong>{delay.reasonDetails || 'غير موضح حتى الآن'}</strong>
+                        </p>
+
+                        {delay.actionTaken && (
+                          <div className="text-[11px] text-slate-600 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>الإجراء المتخذ: <strong>{delay.actionTaken}</strong></span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions & Review Badge */}
+                      <div className="flex flex-col sm:flex-row md:flex-col items-end gap-2 shrink-0">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          delay.reviewStatus === 'excused' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                          delay.reviewStatus === 'reviewed' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                          delay.reviewStatus === 'unexcused' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                          'bg-amber-100 text-amber-800 border border-amber-200'
+                        }`}>
+                          {delay.reviewStatus === 'excused' ? 'تم اعتماد العذر' :
+                           delay.reviewStatus === 'reviewed' ? 'تمت المراجعة' :
+                           delay.reviewStatus === 'unexcused' ? 'عذر غير مقبول' : 'بانتظار المراجعة'}
+                        </span>
+
+                        {isManager && (
+                          <div className="flex items-center gap-1 mt-1">
+                            {delay.reviewStatus !== 'excused' && (
+                              <button
+                                onClick={() => reviewDelayRecord(delay.id, 'excused', 'تم اعتماد العذر بدون أي خصم')}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-2 py-1 rounded transition-colors cursor-pointer"
+                                title="اعتماد العذر وإعفاء الموظف من الجزاء"
+                              >
+                                اعتماد العذر
+                              </button>
+                            )}
+                            {delay.reviewStatus !== 'unexcused' && (
+                              <button
+                                onClick={() => reviewDelayRecord(delay.id, 'unexcused', 'تم رفض العذر لعدم وجود إفادة مسبقة')}
+                                className="bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold px-2 py-1 rounded transition-colors cursor-pointer"
+                                title="رفض العذر"
+                              >
+                                رفض
+                              </button>
+                            )}
+                            <button
+                              onClick={() => deleteDelayRecord(delay.id)}
+                              className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+                              title="حذف"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-
-                    <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 leading-relaxed">
-                      العذر والتوضيح: <strong>{delay.reasonDetails || 'غير موضح حتى الآن'}</strong>
-                    </p>
-
-                    {delay.actionTaken && (
-                      <div className="text-[11px] text-slate-600 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>الإجراء المتخذ: <strong>{delay.actionTaken}</strong></span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions & Review Badge */}
-                  <div className="flex flex-col sm:flex-row md:flex-col items-end gap-2 shrink-0">
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                      delay.reviewStatus === 'excused' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
-                      delay.reviewStatus === 'reviewed' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                      delay.reviewStatus === 'unexcused' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
-                      'bg-amber-100 text-amber-800 border border-amber-200'
-                    }`}>
-                      {delay.reviewStatus === 'excused' ? 'تم اعتماد العذر' :
-                       delay.reviewStatus === 'reviewed' ? 'تمت المراجعة' :
-                       delay.reviewStatus === 'unexcused' ? 'عذر غير مقبول' : 'بانتظار المراجعة'}
-                    </span>
-
-                    {isManager && (
-                      <div className="flex items-center gap-1 mt-1">
-                        {delay.reviewStatus !== 'excused' && (
-                          <button
-                            onClick={() => reviewDelayRecord(delay.id, 'excused', 'تم اعتماد العذر بدون أي خصم')}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-2 py-1 rounded transition-colors cursor-pointer"
-                            title="اعتماد العذر وإعفاء الموظف من الجزاء"
-                          >
-                            اعتماد العذر
-                          </button>
-                        )}
-                        {delay.reviewStatus !== 'unexcused' && (
-                          <button
-                            onClick={() => reviewDelayRecord(delay.id, 'unexcused', 'تم رفض العذر لعدم وجود إفادة مسبقة')}
-                            className="bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold px-2 py-1 rounded transition-colors cursor-pointer"
-                            title="رفض العذر"
-                          >
-                            رفض
-                          </button>
-                        )}
-                        <button
-                          onClick={() => deleteDelayRecord(delay.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
-                          title="حذف"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {filteredDelays.length === 0 && (
-                <div className="p-12 text-center text-slate-400 text-xs">
-                  لا توجد أي تأخيرات مسجلة للموظف أو القسم المختار خلال هذا الشهر.
-                </div>
-              )}
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
@@ -1977,139 +2394,306 @@ export const PerformanceEvaluationView: React.FC<PerformanceEvaluationViewProps>
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: ADD DELAY RECORD */}
+      {/* MODAL 2: UNIFIED ATTENDANCE INCIDENT MODAL (تأخير حضور أو غياب موظف) */}
       {/* ========================================================================= */}
-      {isAddDelayModalOpen && (
+      {(isAddDelayModalOpen || isAddAbsenceModalOpen) && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-                <Clock className="w-5 h-5 text-rose-600" />
-                <span>تسجيل واقعة تأخير حضور</span>
+                {incidentModalType === 'delay' ? (
+                  <>
+                    <Clock className="w-5 h-5 text-amber-500" />
+                    <span>تسجيل واقعة تأخير حضور</span>
+                  </>
+                ) : (
+                  <>
+                    <UserX className="w-5 h-5 text-rose-600" />
+                    <span>تسجيل واقعة غياب موظف</span>
+                  </>
+                )}
               </h3>
               <button
-                onClick={() => setIsAddDelayModalOpen(false)}
+                onClick={() => {
+                  setIsAddDelayModalOpen(false);
+                  setIsAddAbsenceModalOpen(false);
+                }}
                 className="text-slate-400 hover:text-slate-600 font-bold p-1 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateDelay} className="space-y-4 text-xs">
+            {/* Type Switcher: تأخير أم غياب */}
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 text-xs block">نوع الواقعة المراد تسجيلها: *</label>
+              <div className="p-1 bg-slate-100 rounded-xl border border-slate-200 grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIncidentModalType('delay')}
+                  className={`py-2.5 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    incidentModalType === 'delay'
+                      ? 'bg-amber-500 text-slate-950 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                  }`}
+                >
+                  <Clock className="w-4 h-4 text-slate-950 shrink-0" />
+                  <span>تأخير حضور (دقائق)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIncidentModalType('absence')}
+                  className={`py-2.5 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    incidentModalType === 'absence'
+                      ? 'bg-rose-600 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                  }`}
+                >
+                  <UserX className="w-4 h-4 text-white shrink-0" />
+                  <span>غياب كامل عن الدوام</span>
+                </button>
+              </div>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                if (incidentModalType === 'delay') {
+                  handleCreateDelay(e);
+                } else {
+                  handleCreateAbsence(e);
+                }
+              }}
+              className="space-y-4 text-xs"
+            >
+              {/* Employee Selection */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">الموظف المتأخر *</label>
+                <label className="font-bold text-slate-700 block mb-1">
+                  {incidentModalType === 'delay' ? 'الموظف المتأخر *' : 'اسم الموظف الغائب *'}
+                </label>
                 <select
-                  value={delayFormData.employeeId}
-                  onChange={e => setDelayFormData({ ...delayFormData, employeeId: e.target.value })}
+                  value={incidentModalType === 'delay' ? delayFormData.employeeId : (absenceFormData.employeeId || delayFormData.employeeId)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setDelayFormData(prev => ({ ...prev, employeeId: val }));
+                    setAbsenceFormData(prev => ({ ...prev, employeeId: val }));
+                  }}
                   required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:ring-1 focus:ring-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs font-bold text-slate-800 focus:ring-1 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="">اختر الموظف...</option>
                   {visibleTeamMembers.map(m => (
                     <option key={m.id} value={m.id}>
-                      {m.name} ({m.department})
+                      {m.name} ({m.department}) {m.employeeCode ? `- كود: ${m.employeeCode}` : ''}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">التاريخ *</label>
+              {/* Date & Arabic Day Name */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  {incidentModalType === 'delay' ? 'تاريخ ويوم التأخير *' : 'تاريخ ويوم الغياب *'}
+                </label>
+                <div className="flex items-center gap-2">
                   <input
                     type="date"
-                    value={delayFormData.date}
-                    onChange={e => setDelayFormData({ ...delayFormData, date: e.target.value })}
+                    value={incidentModalType === 'delay' ? delayFormData.date : (absenceFormData.date || delayFormData.date)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setDelayFormData(prev => ({ ...prev, date: val }));
+                      setAbsenceFormData(prev => ({ ...prev, date: val }));
+                    }}
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-mono font-bold"
                   />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">بداية الدوام</label>
-                  <input
-                    type="time"
-                    value={delayFormData.scheduledStartTime}
-                    onChange={e => setDelayFormData({ ...delayFormData, scheduledStartTime: e.target.value })}
-                    required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">الحضور الفعلي</label>
-                  <input
-                    type="time"
-                    value={delayFormData.actualArrivalTime}
-                    onChange={e => setDelayFormData({ ...delayFormData, actualArrivalTime: e.target.value })}
-                    required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-rose-600"
-                  />
+                  {(delayFormData.date || absenceFormData.date) && (
+                    <span className={`text-xs font-black px-3 py-2 rounded-lg border flex items-center gap-1.5 shrink-0 shadow-2xs ${
+                      incidentModalType === 'delay'
+                        ? 'bg-amber-50 text-amber-900 border-amber-200'
+                        : 'bg-rose-50 text-rose-900 border-rose-200'
+                    }`}>
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      <span>{getArabicDayInfo(delayFormData.date || absenceFormData.date).dayName}</span>
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Automatic delay calculation badge */}
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
-                <span className="text-slate-600">مدة التأخير المحسوبة تلقائياً:</span>
-                <span className="text-base font-black text-rose-600">
-                  {calculatedLiveDelayMinutes} دقيقة ({getDelayRangeCategory(calculatedLiveDelayMinutes)})
-                </span>
-              </div>
+              {/* ========================================= */}
+              {/* CONDITIONAL SECTION 1: DELAY FIELDS */}
+              {/* ========================================= */}
+              {incidentModalType === 'delay' && (
+                <div className="space-y-4 pt-1">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">بداية الدوام المحدد</label>
+                      <input
+                        type="time"
+                        value={delayFormData.scheduledStartTime}
+                        onChange={e => setDelayFormData({ ...delayFormData, scheduledStartTime: e.target.value })}
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">الحضور الفعلي</label>
+                      <input
+                        type="time"
+                        value={delayFormData.actualArrivalTime}
+                        onChange={e => setDelayFormData({ ...delayFormData, actualArrivalTime: e.target.value })}
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold text-rose-600"
+                      />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">سبب التأخير</label>
-                  <select
-                    value={delayFormData.reasonCategory}
-                    onChange={e => setDelayFormData({ ...delayFormData, reasonCategory: e.target.value as DelayReasonCategory })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs"
-                  >
-                    <option value="traffic_commute">ازدحام مواصلات / طريق</option>
-                    <option value="emergency">ظرف طارئ</option>
-                    <option value="personal">سبب شخصي</option>
-                    <option value="attendance_device_issue">مشكلة في تسجيل الحضور</option>
-                    <option value="not_specified">غير موضح حتى الآن</option>
-                    <option value="other">أخرى</option>
-                  </select>
+                  {/* Automatic delay calculation badge */}
+                  <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200/80 flex items-center justify-between">
+                    <span className="text-amber-900 font-bold">مدة التأخير المحسوبة تلقائياً:</span>
+                    <span className="text-sm font-black text-rose-600 bg-white px-2.5 py-1 rounded-lg border border-rose-200 shadow-2xs">
+                      {calculatedLiveDelayMinutes} دقيقة ({getDelayRangeCategory(calculatedLiveDelayMinutes)})
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">سبب التأخير</label>
+                      <select
+                        value={delayFormData.reasonCategory}
+                        onChange={e => setDelayFormData({ ...delayFormData, reasonCategory: e.target.value as DelayReasonCategory })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold cursor-pointer"
+                      >
+                        <option value="traffic_commute">ازدحام مواصلات / طريق</option>
+                        <option value="emergency">ظرف طارئ</option>
+                        <option value="personal">سبب شخصي</option>
+                        <option value="attendance_device_issue">مشكلة في تسجيل الحضور</option>
+                        <option value="not_specified">غير موضح حتى الآن</option>
+                        <option value="other">أخرى</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">حالة مراجعة العذر</label>
+                      <select
+                        value={delayFormData.reviewStatus}
+                        onChange={e => setDelayFormData({ ...delayFormData, reviewStatus: e.target.value as DelayReviewStatus })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold cursor-pointer"
+                      >
+                        <option value="pending">بانتظار المراجعة</option>
+                        <option value="reviewed">تمت المراجعة</option>
+                        <option value="excused">تم اعتماد العذر (إعفاء)</option>
+                        <option value="unexcused">عذر غير مقبول</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">العذر والتوضيح المقدم</label>
+                    <textarea
+                      rows={2}
+                      value={delayFormData.reasonDetails}
+                      onChange={e => setDelayFormData({ ...delayFormData, reasonDetails: e.target.value })}
+                      placeholder="سجل عذر الموظف وتوضيحه للإدارة..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs"
+                    />
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">حالة مراجعة العذر</label>
-                  <select
-                    value={delayFormData.reviewStatus}
-                    onChange={e => setDelayFormData({ ...delayFormData, reviewStatus: e.target.value as DelayReviewStatus })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold"
-                  >
-                    <option value="pending">بانتظار المراجعة</option>
-                    <option value="reviewed">تمت المراجعة</option>
-                    <option value="excused">تم اعتماد العذر</option>
-                    <option value="unexcused">عذر غير مقبول</option>
-                  </select>
+              {/* ========================================= */}
+              {/* CONDITIONAL SECTION 2: ABSENCE FIELDS */}
+              {/* ========================================= */}
+              {incidentModalType === 'absence' && (
+                <div className="space-y-4 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">تصنيف سبب الغياب *</label>
+                      <select
+                        value={absenceFormData.reasonCategory}
+                        onChange={e => setAbsenceFormData({ ...absenceFormData, reasonCategory: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold cursor-pointer"
+                      >
+                        <option value="unexcused">غياب بدون إذن مسبق (غير معتمد)</option>
+                        <option value="emergency">ظرف عائلي / شخصي طارئ</option>
+                        <option value="medical">عذر مرضي / تقرير وكشف طبي</option>
+                        <option value="leave">إجازة اعتيادية / استئذان مسبق</option>
+                        <option value="personal">ظرف خاص</option>
+                        <option value="other">أسباب أخرى</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">حالة العذر</label>
+                      <select
+                        value={absenceFormData.isExcused ? 'excused' : 'unexcused'}
+                        onChange={e => setAbsenceFormData({ ...absenceFormData, isExcused: e.target.value === 'excused' })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold cursor-pointer"
+                      >
+                        <option value="unexcused">بدون عذر معتمد (يطبق الخصم)</option>
+                        <option value="excused">عذر معتمد (إعفاء من الخصم)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">تفاصيل العذر أو الملاحظات</label>
+                    <textarea
+                      rows={3}
+                      value={absenceFormData.notes}
+                      onChange={e => setAbsenceFormData({ ...absenceFormData, notes: e.target.value })}
+                      placeholder="سجل تفاصيل غياب الموظف أو الإفادة المقدمة للإدارة..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs"
+                    />
+                  </div>
+
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="isAbsenceExcusedCheckbox"
+                      checked={absenceFormData.isExcused}
+                      onChange={e => setAbsenceFormData({ ...absenceFormData, isExcused: e.target.checked })}
+                      className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                    />
+                    <label htmlFor="isAbsenceExcusedCheckbox" className="text-xs font-bold text-slate-800 cursor-pointer select-none">
+                      اعتماد العذر وإعفاء الموظف من الخصم (غياب مبرر ومأذون)
+                    </label>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">العذر والتوضيح المقدم</label>
-                <textarea
-                  rows={2}
-                  value={delayFormData.reasonDetails}
-                  onChange={e => setDelayFormData({ ...delayFormData, reasonDetails: e.target.value })}
-                  placeholder="سجل عذر الموظف المقدم للإدارة..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+              {/* Submit / Cancel Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setIsAddDelayModalOpen(false)}
+                  onClick={() => {
+                    setIsAddDelayModalOpen(false);
+                    setIsAddAbsenceModalOpen(false);
+                  }}
                   className="px-4 py-2 rounded-xl text-slate-600 font-bold hover:bg-slate-100 cursor-pointer"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-md cursor-pointer"
+                  className={`px-5 py-2 text-white font-bold rounded-xl shadow-md cursor-pointer flex items-center gap-1.5 transition-all active:scale-95 ${
+                    incidentModalType === 'delay'
+                      ? 'bg-amber-600 hover:bg-amber-500'
+                      : 'bg-rose-600 hover:bg-rose-500'
+                  }`}
                 >
-                  تسجيل الواقعة
+                  {incidentModalType === 'delay' ? (
+                    <>
+                      <Clock className="w-4 h-4" />
+                      <span>تسجيل واقعة التأخير</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserX className="w-4 h-4" />
+                      <span>تسجيل واقعة الغياب</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

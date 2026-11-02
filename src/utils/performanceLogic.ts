@@ -43,6 +43,35 @@ export function getDelayRangeCategory(minutes: number): DelayRangeCategory {
 }
 
 /**
+ * استخراج اسم اليوم بالعربية وتنسيق التاريخ لربط الغيابات والتأخيرات بيوم وقوعها بدقة
+ * مثال: "2026-11-02" => { dayName: "يوم الإثنين", formattedDate: "2026-11-02", fullBadge: "يوم الإثنين (2026-11-02)" }
+ */
+export function getArabicDayInfo(dateStr: string): {
+  dayName: string;
+  formattedDate: string;
+  fullBadge: string;
+} {
+  if (!dateStr) return { dayName: '', formattedDate: '', fullBadge: '' };
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+      const rawDay = days[d.getDay()] || '';
+      return {
+        dayName: rawDay ? `يوم ${rawDay}` : '',
+        formattedDate: dateStr,
+        fullBadge: rawDay ? `يوم ${rawDay} (${dateStr})` : dateStr
+      };
+    }
+  } catch {}
+  return { dayName: '', formattedDate: dateStr, fullBadge: dateStr };
+}
+
+/**
  * تحويل تقييم الجودة إلى رقم من 1 إلى 5
  */
 export function qualityRatingToScore(rating?: string): number {

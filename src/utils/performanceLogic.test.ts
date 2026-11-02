@@ -5,7 +5,8 @@ import {
   getDelayRangeCategory,
   qualityRatingToScore,
   isTaskDeliveredOnTime,
-  calculateEmployeeKPIs
+  calculateEmployeeKPIs,
+  getArabicDayInfo
 } from './performanceLogic';
 import { Task, DelayRecord, PerformanceEvaluationRecord, RuleViolationRecord } from '../types/crm';
 
@@ -38,6 +39,21 @@ describe('Performance & Delay Logic Tests', () => {
     assert.equal(qualityRatingToScore('good'), 3);
     assert.equal(qualityRatingToScore('needs_work'), 2);
     assert.equal(qualityRatingToScore('unacceptable'), 1);
+  });
+
+  test('getArabicDayInfo formats Arabic day name and date accurately', () => {
+    // 2026-11-01 is a Sunday
+    const sunInfo = getArabicDayInfo('2026-11-01');
+    assert.equal(sunInfo.dayName, 'يوم الأحد');
+    assert.equal(sunInfo.formattedDate, '2026-11-01');
+
+    // 2026-11-02 is a Monday
+    const monInfo = getArabicDayInfo('2026-11-02');
+    assert.equal(monInfo.dayName, 'يوم الإثنين');
+
+    // Empty date
+    const emptyInfo = getArabicDayInfo('');
+    assert.equal(emptyInfo.dayName, '');
   });
 
   test('isTaskDeliveredOnTime checks deadline vs actual delivery date', () => {

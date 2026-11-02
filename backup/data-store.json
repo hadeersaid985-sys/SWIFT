@@ -143,9 +143,9 @@
     {
       "id": "user-roaa",
       "employeeCode": "SM-109",
-      "name": "roaa_hetemy",
-      "role": "content creator",
-      "department": "التطوير والتقنية",
+      "name": "رواء",
+      "role": "Content Creator",
+      "department": "صناع المحتوى",
       "email": "roaa_hetemy@swiftmynd.com",
       "phone": "201271895754",
       "whatsappNumber": "201271895754",
@@ -2435,6 +2435,46 @@
       "timerStartedAt": 1793536064371,
       "timerLastResumedAt": 1793536064371,
       "revisionsCount": 0
+    },
+    {
+      "title": "باك لينك نقل العفش",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: باك لينك نقل العفش\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Eman Ashraf):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "assignedToId": "user-eman",
+      "priority": "medium",
+      "status": "todo",
+      "startDate": "2026-11-02",
+      "dueDate": "2026-11-02",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timeLogs": [],
+      "subtasks": [],
+      "isPrivate": false,
+      "id": "task-1793607075206",
+      "mentionedUserIds": [],
+      "comments": [],
+      "createdAt": "2026-11-02"
+    },
+    {
+      "subtasks": [],
+      "createdAt": "2026-11-01",
+      "status": "completed",
+      "dueTime": "18:00",
+      "mentionedUserIds": [],
+      "title": "فيديو – November Birthday Offer",
+      "completedAt": "2026-11-01",
+      "comments": [],
+      "estimatedHours": 2,
+      "isPrivate": false,
+      "dueDate": "2026-10-31",
+      "id": "task-1793552158505",
+      "category": "إداري",
+      "timeLogs": [],
+      "startDate": "2026-11-01",
+      "updatedAt": "2026-11-01T16:56:09.979Z",
+      "assignedToId": "user-islam",
+      "description": "https://drive.google.com/file/d/1rzLFcUgrRRaDKloFrxPn145_BBoT_CK3/view?usp=sharing",
+      "priority": "medium"
     }
   ],
   "leads": [
@@ -2471,10 +2511,10 @@
         }
       ],
       "notes": "يبحثون عن أتمتة لجميع فروعهم الـ 14 مع تتبع فوري لمواعيد التسليم.",
-      "followUpDate": "2026-11-01",
+      "followUpDate": "2026-11-02",
       "followUpTime": "13:00",
       "followUpNotes": "الاتصال الهاتفي النهائي لمناقشة تعديل شروط الدفع وتوقيع العقد المبدئي.",
-      "createdAt": "2026-10-29"
+      "createdAt": "2026-10-30"
     },
     {
       "id": "lead-302",
@@ -2509,10 +2549,10 @@
         }
       ],
       "notes": "تحتاج لربط برامج العيادات مع نظام إدارة مهام الأطباء ومواعيد الزيارات.",
-      "followUpDate": "2026-11-01",
+      "followUpDate": "2026-11-02",
       "followUpTime": "15:30",
       "followUpNotes": "متابعة قرار مجلس الإدارة ومناقشة تفاصيل الربط التقني.",
-      "createdAt": "2026-11-01"
+      "createdAt": "2026-11-02"
     },
     {
       "id": "lead-303",
@@ -2547,10 +2587,10 @@
         }
       ],
       "notes": "طلب إعادة الاتصال بعد دراسة الميزانية السنوية الجديدة للشركة.",
-      "followUpDate": "2026-11-02",
+      "followUpDate": "2026-11-03",
       "followUpTime": "11:00",
       "followUpNotes": "مكالمة هاتفية للمتابعة بعد مراجعة الإدارة المالية للميزانية.",
-      "createdAt": "2026-10-30"
+      "createdAt": "2026-10-31"
     },
     {
       "id": "lead-304",
@@ -2585,7 +2625,7 @@
         }
       ],
       "notes": "طلبوا تجربة عملية ديمو للربط مع نظام إدارة الأسطول والمخازن.",
-      "createdAt": "2026-10-27"
+      "createdAt": "2026-10-28"
     }
   ],
   "deals": [
@@ -2600,9 +2640,9 @@
       "currency": "ج.م",
       "stage": "تفاوض",
       "probability": 85,
-      "expectedCloseDate": "2026-11-06",
+      "expectedCloseDate": "2026-11-07",
       "assignedToId": "user-1",
-      "createdAt": "2026-10-17",
+      "createdAt": "2026-10-18",
       "notes": "الصفقة في مرحلة الصياغة القانونية النهائية للعقد."
     },
     {
@@ -2616,9 +2656,9 @@
       "currency": "ج.م",
       "stage": "عرض سعر",
       "probability": 60,
-      "expectedCloseDate": "2026-11-13",
+      "expectedCloseDate": "2026-11-14",
       "assignedToId": "user-2",
-      "createdAt": "2026-10-22",
+      "createdAt": "2026-10-23",
       "notes": "العرض يشمل التخصيص والأمان العالي وربط الفروع المصرفية."
     },
     {
@@ -2632,9 +2672,9 @@
       "currency": "ج.م",
       "stage": "مؤهل",
       "probability": 40,
-      "expectedCloseDate": "2026-11-21",
+      "expectedCloseDate": "2026-11-22",
       "assignedToId": "user-3",
-      "createdAt": "2026-10-28",
+      "createdAt": "2026-10-29",
       "notes": "تم تقديم العرض الأولي والمقارنة مع الحلول المنافسة."
     },
     {
@@ -2648,9 +2688,9 @@
       "currency": "ج.م",
       "stage": "مغلقة ناجحة",
       "probability": 100,
-      "expectedCloseDate": "2026-10-29",
+      "expectedCloseDate": "2026-10-30",
       "assignedToId": "user-2",
-      "createdAt": "2026-10-02",
+      "createdAt": "2026-10-03",
       "notes": "تم توقيع العقد رسمياً واستلام الدفعة الأولى بنجاح!"
     }
   ],
@@ -2659,7 +2699,7 @@
       "id": "meet-1",
       "title": "الاجتماع الصباحي اليومي لفريق المبيعات والحسابات (Daily Standup)",
       "meetingType": "internal",
-      "date": "2026-11-01",
+      "date": "2026-11-02",
       "time": "10:00",
       "startTime": "10:00",
       "endTime": "10:30",
@@ -2685,7 +2725,7 @@
           "title": "إرسال عرض سعر العقد المعدل لشركة إعمار",
           "assignedToId": "user-2",
           "assignedToName": "أحمد الشريف",
-          "dueDate": "2026-11-02",
+          "dueDate": "2026-11-03",
           "dueTime": "15:00",
           "taskId": "task-3",
           "isCompleted": false
@@ -2699,7 +2739,7 @@
       "id": "meet-2",
       "title": "عرض ديمو تفاعلي واجتماع استراتيجي مع مسؤولي بنك الرياض للاستثمار",
       "meetingType": "client",
-      "date": "2026-11-02",
+      "date": "2026-11-03",
       "time": "12:30",
       "startTime": "12:30",
       "endTime": "13:15",
@@ -2729,7 +2769,7 @@
           "title": "تجهيز ملف متطلبات الأمان وتشفير البيانات وإرساله للبنك",
           "assignedToId": "user-4",
           "assignedToName": "خالد ناصر",
-          "dueDate": "2026-11-03",
+          "dueDate": "2026-11-04",
           "dueTime": "12:00",
           "taskId": "task-4",
           "isCompleted": false
@@ -2743,7 +2783,7 @@
       "id": "meet-3",
       "title": "جلسة التخطيط المالي وتوزيع ميزانية الربع الرابع مع الإدارة",
       "meetingType": "internal",
-      "date": "2026-11-05",
+      "date": "2026-11-06",
       "time": "14:00",
       "startTime": "14:00",
       "endTime": "15:00",
@@ -2767,7 +2807,7 @@
       "id": "meet-4",
       "title": "اجتماع مراجعة تسليمات خطة السوشيال والمونتاج مع شركة جولدن",
       "meetingType": "client",
-      "date": "2026-10-30",
+      "date": "2026-10-31",
       "time": "11:00",
       "startTime": "11:00",
       "endTime": "11:45",
@@ -2796,7 +2836,7 @@
           "title": "تعديل شعار المقدمة في ريلز شركة جولدن",
           "assignedToId": "user-islam",
           "assignedToName": "Islam",
-          "dueDate": "2026-11-02",
+          "dueDate": "2026-11-03",
           "dueTime": "13:00",
           "isCompleted": true
         }
@@ -4112,6 +4152,80 @@
       "status": "present",
       "checkInTime": "٠٤:٢٨ م",
       "notes": "تسجيل حضور تلقائي من شريط المنظومة"
+    },
+    {
+      "id": "att-1793548939623-km2r",
+      "createdAt": "2026-11-01T16:02:19.623Z",
+      "updatedAt": "2026-11-01T16:02:21.112Z",
+      "employeeCode": "SM-101",
+      "memberId": "user-1",
+      "memberName": "هدير سعيد",
+      "date": "2026-11-01",
+      "status": "present",
+      "checkInTime": "٦:٠٢ م",
+      "checkOutTime": "٦:٠٢ م",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة • نهاية الدوام: ٦:٠٢ م"
+    },
+    {
+      "memberId": "user-maibel",
+      "date": "2026-11-01",
+      "memberName": "Maibel Emad",
+      "employeeCode": "SM-105",
+      "createdAt": "2026-11-01T16:30:43.371Z",
+      "id": "att-1793550643371-00mr",
+      "checkOutTime": "٦:٣١ م",
+      "updatedAt": "2026-11-01T16:31:20.808Z",
+      "checkInTime": "٦:٣٠ م",
+      "status": "present",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة • نهاية الدوام: ٦:٣١ م • تم استئناف الدوام"
+    },
+    {
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "status": "present",
+      "employeeCode": "SM-110",
+      "memberId": "user-amira",
+      "updatedAt": "2026-11-02T07:45:22.621Z",
+      "memberName": "Amira",
+      "checkInTime": "٩:٤٥ ص",
+      "createdAt": "2026-11-02T07:45:22.620Z",
+      "id": "att-1793605522620-uhmp",
+      "date": "2026-11-02"
+    },
+    {
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "id": "att-1793606459725-60kq",
+      "employeeCode": "SM-105",
+      "status": "present",
+      "createdAt": "2026-11-02T08:00:59.725Z",
+      "memberId": "user-maibel",
+      "memberName": "Maibel Emad",
+      "checkInTime": "١٠:٠٠ ص",
+      "updatedAt": "2026-11-02T08:00:59.727Z",
+      "date": "2026-11-02"
+    },
+    {
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "id": "att-1793606781100-mgoe",
+      "employeeCode": "SM-106",
+      "checkInTime": "١٠:٠٦ ص",
+      "createdAt": "2026-11-02T08:06:21.100Z",
+      "status": "present",
+      "memberId": "user-mariam",
+      "updatedAt": "2026-11-02T08:06:21.102Z",
+      "memberName": "Mariam",
+      "date": "2026-11-02"
+    },
+    {
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "checkInTime": "١٠:١٨ ص",
+      "memberId": "user-eman",
+      "employeeCode": "SM-104",
+      "date": "2026-11-02",
+      "id": "att-1793607493681-3emj",
+      "updatedAt": "2026-11-02T08:18:13.683Z",
+      "status": "present",
+      "createdAt": "2026-11-02T08:18:13.682Z",
+      "memberName": "Eman Ashraf"
     }
   ],
   "companyExpenses": [
@@ -4326,7 +4440,7 @@
       "id": "task-1793483160666"
     }
   ],
-  "updatedAt": "2026-11-01T15:40:21.644Z",
+  "updatedAt": "2026-11-02T08:21:23.303Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": [],
   "calls": [],
