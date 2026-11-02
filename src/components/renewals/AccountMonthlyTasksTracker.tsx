@@ -38,6 +38,7 @@ import {
   filterAccountTasks,
   getAccountManagerMetrics
 } from '../../utils/accountTasks';
+import { formatExternalUrl } from '../../utils/urlUtils';
 
 interface Props {
   singleClientId?: string; // Optional: restrict to a single client (e.g. inside dossier modal)
@@ -567,7 +568,7 @@ export const AccountMonthlyTasksTracker: React.FC<Props> = ({
                         {/* Google sheet link shortcut if available */}
                         {client.sheetUrl && (
                           <a
-                            href={client.sheetUrl}
+                            href={formatExternalUrl(client.sheetUrl)}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md font-bold transition-colors"

@@ -1665,10 +1665,12 @@ export const QuickModals: React.FC = () => {
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">رابط الجلسة إن وجد</label>
                   <input
-                    type="url"
+                    type="text"
+                    inputMode="url"
                     value={meetLink}
                     onChange={e => setMeetLink(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono text-left dir-ltr"
+                    placeholder="meet.google.com/... أو https://..."
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-mono text-left dir-ltr text-xs"
                   />
                 </div>
               </div>

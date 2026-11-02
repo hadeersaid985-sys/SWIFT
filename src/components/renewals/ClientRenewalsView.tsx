@@ -67,6 +67,7 @@ import { WhatsAppRenewalModal } from './WhatsAppRenewalModal';
 import { ClientInvoiceModal } from './ClientInvoiceModal';
 import { exportClientsToExcel } from '../../utils/excelExport';
 import { AccountMonthlyTasksTracker } from './AccountMonthlyTasksTracker';
+import { formatExternalUrl, renderTextWithLinks } from '../../utils/urlUtils';
 
 export const ClientRenewalsView: React.FC = () => {
   const {
@@ -502,7 +503,13 @@ export const ClientRenewalsView: React.FC = () => {
     e.preventDefault();
     if (!formData.clientName.trim() || !formData.company.trim()) return;
 
-    const validSheets = (formData.googleSheets || []).filter(s => s.url.trim() || s.title.trim());
+    const validSheets = (formData.googleSheets || [])
+      .filter(s => s.url.trim() || s.title.trim())
+      .map(s => ({
+        ...s,
+        url: formatExternalUrl(s.url),
+        title: s.title.trim() || 'شيت متابعة'
+      }));
     const primarySheet = validSheets[0];
     const assignedIds = (!formData.assignedTeamMemberIds || formData.assignedTeamMemberIds.length === 0)
       ? ['all', ...team.map(m => m.id)]
@@ -510,7 +517,8 @@ export const ClientRenewalsView: React.FC = () => {
 
     const payload = {
       ...formData,
-      sheetUrl: primarySheet?.url || formData.sheetUrl || '',
+      websiteUrl: formatExternalUrl(formData.websiteUrl),
+      sheetUrl: primarySheet?.url || formatExternalUrl(formData.sheetUrl) || '',
       sheetTitle: primarySheet?.title || formData.sheetTitle || '',
       googleSheets: validSheets,
       assignedTeamMemberIds: assignedIds
@@ -757,7 +765,13 @@ export const ClientRenewalsView: React.FC = () => {
   // Save sheets and sync with team in real time
   const handleSaveSheetLink = () => {
     if (!editingSheetClient) return;
-    const validSheets = modalSheets.filter(s => s.url.trim() || s.title.trim());
+    const validSheets = modalSheets
+      .filter(s => s.url.trim() || s.title.trim())
+      .map(s => ({
+        ...s,
+        url: formatExternalUrl(s.url),
+        title: s.title.trim() || 'شيت متابعة'
+      }));
     const primary = validSheets[0];
     const updates: Partial<ClientRenewal> = {
       googleSheets: validSheets,
@@ -779,7 +793,7 @@ export const ClientRenewalsView: React.FC = () => {
   const handleSaveWebsiteAndLogo = () => {
     if (!editingSheetClient) return;
     const updates: Partial<ClientRenewal> = {
-      websiteUrl: clientWebsiteInput.trim(),
+      websiteUrl: formatExternalUrl(clientWebsiteInput),
       logoUrl: clientLogoInput.trim()
     };
     updateClientRenewal(editingSheetClient.id, updates);
@@ -1386,7 +1400,7 @@ export const ClientRenewalsView: React.FC = () => {
                               </span>
                               {client.websiteUrl && (
                                 <a
-                                  href={client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`}
+                                  href={formatExternalUrl(client.websiteUrl)}
                                   target="_blank"
                                   rel="noreferrer"
                                   onClick={e => e.stopPropagation()}
@@ -1483,9 +1497,10 @@ export const ClientRenewalsView: React.FC = () => {
                                       <div className="flex items-center gap-1.5 pt-0.5">
                                         {sheet.url ? (
                                           <a
-                                            href={sheet.url}
+                                            href={formatExternalUrl(sheet.url)}
                                             target="_blank"
                                             rel="noreferrer"
+                                            onClick={e => e.stopPropagation()}
                                             className="flex-1 py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-101"
                                             title="فتح شيت جوجل الخاص بالعميل في نافذة جديدة"
                                           >
@@ -1563,9 +1578,10 @@ export const ClientRenewalsView: React.FC = () => {
 
                             <div className="flex items-center gap-1.5 pt-0.5">
                               <a
-                                href={client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`}
+                                href={formatExternalUrl(client.websiteUrl)}
                                 target="_blank"
                                 rel="noreferrer"
+                                onClick={e => e.stopPropagation()}
                                 className="flex-1 py-1.5 px-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-101"
                                 title="فتح موقع العميل في نافذة جديدة"
                               >
@@ -1738,9 +1754,9 @@ export const ClientRenewalsView: React.FC = () => {
                             <FileText className="w-3 h-3 text-amber-600" />
                             وصف المشروع:
                           </span>
-                          <p className="line-clamp-2 text-slate-600 leading-relaxed font-medium">
-                            {client.projectDescription}
-                          </p>
+                          <div className="text-slate-600 leading-relaxed font-medium">
+                            {renderTextWithLinks(client.projectDescription)}
+                          </div>
                         </div>
                       )}
 
@@ -2041,7 +2057,7 @@ export const ClientRenewalsView: React.FC = () => {
                               <span>{ren.company}</span>
                               {ren.websiteUrl && (
                                 <a
-                                  href={ren.websiteUrl.startsWith('http') ? ren.websiteUrl : `https://${ren.websiteUrl}`}
+                                  href={formatExternalUrl(ren.websiteUrl)}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-sky-600 hover:text-sky-800"
@@ -2070,7 +2086,7 @@ export const ClientRenewalsView: React.FC = () => {
                         {ren.sheetUrl ? (
                           <div className="flex items-center gap-1.5">
                             <a
-                              href={ren.sheetUrl}
+                              href={formatExternalUrl(ren.sheetUrl)}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition-all shadow-2xs hover:scale-102"
@@ -2674,19 +2690,40 @@ export const ClientRenewalsView: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Website URL */}
                   <div>
-                    <label className="block text-[11px] font-bold text-sky-950 mb-1">
-                      رابط الموقع الإلكتروني (الويب سايت):
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold text-sky-950">
+                        رابط الموقع الإلكتروني (الويب سايت):
+                      </label>
+                      {formData.websiteUrl && (
+                        <a
+                          href={formatExternalUrl(formData.websiteUrl)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] font-bold text-sky-700 hover:text-sky-900 underline flex items-center gap-1 cursor-pointer"
+                          title="فتح ومعاينة الرابط في نافذة جديدة"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" />
+                          <span>معاينة الرابط ↗</span>
+                        </a>
+                      )}
+                    </div>
                     <div className="relative">
                       <input
-                        type="url"
+                        type="text"
+                        inputMode="url"
                         value={formData.websiteUrl || ''}
                         onChange={e => setFormData({ ...formData, websiteUrl: e.target.value })}
-                        placeholder="https://www.company-website.com"
-                        className="w-full bg-white border border-sky-200 rounded-xl pr-8 pl-3 py-2 text-xs focus:outline-none focus:border-sky-600 font-mono text-left dir-ltr"
+                        placeholder="power-tech-eg.com أو https://..."
+                        className="w-full bg-white border border-sky-200 rounded-xl pr-8 pl-3 py-2 text-xs focus:outline-none focus:border-sky-600 font-mono text-left dir-ltr font-bold"
                       />
                       <Globe className="w-3.5 h-3.5 text-sky-500 absolute right-2.5 top-2.5 pointer-events-none" />
                     </div>
+                    {formData.websiteUrl && (
+                      <div className="mt-1 flex items-center justify-between text-[10px] text-sky-900 bg-sky-100/70 px-2 py-0.5 rounded border border-sky-200">
+                        <span className="font-mono dir-ltr truncate">✓ {formatExternalUrl(formData.websiteUrl)}</span>
+                        <span className="text-emerald-700 font-bold shrink-0">رابط معتمد ومفعل ✅</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Client Logo */}
@@ -2909,9 +2946,24 @@ export const ClientRenewalsView: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-bold text-emerald-950 mb-1">رابط الشيت (Google Sheets Link):</label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-[11px] font-bold text-emerald-950">رابط الشيت (Google Sheets Link):</label>
+                            {sheet.url && (
+                              <a
+                                href={formatExternalUrl(sheet.url)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[10px] font-bold text-emerald-700 hover:text-emerald-950 underline flex items-center gap-0.5"
+                                title="تجربة فتح الشيت"
+                              >
+                                <ExternalLink className="w-2.5 h-2.5" />
+                                <span>معاينة الشيت ↗</span>
+                              </a>
+                            )}
+                          </div>
                           <input
-                            type="url"
+                            type="text"
+                            inputMode="url"
                             value={sheet.url || ''}
                             onChange={e => {
                               const sheets = [...(formData.googleSheets || [])];
@@ -2925,9 +2977,15 @@ export const ClientRenewalsView: React.FC = () => {
                                 sheetUrl: index === 0 ? e.target.value : formData.sheetUrl
                               });
                             }}
-                            placeholder="https://docs.google.com/spreadsheets/d/..."
+                            placeholder="docs.google.com/spreadsheets/d/... أو https://..."
                             className="w-full bg-slate-50 border border-emerald-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-600 font-mono text-[11px]"
                           />
+                          {sheet.url && (
+                            <div className="mt-1 flex items-center justify-between text-[10px] text-emerald-950 bg-emerald-100/70 px-2 py-0.5 rounded border border-emerald-200">
+                              <span className="font-mono dir-ltr truncate">✓ {formatExternalUrl(sheet.url)}</span>
+                              <span className="text-emerald-700 font-bold shrink-0">رابط شيت صالح ✅</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -3132,7 +3190,7 @@ export const ClientRenewalsView: React.FC = () => {
                     </span>
                     {currentDossierClient.websiteUrl && (
                       <a
-                        href={currentDossierClient.websiteUrl.startsWith('http') ? currentDossierClient.websiteUrl : `https://${currentDossierClient.websiteUrl}`}
+                        href={formatExternalUrl(currentDossierClient.websiteUrl)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded-lg border border-sky-200 transition-colors"
@@ -3172,9 +3230,13 @@ export const ClientRenewalsView: React.FC = () => {
                   </button>
                 )}
               </div>
-              <p className="text-xs text-slate-800 font-medium leading-relaxed bg-white/95 p-3 rounded-xl border border-amber-200/80 shadow-2xs whitespace-pre-wrap">
-                {currentDossierClient.projectDescription || 'لم يتم تسجيل وصف تفصيلي لهذا المشروع بعد. يمكنك إضافته وتعديله من لوحة التحكم.'}
-              </p>
+              <div className="text-xs text-slate-800 font-medium leading-relaxed bg-white/95 p-3 rounded-xl border border-amber-200/80 shadow-2xs whitespace-pre-wrap">
+                {currentDossierClient.projectDescription ? (
+                  renderTextWithLinks(currentDossierClient.projectDescription)
+                ) : (
+                  'لم يتم تسجيل وصف تفصيلي لهذا المشروع بعد. يمكنك إضافته وتعديله من لوحة التحكم.'
+                )}
+              </div>
             </div>
 
             {/* Sub-tabs Navigation inside Dossier */}
@@ -3839,7 +3901,7 @@ export const ClientRenewalsView: React.FC = () => {
                                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                   {sheet.url ? (
                                     <a
-                                      href={sheet.url}
+                                      href={formatExternalUrl(sheet.url)}
                                       target="_blank"
                                       rel="noreferrer"
                                       className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 hover:scale-[1.01]"
@@ -4904,32 +4966,38 @@ export const ClientRenewalsView: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-700 mb-0.5">رابط شيت جوجل (Google Sheet URL):</label>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="block text-[11px] font-bold text-slate-700">رابط شيت جوجل (Google Sheet URL):</label>
+                          {sheet.url && (
+                            <a
+                              href={formatExternalUrl(sheet.url)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[10px] font-bold text-emerald-700 hover:text-emerald-950 underline flex items-center gap-0.5"
+                            >
+                              <ExternalLink className="w-2.5 h-2.5" />
+                              <span>معاينة وفتح الشيت ↗</span>
+                            </a>
+                          )}
+                        </div>
                         <input
-                          type="url"
+                          type="text"
+                          inputMode="url"
                           value={sheet.url}
                           onChange={e => {
                             const val = e.target.value;
                             setModalSheets(prev => prev.map((s, i) => i === idx ? { ...s, url: val } : s));
                           }}
-                          placeholder="https://docs.google.com/spreadsheets/d/..."
+                          placeholder="docs.google.com/spreadsheets/d/... أو https://..."
                           className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-emerald-500 font-mono text-[11px]"
                         />
+                        {sheet.url && (
+                          <div className="mt-1 flex items-center justify-between text-[10px] text-emerald-950 bg-emerald-100/70 px-2 py-0.5 rounded border border-emerald-200">
+                            <span className="font-mono dir-ltr truncate">✓ {formatExternalUrl(sheet.url)}</span>
+                            <span className="text-emerald-700 font-bold shrink-0">رابط شيت صالح ✅</span>
+                          </div>
+                        )}
                       </div>
-
-                      {sheet.url && (
-                        <div className="flex items-center gap-2 pt-1">
-                          <a
-                            href={sheet.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline flex items-center gap-1 cursor-pointer"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            <span>معاينة وفتح الشيت في نافذة جديدة ↗</span>
-                          </a>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -4970,7 +5038,7 @@ export const ClientRenewalsView: React.FC = () => {
                     </span>
                     {clientWebsiteInput && (
                       <a
-                        href={clientWebsiteInput.startsWith('http') ? clientWebsiteInput : `https://${clientWebsiteInput}`}
+                        href={formatExternalUrl(clientWebsiteInput)}
                         target="_blank"
                         rel="noreferrer"
                         className="text-[10px] font-bold text-sky-700 hover:text-sky-900 underline flex items-center gap-1 cursor-pointer"
@@ -4983,12 +5051,27 @@ export const ClientRenewalsView: React.FC = () => {
 
                   <div>
                     <input
-                      type="url"
+                      type="text"
+                      inputMode="url"
                       value={clientWebsiteInput}
                       onChange={e => setClientWebsiteInput(e.target.value)}
-                      placeholder="https://powertech-eg.com أو www.client-domain.com"
+                      placeholder="power-tech-eg.com أو https://..."
                       className="w-full bg-white border border-sky-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-sky-600 font-mono text-left dir-ltr font-bold"
                     />
+                    {clientWebsiteInput && (
+                      <div className="mt-1 flex items-center justify-between text-[10px] text-sky-900 bg-sky-100/70 px-2 py-0.5 rounded border border-sky-200">
+                        <span className="font-mono dir-ltr truncate">✓ {formatExternalUrl(clientWebsiteInput)}</span>
+                        <a
+                          href={formatExternalUrl(clientWebsiteInput)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sky-700 hover:text-sky-950 font-bold underline flex items-center gap-0.5 shrink-0"
+                        >
+                          <span>معاينة الرابط</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      </div>
+                    )}
                     <p className="text-[10px] text-sky-800/80 mt-1">
                       💡 يمكنك وضع رابط موقع العميل أو رابط الدومين المباشر لفتحه ونسخه بضغطة زر من كارت العميل.
                     </p>
@@ -5062,7 +5145,8 @@ export const ClientRenewalsView: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-slate-400 shrink-0">أو رابط صورة اللوجو:</span>
                       <input
-                        type="url"
+                        type="text"
+                        inputMode="url"
                         value={clientLogoInput.startsWith('data:') ? '' : clientLogoInput}
                         onChange={e => setClientLogoInput(e.target.value)}
                         placeholder="https://example.com/logo.png"

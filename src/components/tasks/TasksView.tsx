@@ -62,6 +62,7 @@ import { DailyTasksWorkReportModal } from '../reports/DailyTasksWorkReportModal'
 import { isAdminMember, isAdminTask } from '../../utils/accountManagerScope';
 import { isTaskDescriptionVague, generateStructuredTaskTemplate, DEFAULT_BOILERPLATE_DESCRIPTION } from '../../utils/taskDescriptionUtils';
 import { QuickAttendanceWidget } from '../attendance/QuickAttendanceWidget';
+import { renderTextWithLinks } from '../../utils/urlUtils';
 
 export const TasksView: React.FC = () => {
   const {
@@ -4954,7 +4955,11 @@ export const TasksView: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-slate-800 mt-1 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200/90 whitespace-pre-wrap font-sans text-xs select-text">
-                    {selectedTask.description || 'لا يوجد وصف مفصل للمهمة.'}
+                    {selectedTask.description ? (
+                      renderTextWithLinks(selectedTask.description)
+                    ) : (
+                      'لا يوجد وصف مفصل للمهمة.'
+                    )}
                   </div>
                 </div>
 

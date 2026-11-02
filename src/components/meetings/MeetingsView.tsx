@@ -2389,12 +2389,13 @@ export const MeetingsView: React.FC = () => {
               <div className="space-y-1">
                 <label className="font-bold text-slate-700">رابط التسجيل المباشر (Google Drive / Meet) *</label>
                 <input
-                  type="url"
+                  type="text"
+                  inputMode="url"
                   required
-                  placeholder="https://drive.google.com/file/d/.../view"
+                  placeholder="drive.google.com/file/d/... أو https://..."
                   value={recordingForm.recordingUrl}
                   onChange={e => setRecordingForm({ ...recordingForm, recordingUrl: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden dir-ltr text-left"
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden dir-ltr text-left text-xs font-mono"
                 />
               </div>
 
