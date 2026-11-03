@@ -57,7 +57,9 @@ import {
   playAudioNotification,
   requestNotificationPermission,
   getNotificationPermissionStatus,
-  triggerUniversalNotification
+  triggerUniversalNotification,
+  sanitizeNotificationMessageForEmployee,
+  sanitizeNotificationTitleForEmployee
 } from '../utils/notificationSystem';
 
 interface TopNavbarProps {
@@ -108,7 +110,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         currentUser.id === 'user-1')
   );
 
-  const visibleNotifications = isManagerUser
+  const rawVisibleNotifications = isManagerUser
     ? notifications
     : notifications.filter(n => {
         if (n.recipientUserId) {
@@ -137,6 +139,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
         }
         return true;
       });
+
+  const visibleNotifications = isManagerUser
+    ? rawVisibleNotifications
+    : rawVisibleNotifications.map(n => ({
+        ...n,
+        title: sanitizeNotificationTitleForEmployee(n.title, false),
+        message: sanitizeNotificationMessageForEmployee(n.message, false)
+      }));
 
   const userUnreadCount = visibleNotifications.filter(n => !n.isRead).length;
 
@@ -969,150 +979,152 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ onOpenLoginModal, onLogout
 
 
 
-        {/* Settings Menu Dropdown (Accessible directly from main interface on desktop) */}
-        <div className="relative hidden md:block shrink-0" ref={settingsRef}>
-          <button
-            onClick={() => {
-              setShowSettingsMenu(!showSettingsMenu);
-              setShowAddMenu(false);
-              setShowEditMenu(false);
-              setShowDeleteMenu(false);
-              setShowNotifMenu(false);
-              setShowUserMenu(false);
-            }}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              activeTab === 'system_settings' || showSettingsMenu
-                ? 'bg-blue-50 text-blue-700 border-blue-300 ring-2 ring-blue-100'
-                : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-slate-200'
-            }`}
-            title="الإعدادات الشاملة للمنظومة وتغيير اللوجو"
-          >
-            <Settings className="w-3.5 h-3.5 text-slate-600" />
-            <span className="hidden sm:inline">الإعدادات</span>
-            <ChevronDown className="w-3 h-3 opacity-70" />
-          </button>
+        {/* Settings Menu Dropdown (Accessible only for Admin / Manager) */}
+        {isManagerUser && (
+          <div className="relative hidden md:block shrink-0" ref={settingsRef}>
+            <button
+              onClick={() => {
+                setShowSettingsMenu(!showSettingsMenu);
+                setShowAddMenu(false);
+                setShowEditMenu(false);
+                setShowDeleteMenu(false);
+                setShowNotifMenu(false);
+                setShowUserMenu(false);
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                activeTab === 'system_settings' || showSettingsMenu
+                  ? 'bg-blue-50 text-blue-700 border-blue-300 ring-2 ring-blue-100'
+                  : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-slate-200'
+              }`}
+              title="الإعدادات الشاملة للمنظومة وتغيير اللوجو"
+            >
+              <Settings className="w-3.5 h-3.5 text-slate-600" />
+              <span className="hidden sm:inline">الإعدادات</span>
+              <ChevronDown className="w-3 h-3 opacity-70" />
+            </button>
 
-          {showSettingsMenu && (
-            <div className="fixed sm:absolute left-2 right-2 sm:right-auto sm:left-0 top-14 sm:top-10 w-auto sm:w-72 max-w-sm bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 py-1.5 z-50 text-xs animate-in fade-in">
-              <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
-                <span className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
-                  <Sliders className="w-4 h-4 text-blue-600" />
-                  <span>إعدادات السيستم وتغيير اللوجو</span>
-                </span>
-                <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded font-bold font-mono">
-                  Settings
-                </span>
-              </div>
+            {showSettingsMenu && (
+              <div className="fixed sm:absolute left-2 right-2 sm:right-auto sm:left-0 top-14 sm:top-10 w-auto sm:w-72 max-w-sm bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 py-1.5 z-50 text-xs animate-in fade-in">
+                <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+                  <span className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                    <Sliders className="w-4 h-4 text-blue-600" />
+                    <span>إعدادات السيستم وتغيير اللوجو</span>
+                  </span>
+                  <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded font-bold font-mono">
+                    Settings
+                  </span>
+                </div>
 
-              {/* 1. Fast Logo Customizer Modal */}
-              <button
-                onClick={() => {
-                  setIsBrandModalOpen(true);
-                  setShowSettingsMenu(false);
-                }}
-                className="w-full text-right px-3.5 py-2.5 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700 cursor-pointer border-b border-slate-50"
-              >
-                <div className="p-2 bg-blue-100 text-blue-700 rounded-xl">
-                  <ImageIcon className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-extrabold text-blue-900 text-xs flex items-center gap-1">
-                    <span>تغيير اللوجو والشعار فوراً</span>
-                    <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded font-bold">سريع ⚡</span>
-                  </div>
-                  <div className="text-[10px] text-slate-400">رفع صورة من جهازك، أو رابط، أو ضبط الارتفاع</div>
-                </div>
-              </button>
-
-              {/* 2. Full System Settings View */}
-              <button
-                onClick={() => {
-                  setActiveTab('system_settings');
-                  setShowSettingsMenu(false);
-                }}
-                className="w-full text-right px-3.5 py-2.5 hover:bg-indigo-50 flex items-center gap-2.5 text-slate-700 cursor-pointer border-b border-slate-50"
-              >
-                <div className="p-2 bg-indigo-100 text-indigo-700 rounded-xl">
-                  <Sliders className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-extrabold text-indigo-950 text-xs">صفحة إعدادات الهوية واللوجو الشاملة</div>
-                  <div className="text-[10px] text-slate-400">اللوجو، أيقونة المتصفح Favicon، الألوان، والمعاينة الحية</div>
-                </div>
-              </button>
-
-              {/* 3. Team Management */}
-              <button
-                onClick={() => {
-                  setActiveTab('team');
-                  setShowSettingsMenu(false);
-                }}
-                className="w-full text-right px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 cursor-pointer"
-              >
-                <Users className="w-4 h-4 text-slate-500" />
-                <div>
-                  <div className="font-bold text-slate-800">إدارة حسابات فريق العمل والموظفين</div>
-                  <div className="text-[10px] text-slate-400">الصلاحيات، كلمات المرور، وإضافة موظف جديد</div>
-                </div>
-              </button>
-
-              {/* 4. Reset to Default Swift Logo */}
-              <button
-                onClick={() => {
-                  if (window.confirm('هل تريد استعادة شعار سويفت الأصلي الافتراضي؟')) {
-                    resetBrandConfig();
-                    showToast('تمت استعادة شعار سويفت الافتراضي بنجاح ✨');
-                  }
-                  setShowSettingsMenu(false);
-                }}
-                className="w-full text-right px-3.5 py-2 hover:bg-amber-50 flex items-center gap-2.5 text-slate-700 cursor-pointer"
-              >
-                <RotateCcw className="w-4 h-4 text-amber-600" />
-                <div>
-                  <div className="font-bold text-slate-800">استعادة شعار سويفت الأصلي</div>
-                  <div className="text-[10px] text-slate-400">إلغاء اللوجو المخصص والرجوع للأيقونة الأصلية</div>
-                </div>
-              </button>
-
-              {/* GitHub Sync */}
-              <div className="border-t border-slate-100 pt-1 mt-1">
+                {/* 1. Fast Logo Customizer Modal */}
                 <button
                   onClick={() => {
-                    setIsGitHubModalOpen(true);
+                    setIsBrandModalOpen(true);
                     setShowSettingsMenu(false);
                   }}
-                  className="w-full text-right px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2.5 text-slate-800 cursor-pointer"
+                  className="w-full text-right px-3.5 py-2.5 hover:bg-blue-50 flex items-center gap-2.5 text-slate-700 cursor-pointer border-b border-slate-50"
                 >
-                  <FolderGit2 className="w-4 h-4 text-cyan-600" />
+                  <div className="p-2 bg-blue-100 text-blue-700 rounded-xl">
+                    <ImageIcon className="w-4 h-4" />
+                  </div>
                   <div>
-                    <div className="font-bold flex items-center gap-1.5">
-                      <span>تصدير واستيراد GitHub</span>
-                      <span className="text-[9px] bg-cyan-100 text-cyan-800 px-1 py-0.2 rounded font-bold">حفظ الداتا</span>
+                    <div className="font-extrabold text-blue-900 text-xs flex items-center gap-1">
+                      <span>تغيير اللوجو والشعار فوراً</span>
+                      <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded font-bold">سريع ⚡</span>
                     </div>
-                    <div className="text-[10px] text-slate-400">حفظ واسترجاع أحدث نسخة من المستودع لعدم فقدان البيانات</div>
+                    <div className="text-[10px] text-slate-400">رفع صورة من جهازك، أو رابط، أو ضبط الارتفاع</div>
                   </div>
                 </button>
-              </div>
 
-              {/* 5. Reset Data */}
-              <div className="border-t border-slate-100 pt-1 mt-1">
+                {/* 2. Full System Settings View */}
                 <button
                   onClick={() => {
-                    setIsResetModalOpen(true);
+                    setActiveTab('system_settings');
                     setShowSettingsMenu(false);
                   }}
-                  className="w-full text-right px-3.5 py-2 hover:bg-rose-50 flex items-center gap-2.5 text-rose-700 cursor-pointer"
+                  className="w-full text-right px-3.5 py-2.5 hover:bg-indigo-50 flex items-center gap-2.5 text-slate-700 cursor-pointer border-b border-slate-50"
                 >
-                  <Trash2 className="w-4 h-4 text-rose-600" />
+                  <div className="p-2 bg-indigo-100 text-indigo-700 rounded-xl">
+                    <Sliders className="w-4 h-4" />
+                  </div>
                   <div>
-                    <div className="font-bold">مسح الداتا وإعادة الضبط (Reset)</div>
-                    <div className="text-[10px] text-rose-400">تفريغ السجلات وإعادة السيستم للبداية</div>
+                    <div className="font-extrabold text-indigo-950 text-xs">صفحة إعدادات الهوية واللوجو الشاملة</div>
+                    <div className="text-[10px] text-slate-400">اللوجو، أيقونة المتصفح Favicon، الألوان، والمعاينة الحية</div>
                   </div>
                 </button>
+
+                {/* 3. Team Management */}
+                <button
+                  onClick={() => {
+                    setActiveTab('team');
+                    setShowSettingsMenu(false);
+                  }}
+                  className="w-full text-right px-3.5 py-2 hover:bg-slate-50 flex items-center gap-2.5 text-slate-700 cursor-pointer"
+                >
+                  <Users className="w-4 h-4 text-slate-500" />
+                  <div>
+                    <div className="font-bold text-slate-800">إدارة حسابات فريق العمل والموظفين</div>
+                    <div className="text-[10px] text-slate-400">الصلاحيات، كلمات المرور، وإضافة موظف جديد</div>
+                  </div>
+                </button>
+
+                {/* 4. Reset to Default Swift Logo */}
+                <button
+                  onClick={() => {
+                    if (window.confirm('هل تريد استعادة شعار سويفت الأصلي الافتراضي؟')) {
+                      resetBrandConfig();
+                      showToast('تمت استعادة شعار سويفت الافتراضي بنجاح ✨');
+                    }
+                    setShowSettingsMenu(false);
+                  }}
+                  className="w-full text-right px-3.5 py-2 hover:bg-amber-50 flex items-center gap-2.5 text-slate-700 cursor-pointer"
+                >
+                  <RotateCcw className="w-4 h-4 text-amber-600" />
+                  <div>
+                    <div className="font-bold text-slate-800">استعادة شعار سويفت الأصلي</div>
+                    <div className="text-[10px] text-slate-400">إلغاء اللوجو المخصص والرجوع للأيقونة الأصلية</div>
+                  </div>
+                </button>
+
+                {/* GitHub Sync */}
+                <div className="border-t border-slate-100 pt-1 mt-1">
+                  <button
+                    onClick={() => {
+                      setIsGitHubModalOpen(true);
+                      setShowSettingsMenu(false);
+                    }}
+                    className="w-full text-right px-3.5 py-2 hover:bg-slate-100 flex items-center gap-2.5 text-slate-800 cursor-pointer"
+                  >
+                    <FolderGit2 className="w-4 h-4 text-cyan-600" />
+                    <div>
+                      <div className="font-bold flex items-center gap-1.5">
+                        <span>تصدير واستيراد GitHub</span>
+                        <span className="text-[9px] bg-cyan-100 text-cyan-800 px-1 py-0.2 rounded font-bold">حفظ الداتا</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400">حفظ واسترجاع أحدث نسخة من المستودع لعدم فقدان البيانات</div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* 5. Reset Data */}
+                <div className="border-t border-slate-100 pt-1 mt-1">
+                  <button
+                    onClick={() => {
+                      setIsResetModalOpen(true);
+                      setShowSettingsMenu(false);
+                    }}
+                    className="w-full text-right px-3.5 py-2 hover:bg-rose-50 flex items-center gap-2.5 text-rose-700 cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4 text-rose-600" />
+                    <div>
+                      <div className="font-bold">مسح الداتا وإعادة الضبط (Reset)</div>
+                      <div className="text-[10px] text-rose-400">تفريغ السجلات وإعادة السيستم للبداية</div>
+                    </div>
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Live System Synchronized Clock (5:36 PM) - Shown on tablets and desktops */}
         <div className="hidden sm:block shrink-0">

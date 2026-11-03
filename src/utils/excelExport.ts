@@ -81,27 +81,35 @@ export const exportTasksToExcel = (tasks: Task[], team: TeamMember[]) => {
 /**
  * Export Suspended Contracts to Excel (.xlsx) with Reasons
  */
-export const exportSuspendedContractsToExcel = (clients: ClientRenewal[]) => {
-  const data = clients.map((c, index) => ({
-    'م': index + 1,
-    'اسم العميل': c.clientName,
-    'الشركة / المنشأة': c.company || '-',
-    'رقم الهاتف': c.phone || '-',
-    'الباقة والخدمة': c.serviceName,
-    'قيمة العقد': c.amount,
-    'العملة': c.currency,
-    'دورة الاشتراك': c.planCycle,
-    'سبب الإيقاف': c.suspensionReason || 'غير محدد',
-    'تصنيف سبب الإيقاف': c.suspensionCategory === 'financial' ? 'تعثر مالي / تأخر سداد' :
+export const exportSuspendedContractsToExcel = (clients: ClientRenewal[], isManager: boolean = false) => {
+  const data = clients.map((c, index) => {
+    const row: Record<string, any> = {
+      'م': index + 1,
+      'اسم العميل': c.clientName,
+      'الشركة / المنشأة': c.company || '-',
+      'رقم الهاتف': c.phone || '-',
+      'الباقة والخدمة': c.serviceName,
+    };
+
+    if (isManager) {
+      row['قيمة العقد'] = c.amount;
+      row['العملة'] = c.currency;
+    }
+
+    row['دورة الاشتراك'] = c.planCycle;
+    row['سبب الإيقاف'] = c.suspensionReason || 'غير محدد';
+    row['تصنيف سبب الإيقاف'] = c.suspensionCategory === 'financial' ? 'تعثر مالي / تأخر سداد' :
                         c.suspensionCategory === 'client_request' ? 'طلب العميل مؤقتاً' :
                         c.suspensionCategory === 'technical' ? 'أسباب فنية وتقنية' :
                         c.suspensionCategory === 'restructuring' ? 'إعادة هيكلة النشاط' :
-                        c.suspensionCategory === 'project_done' ? 'انتهاء المشروع' : 'أسباب أخرى',
-    'تاريخ الإيقاف': c.suspendedAt || '-',
-    'تاريخ الاستئناف المتوقع': c.expectedResumeDate || '-',
-    'ملاحظات وتفاصيل إضافية': c.suspensionNotes || c.notes || '-',
-    'مسؤول المتابعة': c.managedBy || 'هدير سعيد'
-  }));
+                        c.suspensionCategory === 'project_done' ? 'انتهاء المشروع' : 'أسباب أخرى';
+    row['تاريخ الإيقاف'] = c.suspendedAt || '-';
+    row['تاريخ الاستئناف المتوقع'] = c.expectedResumeDate || '-';
+    row['ملاحظات وتفاصيل إضافية'] = c.suspensionNotes || c.notes || '-';
+    row['مسؤول المتابعة'] = c.managedBy || 'هدير سعيد';
+
+    return row;
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(data);
   if (!worksheet['!views']) worksheet['!views'] = [];

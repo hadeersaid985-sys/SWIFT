@@ -2592,7 +2592,9 @@ export const ClientRenewalsView: React.FC = () => {
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="text-slate-500">سيرفر: <strong>2 دومين + SSL</strong></span>
-                  <span className="font-mono font-bold text-emerald-600">{client.amount} {client.currency}</span>
+                  {isManager && (
+                    <span className="font-mono font-bold text-emerald-600">{client.amount} {client.currency}</span>
+                  )}
                 </div>
               </div>
             ))}
@@ -4136,14 +4138,16 @@ export const ClientRenewalsView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowClientCallModal(true)}
-                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-                    >
-                      <PhoneCall className="w-3.5 h-3.5" />
-                      <span>+ تسجيل مكالمة</span>
-                    </button>
+                    {isManager && (
+                      <button
+                        type="button"
+                        onClick={() => setShowClientCallModal(true)}
+                        className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                      >
+                        <PhoneCall className="w-3.5 h-3.5" />
+                        <span>+ تسجيل مكالمة</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setShowClientMeetingModal(true)}
@@ -4158,19 +4162,21 @@ export const ClientRenewalsView: React.FC = () => {
                 {/* Communication KPI Stats */}
                 {(() => {
                   const clientMeetings = meetings.filter(m => m.clientRenewalId === currentDossierClient.id || m.clientName?.includes(currentDossierClient.clientName) || m.clientName?.includes(currentDossierClient.company));
-                  const clientCalls = calls.filter(c => c.clientRenewalId === currentDossierClient.id || c.clientName?.includes(currentDossierClient.clientName) || c.clientName?.includes(currentDossierClient.company));
+                  const clientCalls = isManager ? calls.filter(c => c.clientRenewalId === currentDossierClient.id || c.clientName?.includes(currentDossierClient.clientName) || c.clientName?.includes(currentDossierClient.company)) : [];
                   const actionItemsCount = clientMeetings.reduce((acc, m) => acc + (m.actionItems?.length || 0), 0);
 
                   return (
-                    <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
+                    <div className={`grid ${isManager ? 'grid-cols-3' : 'grid-cols-2'} gap-2.5 text-center text-xs`}>
                       <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                         <span className="text-[10px] text-slate-500 font-bold block">الاجتماعات المسجلة</span>
                         <strong className="text-lg font-black text-blue-600 mt-0.5 block">{clientMeetings.length}</strong>
                       </div>
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-slate-500 font-bold block">المكالمات الموثقة</span>
-                        <strong className="text-lg font-black text-rose-600 mt-0.5 block">{clientCalls.length}</strong>
-                      </div>
+                      {isManager && (
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                          <span className="text-[10px] text-slate-500 font-bold block">المكالمات الموثقة (للأدمن)</span>
+                          <strong className="text-lg font-black text-rose-600 mt-0.5 block">{clientCalls.length}</strong>
+                        </div>
+                      )}
                       <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                         <span className="text-[10px] text-slate-500 font-bold block">إجراءات وتكليفات تابعة</span>
                         <strong className="text-lg font-black text-amber-600 mt-0.5 block">{actionItemsCount}</strong>
@@ -4182,7 +4188,7 @@ export const ClientRenewalsView: React.FC = () => {
                 {/* Timeline of Meetings & Calls */}
                 {(() => {
                   const clientMeetings = meetings.filter(m => m.clientRenewalId === currentDossierClient.id || m.clientName?.includes(currentDossierClient.clientName) || m.clientName?.includes(currentDossierClient.company)).map(m => ({ ...m, timelineType: 'meeting' as const }));
-                  const clientCalls = calls.filter(c => c.clientRenewalId === currentDossierClient.id || c.clientName?.includes(currentDossierClient.clientName) || c.clientName?.includes(currentDossierClient.company)).map(c => ({ ...c, timelineType: 'call' as const }));
+                  const clientCalls = isManager ? calls.filter(c => c.clientRenewalId === currentDossierClient.id || c.clientName?.includes(currentDossierClient.clientName) || c.clientName?.includes(currentDossierClient.company)).map(c => ({ ...c, timelineType: 'call' as const })) : [];
 
                   const combinedTimeline = [...clientMeetings, ...clientCalls].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

@@ -7,7 +7,9 @@ import {
   playAudioNotification,
   triggerUniversalNotification,
   NotificationKind,
-  NotificationPayload
+  NotificationPayload,
+  sanitizeNotificationMessageForEmployee,
+  sanitizeNotificationTitleForEmployee
 } from '../../utils/notificationSystem';
 
 interface LiveToast {
@@ -27,7 +29,7 @@ export const playNotificationChime = (kind: 'chat' | 'task' = 'chat') => {
 };
 
 export const GlobalLiveNotification: React.FC = () => {
-  const { setActiveTab } = useCRM();
+  const { setActiveTab, isManager } = useCRM();
   const { setActiveChat } = useChat();
   const [toasts, setToasts] = useState<LiveToast[]>([]);
   const timeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});
@@ -65,8 +67,8 @@ export const GlobalLiveNotification: React.FC = () => {
 
       addToast({
         type: payload.kind,
-        title: payload.title,
-        subtitle: payload.body,
+        title: sanitizeNotificationTitleForEmployee(payload.title, isManager),
+        subtitle: sanitizeNotificationMessageForEmployee(payload.body, isManager),
         senderName: payload.senderName || 'سويفت مايند',
         senderAvatar: payload.senderAvatar,
         data: payload.data || payload

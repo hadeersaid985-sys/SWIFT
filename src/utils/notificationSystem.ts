@@ -279,3 +279,30 @@ export function triggerUniversalNotification(payload: NotificationPayload): void
     }
   }
 }
+
+/**
+ * Strips subscription amounts and prices from notification messages for non-admin employees.
+ * Guarantees that employees never see contract/subscription values in notifications.
+ */
+export function sanitizeNotificationMessageForEmployee(message?: string | null, isManager: boolean = false): string {
+  if (!message) return '';
+  if (isManager) return message;
+  return message
+    .replace(/[.،,؛]?\s*(القيمة|قيمة العقد|قيمة الاشتراك|المبلغ|المبلغ المستحق)\s*:\s*[\d,.]+\s*(ج\.م|ر\.س|\$|USD|EGP|دولار|جنيه)?\s*[.،,؛]?/gi, '. ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\.\s*\./g, '.')
+    .replace(/\s+\./g, '.')
+    .trim();
+}
+
+/**
+ * Strips subscription amounts and prices from notification titles for non-admin employees.
+ */
+export function sanitizeNotificationTitleForEmployee(title?: string | null, isManager: boolean = false): string {
+  if (!title) return '';
+  if (isManager) return title;
+  return title
+    .replace(/[.،,؛]?\s*(القيمة|قيمة العقد|قيمة الاشتراك|المبلغ|المبلغ المستحق)\s*:\s*[\d,.]+\s*(ج\.م|ر\.س|\$|USD|EGP|دولار|جنيه)?\s*[.،,؛]?/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}

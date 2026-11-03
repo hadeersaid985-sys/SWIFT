@@ -24,8 +24,8 @@ interface ClientInvoiceModalProps {
 }
 
 export const ClientInvoiceModal: React.FC<ClientInvoiceModalProps> = ({ client, onClose }) => {
-  if (!client) return null;
-  const { brandConfig } = useCRM();
+  const { brandConfig, isManager } = useCRM();
+  if (!client || !isManager) return null;
 
   const invoiceNumber = `INV-${new Date().getFullYear()}-${client.id.replace(/[^0-9]/g, '').slice(-4) || '1042'}`;
   const todayStr = new Date().toISOString().split('T')[0];

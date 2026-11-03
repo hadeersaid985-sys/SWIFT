@@ -158,12 +158,12 @@ const AppContent: React.FC = () => {
 
   // Security & Role check: Non-admin employees ONLY see their allowed personal tabs
   // موظف المبيعات (مثل مايبل Maibel) يظهر له قسم العملاء المحتملين 'leads'
+  // تم إلغاء المكالمات 'calls' من الموظفين وجعلها مقتصرة على الأدمن فقط
   const allowedEmployeeTabs = [
     'work_queue',
     'tasks',
     'renewals',
     'meetings',
-    'calls',
     'mail',
     'chat',
     'profile',

@@ -302,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                   <button
                     onClick={() => handleSelectTab('meetings')}
                     className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
-                      activeTab === 'meetings' || activeTab === 'calls'
+                      activeTab === 'meetings'
                         ? 'bg-[#2563eb] text-white font-bold shadow-xs'
                         : 'text-slate-300 hover:text-white hover:bg-[#24375a]/70'
                     }`}
@@ -310,20 +310,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                   >
                     <Calendar className="w-4 h-4 shrink-0 text-slate-300" />
                     {!isCollapsed && <span>التواصل والاجتماعات</span>}
-                  </button>
-
-                  {/* 4. المكالمات */}
-                  <button
-                    onClick={() => handleSelectTab('calls')}
-                    className={`w-full text-right flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
-                      activeTab === 'calls'
-                        ? 'bg-[#2563eb] text-white font-bold shadow-xs'
-                        : 'text-slate-300 hover:text-white hover:bg-[#24375a]/70'
-                    }`}
-                    title="المكالمات"
-                  >
-                    <PhoneCall className="w-4 h-4 shrink-0 text-slate-300" />
-                    {!isCollapsed && <span>المكالمات</span>}
                   </button>
 
                   {/* 5. بريد الفريق (Mail) */}

@@ -76,6 +76,13 @@ export const MeetingsView: React.FC = () => {
   // Active Main Tab inside Communication & Meetings System
   const [activeSubTab, setActiveSubTab] = useState<'meetings' | 'calls' | 'action_items' | 'history' | 'recordings'>('meetings');
 
+  // Enforce: Calls are strictly Admin-only. Employees only access meetings, action items, and recordings.
+  React.useEffect(() => {
+    if (!isManager && activeSubTab === 'calls') {
+      setActiveSubTab('meetings');
+    }
+  }, [isManager, activeSubTab]);
+
   // Meetings Sub-filters & View Modes
   const [meetingViewMode, setMeetingViewMode] = useState<'cards' | 'calendar' | 'table'>('cards');
   const [meetingSearch, setMeetingSearch] = useState('');
@@ -329,25 +336,27 @@ export const MeetingsView: React.FC = () => {
       });
     });
 
-    // From Calls with follow-up tasks
-    calls.forEach(c => {
-      if (c.nextFollowUpDate || c.resultingTaskId) {
-        items.push({
-          id: 'call-act-' + c.id,
-          sourceType: 'call',
-          sourceId: c.id,
-          sourceTitle: `مكالمة مع ${c.clientName} (${c.purpose})`,
-          title: c.resultingTaskTitle || c.followUpNotes || `متابعة العميل: ${c.clientName}`,
-          assignedToId: c.employeeId,
-          assignedToName: c.employeeName,
-          dueDate: c.nextFollowUpDate || c.date,
-          dueTime: c.nextFollowUpTime,
-          taskId: c.resultingTaskId,
-          isCompleted: c.outcome === 'deal_agreed' || Boolean(c.resultingTaskId),
-          clientName: c.clientName
-        });
-      }
-    });
+    // From Calls with follow-up tasks (Admin only)
+    if (isManager) {
+      calls.forEach(c => {
+        if (c.nextFollowUpDate || c.resultingTaskId) {
+          items.push({
+            id: 'call-act-' + c.id,
+            sourceType: 'call',
+            sourceId: c.id,
+            sourceTitle: `مكالمة مع ${c.clientName} (${c.purpose})`,
+            title: c.resultingTaskTitle || c.followUpNotes || `متابعة العميل: ${c.clientName}`,
+            assignedToId: c.employeeId,
+            assignedToName: c.employeeName,
+            dueDate: c.nextFollowUpDate || c.date,
+            dueTime: c.nextFollowUpTime,
+            taskId: c.resultingTaskId,
+            isCompleted: c.outcome === 'deal_agreed' || Boolean(c.resultingTaskId),
+            clientName: c.clientName
+          });
+        }
+      });
+    }
 
     // Filter by completion status
     return items.filter(it => {
@@ -355,7 +364,7 @@ export const MeetingsView: React.FC = () => {
       if (actionItemStatusFilter === 'completed') return it.isCompleted;
       return true;
     });
-  }, [meetings, calls, actionItemStatusFilter]);
+  }, [meetings, calls, actionItemStatusFilter, isManager]);
 
   // Unified Communication History Timeline
   const communicationTimeline = useMemo(() => {
@@ -391,28 +400,30 @@ export const MeetingsView: React.FC = () => {
       });
     });
 
-    calls.forEach(c => {
-      list.push({
-        id: c.id,
-        kind: 'call',
-        date: c.date,
-        time: c.time,
-        title: `${c.type === 'incoming' ? '📞 مكالمة واردة' : '📱 مكالمة صادرة'}: ${c.purpose}`,
-        clientName: c.clientName,
-        companyName: c.companyName,
-        actorName: c.employeeName,
-        summary: c.summary,
-        outcomeOrStatus:
-          c.outcome === 'deal_agreed'
-            ? 'تم الاتفاق'
-            : c.outcome === 'needs_follow_up'
-            ? 'يحتاج متابعة'
-            : c.outcome === 'no_answer'
-            ? 'لا يوجد رد'
-            : 'تم التواصل',
-        linkOrPhone: c.contactPhone
+    if (isManager) {
+      calls.forEach(c => {
+        list.push({
+          id: c.id,
+          kind: 'call',
+          date: c.date,
+          time: c.time,
+          title: `${c.type === 'incoming' ? '📞 مكالمة واردة' : '📱 مكالمة صادرة'}: ${c.purpose}`,
+          clientName: c.clientName,
+          companyName: c.companyName,
+          actorName: c.employeeName,
+          summary: c.summary,
+          outcomeOrStatus:
+            c.outcome === 'deal_agreed'
+              ? 'تم الاتفاق'
+              : c.outcome === 'needs_follow_up'
+              ? 'يحتاج متابعة'
+              : c.outcome === 'no_answer'
+              ? 'لا يوجد رد'
+              : 'تم التواصل',
+          linkOrPhone: c.contactPhone
+        });
       });
-    });
+    }
 
     // Sort by date/time descending
     return list
@@ -744,17 +755,19 @@ export const MeetingsView: React.FC = () => {
             <span>جدولة اجتماع جديد</span>
           </button>
 
-          <button
-            onClick={() => {
-              resetCallForm();
-              setEditingCall(null);
-              setIsAddCallModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer"
-          >
-            <Phone className="w-4 h-4" />
-            <span>تسجيل مكالمة جديدة</span>
-          </button>
+          {isManager && (
+            <button
+              onClick={() => {
+                resetCallForm();
+                setEditingCall(null);
+                setIsAddCallModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              <Phone className="w-4 h-4" />
+              <span>تسجيل مكالمة جديدة</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -794,17 +807,19 @@ export const MeetingsView: React.FC = () => {
           <span>الاجتماعات ({meetings.length})</span>
         </button>
 
-        <button
-          onClick={() => setActiveSubTab('calls')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
-            activeSubTab === 'calls'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-        >
-          <Phone className="w-4 h-4" />
-          <span>المكالمات والتواصل ({calls.length})</span>
-        </button>
+        {isManager && (
+          <button
+            onClick={() => setActiveSubTab('calls')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeSubTab === 'calls'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Phone className="w-4 h-4" />
+            <span>المكالمات والتواصل ({calls.length})</span>
+          </button>
+        )}
 
         <button
           onClick={() => setActiveSubTab('action_items')}
