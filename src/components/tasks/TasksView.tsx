@@ -737,8 +737,14 @@ export const TasksView: React.FC = () => {
     if (e) e.stopPropagation();
     const t = tasks.find(x => x.id === taskId);
     if (!t) return;
-    const newStatus: TaskStatus = t.status === 'completed' ? 'todo' : 'completed';
-    changeTaskStatus(taskId, newStatus);
+    const isDone = t.status === 'completed';
+    if (!isDone && (t.isTimerRunning || t.isTimerPaused)) {
+      // If timer is running or paused, stop timer, record actual worked minutes, and finish task
+      stopTaskTimer(taskId, 'إنهاء المهمة وحساب الوقت الفعلي الصافي', true);
+    } else {
+      const newStatus: TaskStatus = isDone ? 'todo' : 'completed';
+      changeTaskStatus(taskId, newStatus);
+    }
   };
 
   // Inline quick add task for Trello member columns and day columns

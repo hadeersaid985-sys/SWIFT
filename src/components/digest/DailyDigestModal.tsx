@@ -112,8 +112,23 @@ export const DailyDigestModal: React.FC = () => {
 
   const handleMarkDone = (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    changeTaskStatus(taskId, 'completed');
+    const task = tasks.find(t => t.id === taskId);
+    if (task && (task.isTimerRunning || task.isTimerPaused)) {
+      stopTaskTimer(taskId, 'إنجاز المهمة وحساب الوقت من الموجز اليومي', true);
+    } else {
+      changeTaskStatus(taskId, 'completed');
+    }
     setCompletedTaskIds(prev => [...prev, taskId]);
+  };
+
+  const handleStopTimerInDigest = (taskId: string) => {
+    const finish = window.confirm(
+      'هل تريد إنهاء المهمة وتحديدها كمكتملة؟\n\n- اضغط موافق (OK): لإنهاء المهمة بنجاح واحتساب وقت العمل كـ مكتملة ✓\n- اضغط إلغاء (Cancel): لإيقاف المؤقت وحساب الوقت مع إبقاء المهمة قيد التنفيذ.'
+    );
+    stopTaskTimer(taskId, finish ? 'إنهاء المهمة وحساب الوقت من الموجز اليومي' : 'إيقاف مؤقت للعمل', finish);
+    if (finish) {
+      setCompletedTaskIds(prev => [...prev, taskId]);
+    }
   };
 
   const handleOpenInTasks = (taskId?: string) => {
@@ -439,7 +454,7 @@ export const DailyDigestModal: React.FC = () => {
                             <span>إيقاف مؤقت</span>
                           </button>
                           <button
-                            onClick={() => stopTaskTimer(task.id)}
+                            onClick={() => handleStopTimerInDigest(task.id)}
                             className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
                           >
                             <Square className="w-3 h-3 fill-current" />
@@ -456,7 +471,7 @@ export const DailyDigestModal: React.FC = () => {
                             <span>استئناف</span>
                           </button>
                           <button
-                            onClick={() => stopTaskTimer(task.id)}
+                            onClick={() => handleStopTimerInDigest(task.id)}
                             className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
                           >
                             <Square className="w-3 h-3 fill-current" />

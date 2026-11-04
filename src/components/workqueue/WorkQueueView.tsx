@@ -97,6 +97,7 @@ export const WorkQueueView: React.FC = () => {
     updateTask,
     changeTaskStatus,
     startTaskTimer,
+    stopTaskTimer,
     updateMeeting,
     updateCallLog,
     createTaskFromActionItem,
@@ -610,8 +611,13 @@ export const WorkQueueView: React.FC = () => {
   // Quick Action: Complete an item
   const handleToggleCompleteItem = (item: WorkQueueItem) => {
     if (item.type === 'task') {
-      const newStatus = item.status === 'completed' ? 'in_progress' : 'completed';
-      changeTaskStatus(item.originalId, newStatus as TaskStatus);
+      const t = tasks.find(x => x.id === item.originalId);
+      if (t && item.status !== 'completed' && (t.isTimerRunning || t.isTimerPaused)) {
+        stopTaskTimer(item.originalId, 'إنهاء المهمة من طابور العمل', true);
+      } else {
+        const newStatus = item.status === 'completed' ? 'in_progress' : 'completed';
+        changeTaskStatus(item.originalId, newStatus as TaskStatus);
+      }
     } else if (item.type === 'meeting') {
       updateMeeting(item.originalId, {
         status: item.status === 'completed' ? 'قادم' : 'مكتمل'
@@ -625,11 +631,16 @@ export const WorkQueueView: React.FC = () => {
 
   // Quick Action: Approve a task
   const handleApproveTask = (taskId: string) => {
-    updateTask(taskId, {
-      reviewOutcome: 'approved',
-      status: 'completed',
-      actualCompletionDate: new Date().toISOString().split('T')[0]
-    });
+    const t = tasks.find(x => x.id === taskId);
+    if (t && (t.isTimerRunning || t.isTimerPaused)) {
+      stopTaskTimer(taskId, 'اعتماد المهمة وإنهاؤها', true);
+    } else {
+      updateTask(taskId, {
+        reviewOutcome: 'approved',
+        status: 'completed',
+        actualCompletionDate: new Date().toISOString().split('T')[0]
+      });
+    }
   };
 
   // Quick Action: Request revisions on a task

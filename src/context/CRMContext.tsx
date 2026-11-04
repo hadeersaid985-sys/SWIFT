@@ -4012,15 +4012,31 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ? { ...existing, ...finalUpdates }
       : ({ id, ...finalUpdates } as Task);
 
-    if (updates.status === 'completed' && existing?.status !== 'completed') {
-      updatedTaskObj.completedAt = new Date().toISOString().split('T')[0];
-      confetti({
-        particleCount: 70,
-        spread: 60,
-        origin: { y: 0.6 }
-      });
-      logActivity('task', 'تم إنجاز المهمة بنجاح 🎉', updatedTaskObj.title);
+    const isExplicitRevert = Boolean(finalUpdates.explicitStatusRevert);
+
+    if (finalUpdates.status === 'completed' || updates.status === 'completed') {
+      updatedTaskObj.status = 'completed';
+      updatedTaskObj.completedAt = updatedTaskObj.completedAt || new Date().toISOString().split('T')[0];
+      updatedTaskObj.explicitStatusRevert = false;
+      if (existing?.status !== 'completed') {
+        try {
+          confetti({
+            particleCount: 70,
+            spread: 60,
+            origin: { y: 0.6 }
+          });
+        } catch {}
+        logActivity('task', 'تم إنجاز المهمة بنجاح 🎉', updatedTaskObj.title);
+      }
+    } else if (existing?.status === 'completed' && !isExplicitRevert) {
+      // Strict 24/7 rule: Any task completed at any time must NEVER revert unless explicitly requested
+      updatedTaskObj.status = 'completed';
+      updatedTaskObj.completedAt = existing.completedAt || new Date().toISOString().split('T')[0];
+    } else if (isExplicitRevert) {
+      updatedTaskObj.completedAt = undefined;
     }
+
+    updatedTaskObj.updatedAt = new Date().toISOString();
 
     lastLocalMutationTimeRef.current = Date.now();
     setTasks(prev =>
@@ -4170,7 +4186,14 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const changeTaskStatus = (taskId: string, status: TaskStatus) => {
-    updateTask(taskId, { status });
+    const existing = tasks.find(t => t.id === taskId);
+    const isReverting = existing?.status === 'completed' && status !== 'completed';
+    updateTask(taskId, {
+      status,
+      explicitStatusRevert: isReverting ? true : undefined,
+      completedAt: status === 'completed' ? (existing?.completedAt || new Date().toISOString().split('T')[0]) : (isReverting ? undefined : existing?.completedAt),
+      updatedAt: new Date().toISOString()
+    });
   };
 
   const moveTaskToMember = (taskId: string, targetMemberId: string) => {
@@ -4199,41 +4222,40 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const startTaskTimer = (taskId: string) => {
     const now = Date.now();
     const target = tasks.find(t => t.id === taskId);
-    if (target) {
-      const isResuming = Boolean(target.isTimerPaused);
-      const updated: Task = {
-        ...target,
-        isTimerRunning: true,
-        isTimerPaused: false,
-        timerStartedAt: isResuming ? (target.timerStartedAt || now) : now,
-        timerLastResumedAt: now,
-        timerAccumulatedMs: isResuming ? (target.timerAccumulatedMs || 0) : 0,
-        status: target.status === 'todo' ? ('in_progress' as TaskStatus) : target.status
-      };
-      saveTaskToFirestore(updated);
-      logActivity(
-        'task',
-        isResuming ? 'استئناف مؤقت العمل' : 'بدء مؤقت العمل الفعلي',
-        `قام ${currentUser.name} بـ ${isResuming ? 'استئناف' : 'تشغيل'} المؤقت على: ${target.title}`
-      );
-    }
+    if (!target) return;
+    const isResuming = Boolean(target.isTimerPaused);
+    const updated: Task = {
+      ...target,
+      isTimerRunning: true,
+      isTimerPaused: false,
+      timerStartedAt: isResuming ? (target.timerStartedAt || now) : now,
+      timerLastResumedAt: now,
+      timerAccumulatedMs: isResuming ? (target.timerAccumulatedMs || 0) : 0,
+      status: target.status === 'completed' ? 'completed' : target.status === 'todo' ? ('in_progress' as TaskStatus) : target.status,
+      updatedAt: new Date().toISOString()
+    };
 
-    setTasks(prev =>
-      prev.map(task => {
-        if (task.id === taskId) {
-          const isResuming = Boolean(task.isTimerPaused);
-          return {
-            ...task,
-            isTimerRunning: true,
-            isTimerPaused: false,
-            timerStartedAt: isResuming ? (task.timerStartedAt || now) : now,
-            timerLastResumedAt: now,
-            timerAccumulatedMs: isResuming ? (task.timerAccumulatedMs || 0) : 0,
-            status: task.status === 'todo' ? 'in_progress' : task.status
-          };
-        }
-        return task;
-      })
+    lastLocalMutationTimeRef.current = Date.now();
+
+    setTasks(prev => {
+      const next = prev.map(t => (t.id === taskId ? updated : t));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(next));
+      return next;
+    });
+
+    saveTaskToFirestore(updated);
+    try {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: updated })
+      }).catch(() => {});
+    } catch (e) {}
+
+    logActivity(
+      'task',
+      isResuming ? 'استئناف مؤقت العمل' : 'بدء مؤقت العمل الفعلي',
+      `قام ${currentUser.name} بـ ${isResuming ? 'استئناف' : 'تشغيل'} المؤقت على: ${target.title}`
     );
   };
 
@@ -4252,11 +4274,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isTimerRunning: false,
       isTimerPaused: true,
       timerAccumulatedMs: newAccumulatedMs,
-      timerLastResumedAt: undefined
+      timerLastResumedAt: undefined,
+      updatedAt: new Date().toISOString()
     };
 
+    lastLocalMutationTimeRef.current = Date.now();
+
+    setTasks(prev => {
+      const next = prev.map(t => (t.id === taskId ? updated : t));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(next));
+      return next;
+    });
+
     saveTaskToFirestore(updated);
-    setTasks(prev => prev.map(t => (t.id === taskId ? updated : t)));
+    try {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: updated })
+      }).catch(() => {});
+    } catch (e) {}
+
     logActivity(
       'task',
       'إيقاف مؤقت للعمل (Pause)',
@@ -4276,11 +4314,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       timerStartedAt: target.timerStartedAt || now,
       timerLastResumedAt: now,
       timerAccumulatedMs: target.timerAccumulatedMs || 0,
-      status: target.status === 'todo' ? 'in_progress' : target.status
+      status: target.status === 'completed' ? 'completed' : target.status === 'todo' ? 'in_progress' : target.status,
+      updatedAt: new Date().toISOString()
     };
 
+    lastLocalMutationTimeRef.current = Date.now();
+
+    setTasks(prev => {
+      const next = prev.map(t => (t.id === taskId ? updated : t));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(next));
+      return next;
+    });
+
     saveTaskToFirestore(updated);
-    setTasks(prev => prev.map(t => (t.id === taskId ? updated : t)));
+    try {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: updated })
+      }).catch(() => {});
+    } catch (e) {}
+
     logActivity('task', 'استئناف العمل الفعلي (Resume)', `قام ${currentUser.name} باستئناف مؤقت: ${target.title}`);
   };
 
@@ -4329,6 +4383,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: todayStr
     };
 
+    const isMarkingDone = markCompleted === true;
+
     const updatedTask: Task = {
       ...targetTask,
       isTimerRunning: false,
@@ -4338,22 +4394,31 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       timerAccumulatedMs: 0,
       totalLoggedMinutes: (targetTask.totalLoggedMinutes || 0) + elapsedMinutes,
       timeLogs: [newLog, ...(targetTask.timeLogs || [])],
-      status: markCompleted ? 'completed' : targetTask.status,
-      completedAt: markCompleted ? todayStr : targetTask.completedAt
+      status: isMarkingDone ? 'completed' : targetTask.status,
+      completedAt: isMarkingDone ? (targetTask.completedAt || todayStr) : targetTask.completedAt,
+      explicitStatusRevert: false,
+      updatedAt: now.toISOString()
     };
+
+    lastLocalMutationTimeRef.current = Date.now();
+
+    setTasks(prev => {
+      const nextTasks = prev.map(task => (task.id === taskId ? updatedTask : task));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(nextTasks));
+      return nextTasks;
+    });
 
     saveTaskToFirestore(updatedTask);
 
-    setTasks(prev =>
-      prev.map(task => {
-        if (task.id === taskId) {
-          return updatedTask;
-        }
-        return task;
-      })
-    );
+    try {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: updatedTask })
+      }).catch(err => console.warn('[SWIFTMYND] Stop timer sync notice:', err));
+    } catch (e) {}
 
-    if (markCompleted) {
+    if (isMarkingDone) {
       try {
         confetti({
           particleCount: 80,
@@ -4376,26 +4441,42 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addManualTimeLog = (taskId: string, entry: Omit<TimeLogEntry, 'id' | 'createdAt'>) => {
+    const target = tasks.find(t => t.id === taskId);
+    if (!target) return;
+
     const newLog: TimeLogEntry = {
       ...entry,
       id: 'log-' + Date.now(),
       createdAt: new Date().toISOString().split('T')[0]
     };
 
-    setTasks(prev =>
-      prev.map(task => {
-        if (task.id === taskId) {
-          const logs = [newLog, ...(task.timeLogs || [])];
-          const totalMins = (task.totalLoggedMinutes || 0) + entry.durationMinutes;
-          return {
-            ...task,
-            totalLoggedMinutes: totalMins,
-            timeLogs: logs
-          };
-        }
-        return task;
-      })
-    );
+    const logs = [newLog, ...(target.timeLogs || [])];
+    const totalMins = (target.totalLoggedMinutes || 0) + entry.durationMinutes;
+
+    const updatedTask: Task = {
+      ...target,
+      totalLoggedMinutes: totalMins,
+      timeLogs: logs,
+      updatedAt: new Date().toISOString()
+    };
+
+    lastLocalMutationTimeRef.current = Date.now();
+
+    setTasks(prev => {
+      const nextTasks = prev.map(task => (task.id === taskId ? updatedTask : task));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(nextTasks));
+      return nextTasks;
+    });
+
+    saveTaskToFirestore(updatedTask);
+
+    try {
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: updatedTask })
+      }).catch(() => {});
+    } catch (e) {}
 
     logActivity(
       'task',
@@ -5289,7 +5370,32 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setTasks(prev => {
               const taskMap = new Map<string, Task>();
               prev.forEach(t => taskMap.set(t.id, t));
-              remoteTasks.forEach(t => taskMap.set(t.id, { ...(taskMap.get(t.id) || {}), ...t }));
+              remoteTasks.forEach(t => {
+                const existing = taskMap.get(t.id);
+                if (existing) {
+                  const isExistingCompleted = existing.status === 'completed';
+                  const isRemoteCompleted = t.status === 'completed';
+                  if (isExistingCompleted && !isRemoteCompleted && !t.explicitStatusRevert) {
+                    taskMap.set(t.id, {
+                      ...existing,
+                      ...t,
+                      status: 'completed',
+                      completedAt: existing.completedAt || t.completedAt || new Date().toISOString().split('T')[0]
+                    });
+                    return;
+                  }
+                  if (isRemoteCompleted) {
+                    taskMap.set(t.id, {
+                      ...existing,
+                      ...t,
+                      status: 'completed',
+                      completedAt: t.completedAt || existing.completedAt || new Date().toISOString().split('T')[0]
+                    });
+                    return;
+                  }
+                }
+                taskMap.set(t.id, { ...(existing || {}), ...t });
+              });
               const merged = Array.from(taskMap.values());
               safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(merged));
               return merged;
@@ -5408,10 +5514,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (Array.isArray(payload.tasks)) {
               const cleanTasks = payload.tasks.filter((t: any) => !serverDeletedSet.has(t.id));
               setTasks(prev => {
-                if (JSON.stringify(prev) !== JSON.stringify(cleanTasks)) {
+                const prevMap = new Map<string, Task>(prev.map(t => [t.id, t]));
+                const mergedTasks = cleanTasks.map((t: any) => {
+                  const existing = prevMap.get(t.id);
+                  if (existing) {
+                    const isExistingCompleted = existing.status === 'completed';
+                    const isIncomingCompleted = t.status === 'completed';
+                    if (isExistingCompleted && !isIncomingCompleted && !t.explicitStatusRevert) {
+                      return {
+                        ...existing,
+                        ...t,
+                        status: 'completed' as TaskStatus,
+                        completedAt: existing.completedAt || t.completedAt || new Date().toISOString().split('T')[0]
+                      };
+                    }
+                  }
+                  return t;
+                });
+                if (JSON.stringify(prev) !== JSON.stringify(mergedTasks)) {
                   isSyncingFromServerRef.current = true;
-                  safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(cleanTasks));
-                  return cleanTasks;
+                  safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(mergedTasks));
+                  return mergedTasks;
                 }
                 return prev;
               });
@@ -5579,8 +5702,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (Array.isArray(serverData.tasks)) {
             const cleanTasks = serverData.tasks.filter((t: any) => !serverDeletedSet.has(t.id));
             isSyncingFromServerRef.current = true;
-            setTasks(cleanTasks);
-            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(cleanTasks));
+            setTasks(prev => {
+              const prevMap = new Map<string, Task>(prev.map(t => [t.id, t]));
+              const merged = cleanTasks.map((t: any) => {
+                const existing = prevMap.get(t.id);
+                if (existing) {
+                  const isExistingCompleted = existing.status === 'completed';
+                  const isIncomingCompleted = t.status === 'completed';
+                  if (isExistingCompleted && !isIncomingCompleted && !t.explicitStatusRevert) {
+                    return {
+                      ...existing,
+                      ...t,
+                      status: 'completed' as TaskStatus,
+                      completedAt: existing.completedAt || t.completedAt || new Date().toISOString().split('T')[0]
+                    };
+                  }
+                }
+                return t;
+              });
+              safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(merged));
+              return merged;
+            });
           }
           if (Array.isArray(serverData.deletedTasks)) {
             setDeletedTasks(serverData.deletedTasks);
@@ -5754,10 +5896,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (serverData && Array.isArray(serverData.tasks)) {
             const cleanTasks = serverData.tasks.filter((t: any) => !serverDeletedSet.has(t.id));
             setTasks(prev => {
-              if (JSON.stringify(prev) !== JSON.stringify(cleanTasks)) {
+              const prevMap = new Map<string, Task>(prev.map(t => [t.id, t]));
+              const mergedTasks = cleanTasks.map((t: any) => {
+                const existing = prevMap.get(t.id);
+                if (existing) {
+                  const isExistingCompleted = existing.status === 'completed';
+                  const isIncomingCompleted = t.status === 'completed';
+                  if (isExistingCompleted && !isIncomingCompleted && !t.explicitStatusRevert) {
+                    return {
+                      ...existing,
+                      ...t,
+                      status: 'completed' as TaskStatus,
+                      completedAt: existing.completedAt || t.completedAt || new Date().toISOString().split('T')[0]
+                    };
+                  }
+                }
+                return t;
+              });
+              if (JSON.stringify(prev) !== JSON.stringify(mergedTasks)) {
                 isSyncingFromServerRef.current = true;
-                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(cleanTasks));
-                return cleanTasks;
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}tasks`, JSON.stringify(mergedTasks));
+                return mergedTasks;
               }
               return prev;
             });

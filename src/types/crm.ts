@@ -50,7 +50,10 @@ export interface Task {
   comments?: TaskComment[]; // تعليقات ومنشنات الفريق على المهمة
   isPrivate?: boolean; // مهمة سرية خاصة بالمدير فقط - لا تظهر لأي موظف في التيم
   createdAt: string;
+  updatedAt?: string;
   completedAt?: string;
+  explicitStatusRevert?: boolean; // علامة صريحة عندما يقوم المستخدم بإلغاء إنجاز المهمة عمداً لمنع التراجع التلقائي
+
   // نظام متابعة جودة التنفيذ والتسليم
   actualCompletionDate?: string; // تاريخ التسليم الفعلي
   actualCompletionTime?: string; // وقت التسليم الفعلي

@@ -121,12 +121,36 @@ async function startServer() {
           if (Array.isArray(latestParsed.tasks) && latestParsed.tasks.length > 0) {
             const currentTasksMap = new Map<string, any>((parsed.tasks || []).map((t: any) => [t.id, t]));
             latestParsed.tasks.forEach((t: any) => {
-              if (!currentTasksMap.has(t.id)) {
+              const curr = currentTasksMap.get(t.id);
+              if (!curr) {
                 currentTasksMap.set(t.id, t);
+              } else {
+                const isCurrCompleted = curr.status === 'completed' || Boolean(curr.completedAt);
+                const isLatestCompleted = t.status === 'completed' || Boolean(t.completedAt);
+                if (isLatestCompleted && !isCurrCompleted) {
+                  currentTasksMap.set(t.id, {
+                    ...curr,
+                    ...t,
+                    status: 'completed',
+                    completedAt: t.completedAt || curr.completedAt || new Date().toISOString().split('T')[0]
+                  });
+                } else if (t.updatedAt && curr.updatedAt && new Date(t.updatedAt).getTime() > new Date(curr.updatedAt).getTime()) {
+                  if (isCurrCompleted && !isLatestCompleted && !t.explicitStatusRevert) {
+                    currentTasksMap.set(t.id, {
+                      ...curr,
+                      ...t,
+                      status: 'completed',
+                      completedAt: curr.completedAt || t.completedAt
+                    });
+                  } else {
+                    currentTasksMap.set(t.id, { ...curr, ...t });
+                  }
+                }
               }
             });
             parsed.tasks = Array.from(currentTasksMap.values());
           }
+
 
           if (Array.isArray(latestParsed.team) && latestParsed.team.length > 0) {
             const delIds = new Set([
@@ -227,9 +251,10 @@ async function startServer() {
         return a;
       });
 
-      // Normalize Islam and Mariam canonical identity across tasks
+      // Normalize Islam and Mariam canonical identity
       if (Array.isArray(parsed.tasks)) {
         parsed.tasks = parsed.tasks.map((t: any) => {
+          if (!t) return t;
           const aid = (t.assignedToId || '').toLowerCase();
           if (aid === 'user-1793025675186' || aid === 'user-1793016178916' || aid === 'islam') {
             t.assignedToId = 'user-islam';
@@ -857,12 +882,33 @@ async function startServer() {
       deletedSet.delete(task.id);
       current.deletedTasks = (current.deletedTasks || []).filter((t: any) => t.id !== task.id);
 
-      // Check if task exists to update or prepend
-      const existingIndex = existingTasks.findIndex(t => t.id === task.id);
+      // Check if task exists to update or prepend with completed protection
+      const incomingTask = { ...task };
+      if (!incomingTask.updatedAt) {
+        incomingTask.updatedAt = new Date().toISOString();
+      }
+
+      const existingIndex = existingTasks.findIndex(t => t.id === incomingTask.id);
       if (existingIndex >= 0) {
-        existingTasks[existingIndex] = { ...existingTasks[existingIndex], ...task };
+        const existing = existingTasks[existingIndex];
+        const isExistingCompleted = existing.status === 'completed';
+        const isIncomingCompleted = incomingTask.status === 'completed';
+
+        if (incomingTask.status === 'completed') {
+          incomingTask.completedAt = incomingTask.completedAt || existing.completedAt || new Date().toISOString().split('T')[0];
+          incomingTask.explicitStatusRevert = false;
+        } else if (isExistingCompleted && !isIncomingCompleted && !incomingTask.explicitStatusRevert) {
+          // Prevent accidental revert if not explicit
+          incomingTask.status = 'completed';
+          incomingTask.completedAt = existing.completedAt || new Date().toISOString().split('T')[0];
+        }
+
+        existingTasks[existingIndex] = { ...existing, ...incomingTask };
       } else {
-        existingTasks.unshift(task);
+        if (incomingTask.status === 'completed') {
+          incomingTask.completedAt = incomingTask.completedAt || new Date().toISOString().split('T')[0];
+        }
+        existingTasks.unshift(incomingTask);
       }
       current.tasks = existingTasks;
 
@@ -1375,11 +1421,39 @@ async function startServer() {
           tasksMap.set(t.id, t);
         }
       });
-      // Merge incoming tasks (update existing or insert new)
+      // Merge incoming tasks (update existing or insert new with strict completion protection)
       incomingTasks.forEach((t: any) => {
         if (!explicitDeletedSet.has(t.id)) {
-          const existing = tasksMap.get(t.id) || {};
-          tasksMap.set(t.id, { ...existing, ...t });
+          const existing = tasksMap.get(t.id);
+          if (existing) {
+            const isExistingCompleted = existing.status === 'completed';
+            const isIncomingCompleted = t.status === 'completed';
+
+            // Strict 24/7 rule: once marked completed at any time, NEVER revert to uncompleted via background/bulk sync!
+            if (isExistingCompleted && !isIncomingCompleted && !t.explicitStatusRevert) {
+              tasksMap.set(t.id, {
+                ...existing,
+                ...t,
+                status: 'completed',
+                completedAt: existing.completedAt || t.completedAt || new Date().toISOString().split('T')[0]
+              });
+              return;
+            }
+
+            if (isIncomingCompleted) {
+              tasksMap.set(t.id, {
+                ...existing,
+                ...t,
+                status: 'completed',
+                completedAt: t.completedAt || existing.completedAt || new Date().toISOString().split('T')[0]
+              });
+              return;
+            }
+
+            tasksMap.set(t.id, { ...existing, ...t });
+          } else {
+            tasksMap.set(t.id, t);
+          }
         }
       });
       const mergedTasks = Array.from(tasksMap.values());
@@ -1404,10 +1478,29 @@ async function startServer() {
       }
       mergedTeam = sanitizeTeam(mergedTeam);
 
-      // Smart merge client renewals: incoming clientRenewals from admin take precedence
+      // Smart merge client renewals: preserve completed monthly tasks
       let mergedRenewals = cleanClientRenewals(currentData.clientRenewals || []);
       if (Array.isArray(incoming.clientRenewals)) {
-        mergedRenewals = cleanClientRenewals(incoming.clientRenewals);
+        const currentRenMap = new Map<string, any>(mergedRenewals.map((r: any) => [r.id, r]));
+        const mergedList = incoming.clientRenewals.map((incRen: any) => {
+          const currRen = currentRenMap.get(incRen.id);
+          if (!currRen) return incRen;
+          const currTasksMap = new Map<string, any>((currRen.monthlyTasks || []).map((mt: any) => [mt.id, mt]));
+          const mergedMonthlyTasks = (incRen.monthlyTasks || []).map((incTask: any) => {
+            const currTask = currTasksMap.get(incTask.id);
+            if (currTask && currTask.completed && !incTask.completed && !incTask.explicitStatusRevert) {
+              return {
+                ...incTask,
+                completed: true,
+                completedAt: currTask.completedAt || new Date().toISOString().split('T')[0],
+                completedByName: currTask.completedByName
+              };
+            }
+            return incTask;
+          });
+          return { ...currRen, ...incRen, monthlyTasks: mergedMonthlyTasks };
+        });
+        mergedRenewals = cleanClientRenewals(mergedList);
       }
 
       // Smart merge marketing deleted items and boards
