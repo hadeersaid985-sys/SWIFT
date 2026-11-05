@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Task } from '../types/crm';
+import {
+  sanitizeTaskIntegrity,
+  mergeTaskIntegrity,
+  mergeTasksListIntegrity,
+  MAX_UNATTENDED_TIMER_MS
+} from './taskCompletionIntegrity';
 
 test('Task Completion Integrity - completed tasks are preserved and never downgraded by stale sync', () => {
   const existingCompletedTask: Task = {
@@ -25,7 +31,9 @@ test('Task Completion Integrity - completed tasks are preserved and never downgr
     description: 'تنفيذ التصاميم كاملة',
     assignedToId: 'user-aya',
     priority: 'high',
-    status: 'todo', // Stale client tab sent older state
+    status: 'in_progress', // Stale client tab sent older in_progress status with running timer!
+    isTimerRunning: true,
+    timerStartedAt: 1793794520797,
     updatedAt: '2026-11-01T10:00:00.000Z',
     dueDate: '2026-11-01',
     category: 'إداري',
@@ -34,24 +42,42 @@ test('Task Completion Integrity - completed tasks are preserved and never downgr
     createdAt: '2026-10-30'
   };
 
-  // Safe merge logic simulation
-  const isExistingCompleted = existingCompletedTask.status === 'completed' || Boolean(existingCompletedTask.completedAt);
-  const isIncomingCompleted = staleIncomingTask.status === 'completed' || Boolean(staleIncomingTask.completedAt);
+  const merged = mergeTaskIntegrity(existingCompletedTask, staleIncomingTask);
 
-  let mergedTask: Task;
-  if (isExistingCompleted && !isIncomingCompleted && !staleIncomingTask.explicitStatusRevert) {
-    mergedTask = {
-      ...existingCompletedTask,
-      ...staleIncomingTask,
-      status: 'completed',
-      completedAt: existingCompletedTask.completedAt
-    };
-  } else {
-    mergedTask = { ...existingCompletedTask, ...staleIncomingTask };
-  }
+  assert.equal(merged.status, 'completed', 'Task must remain completed despite stale incoming in_progress sync');
+  assert.equal(merged.completedAt, '2026-11-01', 'Task completedAt must be preserved');
+  assert.equal(merged.isTimerRunning, false, 'Completed task MUST NOT have isTimerRunning true');
+  assert.equal(merged.timerStartedAt, undefined, 'Completed task MUST NOT have timerStartedAt');
+});
 
-  assert.equal(mergedTask.status, 'completed', 'Task must remain completed despite stale incoming sync');
-  assert.equal(mergedTask.completedAt, '2026-11-01', 'Task completedAt must be preserved');
+test('Task Completion Integrity - completed task strips running timer and records time log', () => {
+  const taskMarkedDoneWhileTimerRunning: Task = {
+    id: 'task-test-roaa',
+    title: '3 مقالات الكشفيه',
+    description: 'مهمة مضافة عبر بورد وقائمة الفريق',
+    assignedToId: 'user-roaa',
+    priority: 'medium',
+    status: 'completed',
+    completedAt: '2026-11-04',
+    isTimerRunning: true,
+    timerStartedAt: Date.now() - 60 * 60 * 1000, // 1 hour ago
+    timerAccumulatedMs: 30 * 60 * 1000,
+    dueDate: '2026-11-04',
+    category: 'إداري',
+    subtasks: [],
+    timeLogs: [],
+    createdAt: '2026-10-31'
+  };
+
+  const sanitized = sanitizeTaskIntegrity(taskMarkedDoneWhileTimerRunning);
+
+  assert.equal(sanitized.status, 'completed');
+  assert.equal(sanitized.isTimerRunning, false);
+  assert.equal(sanitized.isTimerPaused, false);
+  assert.equal(sanitized.timerStartedAt, undefined);
+  assert.equal(sanitized.timerAccumulatedMs, 0);
+  assert.ok(sanitized.totalLoggedMinutes! >= 90, 'Total logged minutes includes accumulated and active worked time');
+  assert.ok(sanitized.timeLogs && sanitized.timeLogs.length > 0, 'Auto time log created for completed session');
 });
 
 test('Task Completion Integrity - explicit user revert is permitted when user deliberately unchecks', () => {
@@ -78,21 +104,77 @@ test('Task Completion Integrity - explicit user revert is permitted when user de
     updatedAt: '2026-11-02T01:30:00.000Z'
   };
 
-  const isExistingCompleted = existingCompletedTask.status === 'completed' || Boolean(existingCompletedTask.completedAt);
-  const isIncomingCompleted = intentionalUserRevert.status === 'completed' || Boolean(intentionalUserRevert.completedAt);
+  const merged = mergeTaskIntegrity(existingCompletedTask, intentionalUserRevert);
 
-  let mergedTask: Task;
-  if (isExistingCompleted && !isIncomingCompleted && !intentionalUserRevert.explicitStatusRevert) {
-    mergedTask = {
-      ...existingCompletedTask,
-      ...intentionalUserRevert,
+  assert.equal(merged.status, 'todo', 'Task can be reverted when explicitStatusRevert is true');
+  assert.equal(merged.completedAt, undefined, 'completedAt is cleared on explicit revert');
+  assert.equal(merged.isTimerRunning, false, 'Reverted task does not magically start running');
+});
+
+test('Task Completion Integrity - dangling overnight timer from previous day is auto-capped', () => {
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const taskWithOvernightTimer: Task = {
+    id: 'task-test-overnight',
+    title: 'مهمة من الأمس بمؤقت معلق',
+    description: 'ترك اللابتوب شغال',
+    assignedToId: 'user-islam',
+    priority: 'urgent',
+    status: 'in_progress',
+    isTimerRunning: true,
+    timerStartedAt: yesterday.getTime(),
+    dueDate: yesterday.toISOString().split('T')[0],
+    category: 'إداري',
+    subtasks: [],
+    timeLogs: [],
+    createdAt: yesterday.toISOString().split('T')[0]
+  };
+
+  const sanitized = sanitizeTaskIntegrity(taskWithOvernightTimer);
+
+  assert.equal(sanitized.isTimerRunning, false, 'Overnight dangling timer must be stopped');
+  assert.equal(sanitized.timerStartedAt, undefined);
+  assert.ok(sanitized.totalLoggedMinutes! > 0, 'Capped session recorded into totalLoggedMinutes');
+  assert.ok(sanitized.timeLogs && sanitized.timeLogs.length > 0, 'Capped time log recorded');
+});
+
+test('Task Completion Integrity - mergeTasksListIntegrity protects entire list', () => {
+  const current: Task[] = [
+    {
+      id: 't-1',
+      title: 'مهمة 1',
+      description: 'وصف المهمة',
+      dueDate: '2026-11-04',
+      assignedToId: 'user-roaa',
+      priority: 'high',
       status: 'completed',
-      completedAt: existingCompletedTask.completedAt
-    };
-  } else {
-    mergedTask = { ...existingCompletedTask, ...intentionalUserRevert };
-  }
+      completedAt: '2026-11-04',
+      category: 'إداري',
+      subtasks: [],
+      timeLogs: [],
+      createdAt: '2026-11-04'
+    }
+  ];
 
-  assert.equal(mergedTask.status, 'todo', 'Task can be reverted when explicitStatusRevert is true');
-  assert.equal(mergedTask.completedAt, undefined, 'completedAt is cleared on explicit revert');
+  const incomingFromStaleServer: Task[] = [
+    {
+      id: 't-1',
+      title: 'مهمة 1',
+      description: 'وصف المهمة',
+      dueDate: '2026-11-04',
+      assignedToId: 'user-roaa',
+      priority: 'high',
+      status: 'in_progress',
+      isTimerRunning: true,
+      timerStartedAt: 1793794520797,
+      category: 'إداري',
+      subtasks: [],
+      timeLogs: [],
+      createdAt: '2026-11-04'
+    }
+  ];
+
+  const result = mergeTasksListIntegrity(current, incomingFromStaleServer);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].status, 'completed');
+  assert.equal(result[0].isTimerRunning, false);
 });

@@ -660,6 +660,7 @@ export const TasksView: React.FC = () => {
   // Helper calculate active worked seconds on a task (excluding pause intervals)
   const getTaskActiveElapsedSeconds = (task?: Task | null): number => {
     if (!task) return 0;
+    if (task.status === 'completed' || Boolean(task.completedAt)) return 0;
     let totalMs = task.timerAccumulatedMs || 0;
     if (task.isTimerRunning) {
       const sessionStart = task.timerLastResumedAt || task.timerStartedAt || liveTicks;
@@ -2491,7 +2492,12 @@ export const TasksView: React.FC = () => {
                     {/* Card Footer: Timer Start/End + Time logged */}
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        {task.isTimerRunning ? (
+                        {isDone ? (
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
+                            <Check className="w-3 h-3 text-emerald-600 stroke-[3]" />
+                            <span>مكتملة ✓</span>
+                          </span>
+                        ) : task.isTimerRunning ? (
                           <div className="flex items-center gap-1">
                             <span className="px-2 py-0.5 bg-emerald-600 text-white rounded-md font-mono text-[10px] font-bold flex items-center gap-1 animate-pulse">
                               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
@@ -3141,7 +3147,12 @@ export const TasksView: React.FC = () => {
                               {/* Footer: Timer Start/End */}
                               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-1">
-                                  {task.isTimerRunning ? (
+                                  {isDone ? (
+                                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                                      <Check className="w-2.5 h-2.5 text-emerald-600 stroke-[3]" />
+                                      <span>مكتملة ✓</span>
+                                    </span>
+                                  ) : task.isTimerRunning ? (
                                     <div className="flex items-center gap-1">
                                       <span className="px-1.5 py-0.5 bg-emerald-600 text-white rounded-md font-mono text-[9px] font-bold">
                                         {formatLiveTimer(task)}
@@ -3461,7 +3472,12 @@ export const TasksView: React.FC = () => {
 
                         {/* Live Timer Control */}
                         <td className="py-3 px-3 text-center">
-                          {task.isTimerRunning ? (
+                          {task.status === 'completed' || Boolean(task.completedAt) ? (
+                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200 inline-flex items-center gap-1">
+                              <Check className="w-3 h-3 text-emerald-600 stroke-[3]" />
+                              <span>مكتملة ✓</span>
+                            </span>
+                          ) : task.isTimerRunning ? (
                             <div className="flex flex-col items-center gap-1">
                               <div className="px-2.5 py-1 bg-emerald-600 text-white rounded-lg font-mono font-bold text-xs flex items-center gap-1.5 shadow-2xs animate-pulse">
                                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />

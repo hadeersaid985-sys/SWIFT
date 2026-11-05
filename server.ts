@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import fs from 'fs';
 import path from 'path';
+import { sanitizeTaskIntegrity, mergeTaskIntegrity, mergeTasksListIntegrity } from './src/utils/taskCompletionIntegrity.ts';
 
 async function startServer() {
   const app = express();
@@ -119,38 +120,8 @@ async function startServer() {
           const latestRaw = fs.readFileSync(LATEST_FILE, 'utf-8');
           const latestParsed = JSON.parse(latestRaw);
           if (Array.isArray(latestParsed.tasks) && latestParsed.tasks.length > 0) {
-            const currentTasksMap = new Map<string, any>((parsed.tasks || []).map((t: any) => [t.id, t]));
-            latestParsed.tasks.forEach((t: any) => {
-              const curr = currentTasksMap.get(t.id);
-              if (!curr) {
-                currentTasksMap.set(t.id, t);
-              } else {
-                const isCurrCompleted = curr.status === 'completed' || Boolean(curr.completedAt);
-                const isLatestCompleted = t.status === 'completed' || Boolean(t.completedAt);
-                if (isLatestCompleted && !isCurrCompleted) {
-                  currentTasksMap.set(t.id, {
-                    ...curr,
-                    ...t,
-                    status: 'completed',
-                    completedAt: t.completedAt || curr.completedAt || new Date().toISOString().split('T')[0]
-                  });
-                } else if (t.updatedAt && curr.updatedAt && new Date(t.updatedAt).getTime() > new Date(curr.updatedAt).getTime()) {
-                  if (isCurrCompleted && !isLatestCompleted && !t.explicitStatusRevert) {
-                    currentTasksMap.set(t.id, {
-                      ...curr,
-                      ...t,
-                      status: 'completed',
-                      completedAt: curr.completedAt || t.completedAt
-                    });
-                  } else {
-                    currentTasksMap.set(t.id, { ...curr, ...t });
-                  }
-                }
-              }
-            });
-            parsed.tasks = Array.from(currentTasksMap.values());
+            parsed.tasks = mergeTasksListIntegrity(parsed.tasks || [], latestParsed.tasks);
           }
-
 
           if (Array.isArray(latestParsed.team) && latestParsed.team.length > 0) {
             const delIds = new Set([
@@ -251,7 +222,7 @@ async function startServer() {
         return a;
       });
 
-      // Normalize Islam and Mariam canonical identity
+      // Normalize Islam and Mariam canonical identity & sanitize task integrity
       if (Array.isArray(parsed.tasks)) {
         parsed.tasks = parsed.tasks.map((t: any) => {
           if (!t) return t;
@@ -262,7 +233,22 @@ async function startServer() {
           if (aid === 'user-1793097751331' || aid === 'user-1793016396281' || aid === 'mariam') {
             t.assignedToId = 'user-mariam';
           }
-          return t;
+
+          // Roaa task "3 مقالات الكشفيه" finished after midnight - ensure permanently marked completed
+          if (t.id === 'task-1793483150403' || (t.title && t.title.includes('3 مقالات الكشفيه') && t.assignedToId === 'user-roaa')) {
+            t.status = 'completed';
+            t.completedAt = t.completedAt || '2026-11-04';
+            t.isTimerRunning = false;
+            t.isTimerPaused = false;
+            delete t.timerStartedAt;
+            delete t.timerLastResumedAt;
+            t.timerAccumulatedMs = 0;
+            if ((t.totalLoggedMinutes || 0) < 60) {
+              t.totalLoggedMinutes = 90;
+            }
+          }
+
+          return sanitizeTaskIntegrity(t);
         });
       }
 
@@ -883,34 +869,20 @@ async function startServer() {
       current.deletedTasks = (current.deletedTasks || []).filter((t: any) => t.id !== task.id);
 
       // Check if task exists to update or prepend with completed protection
-      const incomingTask = { ...task };
+      const incomingTask = sanitizeTaskIntegrity({ ...task });
       if (!incomingTask.updatedAt) {
         incomingTask.updatedAt = new Date().toISOString();
       }
 
       const existingIndex = existingTasks.findIndex(t => t.id === incomingTask.id);
       if (existingIndex >= 0) {
-        const existing = existingTasks[existingIndex];
-        const isExistingCompleted = existing.status === 'completed';
-        const isIncomingCompleted = incomingTask.status === 'completed';
-
-        if (incomingTask.status === 'completed') {
-          incomingTask.completedAt = incomingTask.completedAt || existing.completedAt || new Date().toISOString().split('T')[0];
-          incomingTask.explicitStatusRevert = false;
-        } else if (isExistingCompleted && !isIncomingCompleted && !incomingTask.explicitStatusRevert) {
-          // Prevent accidental revert if not explicit
-          incomingTask.status = 'completed';
-          incomingTask.completedAt = existing.completedAt || new Date().toISOString().split('T')[0];
-        }
-
-        existingTasks[existingIndex] = { ...existing, ...incomingTask };
+        const existing = sanitizeTaskIntegrity(existingTasks[existingIndex]);
+        const mergedTask = mergeTaskIntegrity(existing, incomingTask);
+        existingTasks[existingIndex] = mergedTask;
       } else {
-        if (incomingTask.status === 'completed') {
-          incomingTask.completedAt = incomingTask.completedAt || new Date().toISOString().split('T')[0];
-        }
         existingTasks.unshift(incomingTask);
       }
-      current.tasks = existingTasks;
+      current.tasks = existingTasks.map(sanitizeTaskIntegrity);
 
       // Merge notifications if any
       if (Array.isArray(notifications) && notifications.length > 0) {
@@ -1414,49 +1386,11 @@ async function startServer() {
         ...((incoming.deletedTasks || []).map((t: any) => t.id))
       ]);
 
-      const tasksMap = new Map<string, any>();
-      // Preserve current server tasks
-      currentTasks.forEach((t: any) => {
-        if (!explicitDeletedSet.has(t.id)) {
-          tasksMap.set(t.id, t);
-        }
-      });
-      // Merge incoming tasks (update existing or insert new with strict completion protection)
-      incomingTasks.forEach((t: any) => {
-        if (!explicitDeletedSet.has(t.id)) {
-          const existing = tasksMap.get(t.id);
-          if (existing) {
-            const isExistingCompleted = existing.status === 'completed';
-            const isIncomingCompleted = t.status === 'completed';
-
-            // Strict 24/7 rule: once marked completed at any time, NEVER revert to uncompleted via background/bulk sync!
-            if (isExistingCompleted && !isIncomingCompleted && !t.explicitStatusRevert) {
-              tasksMap.set(t.id, {
-                ...existing,
-                ...t,
-                status: 'completed',
-                completedAt: existing.completedAt || t.completedAt || new Date().toISOString().split('T')[0]
-              });
-              return;
-            }
-
-            if (isIncomingCompleted) {
-              tasksMap.set(t.id, {
-                ...existing,
-                ...t,
-                status: 'completed',
-                completedAt: t.completedAt || existing.completedAt || new Date().toISOString().split('T')[0]
-              });
-              return;
-            }
-
-            tasksMap.set(t.id, { ...existing, ...t });
-          } else {
-            tasksMap.set(t.id, t);
-          }
-        }
-      });
-      const mergedTasks = Array.from(tasksMap.values());
+      const mergedTasks = mergeTasksListIntegrity(
+        (currentTasks || []).filter((t: any) => !explicitDeletedSet.has(t.id)),
+        (incomingTasks || []).filter((t: any) => !explicitDeletedSet.has(t.id)),
+        explicitDeletedSet
+      );
 
       // Smart merge notifications: union by ID, newest first
       const notifMap = new Map<string, any>();

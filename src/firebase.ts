@@ -11,7 +11,8 @@ import {
   orderBy,
   getDocs,
   writeBatch,
-  getDocFromServer
+  getDocFromServer,
+  deleteField
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 import { Task, AppNotification, ClientRenewal, ChatMessage, TeamMember, AttendanceRecord, Meeting } from './types/crm';
@@ -49,6 +50,14 @@ export async function saveTaskToFirestore(task: Task): Promise<void> {
   try {
     const taskRef = doc(db, TASKS_COLLECTION, task.id);
     const cleanPayload: any = { ...task };
+    const isCompleted = cleanPayload.status === 'completed' || Boolean(cleanPayload.completedAt);
+    if (isCompleted) {
+      cleanPayload.isTimerRunning = false;
+      cleanPayload.isTimerPaused = false;
+      cleanPayload.timerAccumulatedMs = 0;
+      cleanPayload.timerStartedAt = deleteField();
+      cleanPayload.timerLastResumedAt = deleteField();
+    }
     // Remove undefined values to avoid Firestore errors
     Object.keys(cleanPayload).forEach(key => {
       if (cleanPayload[key] === undefined) {
