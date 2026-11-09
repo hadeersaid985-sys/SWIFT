@@ -110,7 +110,11 @@ import {
   saveMeetingToFirestore,
   deleteMeetingFromFirestore,
   onMeetingsSnapshot,
-  seedInitialMeetingsIfEmpty
+  seedInitialMeetingsIfEmpty,
+  saveLeadToFirestore,
+  deleteLeadFromFirestore,
+  onLeadsSnapshot,
+  seedInitialLeadsIfEmpty
 } from '../firebase';
 import { resolveActiveTab, normalizeTabName } from '../utils/navigationState';
 import { GOLDEN_TASK_YOMNA_DESC, GOLDEN_TASK_AYA_DESC } from '../utils/taskDescriptionUtils';
@@ -2834,9 +2838,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Client Renewals Methods
   const addClientRenewal = (renewalData: Omit<ClientRenewal, 'id' | 'createdAt'>) => {
     lastLocalMutationTimeRef.current = Date.now();
-    const assignedIds = (renewalData.assignedTeamMemberIds && renewalData.assignedTeamMemberIds.length > 0)
+    const isMaibelUser = currentUser.id === 'user-maibel' ||
+      currentUser.username?.toLowerCase().includes('maibel') ||
+      currentUser.name?.toLowerCase().includes('maibel') ||
+      currentUser.name?.includes('مايبل');
+
+    const creatorId = currentUser.id || (isMaibelUser ? 'user-maibel' : 'user-1');
+    const creatorName = currentUser.name || (isMaibelUser ? 'Maibel Emad' : 'هدير سعيد');
+
+    let assignedIds = (renewalData.assignedTeamMemberIds && renewalData.assignedTeamMemberIds.length > 0)
       ? renewalData.assignedTeamMemberIds.filter(id => id !== 'all')
-      : [renewalData.accountManagerId || currentUser.id].filter(Boolean);
+      : [renewalData.accountManagerId || creatorId].filter(Boolean);
+
+    // If Maibel creates the client, ensure she is in assignedTeamMemberIds
+    if ((isMaibelUser || (!isUserAdminOrRoot && isSalesUser)) && !assignedIds.includes(creatorId)) {
+      assignedIds = [creatorId, ...assignedIds];
+    }
 
     let validSheets = renewalData.googleSheets || [];
     if (validSheets.length === 0 && renewalData.sheetUrl) {
@@ -2851,6 +2868,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: 'ren-' + Date.now(),
       assignedTeamMemberIds: assignedIds,
       googleSheets: validSheets,
+      createdBy: creatorId,
+      creatorName: creatorName,
       createdAt: new Date().toISOString().split('T')[0]
     };
 
@@ -2862,12 +2881,74 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     logActivity('deal', 'إضافة موعد تجديد اشتراك عميل', `${newRen.clientName} - ${newRen.serviceName}`);
 
+    // Build notifications for Admin, Maibel, and mentioned users
+    const newNotifications: AppNotification[] = [];
+
+    // 1. If added by sales / Maibel, notify Admin (هدير سعيد)
+    if (isMaibelUser || (!isUserAdminOrRoot && isSalesUser)) {
+      newNotifications.push({
+        id: 'notif-ren-' + Date.now() + '-admin',
+        title: '💼 عميل / اشتراك جديد من مايبل',
+        message: `أضافت موظفة المبيعات (${creatorName}) عميلاً جديداً: "${newRen.clientName}" (${newRen.company || newRen.serviceName})`,
+        timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+        type: 'deal',
+        isRead: false,
+        linkTab: 'renewals',
+        recipientUserId: 'user-1',
+        senderName: creatorName,
+        senderAvatar: currentUser.avatar
+      });
+    }
+
+    // 2. If added by Admin and assigned to Maibel or someone else, notify them
+    if (isUserAdminOrRoot) {
+      assignedIds.forEach(mId => {
+        if (mId !== currentUser.id && mId !== 'user-1') {
+          newNotifications.push({
+            id: 'notif-ren-' + Date.now() + '-' + mId,
+            title: '💼 تم تعيين عميل لك في الاشتراكات',
+            message: `تم إسناد العميل: "${newRen.clientName}" (${newRen.serviceName}) إليك لمتابعته`,
+            timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+            type: 'deal',
+            isRead: false,
+            linkTab: 'renewals',
+            recipientUserId: mId,
+            senderName: creatorName,
+            senderAvatar: currentUser.avatar
+          });
+        }
+      });
+    }
+
+    // 3. For any mentioned members in mentionedTeamMemberIds
+    (newRen.mentionedTeamMemberIds || []).forEach(mId => {
+      if (mId !== currentUser.id && !newNotifications.some(n => n.recipientUserId === mId)) {
+        newNotifications.push({
+          id: 'notif-ren-mention-' + Date.now() + '-' + mId,
+          title: `🔔 منشن لك في عميل: ${newRen.clientName}`,
+          message: `قام ${creatorName} بذكرك في ملف العميل "${newRen.clientName}"`,
+          timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+          type: 'mention',
+          isRead: false,
+          linkTab: 'renewals',
+          recipientUserId: mId,
+          senderName: creatorName,
+          senderAvatar: currentUser.avatar
+        });
+      }
+    });
+
+    if (newNotifications.length > 0) {
+      setNotifications(prev => [...newNotifications, ...(prev || [])].slice(0, 150));
+      newNotifications.forEach(n => saveNotificationToFirestore(n));
+    }
+
     // Instant multi-device server sync & SSE broadcast
     try {
       fetch('/api/renewals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ renewal: newRen })
+        body: JSON.stringify({ renewal: newRen, notifications: newNotifications })
       }).catch(err => console.warn('[CRM] Renewal sync notice:', err));
     } catch {}
 
@@ -3263,10 +3344,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const assignClientTeam = (clientId: string, memberIds: string[]) => {
     lastLocalMutationTimeRef.current = Date.now();
     let updatedClient: ClientRenewal | null = null;
+    const cleanMemberIds = memberIds.filter(id => id !== 'all');
+
     setClientRenewals(prev => {
       const next = prev.map(c => {
         if (c.id === clientId) {
-          const fresh = { ...c, assignedTeamMemberIds: memberIds };
+          const fresh = { ...c, assignedTeamMemberIds: cleanMemberIds };
           updatedClient = fresh;
           return fresh;
         }
@@ -3277,11 +3360,38 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (updatedClient) {
+      const targetClient = updatedClient as ClientRenewal;
+      const newNotifications: AppNotification[] = [];
+      const currentUid = currentUser?.id || '';
+      const creatorName = currentUser?.name || 'الإدارة';
+
+      cleanMemberIds.forEach(mId => {
+        if (mId !== currentUid) {
+          newNotifications.push({
+            id: 'notif-assign-client-' + Date.now() + '-' + mId,
+            title: '👥 تم تعيينك لمتابعة عميل',
+            message: `تم إسناد العميل "${targetClient.clientName}" (${targetClient.company || targetClient.serviceName}) إليك لمتابعته وإدارة ملفاته`,
+            timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+            type: 'deal',
+            isRead: false,
+            linkTab: 'renewals',
+            recipientUserId: mId,
+            senderName: creatorName,
+            senderAvatar: currentUser?.avatar
+          });
+        }
+      });
+
+      if (newNotifications.length > 0) {
+        setNotifications(prev => [...newNotifications, ...(prev || [])].slice(0, 150));
+        newNotifications.forEach(n => saveNotificationToFirestore(n));
+      }
+
       try {
         fetch('/api/renewals', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ renewal: updatedClient })
+          body: JSON.stringify({ renewal: updatedClient, notifications: newNotifications })
         }).catch(() => {});
       } catch {}
       saveClientRenewalToFirestore(updatedClient);
@@ -3620,17 +3730,31 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const normName = normalizeAr(currentName);
     const normUsername = normalizeAr(currentUsername);
 
+    const isMaibel = currentUid === 'user-maibel' ||
+      currentUsername.includes('maibel') ||
+      currentName.includes('maibel') ||
+      currentName.includes('مايبل');
+
     return activeRenewals
       .filter(c => {
         // Exclude any mock demo client
         if (isMockDemoClient(c)) return false;
 
-        // An employee ONLY sees a client if they are explicitly assigned, mentioned, or managing the client!
-        // 1. Explicit ID in assignedTeamMemberIds
+        // 1. Creator check (if Maibel or employee created this client)
+        if (c.createdBy === currentUser.id || (c.createdBy && c.createdBy.toLowerCase() === currentUid)) return true;
+        if (isMaibel && (c.createdBy === 'user-maibel' || (c.creatorName && c.creatorName.toLowerCase().includes('maibel')))) return true;
+
+        // 2. Account Manager check
+        if (c.accountManagerId === currentUser.id || (c.accountManagerId && c.accountManagerId.toLowerCase() === currentUid)) return true;
+        if (isMaibel && (c.accountManagerId === 'user-maibel' || (c.accountManagerName && (c.accountManagerName.toLowerCase().includes('maibel') || c.accountManagerName.includes('مايبل'))))) return true;
+
+        // 3. Explicit ID in assignedTeamMemberIds
         let isDirectlyAssigned = false;
         if (Array.isArray(c.assignedTeamMemberIds) && c.assignedTeamMemberIds.length > 0) {
           for (const mId of c.assignedTeamMemberIds) {
             const cleanM = (mId || '').trim().toLowerCase();
+            // CRITICAL: For Maibel, generic 'all' does NOT grant access, only explicit assignment
+            if (cleanM === 'all') continue;
             if (cleanM === currentUid || cleanM === currentCode || cleanM === currentUsername) {
               isDirectlyAssigned = true;
               break;
@@ -3639,10 +3763,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               isDirectlyAssigned = true;
               break;
             }
+            if (isMaibel && (cleanM === 'user-maibel' || cleanM.includes('maibel'))) {
+              isDirectlyAssigned = true;
+              break;
+            }
           }
         }
+        if (isDirectlyAssigned) return true;
 
-        // 2. Explicit ID in mentionedTeamMemberIds
+        // 4. Explicit ID in mentionedTeamMemberIds
         let isDirectlyMentioned = false;
         if (Array.isArray(c.mentionedTeamMemberIds) && c.mentionedTeamMemberIds.length > 0) {
           for (const mId of c.mentionedTeamMemberIds) {
@@ -3655,10 +3784,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               isDirectlyMentioned = true;
               break;
             }
+            if (isMaibel && (cleanM === 'user-maibel' || cleanM.includes('maibel'))) {
+              isDirectlyMentioned = true;
+              break;
+            }
           }
         }
+        if (isDirectlyMentioned) return true;
 
-        // 3. ManagedBy matches name or alias (e.g. "اميره" vs "Amira", "Aya", "هدير", etc.)
+        // 5. ManagedBy matches name or alias (e.g. "اميره" vs "Amira", "Aya", "هدير", etc.)
         let isManagerOfClient = false;
         if (c.managedBy) {
           const cleanMgr = c.managedBy.trim().toLowerCase();
@@ -3667,14 +3801,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           else if (normMgr === normName || normMgr === normUsername) isManagerOfClient = true;
           else if (userCanon && getCanonicalUserId(cleanMgr) === userCanon) isManagerOfClient = true;
           else if (userAliases.some(alias => cleanMgr === alias || normMgr === normalizeAr(alias))) isManagerOfClient = true;
+          else if (isMaibel && (cleanMgr.includes('maibel') || cleanMgr.includes('مايبل'))) isManagerOfClient = true;
+        }
+        if (isManagerOfClient) return true;
+
+        // 6. Text mention in notes or description for Maibel
+        if (isMaibel) {
+          if (c.notes && (c.notes.toLowerCase().includes('maibel') || c.notes.includes('مايبل'))) return true;
+          if (c.projectDescription && (c.projectDescription.toLowerCase().includes('maibel') || c.projectDescription.includes('مايبل'))) return true;
         }
 
         // Strict isolation: if employee was unmentioned or unassigned, they cannot see the client!
-        if (!isDirectlyAssigned && !isDirectlyMentioned && !isManagerOfClient) {
-          return false;
-        }
-
-        return true;
+        return false;
       })
       .map(client => ({
         ...client,
@@ -4909,46 +5047,157 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logActivity('email', 'حذف نهائي للرسالة', 'تم الحذف النهائي للرسالة');
   };
 
+  // Helper to extract mentions from free text (e.g. "@مايبل", "@هدير", "@أميرة")
+  const extractLeadMentions = (text: string): string[] => {
+    if (!text) return [];
+    const lower = text.toLowerCase();
+    const mentionedIds = new Set<string>();
+
+    team.forEach(m => {
+      const mId = m.id;
+      const mName = (m.name || '').trim().toLowerCase();
+      const mUsername = (m.username || '').trim().toLowerCase();
+
+      if (mUsername && lower.includes(`@${mUsername}`)) mentionedIds.add(mId);
+      if (mName && lower.includes(`@${mName.replace(/\s+/g, '_')}`)) mentionedIds.add(mId);
+
+      // Known aliases
+      if ((mId === 'user-maibel' || mName.includes('maibel')) && (lower.includes('مايبل') || lower.includes('maibel'))) {
+        mentionedIds.add(mId);
+      }
+      if ((mId === 'user-1' || mName.includes('هدير')) && (lower.includes('هدير') || lower.includes('hadeer') || lower.includes('المدير') || lower.includes('admin'))) {
+        mentionedIds.add(mId);
+      }
+    });
+
+    return Array.from(mentionedIds);
+  };
+
   // Leads Actions
   const addLead = (leadData: Omit<Lead, 'id' | 'createdAt'>) => {
     const isSalesCreator = !isUserAdminOrRoot && isSalesUser;
-    const finalAssigneeId = leadData.assignedToId || (isSalesCreator ? currentUser.id : 'user-1');
+    const isMaibelUser = currentUser.id === 'user-maibel' ||
+      currentUser.username?.toLowerCase().includes('maibel') ||
+      currentUser.name?.toLowerCase().includes('maibel') ||
+      currentUser.name?.includes('مايبل');
+
+    const creatorId = currentUser.id || (isMaibelUser ? 'user-maibel' : 'user-1');
+    const creatorName = currentUser.name || (isMaibelUser ? 'Maibel Emad' : 'هدير سعيد');
+
+    const finalAssigneeId = leadData.assignedToId || (isSalesCreator ? creatorId : 'user-1');
     const existingAssignees = Array.isArray(leadData.assignedTeamMemberIds) ? leadData.assignedTeamMemberIds : [];
     const finalAssignedTeamMemberIds = existingAssignees.length > 0
-      ? (isSalesCreator && !existingAssignees.includes(currentUser.id) ? [currentUser.id, ...existingAssignees] : existingAssignees)
-      : (isSalesCreator ? [currentUser.id] : [finalAssigneeId]);
+      ? (isSalesCreator && !existingAssignees.includes(creatorId) ? [creatorId, ...existingAssignees] : existingAssignees)
+      : (isSalesCreator ? [creatorId] : [finalAssigneeId]);
+
+    // Extract auto-mentions from text
+    const textToScan = `${leadData.detailedDescription || ''} ${leadData.notes || ''} ${leadData.negotiationsHistory || ''}`;
+    const autoMentions = extractLeadMentions(textToScan);
+    const combinedMentions = Array.from(new Set([
+      ...(leadData.mentionedUserIds || []),
+      ...autoMentions
+    ]));
 
     const newLead: Lead = {
       ...leadData,
       id: 'lead-' + Date.now(),
       assignedToId: finalAssigneeId,
       assignedTeamMemberIds: finalAssignedTeamMemberIds,
-      createdBy: leadData.createdBy || currentUser.id,
-      creatorName: leadData.creatorName || currentUser.name,
+      mentionedUserIds: combinedMentions,
+      createdBy: creatorId,
+      creatorName: creatorName,
       leadType: leadData.leadType || (isSalesCreator || finalAssignedTeamMemberIds.some(id => id !== 'user-1') ? 'sales' : 'admin'),
       isSalesLead: leadData.isSalesLead !== undefined ? leadData.isSalesLead : (isSalesCreator || finalAssignedTeamMemberIds.some(id => id !== 'user-1')),
       createdAt: new Date().toISOString().split('T')[0]
     };
 
     setLeads(prev => [newLead, ...prev]);
-    logActivity('lead', 'تم تسجيل عميل محتمل جديد', `${newLead.name} (${newLead.company}) - بواسطة ${currentUser.name}`);
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify([newLead, ...leads]));
+    logActivity('lead', 'تم تسجيل عميل محتمل جديد', `${newLead.name} (${newLead.company}) - بواسطة ${creatorName}`);
 
-    // If added by a sales representative, send high-priority notification to the admin
-    if (isSalesCreator) {
-      const adminNotif: AppNotification = {
-        id: 'notif-lead-' + Date.now(),
-        title: 'عميل محتمل جديد من المبيعات 💼',
-        message: `سجلت موظفة المبيعات (${currentUser.name}) عميلاً محتملاً جديداً: "${newLead.name}" لشركة "${newLead.company}"`,
+    // Build notifications for Admin, Maibel, and mentioned users
+    const newNotifications: AppNotification[] = [];
+
+    // 1. If added by sales / Maibel, notify Admin (هدير سعيد)
+    if (isSalesCreator || isMaibelUser) {
+      newNotifications.push({
+        id: 'notif-lead-' + Date.now() + '-admin',
+        title: '💼 عميل محتمل جديد من مايبل',
+        message: `سجلت موظفة المبيعات (${creatorName}) عميلاً محتملاً جديداً: "${newLead.name}" لشركة "${newLead.company}"`,
         timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
         type: 'lead',
         isRead: false,
         linkTab: 'leads',
         recipientUserId: 'user-1',
-        senderName: currentUser.name,
+        senderName: creatorName,
         senderAvatar: currentUser.avatar
-      };
-      setNotifications(prev => [adminNotif, ...(prev || [])].slice(0, 100));
+      });
     }
+
+    // 2. If added by Admin and assigned to Maibel or someone else, notify them
+    if (isUserAdminOrRoot) {
+      finalAssignedTeamMemberIds.forEach(mId => {
+        if (mId !== currentUser.id && mId !== 'user-1') {
+          newNotifications.push({
+            id: 'notif-lead-' + Date.now() + '-' + mId,
+            title: '💼 عميل محتمل جديد مخصص لك',
+            message: `تم إسناد العميل المحتمل: "${newLead.name}" (${newLead.company}) إليك لمتابعته`,
+            timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+            type: 'lead',
+            isRead: false,
+            linkTab: 'leads',
+            recipientUserId: mId,
+            senderName: creatorName,
+            senderAvatar: currentUser.avatar
+          });
+        }
+      });
+    }
+
+    // 3. For any mentioned members
+    combinedMentions.forEach(mId => {
+      if (mId !== currentUser.id && !newNotifications.some(n => n.recipientUserId === mId)) {
+        newNotifications.push({
+          id: 'notif-lead-mention-' + Date.now() + '-' + mId,
+          title: `🔔 منشن لك في عميل محتمل: ${newLead.name}`,
+          message: `قام ${creatorName} بذكرك في العميل المحتمل "${newLead.name}" (${newLead.company})`,
+          timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+          type: 'mention',
+          isRead: false,
+          linkTab: 'leads',
+          recipientUserId: mId,
+          senderName: creatorName,
+          senderAvatar: currentUser.avatar
+        });
+      }
+    });
+
+    if (newNotifications.length > 0) {
+      setNotifications(prev => [...newNotifications, ...(prev || [])].slice(0, 150));
+      newNotifications.forEach(n => saveNotificationToFirestore(n));
+    }
+
+    // Instant multi-device server sync & SSE broadcast
+    try {
+      fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead: newLead,
+          notifications: newNotifications,
+          activity: {
+            id: 'act-' + Date.now(),
+            type: 'lead',
+            action: 'تم تسجيل عميل محتمل جديد',
+            details: `${newLead.name} (${newLead.company}) - بواسطة ${creatorName}`,
+            timestamp: 'الآن',
+            user: creatorName
+          }
+        })
+      }).catch(err => console.warn('[CRM] Lead sync notice:', err));
+    } catch {}
+
+    saveLeadToFirestore(newLead);
   };
 
   const addLeadsBulk = (leadsData: Omit<Lead, 'id' | 'createdAt'>[]) => {
@@ -4958,51 +5207,178 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: 'lead-' + Date.now() + '-' + idx,
       createdAt: todayStr
     }));
-    setLeads(prev => [...newLeads, ...prev]);
+    setLeads(prev => {
+      const next = [...newLeads, ...prev];
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(next));
+      return next;
+    });
     logActivity('lead', 'استيراد شيت عملاء محتملين', `تم استيراد ${newLeads.length} عميل محتمل بنجاح من شيت البيانات`);
+
+    try {
+      fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leads: newLeads })
+      }).catch(() => {});
+    } catch {}
+
+    newLeads.forEach(l => saveLeadToFirestore(l));
   };
 
   const updateLead = (id: string, updates: Partial<Lead>) => {
-    setLeads(prev => prev.map(l => (l.id === id ? { ...l, ...updates } : l)));
+    let updatedLeadObj: Lead | null = null;
+    const newNotifications: AppNotification[] = [];
+
+    setLeads(prev => {
+      const next = prev.map(l => {
+        if (l.id !== id) return l;
+
+        const textToScan = `${updates.detailedDescription ?? l.detailedDescription ?? ''} ${updates.notes ?? l.notes ?? ''} ${updates.negotiationsHistory ?? l.negotiationsHistory ?? ''}`;
+        const autoMentions = extractLeadMentions(textToScan);
+        const combinedMentions = Array.from(new Set([
+          ...(updates.mentionedUserIds ?? l.mentionedUserIds ?? []),
+          ...autoMentions
+        ]));
+
+        const fresh: Lead = {
+          ...l,
+          ...updates,
+          mentionedUserIds: combinedMentions
+        };
+        updatedLeadObj = fresh;
+        return fresh;
+      });
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(next));
+      return next;
+    });
+
+    if (updatedLeadObj) {
+      const target = updatedLeadObj as Lead;
+
+      // Check if newly assigned to someone
+      if (updates.assignedTeamMemberIds || updates.assignedToId) {
+        const assignedIds = updates.assignedTeamMemberIds || [updates.assignedToId!];
+        assignedIds.forEach(mId => {
+          if (mId && mId !== currentUser.id && mId !== 'user-1') {
+            newNotifications.push({
+              id: 'notif-lead-assign-' + Date.now() + '-' + mId,
+              title: '💼 تم إسناد عميل محتمل لك',
+              message: `تم تعيين العميل المحتمل: "${target.name}" (${target.company}) إليك لمتابعته`,
+              timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+              type: 'lead',
+              isRead: false,
+              linkTab: 'leads',
+              recipientUserId: mId,
+              senderName: currentUser.name,
+              senderAvatar: currentUser.avatar
+            });
+          }
+        });
+      }
+
+      // Check for mentions
+      (target.mentionedUserIds || []).forEach(mId => {
+        if (mId !== currentUser.id && !newNotifications.some(n => n.recipientUserId === mId)) {
+          newNotifications.push({
+            id: 'notif-lead-men-' + Date.now() + '-' + mId,
+            title: `🔔 منشن لك في عميل محتمل: ${target.name}`,
+            message: `قام ${currentUser.name} بذكرك في العميل المحتمل "${target.name}" (${target.company})`,
+            timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+            type: 'mention',
+            isRead: false,
+            linkTab: 'leads',
+            recipientUserId: mId,
+            senderName: currentUser.name,
+            senderAvatar: currentUser.avatar
+          });
+        }
+      });
+
+      // If updated by Maibel, notify Admin
+      if (!isUserAdminOrRoot && (currentUser.id === 'user-maibel' || currentUser.name?.toLowerCase().includes('maibel'))) {
+        newNotifications.push({
+          id: 'notif-lead-upd-' + Date.now() + '-admin',
+          title: '💼 تحديث عميل محتمل من مايبل',
+          message: `حدثت مايبل بيانات العميل المحتمل: "${target.name}" (${target.company}) - الحالة: ${target.status}`,
+          timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+          type: 'lead',
+          isRead: false,
+          linkTab: 'leads',
+          recipientUserId: 'user-1',
+          senderName: currentUser.name,
+          senderAvatar: currentUser.avatar
+        });
+      }
+
+      if (newNotifications.length > 0) {
+        setNotifications(prev => [...newNotifications, ...(prev || [])].slice(0, 150));
+        newNotifications.forEach(n => saveNotificationToFirestore(n));
+      }
+
+      try {
+        fetch('/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lead: target, notifications: newNotifications })
+        }).catch(() => {});
+      } catch {}
+
+      saveLeadToFirestore(target);
+    }
   };
 
   const deleteLead = (id: string) => {
-    setLeads(prev => prev.filter(l => l.id !== id));
+    setLeads(prev => {
+      const next = prev.filter(l => l.id !== id);
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(next));
+      return next;
+    });
+
+    try {
+      fetch('/api/leads/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: id })
+      }).catch(() => {});
+    } catch {}
+
+    deleteLeadFromFirestore(id);
   };
 
   const assignLeadTeamMembers = (leadId: string, memberIds: string[]) => {
-    setLeads(prev =>
-      prev.map(l => (l.id === leadId ? { ...l, assignedTeamMemberIds: memberIds } : l))
-    );
+    updateLead(leadId, {
+      assignedToId: memberIds[0] || 'user-1',
+      assignedTeamMemberIds: memberIds
+    });
   };
 
   const addLeadNegotiation = (leadId: string, entryData: Omit<LeadNegotiationEntry, 'id' | 'createdAt'>) => {
     const newEntry: LeadNegotiationEntry = {
       ...entryData,
       id: 'neg-' + Date.now(),
+      authorName: entryData.authorName || currentUser.name,
+      authorId: entryData.authorId || currentUser.id,
       createdAt: new Date().toISOString()
     };
-    setLeads(prev =>
-      prev.map(l => {
-        if (l.id !== leadId) return l;
-        const currentEntries = l.negotiationEntries || [];
-        const updatedEntries = [newEntry, ...currentEntries];
-        const summaryText = `[${newEntry.date} - ${newEntry.type}]: ${newEntry.summary}${
-          newEntry.finalPrice || newEntry.offeredPrice
-            ? ` (السعر: ${(newEntry.finalPrice || newEntry.offeredPrice)?.toLocaleString()} ${newEntry.currency || l.currency || 'ج.م'})`
-            : ''
-        }`;
-        return {
-          ...l,
-          negotiationEntries: updatedEntries,
-          negotiationsHistory: l.negotiationsHistory
-            ? `${summaryText}\n${l.negotiationsHistory}`
-            : summaryText,
-          finalPrice: newEntry.finalPrice ?? l.finalPrice,
-          currency: newEntry.currency ?? l.currency
-        };
-      })
-    );
+    const targetLead = leads.find(l => l.id === leadId);
+    if (!targetLead) return;
+
+    const currentEntries = targetLead.negotiationEntries || [];
+    const updatedEntries = [newEntry, ...currentEntries];
+    const summaryText = `[${newEntry.date} - ${newEntry.type}]: ${newEntry.summary}${
+      newEntry.finalPrice || newEntry.offeredPrice
+        ? ` (السعر: ${(newEntry.finalPrice || newEntry.offeredPrice)?.toLocaleString()} ${newEntry.currency || targetLead.currency || 'ج.م'})`
+        : ''
+    }`;
+
+    updateLead(leadId, {
+      negotiationEntries: updatedEntries,
+      negotiationsHistory: targetLead.negotiationsHistory
+        ? `${summaryText}\n${targetLead.negotiationsHistory}`
+        : summaryText,
+      finalPrice: newEntry.finalPrice ?? targetLead.finalPrice,
+      currency: newEntry.currency ?? targetLead.currency
+    });
   };
 
   const convertLeadToDeal = (leadId: string, dealValue?: number) => {
@@ -5399,11 +5775,26 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let unsubscribeTeam: (() => void) | null = null;
     let unsubscribeAttendance: (() => void) | null = null;
     let unsubscribeMeetings: (() => void) | null = null;
+    let unsubscribeLeads: (() => void) | null = null;
 
     try {
       // Seed initial team if Firestore collection is empty
       seedInitialTeamIfEmpty(team);
       seedInitialMeetingsIfEmpty(meetings);
+      seedInitialLeadsIfEmpty(leads);
+
+      unsubscribeLeads = onLeadsSnapshot(remoteLeads => {
+        if (Array.isArray(remoteLeads) && remoteLeads.length > 0) {
+          if (Date.now() - lastLocalMutationTimeRef.current < 2000) return;
+          setLeads(prev => {
+            const map = new Map<string, Lead>(prev.map(l => [l.id, l]));
+            remoteLeads.forEach(l => map.set(l.id, { ...(map.get(l.id) || {}), ...l }));
+            const merged = Array.from(map.values());
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      });
 
       unsubscribeMeetings = onMeetingsSnapshot(remoteMeetings => {
         if (Array.isArray(remoteMeetings) && remoteMeetings.length > 0) {
@@ -5517,6 +5908,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (unsubscribeTeam) unsubscribeTeam();
       if (unsubscribeAttendance) unsubscribeAttendance();
       if (unsubscribeMeetings) unsubscribeMeetings();
+      if (unsubscribeLeads) unsubscribeLeads();
     };
   }, []);
 
@@ -5730,6 +6122,52 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
             }
           }
+
+          if (payload.type === 'LEAD_MUTATION' || payload.type === 'FULL_SYNC') {
+            if (payload.deletedLeadId) {
+              setLeads(prev => {
+                const next = prev.filter(l => l.id !== payload.deletedLeadId);
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(next));
+                return next;
+              });
+            }
+            if (Array.isArray(payload.leads)) {
+              setLeads(prev => {
+                const leadMap = new Map<string, Lead>(prev.map(l => [l.id, l]));
+                payload.leads.forEach((l: Lead) => leadMap.set(l.id, { ...(leadMap.get(l.id) || {}), ...l }));
+                const merged = Array.from(leadMap.values());
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(merged));
+                return merged;
+              });
+            } else if (payload.lead) {
+              const l = payload.lead;
+              setLeads(prev => {
+                const map = new Map<string, Lead>(prev.map(item => [item.id, item]));
+                map.set(l.id, { ...(map.get(l.id) || {}), ...l });
+                const merged = Array.from(map.values());
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(merged));
+                return merged;
+              });
+
+              if (currentUser) {
+                const isCreator = l.createdBy === currentUser.id || l.createdBy === currentUser.name || (l as any).creatorId === currentUser.id;
+                const isAssigned = l.assignedToId === currentUser.id ||
+                  (Array.isArray(l.assignedTeamMemberIds) && l.assignedTeamMemberIds.includes(currentUser.id));
+                const isMentioned = Array.isArray(l.mentionedUserIds) && l.mentionedUserIds.includes(currentUser.id);
+
+                if (!isCreator && (isMentioned || isAssigned)) {
+                  triggerUniversalNotification({
+                    kind: isMentioned ? 'mention' : 'lead',
+                    title: isMentioned ? `🔔 منشن لك في عميل محتمل: ${l.name}` : `💼 عميل محتمل جديد موكل لك: ${l.name}`,
+                    body: `الشركة: ${l.company || 'غير محدد'} | الحالة: ${l.status || 'جديد'} | المكلف: أنت`,
+                    senderName: l.creatorName || l.createdBy || 'فريق المبيعات',
+                    taskId: l.id,
+                    data: l
+                  });
+                }
+              }
+            }
+          }
         } catch {}
       };
     } catch {}
@@ -5799,6 +6237,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           if (Array.isArray(serverData.notifications) && serverData.notifications.length > 0) {
             setNotifications(serverData.notifications);
+          }
+          if (Array.isArray(serverData.leads) && serverData.leads.length > 0) {
+            setLeads(prev => {
+              const leadMap = new Map<string, Lead>(prev.map(l => [l.id, l]));
+              serverData.leads.forEach((l: Lead) => leadMap.set(l.id, { ...(leadMap.get(l.id) || {}), ...l }));
+              const merged = Array.from(leadMap.values());
+              safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(merged));
+              return merged;
+            });
           }
           if (Array.isArray(serverData.activities) && serverData.activities.length > 0) {
             setActivities(serverData.activities);

@@ -59,6 +59,32 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["id", "memberId", "date", "status"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "Sales leads and prospective clients with assigned representatives and mentions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "company": { "type": "string" },
+        "title": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "status": { "type": "string" },
+        "source": { "type": "string" },
+        "assignedToId": { "type": "string" },
+        "assignedTeamMemberIds": { "type": "array" },
+        "mentionedUserIds": { "type": "array" },
+        "createdBy": { "type": "string" },
+        "creatorName": { "type": "string" },
+        "estimatedValue": { "type": "number" },
+        "detailedDescription": { "type": "string" },
+        "negotiationsHistory": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "company"]
     }
   },
   "firestore": {
@@ -85,6 +111,10 @@
     "/attendance/{attendanceId}": {
       "schema": "Attendance",
       "description": "Real-time employee attendance shifts and check-in status"
+    },
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Sales leads assigned to sales representatives or created by them"
     }
   }
 }

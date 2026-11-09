@@ -340,7 +340,7 @@ export interface AppNotification {
   title: string;
   message: string;
   timestamp: string;
-  type: 'task_deadline' | 'email' | 'deal_won' | 'lead' | 'system' | 'task_mention' | 'renewal_alert' | 'daily_digest' | 'meeting' | 'meeting_reminder';
+  type: 'task_deadline' | 'email' | 'deal_won' | 'lead' | 'system' | 'task_mention' | 'renewal_alert' | 'daily_digest' | 'meeting' | 'meeting_reminder' | 'deal' | 'mention';
   isRead: boolean;
   linkTab?: string;
   taskId?: string;
@@ -539,6 +539,8 @@ export interface ClientRenewal {
   // NEW: مرحلة التهيئة والتسليم من السيلز للتيم
   onboardingStage?: 'استلام من السيلز' | 'قيد التهيئة والتنفيذ' | 'تسليم ومتابعة مستمرة' | 'مكتمل بنجاح';
   leadSourceId?: string;
+  createdBy?: string;
+  creatorName?: string;
 }
 
 // تسجيلات ميتنج العملاء المهمين (VIP Google Meet Recordings)

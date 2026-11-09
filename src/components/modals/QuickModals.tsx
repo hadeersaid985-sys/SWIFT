@@ -312,6 +312,7 @@ export const QuickModals: React.FC = () => {
       leadScore: Number(leadScore) || 85,
       assignedToId: finalAssignees[0] || currentUser.id,
       assignedTeamMemberIds: finalAssignees,
+      mentionedUserIds: finalAssignees,
       leadType: isSalesCreator || finalAssignees.some(id => id !== 'user-1') ? 'sales' : 'admin',
       isSalesLead: isSalesCreator || finalAssignees.some(id => id !== 'user-1'),
       createdBy: currentUser.id,

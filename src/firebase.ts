@@ -15,7 +15,7 @@ import {
   deleteField
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
-import { Task, AppNotification, ClientRenewal, ChatMessage, TeamMember, AttendanceRecord, Meeting } from './types/crm';
+import { Task, AppNotification, ClientRenewal, ChatMessage, TeamMember, AttendanceRecord, Meeting, Lead } from './types/crm';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -721,5 +721,94 @@ export async function seedInitialMeetingsIfEmpty(initialMeetings: Meeting[]): Pr
     console.warn('[Firebase] Meetings seeding check notice:', err);
   }
 }
+
+const LEADS_COLLECTION = 'leads';
+
+/**
+ * Save / Update a Lead in Firestore in real-time
+ */
+export async function saveLeadToFirestore(lead: Lead): Promise<void> {
+  if (!lead || !lead.id) return;
+  try {
+    const leadRef = doc(db, LEADS_COLLECTION, lead.id);
+    const cleanPayload: any = { ...lead };
+    Object.keys(cleanPayload).forEach(key => {
+      if (cleanPayload[key] === undefined) {
+        delete cleanPayload[key];
+      }
+    });
+    cleanPayload.updatedAt = new Date().toISOString();
+    await setDoc(leadRef, cleanPayload, { merge: true });
+    console.log(`[Firebase] Lead "${lead.name}" (${lead.company}) synced to Firestore in real-time`);
+  } catch (error) {
+    console.error('[Firebase] Error saving lead to Firestore:', error);
+  }
+}
+
+/**
+ * Delete a Lead in Firestore
+ */
+export async function deleteLeadFromFirestore(leadId: string): Promise<void> {
+  if (!leadId) return;
+  try {
+    const leadRef = doc(db, LEADS_COLLECTION, leadId);
+    await deleteDoc(leadRef);
+    console.log(`[Firebase] Lead deleted from Firestore: ${leadId}`);
+  } catch (error) {
+    console.error('[Firebase] Error deleting lead from Firestore:', error);
+  }
+}
+
+/**
+ * Real-time listener for Leads across all sales members & admin devices
+ */
+export function onLeadsSnapshot(onUpdate: (leads: Lead[]) => void) {
+  try {
+    const q = collection(db, LEADS_COLLECTION);
+    return onSnapshot(
+      q,
+      snapshot => {
+        const list: Lead[] = [];
+        snapshot.forEach(docSnap => {
+          list.push(docSnap.data() as Lead);
+        });
+        if (list.length > 0) {
+          onUpdate(list);
+        }
+      },
+      err => console.warn('[Firebase] Leads snapshot notice:', err)
+    );
+  } catch {
+    return () => {};
+  }
+}
+
+/**
+ * Seed initial leads to Firestore if collection is empty
+ */
+export async function seedInitialLeadsIfEmpty(initialLeads: Lead[]): Promise<void> {
+  try {
+    const colRef = collection(db, LEADS_COLLECTION);
+    const snap = await getDocs(colRef);
+    if (snap.empty && Array.isArray(initialLeads) && initialLeads.length > 0) {
+      console.log('[Firebase] Seeding initial leads to Firestore...');
+      const batch = writeBatch(db);
+      initialLeads.forEach(lead => {
+        const lRef = doc(db, LEADS_COLLECTION, lead.id);
+        const clean: any = { ...lead };
+        Object.keys(clean).forEach(k => {
+          if (clean[k] === undefined) delete clean[k];
+        });
+        clean.updatedAt = new Date().toISOString();
+        batch.set(lRef, clean);
+      });
+      await batch.commit();
+      console.log('[Firebase] Seeded leads to Firestore successfully!');
+    }
+  } catch (err) {
+    console.warn('[Firebase] Leads seeding check notice:', err);
+  }
+}
+
 
 

@@ -165,6 +165,16 @@ async function startServer() {
             });
             parsed.meetings = Array.from(currentMeetMap.values());
           }
+
+          if (Array.isArray(latestParsed.leads) && latestParsed.leads.length > 0) {
+            const currentLeadMap = new Map<string, any>((parsed.leads || []).map((l: any) => [l.id, l]));
+            latestParsed.leads.forEach((l: any) => {
+              if (l && l.id) {
+                currentLeadMap.set(l.id, { ...(currentLeadMap.get(l.id) || {}), ...l });
+              }
+            });
+            parsed.leads = Array.from(currentLeadMap.values());
+          }
         } catch {}
       }
 
@@ -172,6 +182,7 @@ async function startServer() {
       parsed.chatChannels = Array.isArray(parsed.chatChannels) ? parsed.chatChannels : [];
       parsed.attendanceRecords = Array.isArray(parsed.attendanceRecords) ? parsed.attendanceRecords : [];
       parsed.meetings = Array.isArray(parsed.meetings) ? parsed.meetings : [];
+      parsed.leads = Array.isArray(parsed.leads) ? parsed.leads : [];
 
       // Guarantee Amira's meeting ("gx monthly report" on 2026-11-04 at 12:00 for موقع gx, host: هدير سعيد) is present
       const hasGxReport = parsed.meetings.some((m: any) => m.id === 'meet-gx-report' || (m.title && m.title.toLowerCase().includes('gx monthly report')));
@@ -420,6 +431,7 @@ async function startServer() {
         notifications: data.notifications || [],
         team: data.team || [],
         clientRenewals: data.clientRenewals || [],
+        leads: data.leads || [],
         attendanceRecords: data.attendanceRecords || [],
         meetings: data.meetings || [],
         updatedAt: data.updatedAt
@@ -615,6 +627,123 @@ async function startServer() {
     } catch (err) {
       console.error('Error deleting client renewal:', err);
       return res.status(500).json({ error: 'Failed to delete renewal' });
+    }
+  });
+
+  // ==================== LEADS API (Instant Multi-Device Sync for Sales & Admin) ====================
+  // Get Leads
+  app.get('/api/leads', (_req, res) => {
+    try {
+      const data = readCurrentData();
+      return res.json({
+        leads: data.leads || [],
+        updatedAt: data.updatedAt
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: 'Failed to get leads' });
+    }
+  });
+
+  // Atomic Lead Create or Update (Instant sync between Maibel, Sales, and Admin)
+  app.post('/api/leads', (req, res) => {
+    try {
+      const { lead, leads: fullList, notifications, activity } = req.body;
+      const current = readCurrentData();
+      let list: any[] = current.leads || [];
+
+      if (Array.isArray(fullList)) {
+        list = fullList;
+      } else if (lead && lead.id) {
+        const idx = list.findIndex((l: any) => l.id === lead.id);
+        if (idx >= 0) {
+          list[idx] = { ...list[idx], ...lead, updatedAt: new Date().toISOString() };
+        } else {
+          list.unshift({ ...lead, createdAt: lead.createdAt || new Date().toISOString().split('T')[0] });
+        }
+      } else {
+        return res.status(400).json({ error: 'lead or leads array required' });
+      }
+
+      current.leads = list;
+
+      // Merge notifications if provided
+      if (Array.isArray(notifications) && notifications.length > 0) {
+        const notifMap = new Map((current.notifications || []).map((n: any) => [n.id, n]));
+        notifications.forEach((n: any) => notifMap.set(n.id, n));
+        current.notifications = Array.from(notifMap.values()).slice(0, 150);
+      }
+
+      // Merge activity if provided
+      if (activity && activity.id) {
+        current.activities = [activity, ...(current.activities || [])].slice(0, 100);
+      }
+
+      saveData(current);
+      console.log(`[SWIFTMYND] Lead synced immediately: "${lead?.name || 'list'}" (${lead?.company || ''}) across all screens`);
+
+      broadcastLiveSync({
+        type: 'LEAD_MUTATION',
+        lead: lead || list[0],
+        leads: current.leads,
+        notifications: current.notifications,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({
+        success: true,
+        lead: lead || list[0],
+        leadsCount: current.leads.length,
+        updatedAt: current.updatedAt
+      });
+    } catch (err) {
+      console.error('Error saving lead:', err);
+      return res.status(500).json({ error: 'Failed to save lead' });
+    }
+  });
+
+  // Atomic Lead Delete
+  app.post('/api/leads/delete', (req, res) => {
+    try {
+      const { leadId, id } = req.body;
+      const targetId = leadId || id;
+      if (!targetId) return res.status(400).json({ error: 'leadId required' });
+
+      const current = readCurrentData();
+      current.leads = (current.leads || []).filter((l: any) => l.id !== targetId);
+      saveData(current);
+
+      broadcastLiveSync({
+        type: 'LEAD_MUTATION',
+        deletedLeadId: targetId,
+        leads: current.leads,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, leadId: targetId, remaining: current.leads.length });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to delete lead' });
+    }
+  });
+
+  app.delete('/api/leads/:id', (req, res) => {
+    try {
+      const targetId = req.params.id;
+      if (!targetId) return res.status(400).json({ error: 'leadId required' });
+
+      const current = readCurrentData();
+      current.leads = (current.leads || []).filter((l: any) => l.id !== targetId);
+      saveData(current);
+
+      broadcastLiveSync({
+        type: 'LEAD_MUTATION',
+        deletedLeadId: targetId,
+        leads: current.leads,
+        updatedAt: current.updatedAt
+      });
+
+      return res.json({ success: true, leadId: targetId });
+    } catch (err) {
+      return res.status(500).json({ error: 'Failed to delete lead' });
     }
   });
 
@@ -1488,6 +1617,18 @@ async function startServer() {
         mergedMeetings = Array.from(meetMap.values());
       }
 
+      // Smart merge leads: union by ID
+      let mergedLeads = currentData.leads || [];
+      if (Array.isArray(incoming.leads)) {
+        const leadMap = new Map<string, any>(mergedLeads.map((l: any) => [l.id, l]));
+        incoming.leads.forEach((l: any) => {
+          if (l && l.id) {
+            leadMap.set(l.id, { ...(leadMap.get(l.id) || {}), ...l });
+          }
+        });
+        mergedLeads = Array.from(leadMap.values());
+      }
+
       const merged = {
         ...currentData,
         ...incoming,
@@ -1496,6 +1637,7 @@ async function startServer() {
         team: mergedTeam,
         deletedTeamMemberIds: Array.from(deletedMemberIds),
         clientRenewals: mergedRenewals,
+        leads: mergedLeads,
         attendanceRecords: mergedAttendance,
         meetings: mergedMeetings,
         deletedTasks: Array.from(explicitDeletedSet).map(id => ({ id })),
@@ -1512,6 +1654,7 @@ async function startServer() {
         notifications: mergedNotifications,
         team: mergedTeam,
         clientRenewals: mergedRenewals,
+        leads: mergedLeads,
         attendanceRecords: mergedAttendance,
         meetings: mergedMeetings,
         updatedAt: merged.updatedAt

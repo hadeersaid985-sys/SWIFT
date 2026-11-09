@@ -511,9 +511,9 @@ export const ClientRenewalsView: React.FC = () => {
         title: s.title.trim() || 'شيت متابعة'
       }));
     const primarySheet = validSheets[0];
-    const assignedIds = (!formData.assignedTeamMemberIds || formData.assignedTeamMemberIds.length === 0)
-      ? ['all', ...team.map(m => m.id)]
-      : formData.assignedTeamMemberIds;
+    const assignedIds = (formData.assignedTeamMemberIds && formData.assignedTeamMemberIds.length > 0)
+      ? formData.assignedTeamMemberIds.filter(id => id !== 'all')
+      : [currentUser.id || 'user-1'];
 
     const payload = {
       ...formData,
@@ -531,7 +531,7 @@ export const ClientRenewalsView: React.FC = () => {
     } else {
       addClientRenewal(payload);
       setShowAddModal(false);
-      showToast('تمت إضافة العميل ومشاركته مع كامل التيم بنجاح 🎉');
+      showToast('تمت إضافة العميل ومشاركته مع الموظفين المحددين بنجاح 🎉');
     }
 
     setFormData({
@@ -556,7 +556,7 @@ export const ClientRenewalsView: React.FC = () => {
       sheetTitle: '',
       googleSheets: [{ id: 'sheet-1', title: '', url: '' }],
       contractNumber: `SWIFT-${Math.floor(1000 + Math.random() * 9000)}`,
-      assignedTeamMemberIds: ['all', ...team.map(m => m.id)]
+      assignedTeamMemberIds: [currentUser.id || 'user-1']
     });
   };
 
@@ -599,7 +599,7 @@ export const ClientRenewalsView: React.FC = () => {
       sheetTitle: '',
       googleSheets: [{ id: 'sheet-1', title: '', url: '' }],
       contractNumber: `SWIFT-${Math.floor(1000 + Math.random() * 9000)}`,
-      assignedTeamMemberIds: ['all', ...team.map(m => m.id)] // يظهر لكامل التيم افتراضياً
+      assignedTeamMemberIds: [currentUser.id || 'user-1']
     });
     setShowAddModal(true);
   };
