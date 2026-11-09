@@ -28,7 +28,9 @@ export const NavigationTabs: React.FC = () => {
     leads,
     deals,
     meetings,
-    isManager
+    isManager,
+    isSalesUser,
+    visibleLeads
   } = useCRM();
 
   const tabs = [
@@ -100,13 +102,17 @@ export const NavigationTabs: React.FC = () => {
       badge: unreadEmailsCount > 0 ? unreadEmailsCount : null,
       badgeColor: 'bg-blue-600 text-white'
     },
-    {
-      id: 'leads',
-      label: 'العملاء المحتملون',
-      icon: Building,
-      badge: leads.length,
-      badgeColor: 'bg-purple-100 text-purple-700'
-    },
+    ...(isManager || isSalesUser
+      ? [
+          {
+            id: 'leads',
+            label: 'العملاء المحتملون',
+            icon: Building,
+            badge: isManager ? leads.length : visibleLeads.length,
+            badgeColor: 'bg-purple-100 text-purple-700'
+          }
+        ]
+      : []),
     {
       id: 'deals',
       label: 'صفقات المبيعات',

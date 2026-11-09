@@ -128,6 +128,7 @@ export const TeamView: React.FC = () => {
     password: 'User@Swift2026',
     accessLevel: 'member' as AccessLevel,
     isAccountActive: true,
+    isSales: true,
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     linkedin: '',
     slack: '',
@@ -226,6 +227,7 @@ export const TeamView: React.FC = () => {
     setEditingMember(member);
     setEditFormData({
       ...member,
+      isSales: member.isSales ?? (member.department === 'المبيعات' || member.role?.toLowerCase().includes('sales') || member.role?.toLowerCase().includes('سيلز') || member.id === 'user-maibel'),
       socialAccounts: { ...member.socialAccounts }
     });
   };
@@ -234,7 +236,10 @@ export const TeamView: React.FC = () => {
     e.preventDefault();
     if (!editingMember) return;
 
-    updateUserCredentials(editingMember.id, editFormData);
+    updateUserCredentials(editingMember.id, {
+      ...editFormData,
+      isSales: Boolean(editFormData.isSales || editFormData.department === 'المبيعات' || editFormData.role?.toLowerCase().includes('sales') || editFormData.role?.toLowerCase().includes('سيلز') || editingMember.id === 'user-maibel')
+    });
     setEditingMember(null);
   };
 
@@ -255,6 +260,7 @@ export const TeamView: React.FC = () => {
       password: newMemberData.password,
       accessLevel: newMemberData.accessLevel,
       isAccountActive: newMemberData.isAccountActive,
+      isSales: Boolean(newMemberData.isSales || newMemberData.department === 'المبيعات' || newMemberData.role?.toLowerCase().includes('sales') || newMemberData.role?.toLowerCase().includes('سيلز')),
       avatar: newMemberData.avatar,
       status: 'online',
       socialAccounts: {
@@ -600,8 +606,14 @@ export const TeamView: React.FC = () => {
 
                         {/* Dept & Role */}
                         <td className="py-3 px-3">
-                          <div className="font-bold text-slate-800">{member.role}</div>
-                          <div className="text-[10px] text-slate-500">{member.department}</div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] text-slate-500">{member.department}</span>
+                            {Boolean(member.isSales || member.department === 'المبيعات' || member.role?.toLowerCase().includes('sales') || member.role?.toLowerCase().includes('سيلز') || member.id === 'user-maibel') && (
+                              <span className="bg-purple-100 text-purple-800 border border-purple-200 px-1.5 py-0.2 rounded text-[9px] font-black">
+                                سيلز 💼
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Username */}
@@ -868,11 +880,16 @@ export const TeamView: React.FC = () => {
                     <div className="text-xs font-semibold text-blue-600 truncate mt-0.5">
                       {member.role}
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1 flex-wrap">
                       <Building className="w-3 h-3 text-slate-400" />
                       <span>{member.department}</span>
                       <span className="text-slate-300">•</span>
                       <span className="font-mono text-slate-600 font-bold">{member.employeeCode}</span>
+                      {Boolean(member.isSales || member.department === 'المبيعات' || member.role?.toLowerCase().includes('sales') || member.role?.toLowerCase().includes('سيلز') || member.id === 'user-maibel') && (
+                        <span className="bg-purple-100 text-purple-800 border border-purple-200 px-1.5 py-0.2 rounded text-[9px] font-black mr-1">
+                          سيلز 💼
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1548,6 +1565,30 @@ export const TeamView: React.FC = () => {
                 </div>
               </div>
 
+              {/* Sales Account Setting (خاص بالعملاء المحتملين والسيلز) */}
+              <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-200">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editFormData.isSales || editFormData.department === 'المبيعات' || editFormData.role?.toLowerCase().includes('sales') || editFormData.role?.toLowerCase().includes('سيلز') || editingMember.id === 'user-maibel')}
+                    onChange={e => setEditFormData({
+                      ...editFormData,
+                      isSales: e.target.checked
+                    })}
+                    className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+                  />
+                  <div>
+                    <div className="font-extrabold text-purple-950 flex items-center gap-1.5 text-xs">
+                      <Building className="w-3.5 h-3.5 text-purple-600" />
+                      <span>حساب مبيعات (Sales Rep) 💼 - تفعيل قسم العملاء المحتملين</span>
+                    </div>
+                    <div className="text-[11px] text-purple-700">
+                      عند تحديد هذا الخيار، سيظهر للموظف قسم "العملاء المحتملون" لرؤية العملاء المسندة إليه أو المنشن، مع إمكانية إضافة عملاء محتملين جدد.
+                    </div>
+                  </div>
+                </label>
+              </div>
+
               {/* System Credentials (Username & Password) */}
               <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200 space-y-3">
                 <div className="font-extrabold text-blue-900 flex items-center justify-between">
@@ -1907,6 +1948,30 @@ export const TeamView: React.FC = () => {
                     <option value="viewer">مشاهد فقط (Viewer)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Sales Account Setting */}
+              <div className="p-3 bg-purple-50/70 rounded-xl border border-purple-200">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(newMemberData.isSales || newMemberData.department === 'المبيعات' || newMemberData.role?.toLowerCase().includes('sales') || newMemberData.role?.toLowerCase().includes('سيلز'))}
+                    onChange={e => setNewMemberData({
+                      ...newMemberData,
+                      isSales: e.target.checked
+                    })}
+                    className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500 cursor-pointer"
+                  />
+                  <div>
+                    <div className="font-extrabold text-purple-950 flex items-center gap-1.5 text-xs">
+                      <Building className="w-3.5 h-3.5 text-purple-600" />
+                      <span>حساب مبيعات (Sales Rep) 💼 - تفعيل قسم العملاء المحتملين</span>
+                    </div>
+                    <div className="text-[11px] text-purple-700">
+                      عند تحديد هذا الخيار، سيظهر للموظف تبويب "العملاء المحتملون" فقط للعملاء المسندة إليه أو المنشن، مع إمكانية إضافة عملاء محتملين جدد.
+                    </div>
+                  </div>
+                </label>
               </div>
 
               {/* Login Credentials */}

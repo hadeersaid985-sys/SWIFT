@@ -178,11 +178,31 @@ export const LeadsView: React.FC = () => {
     }
   };
 
-  // Active leads pool: Admins see all, sales reps see visibleLeads (only assigned ones)
+  const [filterLeadScope, setFilterLeadScope] = useState<'all' | 'sales' | 'admin'>('all');
+
+  // Active leads pool: Admins see all, sales reps see visibleLeads (only assigned/mentioned ones)
   const activeLeadsList = isManager ? leads : visibleLeads;
+
+  // Counts for Admin filtering between Admin leads and Sales leads
+  const adminOnlyCount = leads.filter(l => {
+    const isSalesL = l.leadType === 'sales' || l.isSalesLead || (l.assignedTeamMemberIds && l.assignedTeamMemberIds.some(id => id !== 'user-1')) || (l.assignedToId && l.assignedToId !== 'user-1');
+    return !isSalesL;
+  }).length;
+
+  const salesLeadsCount = leads.filter(l => {
+    const isSalesL = l.leadType === 'sales' || l.isSalesLead || (l.assignedTeamMemberIds && l.assignedTeamMemberIds.some(id => id !== 'user-1')) || (l.assignedToId && l.assignedToId !== 'user-1');
+    return isSalesL;
+  }).length;
 
   // Filter leads
   const filteredLeads = activeLeadsList.filter(l => {
+    // Admin distinction between Admin leads and Sales leads
+    if (isManager && filterLeadScope !== 'all') {
+      const isSalesL = l.leadType === 'sales' || l.isSalesLead || (l.assignedTeamMemberIds && l.assignedTeamMemberIds.some(id => id !== 'user-1')) || (l.assignedToId && l.assignedToId !== 'user-1');
+      if (filterLeadScope === 'sales' && !isSalesL) return false;
+      if (filterLeadScope === 'admin' && isSalesL) return false;
+    }
+
     if (filterStatus !== 'all' && l.status !== filterStatus) return false;
     if (filterSalesMember !== 'all') {
       const assigned = l.assignedTeamMemberIds || (l.assignedToId ? [l.assignedToId] : []);
@@ -218,6 +238,7 @@ export const LeadsView: React.FC = () => {
   // Sales members list for easy assignment
   const salesTeamMembers = team.filter(
     m =>
+      m.isSales ||
       m.department === 'المبيعات' ||
       m.role?.toLowerCase().includes('sales') ||
       m.role?.toLowerCase().includes('سيلز') ||
@@ -525,25 +546,103 @@ export const LeadsView: React.FC = () => {
         </div>
       </div>
 
+      {/* SALES BANNER FOR SALES USERS (e.g. Maibel) */}
+      {!isManager && isSalesUser && (
+        <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-4 rounded-2xl border border-purple-500/40 shadow-sm flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300">
+              <Building className="w-5 h-5 text-purple-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-sm text-white">حساب المبيعات: {currentUser.name}</span>
+                <span className="bg-purple-500/30 text-purple-200 border border-purple-400/40 text-[10px] font-black px-2 py-0.5 rounded-full">
+                  سيلز 💼
+                </span>
+              </div>
+              <p className="text-xs text-purple-200/90 mt-0.5">
+                تظهر لكِ هنا حصرياً العملاء التي تم عمل منشن لكِ عليها أو إسنادها لكِ، مع إمكانية إضافة عملاء محتملين جدد وتوثيق جولات التفاوض.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-white/10 px-3 py-1.5 rounded-xl font-bold font-mono text-purple-200">
+              {filteredLeads.length} عميل محتمل مسند لكِ
+            </span>
+            <button
+              onClick={() => setOpenQuickModal('lead')}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white text-xs font-black rounded-xl shadow-xs transition-all cursor-pointer hover:scale-[1.02]"
+              title="تسجيل عميل محتمل جديد"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>+ إضافة عميل محتمل</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Filter, Sales Member Switcher, View Switcher & Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3 text-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Status Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-bold text-slate-500 ml-1">تصفية الحالات:</span>
-            {['all', 'جديد', 'تم التواصل', 'مهتم', 'مؤهل'].map(st => (
-              <button
-                key={st}
-                onClick={() => setFilterStatus(st)}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
-                  filterStatus === st
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {st === 'all' ? 'جميع الحالات' : st}
-              </button>
-            ))}
+          {/* Status Tabs and Admin Scope Switcher */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Scope Tabs: الكل / عملاء السيلز / عملاء الإدارة (الأدمن) */}
+            {isManager && (
+              <div className="flex items-center bg-purple-50/80 p-1 rounded-xl border border-purple-200 gap-1">
+                <span className="font-bold text-purple-900 text-[11px] px-1.5">تصنيف العملاء:</span>
+                <button
+                  onClick={() => setFilterLeadScope('all')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer text-xs ${
+                    filterLeadScope === 'all'
+                      ? 'bg-purple-600 text-white shadow-2xs'
+                      : 'text-purple-800 hover:bg-purple-100'
+                  }`}
+                >
+                  الكل ({leads.length})
+                </button>
+                <button
+                  onClick={() => setFilterLeadScope('sales')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer text-xs flex items-center gap-1 ${
+                    filterLeadScope === 'sales'
+                      ? 'bg-purple-600 text-white shadow-2xs'
+                      : 'text-purple-800 hover:bg-purple-100'
+                  }`}
+                  title="العملاء المسندة لمايبل ومسؤولي المبيعات"
+                >
+                  <span>عملاء السيلز (مايبل) 💼</span>
+                  <span className="font-mono text-[10px]">({salesLeadsCount})</span>
+                </button>
+                <button
+                  onClick={() => setFilterLeadScope('admin')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer text-xs flex items-center gap-1 ${
+                    filterLeadScope === 'admin'
+                      ? 'bg-purple-600 text-white shadow-2xs'
+                      : 'text-purple-800 hover:bg-purple-100'
+                  }`}
+                  title="العملاء الخاصة بالإدارة والأدمن فقط"
+                >
+                  <span>عملاء الأدمن فقط 🔒</span>
+                  <span className="font-mono text-[10px]">({adminOnlyCount})</span>
+                </button>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-bold text-slate-500 ml-1">الحالة:</span>
+              {['all', 'جديد', 'تم التواصل', 'مهتم', 'مؤهل'].map(st => (
+                <button
+                  key={st}
+                  onClick={() => setFilterStatus(st)}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                    filterStatus === st
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {st === 'all' ? 'جميع الحالات' : st}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* View Mode Toggle: Cards vs Table */}
@@ -626,10 +725,28 @@ export const LeadsView: React.FC = () => {
                 <div className="space-y-1.5">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-black text-sm text-slate-900 group-hover:text-purple-700 transition-colors">
-                        {lead.name}
-                      </h3>
-                      <div className="text-[11px] text-slate-500 flex items-center gap-1 font-semibold">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-black text-sm text-slate-900 group-hover:text-purple-700 transition-colors">
+                          {lead.name}
+                        </h3>
+                        {lead.leadType === 'admin' || (assignedMembers.length === 1 && assignedMembers[0].id === 'user-1') ? (
+                          <span className="text-[9px] bg-slate-100 text-slate-700 border border-slate-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                            <Shield className="w-2.5 h-2.5 text-slate-500" />
+                            <span>خاص بالأدمن 🔒</span>
+                          </span>
+                        ) : (
+                          <span className="text-[9px] bg-purple-100 text-purple-900 border border-purple-200 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                            <Building className="w-2.5 h-2.5 text-purple-700" />
+                            <span>عميل سيلز 💼</span>
+                          </span>
+                        )}
+                        {assignedMembers.some(m => m.id === 'user-maibel' || m.username?.toLowerCase().includes('maibel')) && (
+                          <span className="text-[9px] bg-indigo-100 text-indigo-900 border border-indigo-200 px-1.5 py-0.2 rounded font-black">
+                            مايبل 💼
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1 font-semibold mt-0.5">
                         <Building className="w-3 h-3 text-slate-400 shrink-0" />
                         <span className="font-bold text-slate-700">{lead.company}</span>
                         {lead.title && <span className="text-slate-400">({lead.title})</span>}

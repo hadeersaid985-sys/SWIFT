@@ -35,7 +35,8 @@ export const QuickModals: React.FC = () => {
     addMeeting,
     addTeamMember,
     currentUser,
-    clientRenewals
+    clientRenewals,
+    isSalesUser
   } = useCRM();
 
   const isManager =
@@ -81,6 +82,16 @@ export const QuickModals: React.FC = () => {
   const [leadFollowUpNotes, setLeadFollowUpNotes] = useState<string>('');
   const [leadNotes, setLeadNotes] = useState('');
   const [leadAssignedMemberIds, setLeadAssignedMemberIds] = useState<string[]>(['user-maibel']);
+
+  useEffect(() => {
+    if (openQuickModal === 'lead') {
+      if (!isManager && isSalesUser) {
+        setLeadAssignedMemberIds([currentUser.id]);
+      } else if (isManager && leadAssignedMemberIds.length === 0) {
+        setLeadAssignedMemberIds(['user-maibel']);
+      }
+    }
+  }, [openQuickModal, isManager, isSalesUser, currentUser.id]);
 
   // Deal Form State
   const [dealTitle, setDealTitle] = useState('');
@@ -284,7 +295,10 @@ export const QuickModals: React.FC = () => {
     if (!leadName.trim() || !leadCompany.trim()) return;
 
     const finalSource = leadSource === 'مصدر آخر' ? (leadCustomSource.trim() || 'مصدر مخصص') : leadSource;
-    const finalAssignees = leadAssignedMemberIds.length > 0 ? leadAssignedMemberIds : [currentUser.id];
+    const isSalesCreator = !isManager && isSalesUser;
+    const finalAssignees = leadAssignedMemberIds.length > 0
+      ? (isSalesCreator && !leadAssignedMemberIds.includes(currentUser.id) ? [currentUser.id, ...leadAssignedMemberIds] : leadAssignedMemberIds)
+      : (isSalesCreator ? [currentUser.id] : ['user-1']);
 
     addLead({
       name: leadName.trim(),
@@ -298,6 +312,10 @@ export const QuickModals: React.FC = () => {
       leadScore: Number(leadScore) || 85,
       assignedToId: finalAssignees[0] || currentUser.id,
       assignedTeamMemberIds: finalAssignees,
+      leadType: isSalesCreator || finalAssignees.some(id => id !== 'user-1') ? 'sales' : 'admin',
+      isSalesLead: isSalesCreator || finalAssignees.some(id => id !== 'user-1'),
+      createdBy: currentUser.id,
+      creatorName: currentUser.name,
       estimatedValue: Number(leadValue) || 0,
       currency: leadCurrency || 'ج.م',
       finalPrice: leadFinalPrice ? Number(leadFinalPrice) : undefined,

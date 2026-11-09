@@ -3692,9 +3692,15 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isSalesUser = Boolean(
     isUserAdminOrRoot ||
     (currentUser && (
+      currentUser.isSales === true ||
       currentUser.department === 'المبيعات' ||
       currentUser.role?.toLowerCase().includes('sales') ||
       currentUser.role?.toLowerCase().includes('سيلز') ||
+      currentUser.role?.toLowerCase().includes('مبيعات') ||
+      currentUser.id === 'user-maibel' ||
+      currentUser.username?.toLowerCase().includes('maibel') ||
+      currentUser.name?.toLowerCase().includes('maibel') ||
+      currentUser.name?.includes('مايبل') ||
       currentUser.allowedTabs?.includes('leads')
     ))
   );
@@ -3702,14 +3708,45 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const visibleLeads = useMemo(() => {
     if (isUserAdminOrRoot) return leads;
     if (!isSalesUser) return []; // لغير موظفي المبيعات، لا تظهر العملاء المحتملة إطلاقاً
-    // لموظفي المبيعات (مثل مايبل Maibel): تظهر فقط العملاء المعلمة أو المعينة لهم من الإدارة
-    return leads.filter(l =>
-      Boolean(
-        currentUser &&
-          (l.assignedToId === currentUser.id ||
-            l.assignedTeamMemberIds?.includes(currentUser.id))
-      )
-    );
+
+    // لموظفي المبيعات (مثل مايبل Maibel): تظهر فقط العملاء التي تم عمل منشن لها فيها أو تعيينها لها أو إنشاؤها بواسطتها
+    const currentUserId = currentUser?.id || '';
+    const userCanon = currentUser ? getCanonicalUserId(currentUser.id) : null;
+    const isMaibel = currentUserId === 'user-maibel' ||
+      (currentUser?.username || '').toLowerCase().includes('maibel') ||
+      (currentUser?.name || '').toLowerCase().includes('maibel') ||
+      (currentUser?.name || '').includes('مايبل');
+
+    return leads.filter(l => {
+      // 1. مسند للموظفة بالـ ID المباشر
+      if (l.assignedToId === currentUserId) return true;
+      if (Array.isArray(l.assignedTeamMemberIds) && l.assignedTeamMemberIds.includes(currentUserId)) return true;
+
+      // 2. منشن صريح للموظفة في العميل
+      if (Array.isArray(l.mentionedUserIds) && l.mentionedUserIds.includes(currentUserId)) return true;
+
+      // 3. المنشئ (إذا قامت الموظفة بإضافة العميل بنفسها)
+      if (l.createdBy === currentUserId || (l as any).creatorId === currentUserId || (l as any).authorId === currentUserId) return true;
+
+      // 4. مطابقة الاسم المستعار القانوني Canonical User ID
+      if (userCanon) {
+        if (l.assignedToId && getCanonicalUserId(l.assignedToId) === userCanon) return true;
+        if (Array.isArray(l.assignedTeamMemberIds) && l.assignedTeamMemberIds.some(id => getCanonicalUserId(id) === userCanon)) return true;
+        if (Array.isArray(l.mentionedUserIds) && l.mentionedUserIds.some(id => getCanonicalUserId(id) === userCanon)) return true;
+      }
+
+      // 5. مطابقة خاصة بمايبل Maibel عبر المعرفات أو المنشن النصي
+      if (isMaibel) {
+        if (l.assignedToId === 'user-maibel' || l.assignedToId === 'sm-105') return true;
+        if (Array.isArray(l.assignedTeamMemberIds) && l.assignedTeamMemberIds.some(id => id === 'user-maibel' || id.toLowerCase().includes('maibel'))) return true;
+        if (Array.isArray(l.mentionedUserIds) && l.mentionedUserIds.some(id => id === 'user-maibel' || id.toLowerCase().includes('maibel'))) return true;
+        if (l.detailedDescription && (l.detailedDescription.toLowerCase().includes('maibel') || l.detailedDescription.includes('مايبل'))) return true;
+        if (l.negotiationsHistory && (l.negotiationsHistory.toLowerCase().includes('maibel') || l.negotiationsHistory.includes('مايبل'))) return true;
+        if (l.notes && (l.notes.toLowerCase().includes('maibel') || l.notes.includes('مايبل'))) return true;
+      }
+
+      return false;
+    });
   }, [leads, isUserAdminOrRoot, isSalesUser, currentUser]);
 
   // Sync to safeStorage
@@ -4874,13 +4911,44 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Leads Actions
   const addLead = (leadData: Omit<Lead, 'id' | 'createdAt'>) => {
+    const isSalesCreator = !isUserAdminOrRoot && isSalesUser;
+    const finalAssigneeId = leadData.assignedToId || (isSalesCreator ? currentUser.id : 'user-1');
+    const existingAssignees = Array.isArray(leadData.assignedTeamMemberIds) ? leadData.assignedTeamMemberIds : [];
+    const finalAssignedTeamMemberIds = existingAssignees.length > 0
+      ? (isSalesCreator && !existingAssignees.includes(currentUser.id) ? [currentUser.id, ...existingAssignees] : existingAssignees)
+      : (isSalesCreator ? [currentUser.id] : [finalAssigneeId]);
+
     const newLead: Lead = {
       ...leadData,
       id: 'lead-' + Date.now(),
+      assignedToId: finalAssigneeId,
+      assignedTeamMemberIds: finalAssignedTeamMemberIds,
+      createdBy: leadData.createdBy || currentUser.id,
+      creatorName: leadData.creatorName || currentUser.name,
+      leadType: leadData.leadType || (isSalesCreator || finalAssignedTeamMemberIds.some(id => id !== 'user-1') ? 'sales' : 'admin'),
+      isSalesLead: leadData.isSalesLead !== undefined ? leadData.isSalesLead : (isSalesCreator || finalAssignedTeamMemberIds.some(id => id !== 'user-1')),
       createdAt: new Date().toISOString().split('T')[0]
     };
+
     setLeads(prev => [newLead, ...prev]);
-    logActivity('lead', 'تم تسجيل عميل محتمل جديد', `${newLead.name} (${newLead.company})`);
+    logActivity('lead', 'تم تسجيل عميل محتمل جديد', `${newLead.name} (${newLead.company}) - بواسطة ${currentUser.name}`);
+
+    // If added by a sales representative, send high-priority notification to the admin
+    if (isSalesCreator) {
+      const adminNotif: AppNotification = {
+        id: 'notif-lead-' + Date.now(),
+        title: 'عميل محتمل جديد من المبيعات 💼',
+        message: `سجلت موظفة المبيعات (${currentUser.name}) عميلاً محتملاً جديداً: "${newLead.name}" لشركة "${newLead.company}"`,
+        timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+        type: 'lead',
+        isRead: false,
+        linkTab: 'leads',
+        recipientUserId: 'user-1',
+        senderName: currentUser.name,
+        senderAvatar: currentUser.avatar
+      };
+      setNotifications(prev => [adminNotif, ...(prev || [])].slice(0, 100));
+    }
   };
 
   const addLeadsBulk = (leadsData: Omit<Lead, 'id' | 'createdAt'>[]) => {

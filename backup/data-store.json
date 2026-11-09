@@ -305,7 +305,10 @@
       "priority": "high",
       "totalLoggedMinutes": 60,
       "completedAt": "2026-10-31",
-      "updatedAt": "2026-10-31T11:49:52.068Z"
+      "updatedAt": "2026-10-31T11:49:52.068Z",
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "dueDate": "2026-10-27",
@@ -366,7 +369,10 @@
       "id": "task-103",
       "createdAt": "2026-10-22",
       "completedAt": "2026-10-31",
-      "updatedAt": "2026-10-31T11:49:53.853Z"
+      "updatedAt": "2026-10-31T11:49:53.853Z",
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "description": "توزيع ميزانية 15,000 ريال على حملات Lead Generation المباشرة واستهداف قطاع المقاولات والتجزئة.",
@@ -394,6 +400,18 @@
           "memberName": "سارة المنصوري",
           "memberId": "user-3",
           "durationMinutes": 120
+        },
+        {
+          "id": "log-7b",
+          "memberId": "user-3",
+          "memberName": "سارة المنصوري",
+          "startDate": "2026-11-09",
+          "startTime": "10:15",
+          "endDate": "2026-11-09",
+          "endTime": "12:45",
+          "durationMinutes": 150,
+          "note": "تحليل أداء الحملات الإعلانية ومتابعة تكلفة النقرة CPL",
+          "createdAt": "2026-11-09"
         }
       ],
       "isTimerRunning": false,
@@ -427,7 +445,10 @@
       "priority": "medium",
       "category": "تسويق",
       "updatedAt": "2026-10-31T11:49:54.193Z",
-      "completedAt": "2026-10-31"
+      "completedAt": "2026-10-31",
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "description": "تجهيز جدول الـ Milestones والاتفاق على الموعد النهائي للمرحلة الأولى قبل نهاية اليوم.",
@@ -447,7 +468,10 @@
       "assignedToId": "user-2",
       "startDate": "2026-10-24",
       "updatedAt": "2026-10-31T11:49:50.117Z",
-      "completedAt": "2026-10-31"
+      "completedAt": "2026-10-31",
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "startDate": "2026-10-25",
@@ -467,7 +491,10 @@
       "dueTime": "16:00",
       "description": "مراجعة استعلامات SQL البطيئة وتحسين الفهارس وضمان استقرار زمن الاستجابة.",
       "updatedAt": "2026-10-31T11:49:50.767Z",
-      "completedAt": "2026-10-31"
+      "completedAt": "2026-10-31",
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "createdAt": "2026-10-25",
@@ -487,7 +514,10 @@
       "subtasks": [],
       "description": "مطابقة المبالغ المحولة بنكياً مع فواتير الاشتراكات الصادرة وتسجيل سندات القبض.",
       "updatedAt": "2026-10-31T11:49:51.699Z",
-      "completedAt": "2026-10-31"
+      "completedAt": "2026-10-31",
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "totalLoggedMinutes": 35,
@@ -539,7 +569,8 @@
       "subtasks": [],
       "assignedToId": "user-roaa",
       "isTimerPaused": false,
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "status": "completed",
@@ -560,7 +591,11 @@
       "title": "مقالات gx",
       "mentionedUserIds": [],
       "timeLogs": [],
-      "completedAt": "2026-10-28"
+      "completedAt": "2026-10-28",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "comments": [],
@@ -605,7 +640,8 @@
       "timerAccumulatedMs": 0,
       "company": "جولدن",
       "completedAt": "2026-11-01",
-      "totalLoggedMinutes": 1323
+      "totalLoggedMinutes": 1323,
+      "explicitStatusRevert": false
     },
     {
       "comments": [],
@@ -644,7 +680,8 @@
       "mentionedUserIds": [],
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
       "isTimerPaused": false,
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "فيدوهات سويفت",
@@ -685,7 +722,8 @@
       "assigneeName": "Islam",
       "assigneeAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "isTimerPaused": false,
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "estimatedHours": 2,
@@ -706,7 +744,11 @@
       "dueDate": "2026-10-26",
       "createdAt": "2026-10-26",
       "subtasks": [],
-      "completedAt": "2026-10-27"
+      "completedAt": "2026-10-27",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "timeLogs": [
@@ -771,7 +813,8 @@
       "priority": "medium",
       "completedAt": "2026-10-28",
       "isTimerPaused": false,
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "isPrivate": false,
@@ -836,7 +879,8 @@
       "totalLoggedMinutes": 470,
       "isTimerPaused": false,
       "completedAt": "2026-10-28",
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "تكمله رفع مقالات جي أكس بعد اعتمادهم",
@@ -889,7 +933,8 @@
       "totalLoggedMinutes": 139,
       "completedAt": "2026-10-27",
       "isTimerPaused": false,
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "priority": "medium",
@@ -928,7 +973,8 @@
       "estimatedHours": 2,
       "id": "task-1793092688667",
       "isTimerPaused": false,
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "كتابه اسكربت الفيديوهات وبلجن  للتسويق",
@@ -949,7 +995,12 @@
       "comments": [],
       "createdAt": "2026-10-27",
       "completedAt": "2026-10-31",
-      "updatedAt": "2026-10-31T11:49:53.450Z"
+      "updatedAt": "2026-10-31T11:49:53.450Z",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false,
+      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
     },
     {
       "title": "كوتيشن للصيدليه بلان تسويق كامله",
@@ -970,7 +1021,12 @@
       "comments": [],
       "createdAt": "2026-10-27",
       "updatedAt": "2026-10-28T15:57:20.580Z",
-      "completedAt": "2026-10-28"
+      "completedAt": "2026-10-28",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false,
+      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
     },
     {
       "title": "كوتيشن عميل مدرسه التدريس للعماره اونلاين للموقع",
@@ -996,7 +1052,8 @@
       "isTimerRunning": false,
       "isTimerPaused": false,
       "timerAccumulatedMs": 0,
-      "completedAt": "2026-11-03"
+      "completedAt": "2026-11-03",
+      "explicitStatusRevert": false
     },
     {
       "title": "فيديو",
@@ -1017,7 +1074,11 @@
       "comments": [],
       "createdAt": "2026-10-27",
       "updatedAt": "2026-11-01T17:15:28.162Z",
-      "completedAt": "2026-11-01"
+      "completedAt": "2026-11-01",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "الانتهاء من 7 مقالات gx",
@@ -1038,7 +1099,11 @@
       "comments": [],
       "createdAt": "2026-10-27",
       "updatedAt": "2026-10-28T04:44:13.508Z",
-      "completedAt": "2026-10-28"
+      "completedAt": "2026-10-28",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "متابعه الاكونتات",
@@ -1076,7 +1141,9 @@
       "updatedAt": "2026-11-01T08:48:33.490Z",
       "totalLoggedMinutes": 2593,
       "isTimerPaused": false,
-      "completedAt": "2026-10-29"
+      "completedAt": "2026-10-29",
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "ارسال اوفرات للعملاء",
@@ -1115,7 +1182,8 @@
       "completedAt": "2026-11-03",
       "totalLoggedMinutes": 72,
       "isTimerPaused": false,
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "متابعة ومراجعة كفرات جولدن والتنسيق مع العميل (آية ويمنى)",
@@ -1194,7 +1262,9 @@
       "updatedAt": "2026-10-31T11:49:55.491Z",
       "completedAt": "2026-10-31",
       "isTimerPaused": false,
-      "isTimerRunning": false
+      "isTimerRunning": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "subtasks": [],
@@ -1247,7 +1317,8 @@
       "isTimerPaused": false,
       "timerAccumulatedMs": 0,
       "completedAt": "2026-10-28",
-      "totalLoggedMinutes": 1241
+      "totalLoggedMinutes": 1241,
+      "explicitStatusRevert": false
     },
     {
       "title": "عمل لوجو سويفتورا برايم الجديد للشركة علي البيدج او اعمل سرش الافضل اغيرها ولا اسيب سويفت والسجل اسم تاني",
@@ -1267,7 +1338,9 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-10-28",
-      "updatedAt": "2026-10-28T17:01:30.340Z"
+      "updatedAt": "2026-10-28T17:01:30.340Z",
+      "revisionsCount": 0,
+      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
     },
     {
       "priority": "medium",
@@ -1306,7 +1379,8 @@
       "timerAccumulatedMs": 0,
       "isTimerPaused": false,
       "completedAt": "2026-10-28",
-      "totalLoggedMinutes": 205
+      "totalLoggedMinutes": 205,
+      "explicitStatusRevert": false
     },
     {
       "updatedAt": "2026-10-28T15:03:23.739Z",
@@ -1345,7 +1419,8 @@
       "isTimerPaused": false,
       "isTimerRunning": false,
       "completedAt": "2026-10-28",
-      "totalLoggedMinutes": 443
+      "totalLoggedMinutes": 443,
+      "explicitStatusRevert": false
     },
     {
       "comments": [
@@ -1398,7 +1473,8 @@
       "timerAccumulatedMs": 0,
       "isTimerRunning": false,
       "totalLoggedMinutes": 288,
-      "completedAt": "2026-10-28"
+      "completedAt": "2026-10-28",
+      "explicitStatusRevert": false
     },
     {
       "id": "task-1793187796580",
@@ -1437,7 +1513,8 @@
       "isTimerRunning": false,
       "timerAccumulatedMs": 0,
       "totalLoggedMinutes": 169,
-      "completedAt": "2026-10-28"
+      "completedAt": "2026-10-28",
+      "explicitStatusRevert": false
     },
     {
       "dueTime": "18:00",
@@ -1476,7 +1553,8 @@
       "isTimerRunning": false,
       "isTimerPaused": false,
       "completedAt": "2026-10-29",
-      "totalLoggedMinutes": 73
+      "totalLoggedMinutes": 73,
+      "explicitStatusRevert": false
     },
     {
       "isPrivate": false,
@@ -1529,7 +1607,8 @@
       "isTimerRunning": false,
       "isTimerPaused": false,
       "completedAt": "2026-10-29",
-      "totalLoggedMinutes": 107
+      "totalLoggedMinutes": 107,
+      "explicitStatusRevert": false
     },
     {
       "title": "3 مقالات الكشفيه",
@@ -1554,6 +1633,18 @@
           "durationMinutes": 90,
           "note": "إنجاز 3 مقالات الكشفيه بنجاح وتسجيل وقت العمل الصافي",
           "createdAt": "2026-11-04"
+        },
+        {
+          "endTime": "18:00",
+          "id": "log-cap-1793867735372",
+          "endDate": "2026-11-04",
+          "startTime": "10:00",
+          "durationMinutes": 600,
+          "memberName": "المكلف بالمهمة",
+          "createdAt": "2026-11-04",
+          "startDate": "2026-11-04",
+          "note": "جلسة عمل مسجلة حتى نهاية اليوم (تم إيقاف المؤقت تلقائياً عند منتصف الليل)",
+          "memberId": "user-roaa"
         }
       ],
       "subtasks": [],
@@ -1573,7 +1664,8 @@
       "timerAccumulatedMs": 0,
       "isTimerRunning": false,
       "completedAt": "2026-11-04",
-      "totalLoggedMinutes": 90
+      "totalLoggedMinutes": 90,
+      "explicitStatusRevert": false
     },
     {
       "title": "5 مقالات تعديل بيوشار",
@@ -1631,7 +1723,8 @@
       "isTimerRunning": false,
       "isTimerPaused": false,
       "completedAt": "2026-11-03",
-      "totalLoggedMinutes": 227
+      "totalLoggedMinutes": 227,
+      "explicitStatusRevert": false
     },
     {
       "title": "3 مقالات موقع الكشفيه",
@@ -1652,7 +1745,11 @@
       "comments": [],
       "createdAt": "2026-10-31",
       "updatedAt": "2026-10-31T23:31:39.259Z",
-      "completedAt": "2026-10-31"
+      "completedAt": "2026-10-31",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "تنفيذ فيديو عميل بيوشار",
@@ -1678,7 +1775,8 @@
       "timerAccumulatedMs": 0,
       "revisionsCount": 0,
       "completedAt": "2026-11-01",
-      "totalLoggedMinutes": 644
+      "totalLoggedMinutes": 644,
+      "explicitStatusRevert": false
     },
     {
       "title": "تصميم رحلات south coast",
@@ -1691,7 +1789,21 @@
       "dueTime": "18:00",
       "category": "إداري",
       "estimatedHours": 2,
-      "timeLogs": [],
+      "timeLogs": [
+        {
+          "createdAt": "2026-11-05",
+          "startDate": "2026-11-02",
+          "memberAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+          "id": "log-1793886431524",
+          "memberName": "Mariam",
+          "startTime": "١٠:٢٤ ص",
+          "memberId": "user-mariam",
+          "endTime": "٠٣:٤٧ م",
+          "durationMinutes": 2336,
+          "endDate": "2026-11-05",
+          "note": "إنهاء المهمة وحساب الوقت الفعلي الصافي"
+        }
+      ],
       "subtasks": [],
       "isPrivate": false,
       "id": "task-1793270501668",
@@ -1705,7 +1817,8 @@
       "timerAccumulatedMs": 0,
       "isTimerPaused": false,
       "isTimerRunning": false,
-      "totalLoggedMinutes": 762
+      "totalLoggedMinutes": 762,
+      "explicitStatusRevert": false
     },
     {
       "title": "نشر وجدوله  cafm",
@@ -1727,7 +1840,11 @@
       "createdAt": "2026-10-29",
       "updatedAt": "2026-10-31T11:49:55.013Z",
       "revisionsCount": 0,
-      "completedAt": "2026-10-31"
+      "completedAt": "2026-10-31",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "تقفيل موقع gx",
@@ -1754,7 +1871,11 @@
       "company": "gxp way",
       "accountManagerId": "user-amira",
       "accountManagerName": "Amira",
-      "completedAt": "2026-10-31"
+      "completedAt": "2026-10-31",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "status": "completed",
@@ -1793,7 +1914,8 @@
       "assignedToId": "user-maibel",
       "isTimerPaused": false,
       "timerAccumulatedMs": 0,
-      "completedAt": "2026-10-29"
+      "completedAt": "2026-10-29",
+      "explicitStatusRevert": false
     },
     {
       "priority": "medium",
@@ -1832,7 +1954,8 @@
       "isTimerPaused": false,
       "isTimerRunning": false,
       "totalLoggedMinutes": 95,
-      "completedAt": "2026-10-29"
+      "completedAt": "2026-10-29",
+      "explicitStatusRevert": false
     },
     {
       "createdAt": "2026-10-29",
@@ -1885,7 +2008,8 @@
       "isTimerRunning": false,
       "timerAccumulatedMs": 0,
       "totalLoggedMinutes": 253,
-      "completedAt": "2026-10-29"
+      "completedAt": "2026-10-29",
+      "explicitStatusRevert": false
     },
     {
       "id": "task-1793271960405",
@@ -1924,7 +2048,8 @@
       "dueTime": "04:00",
       "timerAccumulatedMs": 0,
       "isTimerPaused": false,
-      "completedAt": "2026-10-29"
+      "completedAt": "2026-10-29",
+      "explicitStatusRevert": false
     },
     {
       "description": "مهمة مضافة عبر بورد وقائمة الفريق",
@@ -1950,7 +2075,8 @@
       "isTimerPaused": false,
       "isTimerRunning": false,
       "totalLoggedMinutes": 273,
-      "completedAt": "2026-11-04"
+      "completedAt": "2026-11-04",
+      "explicitStatusRevert": false
     },
     {
       "timeLogs": [],
@@ -1973,7 +2099,9 @@
       "dueTime": "18:00",
       "title": "متابعة اعتماد gx",
       "category": "إداري",
-      "completedAt": "2026-10-31"
+      "completedAt": "2026-10-31",
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "timeLogs": [
@@ -2011,7 +2139,9 @@
       "category": "إداري",
       "startDate": "2026-10-31",
       "totalLoggedMinutes": 542,
-      "completedAt": "2026-10-31"
+      "completedAt": "2026-10-31",
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "تصميم بوست مابيل",
@@ -2037,7 +2167,8 @@
       "totalLoggedMinutes": 106,
       "completedAt": "2026-11-04",
       "isTimerRunning": false,
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "رفع 7 مقالات موقع gx",
@@ -2076,7 +2207,8 @@
       "isTimerRunning": false,
       "isTimerPaused": false,
       "completedAt": "2026-11-01",
-      "totalLoggedMinutes": 188
+      "totalLoggedMinutes": 188,
+      "explicitStatusRevert": false
     },
     {
       "title": "المرتبات والصيانه",
@@ -2098,7 +2230,11 @@
       "createdAt": "2026-10-31",
       "updatedAt": "2026-11-01T12:06:57.450Z",
       "completedAt": "2026-11-01",
-      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "ميتنج مع عميل الساعه 4",
@@ -2145,13 +2281,26 @@
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: كفرات موقع الكشفيه\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Aya Gaber):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق (هدير سعيد):\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-aya",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-04",
       "dueDate": "2026-11-04",
       "dueTime": "18:00",
       "category": "إداري",
       "estimatedHours": 2,
-      "timeLogs": [],
+      "timeLogs": [
+        {
+          "id": "log-cap-1794064012673",
+          "endDate": "2026-11-05",
+          "startTime": "10:00",
+          "durationMinutes": 600,
+          "endTime": "18:00",
+          "memberName": "المكلف بالمهمة",
+          "memberId": "user-aya",
+          "startDate": "2026-11-05",
+          "createdAt": "2026-11-05",
+          "note": "جلسة عمل مسجلة حتى نهاية اليوم (تم إيقاف المؤقت تلقائياً عند منتصف الليل)"
+        }
+      ],
       "subtasks": [],
       "isPrivate": false,
       "id": "task-1793462613830",
@@ -2159,7 +2308,13 @@
       "comments": [],
       "createdAt": "2026-10-31",
       "revisionsCount": 0,
-      "updatedAt": "2026-11-04T08:15:52.173Z"
+      "updatedAt": "2026-11-04T08:15:52.173Z",
+      "completedAt": "2026-11-07",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "explicitStatusRevert": false,
+      "totalLoggedMinutes": 1200,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "تصميم لوجو لسويفتورا برايم الجديد",
@@ -2179,7 +2334,8 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-10-31",
-      "updatedAt": "2026-10-31T16:03:21.112Z"
+      "updatedAt": "2026-10-31T16:03:21.112Z",
+      "revisionsCount": 0
     },
     {
       "assignedToId": "user-mariam",
@@ -2219,7 +2375,8 @@
       "isTimerRunning": false,
       "revisionsCount": 0,
       "completedAt": "2026-11-01",
-      "totalLoggedMinutes": 293
+      "totalLoggedMinutes": 293,
+      "explicitStatusRevert": false
     },
     {
       "title": "التسوي لظاهرلي سوشيال ميديا وسيو",
@@ -2325,7 +2482,8 @@
       "isTimerPaused": false,
       "totalLoggedMinutes": 1110,
       "isTimerRunning": false,
-      "completedAt": "2026-11-03"
+      "completedAt": "2026-11-03",
+      "explicitStatusRevert": false
     },
     {
       "title": "نشر وجدوله GX",
@@ -2351,7 +2509,8 @@
       "isTimerRunning": false,
       "timerAccumulatedMs": 0,
       "totalLoggedMinutes": 10,
-      "completedAt": "2026-11-03"
+      "completedAt": "2026-11-03",
+      "explicitStatusRevert": false
     },
     {
       "title": "باك لينك نقل العفش",
@@ -2404,7 +2563,8 @@
       "isTimerPaused": false,
       "timerAccumulatedMs": 0,
       "completedAt": "2026-11-01",
-      "totalLoggedMinutes": 98
+      "totalLoggedMinutes": 98,
+      "explicitStatusRevert": false
     },
     {
       "title": "تغيير 15 جولدن بكرا كفرات",
@@ -2443,7 +2603,8 @@
       "isTimerPaused": false,
       "isTimerRunning": false,
       "completedAt": "2026-11-02",
-      "totalLoggedMinutes": 63
+      "totalLoggedMinutes": 63,
+      "explicitStatusRevert": false
     },
     {
       "title": "متابعه العملاء القدام وتقفيل الديلات مع العملاء المحتملين",
@@ -2482,7 +2643,8 @@
       "isTimerRunning": false,
       "timerAccumulatedMs": 0,
       "totalLoggedMinutes": 1,
-      "completedAt": "2026-11-01"
+      "completedAt": "2026-11-01",
+      "explicitStatusRevert": false
     },
     {
       "title": "ارسال اوفرات للعملاء",
@@ -2507,7 +2669,8 @@
       "isTimerPaused": false,
       "isTimerRunning": false,
       "completedAt": "2026-11-01",
-      "totalLoggedMinutes": 90
+      "totalLoggedMinutes": 90,
+      "explicitStatusRevert": false
     },
     {
       "title": "متابعه جولدن والشغل المتبقي مع يمني وايمان",
@@ -2528,7 +2691,11 @@
       "comments": [],
       "createdAt": "2026-11-01",
       "updatedAt": "2026-11-01T14:28:28.704Z",
-      "completedAt": "2026-11-01"
+      "completedAt": "2026-11-01",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "متابعه نشر وجدوله اكونت الكشفيه",
@@ -2549,7 +2716,11 @@
       "comments": [],
       "createdAt": "2026-11-01",
       "updatedAt": "2026-11-02T08:38:43.579Z",
-      "completedAt": "2026-11-02"
+      "completedAt": "2026-11-02",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "متابعه تقفيل gx",
@@ -2573,7 +2744,8 @@
       "completedAt": "2026-11-02",
       "isTimerRunning": false,
       "isTimerPaused": false,
-      "timerAccumulatedMs": 0
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "assignedToId": "user-eman",
@@ -2627,7 +2799,8 @@
       "timerAccumulatedMs": 0,
       "revisionsCount": 0,
       "completedAt": "2026-11-01",
-      "totalLoggedMinutes": 73
+      "totalLoggedMinutes": 73,
+      "explicitStatusRevert": false
     },
     {
       "title": "باك لينك نقل العفش",
@@ -2666,7 +2839,8 @@
       "timerAccumulatedMs": 0,
       "isTimerRunning": false,
       "totalLoggedMinutes": 162,
-      "completedAt": "2026-11-02"
+      "completedAt": "2026-11-02",
+      "explicitStatusRevert": false
     },
     {
       "subtasks": [],
@@ -2687,7 +2861,11 @@
       "updatedAt": "2026-11-01T16:56:09.979Z",
       "assignedToId": "user-islam",
       "description": "https://drive.google.com/file/d/1rzLFcUgrRRaDKloFrxPn145_BBoT_CK3/view?usp=sharing",
-      "priority": "medium"
+      "priority": "medium",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "رفع وجدولة مقاله  لموقع بيوشار",
@@ -2742,7 +2920,8 @@
       "isTimerRunning": false,
       "timerAccumulatedMs": 0,
       "completedAt": "2026-11-04",
-      "totalLoggedMinutes": 34
+      "totalLoggedMinutes": 34,
+      "explicitStatusRevert": false
     },
     {
       "title": "رفع وجدولة مقالتين بيوشار",
@@ -2782,7 +2961,8 @@
       "timerAccumulatedMs": 0,
       "isTimerRunning": false,
       "totalLoggedMinutes": 153,
-      "completedAt": "2026-11-02"
+      "completedAt": "2026-11-02",
+      "explicitStatusRevert": false
     },
     {
       "title": "باك لينك نقل العفش",
@@ -2832,7 +3012,8 @@
       "isTimerRunning": false,
       "timerAccumulatedMs": 0,
       "completedAt": "2026-11-04",
-      "totalLoggedMinutes": 247
+      "totalLoggedMinutes": 247,
+      "explicitStatusRevert": false
     },
     {
       "title": "باك لينك نقل العفش",
@@ -2871,7 +3052,8 @@
       "timerAccumulatedMs": 0,
       "isTimerPaused": false,
       "completedAt": "2026-11-03",
-      "totalLoggedMinutes": 207
+      "totalLoggedMinutes": 207,
+      "explicitStatusRevert": false
     },
     {
       "title": "باك لينك الدرب",
@@ -2910,7 +3092,8 @@
       "timerAccumulatedMs": 0,
       "isTimerPaused": false,
       "completedAt": "2026-11-03",
-      "totalLoggedMinutes": 61
+      "totalLoggedMinutes": 61,
+      "explicitStatusRevert": false
     },
     {
       "title": "رفع وجدولة مقالتين لموقع بيوشار",
@@ -2950,7 +3133,8 @@
       "isTimerRunning": false,
       "isTimerPaused": false,
       "completedAt": "2026-11-03",
-      "totalLoggedMinutes": 149
+      "totalLoggedMinutes": 149,
+      "explicitStatusRevert": false
     },
     {
       "title": "السوشيال ميديا عروض باك لينك",
@@ -2990,7 +3174,8 @@
       "isTimerRunning": false,
       "totalLoggedMinutes": 129,
       "revisionsCount": 0,
-      "completedAt": "2026-11-02"
+      "completedAt": "2026-11-02",
+      "explicitStatusRevert": false
     },
     {
       "title": "ارسال عروض نوفمبر للعملاء القدام",
@@ -3029,7 +3214,8 @@
       "isTimerPaused": false,
       "updatedAt": "2026-11-02T12:40:01.174Z",
       "totalLoggedMinutes": 52,
-      "completedAt": "2026-11-02"
+      "completedAt": "2026-11-02",
+      "explicitStatusRevert": false
     },
     {
       "title": "تقفيل ساوث كوست",
@@ -3057,7 +3243,7 @@
       "description": "البرزنتيشن وشغل التكنيكال",
       "assignedToId": "user-yomna",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-02",
       "dueDate": "2026-11-04",
       "dueTime": "18:00",
@@ -3070,7 +3256,12 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-02",
-      "updatedAt": "2026-11-02T10:06:45.895Z"
+      "updatedAt": "2026-11-02T10:06:45.895Z",
+      "timerAccumulatedMs": 0,
+      "isTimerPaused": false,
+      "completedAt": "2026-11-05",
+      "isTimerRunning": false,
+      "explicitStatusRevert": false
     },
     {
       "title": "كوتيشن موقع الكورسات والبكالوريا",
@@ -3135,7 +3326,10 @@
       "updatedAt": "2026-11-04T13:31:33.269Z",
       "revisionsCount": 0,
       "explicitStatusRevert": false,
-      "completedAt": "2026-11-04"
+      "completedAt": "2026-11-04",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0
     },
     {
       "category": "إداري",
@@ -3160,7 +3354,8 @@
       "timerAccumulatedMs": 0,
       "isTimerPaused": false,
       "revisionsCount": 0,
-      "completedAt": "2026-11-03"
+      "completedAt": "2026-11-03",
+      "explicitStatusRevert": false
     },
     {
       "subtasks": [],
@@ -3184,7 +3379,8 @@
       "timerAccumulatedMs": 0,
       "isTimerPaused": false,
       "isTimerRunning": false,
-      "completedAt": "2026-11-02"
+      "completedAt": "2026-11-02",
+      "explicitStatusRevert": false
     },
     {
       "id": "task-1793614431627",
@@ -3223,7 +3419,8 @@
       "isTimerPaused": false,
       "timerAccumulatedMs": 0,
       "completedAt": "2026-11-02",
-      "totalLoggedMinutes": 240
+      "totalLoggedMinutes": 240,
+      "explicitStatusRevert": false
     },
     {
       "status": "completed",
@@ -3245,7 +3442,10 @@
       "createdAt": "2026-11-02",
       "id": "task-1793617817971",
       "explicitStatusRevert": false,
-      "completedAt": "2026-11-04"
+      "completedAt": "2026-11-04",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0
     },
     {
       "updatedAt": "2026-11-04T11:20:59.917Z",
@@ -3284,14 +3484,15 @@
       "isTimerPaused": false,
       "isTimerRunning": false,
       "completedAt": "2026-11-04",
-      "totalLoggedMinutes": 74
+      "totalLoggedMinutes": 74,
+      "explicitStatusRevert": false
     },
     {
       "title": "تاسك عميل تفاصيله مع مايبل 30 ثانية",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: تاسك عميل تفاصيله مع مايبل 30 ثانية\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Islam):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-islam",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-04",
       "dueDate": "2026-11-04",
       "dueTime": "18:00",
@@ -3304,40 +3505,79 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-04",
-      "updatedAt": "2026-11-04T16:22:11.946Z"
+      "updatedAt": "2026-11-04T16:22:11.946Z",
+      "explicitStatusRevert": false,
+      "isTimerPaused": false,
+      "completedAt": "2026-11-08",
+      "isTimerRunning": false,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "متابعه gxالرد عليه في Traceability   ضروري",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: متابعه gxالرد عليه في Traceability   ضروري\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Amira):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-amira",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-04",
       "dueDate": "2026-11-04",
       "dueTime": "18:00",
       "category": "إداري",
       "estimatedHours": 2,
-      "timeLogs": [],
+      "timeLogs": [
+        {
+          "durationMinutes": 120,
+          "memberAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+          "endDate": "2026-11-05",
+          "endTime": "٠١:١٤ م",
+          "createdAt": "2026-11-05",
+          "startDate": "2026-11-05",
+          "note": "إنجاز المهمة وحساب الوقت من الموجز اليومي",
+          "id": "log-1793877252536",
+          "memberId": "user-amira",
+          "memberName": "Amira",
+          "startTime": "١١:١٤ ص"
+        }
+      ],
       "subtasks": [],
       "isPrivate": false,
       "id": "task-1793808507241",
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-04",
-      "updatedAt": "2026-11-04T16:08:27.241Z"
+      "updatedAt": "2026-11-04T16:08:27.241Z",
+      "timerAccumulatedMs": 0,
+      "isTimerRunning": false,
+      "totalLoggedMinutes": 120,
+      "isTimerPaused": false,
+      "completedAt": "2026-11-05",
+      "explicitStatusRevert": false
     },
     {
       "title": "ايميل ماركيتنج ومتابعه الايميلات القديمه",
       "description": "https://docs.google.com/document/d/1b9-6kgN8papB_CudspSPa0ihC3-9gFQaZpX0bmFHcC8/edit?usp=sharing",
       "assignedToId": "user-maibel",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-04",
       "dueDate": "2026-11-05",
       "dueTime": "18:00",
       "category": "إداري",
       "estimatedHours": 2,
-      "timeLogs": [],
+      "timeLogs": [
+        {
+          "memberId": "user-maibel",
+          "startDate": "2026-11-05",
+          "createdAt": "2026-11-05",
+          "endTime": "٠٣:٠٠ م",
+          "endDate": "2026-11-05",
+          "id": "log-1793883639790",
+          "durationMinutes": 231,
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي",
+          "startTime": "١١:٠٩ ص",
+          "memberAvatar": "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150&auto=format&fit=crop&q=80",
+          "memberName": "Maibel Emad"
+        }
+      ],
       "subtasks": [],
       "isPrivate": false,
       "id": "task-1793808347384",
@@ -3345,14 +3585,20 @@
       "comments": [],
       "createdAt": "2026-11-04",
       "revisionsCount": 0,
-      "updatedAt": "2026-11-04T16:07:33.631Z"
+      "updatedAt": "2026-11-04T16:07:33.631Z",
+      "explicitStatusRevert": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "completedAt": "2026-11-05",
+      "isTimerRunning": false,
+      "totalLoggedMinutes": 231
     },
     {
       "title": "ابعت gx ترتيب تريس ف الدول من يمني",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: ابعت gx ترتيب تريس ف الدول من يمني\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-1",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-04",
       "dueDate": "2026-11-04",
       "dueTime": "18:00",
@@ -3365,14 +3611,19 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-04",
-      "updatedAt": "2026-11-04T13:48:09.075Z"
+      "updatedAt": "2026-11-04T13:48:09.075Z",
+      "completedAt": "2026-11-05",
+      "isTimerPaused": false,
+      "isTimerRunning": false,
+      "explicitStatusRevert": false,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "هبعت ل gx مشاكل خاصه بالتصممي محمود عيملها",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: هبعت ل gx مشاكل خاصه بالتصممي محمود عيملها\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-1",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-04",
       "dueDate": "2026-11-04",
       "dueTime": "18:00",
@@ -3385,7 +3636,12 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-04",
-      "updatedAt": "2026-11-04T13:47:53.102Z"
+      "updatedAt": "2026-11-04T13:47:53.102Z",
+      "timerAccumulatedMs": 0,
+      "completedAt": "2026-11-05",
+      "isTimerPaused": false,
+      "explicitStatusRevert": false,
+      "isTimerRunning": false
     },
     {
       "title": "برزنتيشن gx",
@@ -3407,14 +3663,17 @@
       "createdAt": "2026-11-04",
       "updatedAt": "2026-11-04T13:31:24.405Z",
       "explicitStatusRevert": false,
-      "completedAt": "2026-11-04"
+      "completedAt": "2026-11-04",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "رفع 2 فيديو لاسلام",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: رفع 2 فيديو لاسلام\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-1",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-03",
       "dueDate": "2026-11-04",
       "dueTime": "18:00",
@@ -3426,7 +3685,13 @@
       "id": "task-1793726285631",
       "mentionedUserIds": [],
       "comments": [],
-      "createdAt": "2026-11-03"
+      "createdAt": "2026-11-03",
+      "completedAt": "2026-11-05",
+      "isTimerPaused": false,
+      "updatedAt": "2026-11-05T12:50:19.835Z",
+      "isTimerRunning": false,
+      "explicitStatusRevert": false,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "بيزنس كارت لسويفت مايند",
@@ -3469,7 +3734,10 @@
       "createdAt": "2026-11-04",
       "updatedAt": "2026-11-04T13:31:29.713Z",
       "explicitStatusRevert": false,
-      "completedAt": "2026-11-04"
+      "completedAt": "2026-11-04",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "كتابه تفاضيل الكوتيشن العميل الجديد",
@@ -3531,14 +3799,17 @@
       "createdAt": "2026-11-03",
       "explicitStatusRevert": false,
       "completedAt": "2026-11-04",
-      "updatedAt": "2026-11-04T15:59:47.734Z"
+      "updatedAt": "2026-11-04T15:59:47.734Z",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "متابعه يمين موقع نقل العفش  تقرير بترتيب الكلمات وبلان العمل",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: متابعه يمين موقع نقل العفش  تقرير بترتيب الكلمات وبلان العمل\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-1",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-03",
       "dueDate": "2026-11-04",
       "dueTime": "18:00",
@@ -3550,14 +3821,21 @@
       "id": "task-1793725372652",
       "mentionedUserIds": [],
       "comments": [],
-      "createdAt": "2026-11-03"
+      "createdAt": "2026-11-03",
+      "isTimerRunning": false,
+      "revisionsCount": 0,
+      "completedAt": "2026-11-07",
+      "isTimerPaused": false,
+      "updatedAt": "2026-11-07T10:18:57.510Z",
+      "explicitStatusRevert": false,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "موقع نقل العفش  تقرير بترتيب الكلمات وبلان العمل",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: موقع نقل العفش  تقرير بترتيب الكلمات وبلان العمل\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Yomna):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-yomna",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-03",
       "dueDate": "2026-11-04",
       "dueTime": "18:00",
@@ -3569,20 +3847,40 @@
       "id": "task-1793725361581",
       "mentionedUserIds": [],
       "comments": [],
-      "createdAt": "2026-11-03"
+      "createdAt": "2026-11-03",
+      "explicitStatusRevert": false,
+      "isTimerPaused": false,
+      "updatedAt": "2026-11-07T09:58:17.825Z",
+      "timerAccumulatedMs": 0,
+      "completedAt": "2026-11-07",
+      "isTimerRunning": false
     },
     {
       "title": "مكالمات متابعه لارقام المحتمله",
       "description": "الارقام\n01032825622\n01201722442\n01147154468\n01028553555\n01017197060\n01110210014\n01096222636\n01001615925",
       "assignedToId": "user-maibel",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-03",
       "dueDate": "2026-11-11",
       "dueTime": "18:00",
       "category": "إداري",
       "estimatedHours": 2,
-      "timeLogs": [],
+      "timeLogs": [
+        {
+          "memberId": "user-maibel",
+          "startTime": "٠٣:٠٠ م",
+          "endDate": "2026-11-05",
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي",
+          "endTime": "٠٦:٠٩ م",
+          "memberAvatar": "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150&auto=format&fit=crop&q=80",
+          "id": "log-1793894958686",
+          "memberName": "Maibel Emad",
+          "durationMinutes": 189,
+          "startDate": "2026-11-05",
+          "createdAt": "2026-11-05"
+        }
+      ],
       "subtasks": [],
       "isPrivate": false,
       "id": "task-1793721666827",
@@ -3590,7 +3888,13 @@
       "comments": [],
       "createdAt": "2026-11-03",
       "updatedAt": "2026-11-03T16:01:06.827Z",
-      "revisionsCount": 0
+      "revisionsCount": 0,
+      "timerAccumulatedMs": 0,
+      "completedAt": "2026-11-05",
+      "isTimerPaused": false,
+      "isTimerRunning": false,
+      "totalLoggedMinutes": 189,
+      "explicitStatusRevert": false
     },
     {
       "title": "السوشيال ميديا",
@@ -3678,7 +3982,7 @@
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: متابعه النشر اليومي للكشفيه\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-1",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-04",
       "dueDate": "2026-11-08",
       "dueTime": "18:00",
@@ -3692,7 +3996,12 @@
       "comments": [],
       "createdAt": "2026-11-03",
       "revisionsCount": 0,
-      "updatedAt": "2026-11-03T15:08:44.727Z"
+      "updatedAt": "2026-11-03T15:08:44.727Z",
+      "completedAt": "2026-11-05",
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false,
+      "isTimerRunning": false
     },
     {
       "title": "العمل علي جولدن",
@@ -3712,7 +4021,14 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-03",
-      "updatedAt": "2026-11-03T12:09:03.901Z"
+      "updatedAt": "2026-11-03T12:09:03.901Z",
+      "timerLastResumedAt": 1794172197744,
+      "revisionsCount": 0,
+      "timerAccumulatedMs": 45403260,
+      "isTimerRunning": false,
+      "isTimerPaused": true,
+      "actualCompletionDate": "2026-11-10",
+      "timerStartedAt": 1794126809375
     },
     {
       "title": "رفع وجدولة مقالتين لموقع بيوشار",
@@ -3732,34 +4048,55 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-03",
-      "updatedAt": "2026-11-03T08:22:17.127Z"
+      "updatedAt": "2026-11-03T08:22:17.127Z",
+      "revisionsCount": 0
     },
     {
       "title": "رفع وجدولة مقالتين لموقع بيوشار",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: رفع وجدولة مقالتين لموقع بيوشار\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Eman Ashraf):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-eman",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-03",
       "dueDate": "2026-11-08",
       "dueTime": "18:00",
       "category": "إداري",
       "estimatedHours": 2,
-      "timeLogs": [],
+      "timeLogs": [
+        {
+          "id": "log-1794130147464",
+          "startTime": "١٠:٢٢ ص",
+          "memberId": "user-eman",
+          "endDate": "2026-11-08",
+          "durationMinutes": 66,
+          "memberName": "Eman Ashraf",
+          "endTime": "١١:٢٩ ص",
+          "note": "تم تحديث مقالتين مقالة طريقة استخدام البيوشار السائل الميكروني - مقالة أفضل معالج ملوحة التربة من سرسة الأرز",
+          "startDate": "2026-11-08",
+          "createdAt": "2026-11-08",
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"
+        }
+      ],
       "subtasks": [],
       "isPrivate": false,
       "id": "task-1793694128780",
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-03",
-      "updatedAt": "2026-11-03T08:22:08.780Z"
+      "updatedAt": "2026-11-03T08:22:08.780Z",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "completedAt": "2026-11-08",
+      "explicitStatusRevert": false,
+      "totalLoggedMinutes": 66,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "باك لينك نقل العفش",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: باك لينك نقل العفش\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Eman Ashraf):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-eman",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-03",
       "dueDate": "2026-11-08",
       "dueTime": "18:00",
@@ -3772,47 +4109,92 @@
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-03",
-      "updatedAt": "2026-11-03T08:21:54.220Z"
+      "updatedAt": "2026-11-03T08:21:54.220Z",
+      "explicitStatusRevert": false,
+      "timerAccumulatedMs": 0,
+      "completedAt": "2026-11-05",
+      "isTimerPaused": false,
+      "isTimerRunning": false
     },
     {
       "title": "باك لينك نقل العفش",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: باك لينك نقل العفش\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Eman Ashraf):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-eman",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-03",
       "dueDate": "2026-11-05",
       "dueTime": "18:00",
       "category": "إداري",
       "estimatedHours": 2,
-      "timeLogs": [],
+      "timeLogs": [
+        {
+          "memberId": "user-eman",
+          "startTime": "٠١:١٥ م",
+          "durationMinutes": 307,
+          "memberName": "Eman Ashraf",
+          "endTime": "٠٦:٥١ م",
+          "endDate": "2026-11-05",
+          "id": "log-1793897494913",
+          "note": "عملت 57 باك لينك 56 صور ومقالة",
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "startDate": "2026-11-05",
+          "createdAt": "2026-11-05"
+        }
+      ],
       "subtasks": [],
       "isPrivate": false,
       "id": "task-1793694104908",
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-03",
-      "updatedAt": "2026-11-03T08:21:44.908Z"
+      "updatedAt": "2026-11-03T08:21:44.908Z",
+      "isTimerPaused": false,
+      "totalLoggedMinutes": 307,
+      "explicitStatusRevert": false,
+      "isTimerRunning": false,
+      "completedAt": "2026-11-05",
+      "timerAccumulatedMs": 0
     },
     {
       "title": "رفع وجدولة مقالتين لموقع بيوشار",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: رفع وجدولة مقالتين لموقع بيوشار\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Eman Ashraf):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-eman",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-03",
       "dueDate": "2026-11-05",
       "dueTime": "18:00",
       "category": "إداري",
       "estimatedHours": 2,
-      "timeLogs": [],
+      "timeLogs": [
+        {
+          "durationMinutes": 155,
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "endTime": "٠١:٠٥ م",
+          "memberName": "Eman Ashraf",
+          "endDate": "2026-11-05",
+          "note": "تم رفع مقالتين \n-تم تحديث مقالة بتاريخ 5 نوفبمر ( الفرق بين البيوشار السائل وخل الخشب ) \n-تم تحديث مقالة  البيوشار السائل للتربة الرملية  بتاريخ 5 نوفمبر \n\n",
+          "startTime": "١٠:٣٠ ص",
+          "id": "log-1793876718482",
+          "startDate": "2026-11-05",
+          "createdAt": "2026-11-05",
+          "memberId": "user-eman"
+        }
+      ],
       "subtasks": [],
       "isPrivate": false,
       "id": "task-1793694098146",
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-03",
-      "updatedAt": "2026-11-03T08:21:38.147Z"
+      "updatedAt": "2026-11-03T08:21:38.147Z",
+      "timerAccumulatedMs": 0,
+      "isTimerPaused": false,
+      "totalLoggedMinutes": 155,
+      "explicitStatusRevert": false,
+      "isTimerRunning": false,
+      "completedAt": "2026-11-05"
     },
     {
       "title": "اقتراح بلان ساوث كوست الجديدة",
@@ -3855,7 +4237,8 @@
       "comments": [],
       "createdAt": "2026-11-02",
       "updatedAt": "2026-11-02T16:42:04.480Z",
-      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      "revisionsCount": 0
     },
     {
       "title": "كامبين متاجر بطريقة مختلفه ومجال مختلفه المللابس والقهوه بس",
@@ -3899,7 +4282,10 @@
       "updatedAt": "2026-11-04T15:59:51.830Z",
       "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
       "explicitStatusRevert": false,
-      "completedAt": "2026-11-04"
+      "completedAt": "2026-11-04",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0
     },
     {
       "title": "كامبين بلجن خصومات مواليد شهر نوفمبر",
@@ -3921,7 +4307,11 @@
       "createdAt": "2026-11-02",
       "updatedAt": "2026-11-03T09:58:20.507Z",
       "completedAt": "2026-11-03",
-      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "ارسال اوفرات لمجال للتنمية الزراعية والمنتجات الزراعية",
@@ -3961,27 +4351,48 @@
       "timerAccumulatedMs": 0,
       "isTimerPaused": false,
       "completedAt": "2026-11-03",
-      "totalLoggedMinutes": 32
+      "totalLoggedMinutes": 32,
+      "explicitStatusRevert": false
     },
     {
       "title": "مقالات سويفت",
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: مقالات سويفت\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (roaa_hetemy):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-roaa",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-02",
       "dueDate": "2026-11-05",
       "dueTime": "18:00",
       "category": "إداري",
       "estimatedHours": 2,
-      "timeLogs": [],
+      "timeLogs": [
+        {
+          "memberName": "رواء",
+          "id": "log-1793918578848",
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي",
+          "startTime": "٠٩:٣٠ م",
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "memberId": "user-roaa",
+          "endTime": "١٢:٤٢ ص",
+          "durationMinutes": 193,
+          "startDate": "2026-11-05",
+          "createdAt": "2026-11-05",
+          "endDate": "2026-11-05"
+        }
+      ],
       "subtasks": [],
       "isPrivate": false,
       "id": "task-1793635904243",
       "mentionedUserIds": [],
       "comments": [],
       "createdAt": "2026-11-02",
-      "updatedAt": "2026-11-02T16:11:44.243Z"
+      "updatedAt": "2026-11-02T16:11:44.243Z",
+      "totalLoggedMinutes": 193,
+      "isTimerRunning": false,
+      "timerAccumulatedMs": 0,
+      "completedAt": "2026-11-05",
+      "isTimerPaused": false,
+      "explicitStatusRevert": false
     },
     {
       "title": "متابعه نشر وجدوله الكشفيه مع يمني",
@@ -4015,7 +4426,11 @@
       ],
       "createdAt": "2026-11-02",
       "updatedAt": "2026-11-03T08:43:25.704Z",
-      "completedAt": "2026-11-03"
+      "completedAt": "2026-11-03",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "متابعه تقفيل اكونت gx كامل بالبرزنتيشن",
@@ -4036,7 +4451,11 @@
       "comments": [],
       "createdAt": "2026-11-02",
       "updatedAt": "2026-11-03T08:43:27.018Z",
-      "completedAt": "2026-11-03"
+      "completedAt": "2026-11-03",
+      "isTimerRunning": false,
+      "isTimerPaused": false,
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false
     },
     {
       "title": "ارسال اوفرات نوفمبر مع العملاء القدام",
@@ -4076,7 +4495,8 @@
       "isTimerRunning": false,
       "timerAccumulatedMs": 0,
       "isTimerPaused": false,
-      "totalLoggedMinutes": 27
+      "totalLoggedMinutes": 27,
+      "explicitStatusRevert": false
     },
     {
       "title": "ارسال اوفرات لمجال الموبايلات وشركات الشحن",
@@ -4116,7 +4536,8 @@
       "timerAccumulatedMs": 0,
       "revisionsCount": 0,
       "totalLoggedMinutes": 62,
-      "completedAt": "2026-11-03"
+      "completedAt": "2026-11-03",
+      "explicitStatusRevert": false
     },
     {
       "title": "عمل افكار فيدييوهات تلقائية تنزل علي البيدج والتسويق ليها",
@@ -4145,7 +4566,7 @@
       "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: فكره عرض وخصم علي المواقع كل يوم خميس فقط\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
       "assignedToId": "user-1",
       "priority": "medium",
-      "status": "todo",
+      "status": "completed",
       "startDate": "2026-11-02",
       "dueDate": "2026-11-05",
       "dueTime": "18:00",
@@ -4159,7 +4580,12 @@
       "comments": [],
       "createdAt": "2026-11-02",
       "updatedAt": "2026-11-02T16:07:42.530Z",
-      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      "isTimerRunning": false,
+      "completedAt": "2026-11-05",
+      "explicitStatusRevert": false,
+      "timerAccumulatedMs": 0,
+      "isTimerPaused": false
     },
     {
       "title": "كامبين جيو بخصم 20%",
@@ -4224,7 +4650,8 @@
       "comments": [],
       "createdAt": "2026-11-02",
       "updatedAt": "2026-11-02T15:50:42.551Z",
-      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+      "assigneeAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      "revisionsCount": 0
     },
     {
       "title": "2 فيديو 30 ثانية",
@@ -4249,7 +4676,8 @@
       "timerAccumulatedMs": 0,
       "isTimerRunning": false,
       "completedAt": "2026-11-03",
-      "isTimerPaused": false
+      "isTimerPaused": false,
+      "explicitStatusRevert": false
     },
     {
       "title": "فيديو 30 ثانية",
@@ -4274,7 +4702,8 @@
       "isTimerPaused": false,
       "totalLoggedMinutes": 86,
       "isTimerRunning": false,
-      "completedAt": "2026-11-03"
+      "completedAt": "2026-11-03",
+      "explicitStatusRevert": false
     },
     {
       "title": "تجديد هوست سويفت مايند",
@@ -4335,7 +4764,8 @@
       "isTimerRunning": false,
       "isTimerPaused": false,
       "totalLoggedMinutes": 24,
-      "completedAt": "2026-11-03"
+      "completedAt": "2026-11-03",
+      "explicitStatusRevert": false
     },
     {
       "estimatedHours": 2,
@@ -4388,7 +4818,898 @@
       "isTimerPaused": false,
       "isTimerRunning": false,
       "completedAt": "2026-11-04",
-      "totalLoggedMinutes": 78
+      "totalLoggedMinutes": 78,
+      "explicitStatusRevert": false
+    },
+    {
+      "mentionedUserIds": [],
+      "explicitStatusRevert": false,
+      "dueTime": "18:00",
+      "timeLogs": [],
+      "assignedToId": "user-islam",
+      "isTimerPaused": false,
+      "status": "completed",
+      "dueDate": "2026-11-05",
+      "estimatedHours": 2,
+      "isPrivate": false,
+      "description": "https://docs.google.com/document/d/1o8Aunu8SVIbGjtcwB8m2ZJuRP90QAcMlY5fmANEETOg/edit?usp=sharing",
+      "updatedAt": "2026-11-06T16:37:50.133Z",
+      "comments": [],
+      "title": "فيديوهات لسويفت",
+      "priority": "medium",
+      "subtasks": [],
+      "id": "task-1793882396600",
+      "isTimerRunning": false,
+      "createdAt": "2026-11-05",
+      "startDate": "2026-11-05",
+      "category": "إداري",
+      "timerAccumulatedMs": 0,
+      "revisionsCount": 0,
+      "completedAt": "2026-11-06"
+    },
+    {
+      "mentionedUserIds": [],
+      "timeLogs": [
+        {
+          "id": "log-1793894126503",
+          "startDate": "2026-11-05",
+          "createdAt": "2026-11-05",
+          "memberId": "user-mariam",
+          "memberName": "Mariam",
+          "memberAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+          "note": "إنهاء المهمة وحساب الوقت من الموجز اليومي",
+          "endDate": "2026-11-05",
+          "durationMinutes": 54,
+          "startTime": "٠٤:٢٤ م",
+          "endTime": "٠٥:٥٥ م"
+        }
+      ],
+      "updatedAt": "2026-11-05T15:55:26.510Z",
+      "assignedToId": "user-mariam",
+      "id": "task-1793883797817",
+      "isTimerPaused": false,
+      "estimatedHours": 2,
+      "isPrivate": false,
+      "totalLoggedMinutes": 54,
+      "isTimerRunning": false,
+      "dueDate": "2026-11-05",
+      "createdAt": "2026-11-05",
+      "startDate": "2026-11-05",
+      "subtasks": [],
+      "priority": "medium",
+      "comments": [],
+      "description": "https://almotamayizon.com",
+      "timerAccumulatedMs": 0,
+      "completedAt": "2026-11-05",
+      "title": "تعديل مدونة موقع المتميزون",
+      "category": "إداري",
+      "explicitStatusRevert": false,
+      "dueTime": "18:00",
+      "status": "completed"
+    },
+    {
+      "assignedToId": "user-eman",
+      "subtasks": [],
+      "priority": "medium",
+      "isTimerRunning": false,
+      "startDate": "2026-11-05",
+      "createdAt": "2026-11-05",
+      "updatedAt": "2026-11-05T15:20:03.409Z",
+      "completedAt": "2026-11-05",
+      "explicitStatusRevert": false,
+      "estimatedHours": 2,
+      "status": "completed",
+      "category": "إداري",
+      "dueTime": "18:00",
+      "title": "مينتج الدرب",
+      "totalLoggedMinutes": 12,
+      "id": "task-1793891253239",
+      "comments": [],
+      "mentionedUserIds": [],
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: مينتج الدرب\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Eman Ashraf):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "timerAccumulatedMs": 0,
+      "isTimerPaused": false,
+      "dueDate": "2026-11-05",
+      "timeLogs": [
+        {
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي",
+          "endDate": "2026-11-05",
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "endTime": "٠٥:٢٠ م",
+          "createdAt": "2026-11-05",
+          "startDate": "2026-11-05",
+          "durationMinutes": 12,
+          "memberId": "user-eman",
+          "memberName": "Eman Ashraf",
+          "id": "log-1793892003405",
+          "startTime": "٠٥:٠٧ م"
+        }
+      ],
+      "isPrivate": false
+    },
+    {
+      "createdAt": "2026-11-05",
+      "startDate": "2026-11-05",
+      "updatedAt": "2026-11-08T21:38:45.812Z",
+      "completedAt": "2026-11-08",
+      "estimatedHours": 2,
+      "title": "تقفيل gx  بلان وحل مشكلة الكلمات اختفت من البحث",
+      "isTimerPaused": false,
+      "isTimerRunning": false,
+      "priority": "medium",
+      "subtasks": [],
+      "mentionedUserIds": [],
+      "status": "completed",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: تقفيل gx وحل مشكلة الكلمات اختفت من البحث\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Yomna):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "assignedToId": "user-yomna",
+      "timerAccumulatedMs": 0,
+      "dueDate": "2026-11-07",
+      "explicitStatusRevert": false,
+      "timeLogs": [
+        {
+          "createdAt": "2026-11-08",
+          "startDate": "2026-11-07",
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي",
+          "endDate": "2026-11-08",
+          "endTime": "١١:٣٨ م",
+          "startTime": "١١:١٤ م",
+          "id": "log-1794173925806",
+          "memberId": "user-yomna",
+          "memberAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+          "durationMinutes": 233,
+          "memberName": "Yomna"
+        }
+      ],
+      "isPrivate": false,
+      "category": "إداري",
+      "id": "task-1793895008356",
+      "comments": [],
+      "totalLoggedMinutes": 233,
+      "dueTime": "18:00",
+      "revisionsCount": 0
+    },
+    {
+      "title": "ميتنج  gx",
+      "category": "إداري",
+      "explicitStatusRevert": false,
+      "completedAt": "2026-11-09",
+      "assignedToId": "user-yomna",
+      "isTimerPaused": false,
+      "dueTime": "18:00",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: ميتنج الاحد gx\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Yomna):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "priority": "medium",
+      "subtasks": [],
+      "comments": [],
+      "isPrivate": false,
+      "dueDate": "2026-11-09",
+      "mentionedUserIds": [],
+      "estimatedHours": 2,
+      "updatedAt": "2026-11-09T13:29:11.031Z",
+      "id": "task-1793895021555",
+      "revisionsCount": 0,
+      "startDate": "2026-11-09",
+      "createdAt": "2026-11-05",
+      "status": "completed",
+      "timeLogs": [],
+      "timerAccumulatedMs": 0,
+      "isTimerRunning": false
+    },
+    {
+      "category": "إداري",
+      "assignedToId": "user-amira",
+      "mentionedUserIds": [],
+      "estimatedHours": 2,
+      "dueTime": "18:00",
+      "totalLoggedMinutes": 228,
+      "title": "متابعه حل مشكلة gx مع يمني",
+      "isTimerRunning": false,
+      "subtasks": [],
+      "priority": "medium",
+      "id": "task-1793895470220",
+      "comments": [],
+      "isTimerPaused": false,
+      "explicitStatusRevert": false,
+      "completedAt": "2026-11-07",
+      "startDate": "2026-11-05",
+      "createdAt": "2026-11-05",
+      "dueDate": "2026-11-07",
+      "description": "لتحديد ميتنج الاحد مع العميل مع بلان الشهر الجديد",
+      "updatedAt": "2026-11-07T11:38:24.155Z",
+      "timerAccumulatedMs": 0,
+      "timeLogs": [
+        {
+          "endDate": "2026-11-07",
+          "endTime": "٠١:٣٨ م",
+          "memberId": "user-amira",
+          "id": "log-1794051504152",
+          "note": "إنجاز المهمة وحساب الوقت من الموجز اليومي",
+          "startTime": "٠٩:٥٠ ص",
+          "durationMinutes": 228,
+          "memberName": "Amira",
+          "memberAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+          "startDate": "2026-11-07",
+          "createdAt": "2026-11-07"
+        }
+      ],
+      "isPrivate": false,
+      "status": "completed"
+    },
+    {
+      "totalLoggedMinutes": 1865,
+      "isPrivate": false,
+      "mentionedUserIds": [],
+      "status": "completed",
+      "estimatedHours": 2,
+      "dueTime": "18:00",
+      "comments": [
+        {
+          "taskId": "task-1793895483220",
+          "mentionedUserIds": [
+            "user-yomna",
+            "user-eman"
+          ],
+          "content": "ايه الاخبار  @Yomna  @Eman_Ashraf",
+          "authorId": "user-amira",
+          "authorName": "Amira",
+          "createdAt": "٠١:٣٩ م اليوم",
+          "id": "comment-1794051566598",
+          "authorAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+        },
+        {
+          "createdAt": "١١:٠٨ ص اليوم",
+          "authorName": "Amira",
+          "content": "شغالين علي المقالت و تعديلها و تم الانتهاء من الكفرات  @هدير_سعيد",
+          "taskId": "task-1793895483220",
+          "authorAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+          "id": "comment-1794215323706",
+          "authorId": "user-amira",
+          "mentionedUserIds": [
+            "user-1"
+          ]
+        }
+      ],
+      "assignedToId": "user-amira",
+      "priority": "medium",
+      "updatedAt": "2026-11-09T10:13:40.517Z",
+      "subtasks": [],
+      "title": "متابعه اكونت جولدن مع ايمان ويمني",
+      "createdAt": "2026-11-05",
+      "startDate": "2026-11-05",
+      "isTimerRunning": false,
+      "category": "إداري",
+      "dueDate": "2026-11-08",
+      "id": "task-1793895483220",
+      "completedAt": "2026-11-09",
+      "timeLogs": [
+        {
+          "durationMinutes": 65,
+          "memberAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+          "startTime": "١١:٠٩ ص",
+          "memberName": "Amira",
+          "startDate": "2026-11-09",
+          "createdAt": "2026-11-09",
+          "id": "log-1794219220472",
+          "endDate": "2026-11-09",
+          "note": "إنهاء المهمة وحساب الوقت الفعلي الصافي",
+          "endTime": "١٢:١٣ م",
+          "memberId": "user-amira"
+        },
+        {
+          "durationMinutes": 600,
+          "memberName": "المكلف بالمهمة",
+          "createdAt": "2026-11-08",
+          "id": "log-cap-1794215323916",
+          "startDate": "2026-11-08",
+          "endDate": "2026-11-08",
+          "memberId": "user-amira",
+          "note": "جلسة عمل مسجلة حتى نهاية اليوم (تم إيقاف المؤقت تلقائياً عند منتصف الليل)",
+          "startTime": "10:00",
+          "endTime": "18:00"
+        },
+        {
+          "note": "جلسة عمل مسجلة حتى نهاية اليوم (تم إيقاف المؤقت تلقائياً عند منتصف الليل)",
+          "startDate": "2026-11-07",
+          "createdAt": "2026-11-07",
+          "id": "log-cap-1794126918203",
+          "memberName": "المكلف بالمهمة",
+          "endDate": "2026-11-07",
+          "endTime": "18:00",
+          "memberId": "user-amira",
+          "startTime": "10:00",
+          "durationMinutes": 600
+        }
+      ],
+      "isTimerPaused": false,
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: متابعه اكونت جولدن مع ايمان ويمني\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Amira):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "explicitStatusRevert": false,
+      "timerAccumulatedMs": 0
+    },
+    {
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: نشر وجدوله مقالات لسويفت مع ضبط سيو صفحات الخدمات\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Eman Ashraf):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "title": "نشر وجدوله مقالات ال draft لسويفت",
+      "revisionsCount": 0,
+      "dueDate": "2026-11-09",
+      "isPrivate": false,
+      "timerAccumulatedMs": 0,
+      "totalLoggedMinutes": 242,
+      "priority": "medium",
+      "status": "completed",
+      "subtasks": [],
+      "id": "task-1793895565485",
+      "mentionedUserIds": [],
+      "dueTime": "18:00",
+      "assignedToId": "user-eman",
+      "startDate": "2026-11-09",
+      "createdAt": "2026-11-05",
+      "timeLogs": [
+        {
+          "startTime": "١١:٢٣ ص",
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "memberId": "user-eman",
+          "endTime": "٠٤:٤٠ م",
+          "durationMinutes": 242,
+          "endDate": "2026-11-09",
+          "startDate": "2026-11-09",
+          "createdAt": "2026-11-09",
+          "memberName": "Eman Ashraf",
+          "note": "تم جدولة 6 مقالات وفيه مقالتين مكررتين فتم حذفهم وفيه 4 درافت تجربة وليست محتوي",
+          "id": "log-1794235237613"
+        }
+      ],
+      "estimatedHours": 2,
+      "updatedAt": "2026-11-09T14:40:37.619Z",
+      "isTimerRunning": false,
+      "completedAt": "2026-11-09",
+      "isTimerPaused": false,
+      "explicitStatusRevert": false,
+      "comments": [],
+      "category": "إداري"
+    },
+    {
+      "category": "إداري",
+      "mentionedUserIds": [],
+      "createdAt": "2026-11-05",
+      "startDate": "2026-11-05",
+      "dueDate": "2026-11-10",
+      "assignedToId": "user-eman",
+      "id": "task-1793900135935",
+      "isPrivate": false,
+      "subtasks": [],
+      "priority": "medium",
+      "status": "todo",
+      "title": "تقفيل باك لينك العميل نقل العفش لغاية عدد 250 باك لينك بس  لbacklink1",
+      "comments": [],
+      "updatedAt": "2026-11-07T12:20:16.729Z",
+      "estimatedHours": 2,
+      "dueTime": "18:00",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: تقفيل باك لينك العميل نقل العفش\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Eman Ashraf):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "timeLogs": [],
+      "revisionsCount": 0
+    },
+    {
+      "isPrivate": false,
+      "dueTime": "18:00",
+      "estimatedHours": 2,
+      "status": "todo",
+      "timeLogs": [],
+      "updatedAt": "2026-11-07T12:23:16.018Z",
+      "createdAt": "2026-11-07",
+      "startDate": "2026-11-07",
+      "assignedToId": "user-yomna",
+      "dueDate": "2026-11-08",
+      "comments": [],
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: نشر وجدوله مقالات الكشفيه مع تعديل الكفرات\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Yomna):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "subtasks": [],
+      "priority": "medium",
+      "mentionedUserIds": [],
+      "category": "إداري",
+      "id": "task-1794054196018",
+      "title": "نشر وجدوله مقالات الكشفيه مع تعديل الكفرات"
+    },
+    {
+      "assignedToId": "user-yomna",
+      "revisionsCount": 0,
+      "timeLogs": [],
+      "dueTime": "18:00",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: ساوث كوست\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Yomna):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "mentionedUserIds": [],
+      "estimatedHours": 2,
+      "isPrivate": false,
+      "id": "task-1794054222619",
+      "subtasks": [],
+      "priority": "medium",
+      "comments": [],
+      "updatedAt": "2026-11-07T12:24:50.594Z",
+      "dueDate": "2026-11-10",
+      "category": "إداري",
+      "startDate": "2026-11-10",
+      "createdAt": "2026-11-07",
+      "status": "todo",
+      "title": "ساوث كوست"
+    },
+    {
+      "category": "إداري",
+      "createdAt": "2026-11-07",
+      "startDate": "2026-11-07",
+      "id": "task-1794054274018",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: تقفيل ساوث كوست\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Yomna):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "dueTime": "18:00",
+      "isPrivate": false,
+      "updatedAt": "2026-11-09T08:32:10.819Z",
+      "subtasks": [],
+      "priority": "medium",
+      "comments": [],
+      "revisionsCount": 0,
+      "dueDate": "2026-11-09",
+      "estimatedHours": 2,
+      "title": " ساوث كوست",
+      "timeLogs": [],
+      "mentionedUserIds": [],
+      "status": "todo",
+      "assignedToId": "user-yomna"
+    },
+    {
+      "timeLogs": [],
+      "createdAt": "2026-11-07",
+      "startDate": "2026-11-07",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: مقالات موقع المتميزون\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Yomna):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "estimatedHours": 2,
+      "title": "مقالات موقع المتميزون",
+      "assignedToId": "user-yomna",
+      "isPrivate": false,
+      "updatedAt": "2026-11-07T14:09:25.692Z",
+      "dueTime": "18:00",
+      "priority": "medium",
+      "subtasks": [],
+      "mentionedUserIds": [],
+      "comments": [],
+      "status": "todo",
+      "id": "task-1794060565692",
+      "category": "إداري",
+      "dueDate": "2026-11-11"
+    },
+    {
+      "dueTime": "18:00",
+      "createdAt": "2026-11-07",
+      "startDate": "2026-11-07",
+      "id": "task-1794060656313",
+      "updatedAt": "2026-11-09T23:05:26.986Z",
+      "assignedToId": "user-mariam",
+      "dueDate": "2026-11-15",
+      "mentionedUserIds": [],
+      "revisionsCount": 0,
+      "priority": "medium",
+      "subtasks": [],
+      "isTimerPaused": false,
+      "status": "in_progress",
+      "title": "تصميم بيدج البروتفليو لسويفت",
+      "timerAccumulatedMs": 1384234,
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: تصميم بيدج البروتفليو لسويفت\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Mariam):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "isPrivate": false,
+      "explicitStatusRevert": false,
+      "timerStartedAt": 1794263168729,
+      "timeLogs": [
+        {
+          "createdAt": "2026-11-08",
+          "startDate": "2026-11-08",
+          "endTime": "٠٦:٣٩ م",
+          "endDate": "2026-11-08",
+          "memberName": "Mariam",
+          "note": "جلسة عمل فعلية مسجلة عبر المؤقت المباشر (مستبعد منها فترات التوقف)",
+          "id": "log-1794155991841",
+          "memberAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+          "startTime": "١٢:٠٩ م",
+          "durationMinutes": 313,
+          "memberId": "user-mariam"
+        }
+      ],
+      "category": "إداري",
+      "estimatedHours": 2,
+      "timerLastResumedAt": 1794265526979,
+      "totalLoggedMinutes": 313,
+      "isTimerRunning": true,
+      "comments": []
+    },
+    {
+      "id": "task-1794060668959",
+      "isPrivate": false,
+      "isTimerPaused": false,
+      "priority": "medium",
+      "subtasks": [],
+      "totalLoggedMinutes": 84,
+      "assignedToId": "user-roaa",
+      "status": "completed",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: مقالات الكشفيه\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (رواء):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "timerAccumulatedMs": 0,
+      "mentionedUserIds": [],
+      "dueDate": "2026-11-07",
+      "comments": [],
+      "updatedAt": "2026-11-07T22:02:28.207Z",
+      "startDate": "2026-11-07",
+      "createdAt": "2026-11-07",
+      "category": "إداري",
+      "title": "مقالات الكشفيه",
+      "timeLogs": [
+        {
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي",
+          "memberName": "رواء",
+          "createdAt": "2026-11-07",
+          "startDate": "2026-11-07",
+          "memberId": "user-roaa",
+          "id": "log-1794088948207",
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "startTime": "١٠:١٢ م",
+          "endDate": "2026-11-07",
+          "endTime": "١٢:٠٢ ص",
+          "durationMinutes": 84
+        }
+      ],
+      "dueTime": "18:00",
+      "isTimerRunning": false,
+      "completedAt": "2026-11-07",
+      "estimatedHours": 2,
+      "explicitStatusRevert": false
+    },
+    {
+      "dueTime": "18:00",
+      "status": "todo",
+      "title": "مقالات بيوشار 5",
+      "category": "إداري",
+      "estimatedHours": 2,
+      "comments": [],
+      "priority": "medium",
+      "subtasks": [],
+      "dueDate": "2026-11-09",
+      "assignedToId": "user-roaa",
+      "isPrivate": false,
+      "id": "task-1794060707416",
+      "updatedAt": "2026-11-07T14:11:47.416Z",
+      "mentionedUserIds": [],
+      "createdAt": "2026-11-07",
+      "startDate": "2026-11-07",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: مقالات بيوشار 5\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (رواء):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "timeLogs": []
+    },
+    {
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: مقالات الكشفيه\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (رواء):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "startDate": "2026-11-07",
+      "createdAt": "2026-11-07",
+      "completedAt": "2026-11-08",
+      "isTimerPaused": false,
+      "timeLogs": [
+        {
+          "endDate": "2026-11-08",
+          "endTime": "٠٩:٤٧ م",
+          "memberId": "user-roaa",
+          "id": "log-1794167220214",
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي",
+          "startTime": "٠٢:٤٢ م",
+          "durationMinutes": 423,
+          "memberName": "رواء",
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "startDate": "2026-11-08",
+          "createdAt": "2026-11-08"
+        }
+      ],
+      "updatedAt": "2026-11-08T19:47:00.243Z",
+      "timerAccumulatedMs": 0,
+      "dueDate": "2026-11-08",
+      "isPrivate": false,
+      "estimatedHours": 2,
+      "mentionedUserIds": [],
+      "category": "إداري",
+      "totalLoggedMinutes": 423,
+      "title": "مقالات الكشفيه",
+      "explicitStatusRevert": false,
+      "id": "task-1794060714081",
+      "priority": "medium",
+      "isTimerRunning": false,
+      "status": "completed",
+      "subtasks": [],
+      "comments": [],
+      "assignedToId": "user-roaa",
+      "dueTime": "18:00"
+    },
+    {
+      "dueDate": "2026-11-09",
+      "isTimerRunning": false,
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: ميتنج  gx\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "comments": [],
+      "subtasks": [],
+      "isTimerPaused": false,
+      "priority": "medium",
+      "assignedToId": "user-1",
+      "estimatedHours": 2,
+      "completedAt": "2026-11-09",
+      "category": "إداري",
+      "timerAccumulatedMs": 0,
+      "startDate": "2026-11-07",
+      "createdAt": "2026-11-07",
+      "dueTime": "18:00",
+      "mentionedUserIds": [],
+      "explicitStatusRevert": false,
+      "status": "completed",
+      "timeLogs": [],
+      "isPrivate": false,
+      "id": "task-1794062083460",
+      "title": "ميتنج  gx",
+      "updatedAt": "2026-11-09T13:29:05.502Z"
+    },
+    {
+      "comments": [],
+      "priority": "medium",
+      "subtasks": [],
+      "assignedToId": "user-eman",
+      "id": "task-1794062089852",
+      "dueTime": "18:00",
+      "category": "إداري",
+      "timerAccumulatedMs": 0,
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: ميتنج  gx\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Eman Ashraf):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "status": "completed",
+      "isTimerPaused": false,
+      "totalLoggedMinutes": 72,
+      "isPrivate": false,
+      "timeLogs": [
+        {
+          "id": "log-1794235059126",
+          "startTime": "٠٣:٢٥ م",
+          "memberAvatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+          "memberName": "Eman Ashraf",
+          "durationMinutes": 72,
+          "createdAt": "2026-11-09",
+          "startDate": "2026-11-09",
+          "endTime": "٠٤:٣٧ م",
+          "memberId": "user-eman",
+          "endDate": "2026-11-09",
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي"
+        }
+      ],
+      "updatedAt": "2026-11-09T14:37:39.134Z",
+      "isTimerRunning": false,
+      "title": "ميتنج  gx",
+      "dueDate": "2026-11-09",
+      "explicitStatusRevert": false,
+      "createdAt": "2026-11-07",
+      "startDate": "2026-11-07",
+      "mentionedUserIds": [],
+      "completedAt": "2026-11-09",
+      "estimatedHours": 2
+    },
+    {
+      "category": "إداري",
+      "totalLoggedMinutes": 2400,
+      "startDate": "2026-11-07",
+      "createdAt": "2026-11-07",
+      "dueDate": "2026-11-09",
+      "updatedAt": "2026-11-09T14:05:49.552Z",
+      "status": "in_progress",
+      "comments": [],
+      "timerLastResumedAt": 1794233149552,
+      "revisionsCount": 0,
+      "dueTime": "18:00",
+      "id": "task-1794062187501",
+      "timeLogs": [
+        {
+          "durationMinutes": 600,
+          "createdAt": "2026-11-08",
+          "startDate": "2026-11-08",
+          "id": "log-cap-1794233149047",
+          "endTime": "18:00",
+          "endDate": "2026-11-08",
+          "startTime": "10:00",
+          "memberName": "المكلف بالمهمة",
+          "memberId": "user-maibel",
+          "note": "جلسة عمل مسجلة حتى نهاية اليوم (تم إيقاف المؤقت تلقائياً عند منتصف الليل)"
+        }
+      ],
+      "timerAccumulatedMs": 0,
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: متابعه كامبين البلجن\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Maibel Emad):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "mentionedUserIds": [],
+      "timerStartedAt": 1794233149552,
+      "assignedToId": "user-maibel",
+      "subtasks": [],
+      "priority": "medium",
+      "isPrivate": false,
+      "isTimerPaused": false,
+      "isTimerRunning": true,
+      "estimatedHours": 2,
+      "title": "متابعه كامبين البلجن"
+    },
+    {
+      "dueTime": "18:00",
+      "comments": [],
+      "status": "completed",
+      "subtasks": [],
+      "priority": "medium",
+      "category": "إداري",
+      "id": "task-1794066442565",
+      "timerAccumulatedMs": 0,
+      "createdAt": "2026-11-07",
+      "startDate": "2026-11-07",
+      "estimatedHours": 2,
+      "description": "عميل السوشيال ميديا",
+      "dueDate": "2026-11-08",
+      "assignedToId": "user-1",
+      "isTimerPaused": false,
+      "mentionedUserIds": [],
+      "timeLogs": [],
+      "explicitStatusRevert": false,
+      "isPrivate": false,
+      "isTimerRunning": false,
+      "title": "متابعه الكامبين مع مايل",
+      "updatedAt": "2026-11-08T09:59:05.252Z",
+      "completedAt": "2026-11-08"
+    },
+    {
+      "mentionedUserIds": [],
+      "isTimerRunning": false,
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: تحديد ميتنج مع عميل اليابان بعد تحليل موقعين\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "timeLogs": [],
+      "estimatedHours": 2,
+      "dueTime": "18:00",
+      "id": "task-1794066468815",
+      "timerAccumulatedMs": 0,
+      "completedAt": "2026-11-08",
+      "comments": [],
+      "status": "completed",
+      "priority": "medium",
+      "subtasks": [],
+      "explicitStatusRevert": false,
+      "title": "تحديد ميتنج مع عميل اليابان بعد تحليل موقعين",
+      "createdAt": "2026-11-07",
+      "startDate": "2026-11-07",
+      "isTimerPaused": false,
+      "updatedAt": "2026-11-08T16:18:20.708Z",
+      "dueDate": "2026-11-08",
+      "assignedToId": "user-1",
+      "isPrivate": false,
+      "category": "إداري"
+    },
+    {
+      "category": "إداري",
+      "estimatedHours": 2,
+      "id": "task-1794069467886",
+      "completedAt": "2026-11-08",
+      "dueDate": "2026-11-08",
+      "totalLoggedMinutes": 24,
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: توحيد صب هيدر لبيدجات سويفت لغتين\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Mariam):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "isTimerRunning": false,
+      "subtasks": [],
+      "priority": "medium",
+      "comments": [],
+      "explicitStatusRevert": false,
+      "startDate": "2026-11-07",
+      "createdAt": "2026-11-07",
+      "dueTime": "18:00",
+      "timerAccumulatedMs": 0,
+      "assignedToId": "user-mariam",
+      "isTimerPaused": false,
+      "isPrivate": false,
+      "status": "completed",
+      "timeLogs": [
+        {
+          "id": "log-1794131942807",
+          "endDate": "2026-11-08",
+          "durationMinutes": 24,
+          "memberId": "user-mariam",
+          "endTime": "١١:٥٩ ص",
+          "startTime": "١١:٣٤ ص",
+          "memberName": "Mariam",
+          "createdAt": "2026-11-08",
+          "startDate": "2026-11-08",
+          "note": "إنهاء المهمة وحساب الوقت الفعلي الصافي",
+          "memberAvatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+        }
+      ],
+      "mentionedUserIds": [],
+      "title": "توحيد صب هيدر لبيدجات سويفت لغتين",
+      "updatedAt": "2026-11-08T09:59:02.818Z"
+    },
+    {
+      "dueDate": "2026-11-07",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: تحليل  سيو الموقعين المرسلين وارسال التحليل  للمواقع\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (Yomna):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "status": "completed",
+      "id": "task-1794070310240",
+      "dueTime": "18:00",
+      "isTimerRunning": false,
+      "updatedAt": "2026-11-08T03:22:09.200Z",
+      "subtasks": [],
+      "priority": "medium",
+      "startDate": "2026-11-07",
+      "createdAt": "2026-11-07",
+      "title": "تحليل  سيو الموقعين المرسلين وارسال التحليل  للمواقع",
+      "isTimerPaused": false,
+      "estimatedHours": 2,
+      "timeLogs": [
+        {
+          "memberId": "user-yomna",
+          "startTime": "٠٥:١٣ ص",
+          "endTime": "٠٥:٢٢ ص",
+          "endDate": "2026-11-08",
+          "memberAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+          "memberName": "Yomna",
+          "id": "log-1794108129188",
+          "durationMinutes": 8,
+          "createdAt": "2026-11-08",
+          "startDate": "2026-11-08",
+          "note": "إنجاز المهمة وحساب الوقت الفعلي الصافي"
+        }
+      ],
+      "timerAccumulatedMs": 0,
+      "explicitStatusRevert": false,
+      "completedAt": "2026-11-08",
+      "mentionedUserIds": [],
+      "isPrivate": false,
+      "comments": [],
+      "assignedToId": "user-yomna",
+      "totalLoggedMinutes": 8,
+      "category": "إداري"
+    },
+    {
+      "dueTime": "18:00",
+      "category": "إداري",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: اشتراك كلود للشركه\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "id": "task-1794130981742",
+      "startDate": "2026-11-10",
+      "createdAt": "2026-11-08",
+      "title": "اشتراك كلود للشركه",
+      "updatedAt": "2026-11-08T16:19:28.159Z",
+      "assignedToId": "user-1",
+      "isPrivate": false,
+      "comments": [],
+      "subtasks": [],
+      "mentionedUserIds": [],
+      "priority": "medium",
+      "dueDate": "2026-11-10",
+      "revisionsCount": 0,
+      "status": "todo",
+      "estimatedHours": 2,
+      "timeLogs": []
+    },
+    {
+      "comments": [],
+      "estimatedHours": 2,
+      "priority": "medium",
+      "subtasks": [],
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: كوتيشن عميل السعودية\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة.",
+      "assignedToId": "user-1",
+      "dueDate": "2026-11-09",
+      "mentionedUserIds": [],
+      "isTimerRunning": false,
+      "completedAt": "2026-11-09",
+      "timerAccumulatedMs": 0,
+      "category": "إداري",
+      "isPrivate": false,
+      "explicitStatusRevert": false,
+      "title": "كوتيشن عميل السعودية",
+      "timeLogs": [],
+      "status": "completed",
+      "updatedAt": "2026-11-09T12:13:28.702Z",
+      "id": "task-1794154720133",
+      "createdAt": "2026-11-08",
+      "startDate": "2026-11-08",
+      "dueTime": "18:00",
+      "isTimerPaused": false
+    },
+    {
+      "mentionedUserIds": [],
+      "priority": "medium",
+      "subtasks": [],
+      "title": "تقفيل سيستم الباك لينك",
+      "comments": [],
+      "dueTime": "18:00",
+      "status": "todo",
+      "category": "إداري",
+      "assignedToId": "user-1",
+      "startDate": "2026-11-08",
+      "createdAt": "2026-11-08",
+      "timeLogs": [],
+      "dueDate": "2026-11-09",
+      "estimatedHours": 2,
+      "id": "task-1794154831694",
+      "isPrivate": false,
+      "updatedAt": "2026-11-08T16:20:31.694Z",
+      "description": "📌 المطلوب بالتحديد:\n- تنفيذ متطلبات: تقفيل سيستم الباك لينك\n- تجهيز كافة المتطلبات والملفات المطلوبة وفق أعلى معايير الجودة.\n\n👥 توزيع الأدوار والمسؤوليات المحددة:\n• دور المكلف بالتنفيذ (هدير سعيد):\n  - استلام المتطلبات والبدء في تنفيذ المهام الموكلة إليه مباشرة.\n  - تسليم البروفات والنسخة الأولية في الموعد المحدد للمراجعة الفنية.\n\n• دور المراجع / المنسق:\n  - التدقيق الشامل ومراجعة المخرجات والتأكد من خلوها من الأخطاء.\n  - التنسيق مع العميل أو الأكاونت مانجر واعتماد النسخة النهائية وتوثيق التسليم.\n\n🎯 معايير الجودة وموعد التسليم:\n- استيفاء المعايير الفنية المعتمدة بنسبة 100%.\n- التسليم في الوقت المحدد وتوثيق ساعات العمل بدقة."
     }
   ],
   "leads": [
@@ -4425,10 +5746,10 @@
         }
       ],
       "notes": "يبحثون عن أتمتة لجميع فروعهم الـ 14 مع تتبع فوري لمواعيد التسليم.",
-      "followUpDate": "2026-11-05",
+      "followUpDate": "2026-11-09",
       "followUpTime": "13:00",
       "followUpNotes": "الاتصال الهاتفي النهائي لمناقشة تعديل شروط الدفع وتوقيع العقد المبدئي.",
-      "createdAt": "2026-11-02"
+      "createdAt": "2026-11-06"
     },
     {
       "id": "lead-302",
@@ -4463,10 +5784,10 @@
         }
       ],
       "notes": "تحتاج لربط برامج العيادات مع نظام إدارة مهام الأطباء ومواعيد الزيارات.",
-      "followUpDate": "2026-11-05",
+      "followUpDate": "2026-11-09",
       "followUpTime": "15:30",
       "followUpNotes": "متابعة قرار مجلس الإدارة ومناقشة تفاصيل الربط التقني.",
-      "createdAt": "2026-11-05"
+      "createdAt": "2026-11-09"
     },
     {
       "id": "lead-303",
@@ -4501,10 +5822,10 @@
         }
       ],
       "notes": "طلب إعادة الاتصال بعد دراسة الميزانية السنوية الجديدة للشركة.",
-      "followUpDate": "2026-11-06",
+      "followUpDate": "2026-11-10",
       "followUpTime": "11:00",
       "followUpNotes": "مكالمة هاتفية للمتابعة بعد مراجعة الإدارة المالية للميزانية.",
-      "createdAt": "2026-11-03"
+      "createdAt": "2026-11-07"
     },
     {
       "id": "lead-304",
@@ -4539,7 +5860,7 @@
         }
       ],
       "notes": "طلبوا تجربة عملية ديمو للربط مع نظام إدارة الأسطول والمخازن.",
-      "createdAt": "2026-10-31"
+      "createdAt": "2026-11-04"
     }
   ],
   "deals": [
@@ -4554,9 +5875,9 @@
       "currency": "ج.م",
       "stage": "تفاوض",
       "probability": 85,
-      "expectedCloseDate": "2026-11-10",
+      "expectedCloseDate": "2026-11-14",
       "assignedToId": "user-1",
-      "createdAt": "2026-10-21",
+      "createdAt": "2026-10-25",
       "notes": "الصفقة في مرحلة الصياغة القانونية النهائية للعقد."
     },
     {
@@ -4570,9 +5891,9 @@
       "currency": "ج.م",
       "stage": "عرض سعر",
       "probability": 60,
-      "expectedCloseDate": "2026-11-17",
+      "expectedCloseDate": "2026-11-21",
       "assignedToId": "user-2",
-      "createdAt": "2026-10-26",
+      "createdAt": "2026-10-30",
       "notes": "العرض يشمل التخصيص والأمان العالي وربط الفروع المصرفية."
     },
     {
@@ -4586,9 +5907,9 @@
       "currency": "ج.م",
       "stage": "مؤهل",
       "probability": 40,
-      "expectedCloseDate": "2026-11-25",
+      "expectedCloseDate": "2026-11-29",
       "assignedToId": "user-3",
-      "createdAt": "2026-11-01",
+      "createdAt": "2026-11-05",
       "notes": "تم تقديم العرض الأولي والمقارنة مع الحلول المنافسة."
     },
     {
@@ -4602,9 +5923,9 @@
       "currency": "ج.م",
       "stage": "مغلقة ناجحة",
       "probability": 100,
-      "expectedCloseDate": "2026-11-02",
+      "expectedCloseDate": "2026-11-06",
       "assignedToId": "user-2",
-      "createdAt": "2026-10-06",
+      "createdAt": "2026-10-10",
       "notes": "تم توقيع العقد رسمياً واستلام الدفعة الأولى بنجاح!"
     }
   ],
@@ -6327,7 +7648,8 @@
       "id": "att-1793866288846-3njb",
       "createdAt": "2026-11-05T08:11:28.846Z",
       "notes": "تسجيل بداية الدوام من شريط المنظومة",
-      "date": "2026-11-05"
+      "date": "2026-11-05",
+      "checkOutTime": "٦:٣٨ م"
     },
     {
       "memberName": "Amira",
@@ -6351,7 +7673,8 @@
       "checkInTime": "١٠:٢٢ ص",
       "memberId": "user-mariam",
       "createdAt": "2026-11-05T08:22:41.915Z",
-      "employeeCode": "SM-106"
+      "employeeCode": "SM-106",
+      "checkOutTime": "٥:٥٥ م"
     },
     {
       "employeeCode": "SM-104",
@@ -6364,6 +7687,183 @@
       "status": "present",
       "date": "2026-11-05",
       "checkInTime": "١٠:٢٥ ص"
+    },
+    {
+      "updatedAt": "2026-11-05T08:40:24.654Z",
+      "status": "absent",
+      "memberName": "Yomna",
+      "date": "2026-11-03",
+      "id": "att-1793868024653-pkyp",
+      "checkInTime": "",
+      "createdAt": "2026-11-05T08:40:24.653Z",
+      "lateMinutes": 0,
+      "isExcused": false,
+      "checkOutTime": "",
+      "memberId": "user-yomna",
+      "employeeCode": "SM-107",
+      "notes": "[غياب بدون إذن مسبق] وأثناء الميتنج وحش والثلاثاء لم يتم العمل غير نشر مقالات الكشفيه مقاله واحده بس"
+    },
+    {
+      "status": "present",
+      "createdAt": "2026-11-05T19:10:49.944Z",
+      "checkInTime": "٩:١٠ م",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "updatedAt": "2026-11-05T19:10:49.946Z",
+      "id": "att-1793905849944-fcy6",
+      "date": "2026-11-05",
+      "memberName": "رواء",
+      "employeeCode": "SM-109",
+      "memberId": "user-roaa"
+    },
+    {
+      "updatedAt": "2026-11-07T17:24:54.333Z",
+      "id": "att-1794037724094-27ms",
+      "status": "present",
+      "checkOutTime": "٧:٢٤ م",
+      "checkInTime": "٩:٤٨ ص",
+      "date": "2026-11-07",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة • نهاية الدوام: ٧:٢٤ م",
+      "employeeCode": "SM-110",
+      "memberId": "user-amira",
+      "memberName": "Amira",
+      "createdAt": "2026-11-07T07:48:44.094Z"
+    },
+    {
+      "memberName": "Maibel Emad",
+      "checkOutTime": "٧:٥٢ م",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة • نهاية الدوام: ٧:٥٢ م",
+      "updatedAt": "2026-11-07T17:52:48.955Z",
+      "createdAt": "2026-11-07T08:22:23.973Z",
+      "memberId": "user-maibel",
+      "employeeCode": "SM-105",
+      "date": "2026-11-07",
+      "id": "att-1794039743973-ci44",
+      "checkInTime": "١٠:٢٢ ص",
+      "status": "present"
+    },
+    {
+      "createdAt": "2026-11-07T19:06:02.373Z",
+      "memberName": "رواء",
+      "date": "2026-11-07",
+      "status": "present",
+      "checkInTime": "٩:٠٦ م",
+      "memberId": "user-roaa",
+      "updatedAt": "2026-11-07T19:06:02.376Z",
+      "employeeCode": "SM-109",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "id": "att-1794078362373-sl4k"
+    },
+    {
+      "memberId": "user-maibel",
+      "updatedAt": "2026-11-08T16:20:44.728Z",
+      "id": "att-1794125243249-a1e9",
+      "checkOutTime": "٦:٢٠ م",
+      "memberName": "Maibel Emad",
+      "checkInTime": "١٠:٠٧ ص",
+      "employeeCode": "SM-105",
+      "date": "2026-11-08",
+      "status": "present",
+      "createdAt": "2026-11-08T08:07:23.249Z",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة • نهاية الدوام: ٦:٢٠ م"
+    },
+    {
+      "status": "present",
+      "date": "2026-11-08",
+      "checkInTime": "١٠:١٠ ص",
+      "memberName": "Eman Ashraf",
+      "updatedAt": "2026-11-08T08:10:16.013Z",
+      "employeeCode": "SM-104",
+      "createdAt": "2026-11-08T08:10:16.008Z",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "memberId": "user-eman",
+      "id": "att-1794125416008-k0xi"
+    },
+    {
+      "employeeCode": "SM-110",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة • نهاية الدوام: ٦:٣٤ م",
+      "checkInTime": "١٠:٣٣ ص",
+      "status": "present",
+      "memberName": "Amira",
+      "date": "2026-11-08",
+      "createdAt": "2026-11-08T08:33:21.586Z",
+      "memberId": "user-amira",
+      "updatedAt": "2026-11-08T16:34:36.755Z",
+      "id": "att-1794126801585-j1iy",
+      "checkOutTime": "٦:٣٤ م"
+    },
+    {
+      "status": "present",
+      "date": "2026-11-08",
+      "updatedAt": "2026-11-08T16:39:45.196Z",
+      "memberId": "user-mariam",
+      "checkOutTime": "٦:٣٤ م",
+      "memberName": "Mariam",
+      "employeeCode": "SM-106",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة • نهاية الدوام: ٦:٣٤ م",
+      "createdAt": "2026-11-08T09:20:55.867Z",
+      "id": "att-1794129655867-bt0c",
+      "checkInTime": "١١:٢٠ ص"
+    },
+    {
+      "createdAt": "2026-11-08T10:48:00.705Z",
+      "memberName": "رواء",
+      "employeeCode": "SM-109",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة • نهاية الدوام: ٩:٤٧ م",
+      "date": "2026-11-08",
+      "checkInTime": "١٢:٤٧ م",
+      "memberId": "user-roaa",
+      "checkOutTime": "٩:٤٧ م",
+      "id": "att-1794134880705-hced",
+      "status": "present",
+      "updatedAt": "2026-11-08T19:47:04.795Z"
+    },
+    {
+      "date": "2026-11-09",
+      "createdAt": "2026-11-09T08:10:30.664Z",
+      "memberName": "Maibel Emad",
+      "employeeCode": "SM-105",
+      "memberId": "user-maibel",
+      "checkInTime": "١٠:١٠ ص",
+      "status": "present",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "id": "att-1794211830664-h3qk",
+      "updatedAt": "2026-11-09T08:10:30.667Z"
+    },
+    {
+      "date": "2026-11-09",
+      "memberId": "user-eman",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "updatedAt": "2026-11-09T08:10:50.540Z",
+      "checkInTime": "١٠:١٠ ص",
+      "memberName": "Eman Ashraf",
+      "id": "att-1794211850537-qa8p",
+      "employeeCode": "SM-104",
+      "status": "present",
+      "createdAt": "2026-11-09T08:10:50.537Z"
+    },
+    {
+      "updatedAt": "2026-11-09T08:11:30.851Z",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة",
+      "createdAt": "2026-11-09T08:11:30.850Z",
+      "checkInTime": "١٠:١١ ص",
+      "memberId": "user-amira",
+      "employeeCode": "SM-110",
+      "id": "att-1794211890850-qwdp",
+      "memberName": "Amira",
+      "date": "2026-11-09",
+      "status": "present"
+    },
+    {
+      "memberName": "Mariam",
+      "id": "att-1794212228350-ve0d",
+      "status": "present",
+      "updatedAt": "2026-11-09T08:17:08.353Z",
+      "checkInTime": "١٠:١٧ ص",
+      "memberId": "user-mariam",
+      "employeeCode": "SM-106",
+      "date": "2026-11-09",
+      "createdAt": "2026-11-09T08:17:08.350Z",
+      "notes": "تسجيل بداية الدوام من شريط المنظومة"
     }
   ],
   "companyExpenses": [
@@ -6578,7 +8078,7 @@
       "id": "task-1793483160666"
     }
   ],
-  "updatedAt": "2026-11-05T08:28:15.745Z",
+  "updatedAt": "2026-11-09T15:12:52.025Z",
   "deletedMarketingCardIds": [],
   "deletedMarketingListIds": [],
   "calls": [],

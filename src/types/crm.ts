@@ -124,6 +124,7 @@ export interface TeamMember {
   socialAccounts?: SocialAccounts; // اكونتات التواصل والعمل
   isAccountManager?: boolean; // هل العضو مدير حسابات (Account Manager)
   managedTeamMemberIds?: string[]; // أعضاء الفريق المكلفين بالعمل مع هذا الأكونت مانجر
+  isSales?: boolean; // هل العضو حساب مبيعات (Sales Rep) مخصص للعملاء المحتملين
 }
 
 export interface EmailAttachment {
@@ -178,6 +179,11 @@ export interface Lead {
   leadScore: number;
   assignedToId: string;
   assignedTeamMemberIds?: string[]; // موظفو المبيعات المصرح لهم برؤية ومتابعة هذا العميل
+  mentionedUserIds?: string[]; // أعضاء الفريق الذين تم عمل منشن لهم في هذا العميل
+  leadType?: 'admin' | 'sales'; // نوع العميل: خاص بالأدمن أو خاص بالسيلز
+  isSalesLead?: boolean; // هل العميل مخصص للسيلز أم للإدارة والأدمن
+  createdBy?: string; // من قام بتسجيل العميل المحتمل
+  creatorName?: string;
   estimatedValue: number;
   currency?: string; // e.g. "ج.م" (الجنيه المصري) أو "ر.س" أو "$"
   finalPrice?: number; // السعر النهائي المتفق عليه

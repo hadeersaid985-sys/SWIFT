@@ -67,7 +67,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
     suspendedContracts,
     logoutUser,
     setIsGitHubModalOpen,
-    visibleClients
+    visibleClients,
+    isSalesUser,
+    visibleLeads
   } = useCRM();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -378,6 +380,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                       </span>
                     )}
                   </button>
+
+                  {/* 8. العملاء المحتملون (خاص بحسابات المبيعات وسيلز مثل مايبل) */}
+                  {isSalesUser && (
+                    <button
+                      onClick={() => handleSelectTab('leads')}
+                      className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
+                        activeTab === 'leads'
+                          ? 'bg-[#2563eb] text-white font-bold shadow-xs'
+                          : 'text-slate-300 hover:text-white hover:bg-[#24375a]/70'
+                      }`}
+                      title="العملاء المحتملون (قسم المبيعات)"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Building2 className={`w-4 h-4 shrink-0 ${activeTab === 'leads' ? 'text-white' : 'text-purple-400'}`} />
+                        {!isCollapsed && <span className="truncate">العملاء المحتملون</span>}
+                      </div>
+                      {!isCollapsed && (
+                        <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/40 px-1.5 py-0.2 rounded font-mono font-bold">
+                          {visibleLeads.length}
+                        </span>
+                      )}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -1326,6 +1351,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
                         {clientCount} عميل
                       </span>
                     </button>
+
+                    {/* العملاء المحتملون في قائمة الموبايل لموظف المبيعات */}
+                    {isSalesUser && (
+                      <button
+                        onClick={() => handleSelectTab('leads')}
+                        className={`w-full text-right flex items-center justify-between px-3 py-2.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                          activeTab === 'leads' ? 'bg-[#2563eb] text-white font-bold shadow-md' : 'text-slate-300 hover:bg-[#24375a]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Building2 className="w-4 h-4 text-purple-400 shrink-0" />
+                          <span className="truncate">العملاء المحتملون</span>
+                        </div>
+                        <span className="text-[10px] bg-purple-900/50 text-purple-300 border border-purple-600/40 px-2 py-0.5 rounded-full font-mono font-bold">
+                          {visibleLeads.length}
+                        </span>
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (
