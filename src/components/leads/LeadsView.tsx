@@ -340,6 +340,7 @@ export const LeadsView: React.FC = () => {
 
     const finalSource = editForm.source === 'مصدر آخر' ? (editForm.customSource.trim() || 'مصدر مخصص') : editForm.source;
 
+    const hasNonAdminAssignees = editForm.assignedTeamMemberIds.some(id => id !== 'user-1');
     updateLead(editModalLead.id, {
       name: editForm.name.trim(),
       company: editForm.company.trim(),
@@ -358,6 +359,8 @@ export const LeadsView: React.FC = () => {
       followUpNotes: editForm.followUpNotes?.trim() || undefined,
       detailedDescription: editForm.detailedDescription.trim(),
       negotiationsHistory: editForm.negotiationsHistory.trim(),
+      leadType: hasNonAdminAssignees ? 'sales' : 'admin',
+      isSalesLead: hasNonAdminAssignees,
       assignedTeamMemberIds: editForm.assignedTeamMemberIds,
       assignedToId: editForm.assignedTeamMemberIds[0] || editModalLead.assignedToId
     });
@@ -1102,8 +1105,26 @@ export const LeadsView: React.FC = () => {
                   return (
                     <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="font-extrabold text-slate-900">{lead.name}</div>
-                        <div className="text-[11px] text-slate-400">{lead.title}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-extrabold text-slate-900">{lead.name}</span>
+                          {lead.leadType === 'admin' || (assignedMembers.length === 1 && assignedMembers[0].id === 'user-1') ? (
+                            <span className="text-[9px] bg-slate-100 text-slate-700 border border-slate-300 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                              <Shield className="w-2.5 h-2.5 text-slate-500" />
+                              <span>خاص بالأدمن 🔒</span>
+                            </span>
+                          ) : (
+                            <span className="text-[9px] bg-purple-100 text-purple-900 border border-purple-200 px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                              <Building className="w-2.5 h-2.5 text-purple-700" />
+                              <span>عميل سيلز 💼</span>
+                            </span>
+                          )}
+                          {assignedMembers.some(m => m.id === 'user-maibel' || m.username?.toLowerCase().includes('maibel')) && (
+                            <span className="text-[9px] bg-indigo-100 text-indigo-900 border border-indigo-200 px-1.5 py-0.2 rounded font-black">
+                              مايبل 💼
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">{lead.title}</div>
                       </td>
 
                       <td className="py-3.5 px-4 whitespace-nowrap">

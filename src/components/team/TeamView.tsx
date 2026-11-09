@@ -285,6 +285,7 @@ export const TeamView: React.FC = () => {
       password: 'User@Swift2026',
       accessLevel: 'member',
       isAccountActive: true,
+      isSales: true,
       avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       linkedin: '',
       slack: '',
