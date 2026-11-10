@@ -7,15 +7,22 @@
  * - Clear any old lingering offsets.
  */
 
-export const EGYPT_TIMEZONE = 'Etc/GMT-2';
+export const EGYPT_TIMEZONE = 'Africa/Cairo';
 export const STORAGE_OFFSET_KEY = 'swiftmynd_time_offset_minutes';
 export const TIME_EVENT_NAME = 'swiftmynd_time_changed';
 
-// Clear legacy offsets that may have shifted the clock incorrectly to 8:xx
+// Clear legacy offsets that may have shifted the clock incorrectly
 if (typeof window !== 'undefined') {
   try {
-    localStorage.removeItem(STORAGE_OFFSET_KEY);
+    const saved = localStorage.getItem(STORAGE_OFFSET_KEY);
+    if (saved) {
+      const val = parseInt(saved, 10);
+      if (Math.abs(val) > 180) {
+        localStorage.removeItem(STORAGE_OFFSET_KEY);
+      }
+    }
     localStorage.removeItem('swiftmynd_time_offset');
+    localStorage.removeItem('swiftmynd_calibrated_offset');
   } catch {}
 }
 
@@ -30,7 +37,13 @@ export function getSystemDate(): Date {
     try {
       const saved = localStorage.getItem(STORAGE_OFFSET_KEY);
       if (saved) {
-        offsetMinutes = parseInt(saved, 10) || 0;
+        const parsed = parseInt(saved, 10) || 0;
+        // Strict guard: ignore wild legacy offsets (e.g. 600 min / 10 hours)
+        if (Math.abs(parsed) <= 180) {
+          offsetMinutes = parsed;
+        } else {
+          localStorage.removeItem(STORAGE_OFFSET_KEY);
+        }
       }
     } catch {}
   }
@@ -45,7 +58,8 @@ export function getSystemTimeOffsetMinutes(): number {
   if (typeof window === 'undefined') return 0;
   try {
     const saved = localStorage.getItem(STORAGE_OFFSET_KEY);
-    return saved ? parseInt(saved, 10) || 0 : 0;
+    const parsed = saved ? parseInt(saved, 10) || 0 : 0;
+    return Math.abs(parsed) <= 180 ? parsed : 0;
   } catch {
     return 0;
   }
@@ -58,19 +72,21 @@ export function adjustSystemTimeOffset(deltaMinutes: number): void {
   if (typeof window === 'undefined') return;
   try {
     const current = getSystemTimeOffsetMinutes();
-    const updated = current + deltaMinutes;
+    const updated = Math.max(-180, Math.min(180, current + deltaMinutes));
     localStorage.setItem(STORAGE_OFFSET_KEY, updated.toString());
     window.dispatchEvent(new CustomEvent(TIME_EVENT_NAME, { detail: { offset: updated } }));
   } catch {}
 }
 
 /**
- * Resets system time back to official Egypt time (UTC+2 -> 6:xx PM)
+ * Resets system time back to official Egypt time (Africa/Cairo)
  */
 export function resetSystemTimeToDevice(): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.removeItem(STORAGE_OFFSET_KEY);
+    localStorage.removeItem('swiftmynd_time_offset');
+    localStorage.removeItem('swiftmynd_calibrated_offset');
     window.dispatchEvent(new CustomEvent(TIME_EVENT_NAME, { detail: { offset: 0 } }));
   } catch {}
 }

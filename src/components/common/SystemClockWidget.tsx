@@ -58,7 +58,7 @@ export const SystemClockWidget: React.FC = () => {
           <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0 group-hover:scale-110 transition-transform" />
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 absolute -top-0.5 -right-0.5 animate-pulse" />
         </div>
-        <span className="font-mono font-bold text-blue-700 text-xs whitespace-nowrap">
+        <span className="font-mono font-bold text-blue-700 text-xs whitespace-nowrap" dir="ltr">
           {timeStr}
         </span>
       </button>
@@ -75,12 +75,12 @@ export const SystemClockWidget: React.FC = () => {
           </div>
 
           <div className="my-2 p-2 bg-blue-50/80 border border-blue-100 rounded-lg text-center">
-            <div className="font-mono text-xl font-black text-blue-800">
+            <div className="font-mono text-xl font-black text-blue-800" dir="ltr">
               {timeStr}
             </div>
             <div className="text-[11px] text-emerald-700 flex items-center justify-center gap-1 mt-1 font-bold">
               <Check className="w-3.5 h-3.5" />
-              <span>توقيت مصر الرسمي (توقيت شتوي 6:xx)</span>
+              <span>توقيت مصر الرسمي (القاهرة)</span>
             </div>
           </div>
 
@@ -117,7 +117,7 @@ export const SystemClockWidget: React.FC = () => {
             className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs"
           >
             <RefreshCw className="w-3 h-3" />
-            <span>إعادة ضبط للتوقيت الشتوي الرسمي (6)</span>
+            <span>إعادة ضبط لتوقيت القاهرة الرسمي</span>
           </button>
 
           <div className="mt-2 text-[10px] text-slate-400 flex items-center justify-center gap-1">

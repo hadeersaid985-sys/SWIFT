@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Task,
@@ -114,8 +114,10 @@ import {
   saveLeadToFirestore,
   deleteLeadFromFirestore,
   onLeadsSnapshot,
+  onDeletedLeadsSnapshot,
   seedInitialLeadsIfEmpty
 } from '../firebase';
+import { filterVisibleLeadsForUser, mergeLeadsListIntegrity } from '../utils/salesLeadVisibility';
 import { resolveActiveTab, normalizeTabName } from '../utils/navigationState';
 import { GOLDEN_TASK_YOMNA_DESC, GOLDEN_TASK_AYA_DESC } from '../utils/taskDescriptionUtils';
 import { triggerUniversalNotification } from '../utils/notificationSystem';
@@ -198,6 +200,7 @@ interface CRMContextType {
 
   // Leads
   leads: Lead[];
+  deletedLeadIds: string[];
   addLead: (lead: Omit<Lead, 'id' | 'createdAt'>) => void;
   addLeadsBulk: (leads: Omit<Lead, 'id' | 'createdAt'>[]) => void;
   updateLead: (id: string, updates: Partial<Lead>) => void;
@@ -1404,13 +1407,32 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_EMAILS;
   });
 
-  const [leads, setLeads] = useState<Lead[]>(() => {
+  const [deletedLeadIds, setDeletedLeadIds] = useState<string[]>(() => {
     try {
-      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}leads`);
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed;
       }
+    } catch {}
+    return [];
+  });
+  const deletedLeadIdsRef = useRef<string[]>(deletedLeadIds);
+  useEffect(() => {
+    deletedLeadIdsRef.current = deletedLeadIds;
+    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`, JSON.stringify(deletedLeadIds));
+  }, [deletedLeadIds]);
+
+  const [leads, setLeads] = useState<Lead[]>(() => {
+    try {
+      const savedDel = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`);
+      const delSet = new Set(savedDel ? JSON.parse(savedDel) : []);
+      const saved = safeStorage.getItem(`${LOCAL_STORAGE_PREFIX}leads`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed.filter((l: Lead) => l && l.id && !delSet.has(l.id));
+      }
+      return INITIAL_LEADS.filter(l => !delSet.has(l.id));
     } catch {}
     return INITIAL_LEADS;
   });
@@ -3844,48 +3866,8 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   const visibleLeads = useMemo(() => {
-    if (isUserAdminOrRoot) return leads;
-    if (!isSalesUser) return []; // لغير موظفي المبيعات، لا تظهر العملاء المحتملة إطلاقاً
-
-    // لموظفي المبيعات (مثل مايبل Maibel): تظهر فقط العملاء التي تم عمل منشن لها فيها أو تعيينها لها أو إنشاؤها بواسطتها
-    const currentUserId = currentUser?.id || '';
-    const userCanon = currentUser ? getCanonicalUserId(currentUser.id) : null;
-    const isMaibel = currentUserId === 'user-maibel' ||
-      (currentUser?.username || '').toLowerCase().includes('maibel') ||
-      (currentUser?.name || '').toLowerCase().includes('maibel') ||
-      (currentUser?.name || '').includes('مايبل');
-
-    return leads.filter(l => {
-      // 1. مسند للموظفة بالـ ID المباشر
-      if (l.assignedToId === currentUserId) return true;
-      if (Array.isArray(l.assignedTeamMemberIds) && l.assignedTeamMemberIds.includes(currentUserId)) return true;
-
-      // 2. منشن صريح للموظفة في العميل
-      if (Array.isArray(l.mentionedUserIds) && l.mentionedUserIds.includes(currentUserId)) return true;
-
-      // 3. المنشئ (إذا قامت الموظفة بإضافة العميل بنفسها)
-      if (l.createdBy === currentUserId || (l as any).creatorId === currentUserId || (l as any).authorId === currentUserId) return true;
-
-      // 4. مطابقة الاسم المستعار القانوني Canonical User ID
-      if (userCanon) {
-        if (l.assignedToId && getCanonicalUserId(l.assignedToId) === userCanon) return true;
-        if (Array.isArray(l.assignedTeamMemberIds) && l.assignedTeamMemberIds.some(id => getCanonicalUserId(id) === userCanon)) return true;
-        if (Array.isArray(l.mentionedUserIds) && l.mentionedUserIds.some(id => getCanonicalUserId(id) === userCanon)) return true;
-      }
-
-      // 5. مطابقة خاصة بمايبل Maibel عبر المعرفات أو المنشن النصي
-      if (isMaibel) {
-        if (l.assignedToId === 'user-maibel' || l.assignedToId === 'sm-105') return true;
-        if (Array.isArray(l.assignedTeamMemberIds) && l.assignedTeamMemberIds.some(id => id === 'user-maibel' || id.toLowerCase().includes('maibel'))) return true;
-        if (Array.isArray(l.mentionedUserIds) && l.mentionedUserIds.some(id => id === 'user-maibel' || id.toLowerCase().includes('maibel'))) return true;
-        if (l.detailedDescription && (l.detailedDescription.toLowerCase().includes('maibel') || l.detailedDescription.includes('مايبل'))) return true;
-        if (l.negotiationsHistory && (l.negotiationsHistory.toLowerCase().includes('maibel') || l.negotiationsHistory.includes('مايبل'))) return true;
-        if (l.notes && (l.notes.toLowerCase().includes('maibel') || l.notes.includes('مايبل'))) return true;
-      }
-
-      return false;
-    });
-  }, [leads, isUserAdminOrRoot, isSalesUser, currentUser]);
+    return filterVisibleLeadsForUser(leads, currentUser, isUserAdminOrRoot);
+  }, [leads, isUserAdminOrRoot, currentUser]);
 
   // Sync to safeStorage
   useEffect(() => {
@@ -5091,11 +5073,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       : (isSalesCreator ? [creatorId] : [finalAssigneeId]);
 
     // Extract auto-mentions from text
-    const textToScan = `${leadData.detailedDescription || ''} ${leadData.notes || ''} ${leadData.negotiationsHistory || ''}`;
+    const textToScan = `${leadData.detailedDescription || ''} ${leadData.notes || ''} ${leadData.negotiationsHistory || ''} ${leadData.followUpNotes || ''}`;
     const autoMentions = extractLeadMentions(textToScan);
     const combinedMentions = Array.from(new Set([
       ...(leadData.mentionedUserIds || []),
-      ...autoMentions
+      ...autoMentions,
+      ...finalAssignedTeamMemberIds
     ]));
 
     const newLead: Lead = {
@@ -5111,8 +5094,18 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString().split('T')[0]
     };
 
-    setLeads(prev => [newLead, ...prev]);
-    safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify([newLead, ...leads]));
+    // Remove from deleted list if re-adding
+    setDeletedLeadIds(prev => {
+      const next = prev.filter(delId => delId !== newLead.id);
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`, JSON.stringify(next));
+      return next;
+    });
+
+    setLeads(prev => {
+      const next = [newLead, ...prev.filter(l => l.id !== newLead.id)];
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(next));
+      return next;
+    });
     logActivity('lead', 'تم تسجيل عميل محتمل جديد', `${newLead.name} (${newLead.company}) - بواسطة ${creatorName}`);
 
     // Build notifications for Admin, Maibel, and mentioned users
@@ -5233,17 +5226,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const next = prev.map(l => {
         if (l.id !== id) return l;
 
-        const textToScan = `${updates.detailedDescription ?? l.detailedDescription ?? ''} ${updates.notes ?? l.notes ?? ''} ${updates.negotiationsHistory ?? l.negotiationsHistory ?? ''}`;
+        const textToScan = `${updates.detailedDescription ?? l.detailedDescription ?? ''} ${updates.notes ?? l.notes ?? ''} ${updates.negotiationsHistory ?? l.negotiationsHistory ?? ''} ${updates.followUpNotes ?? l.followUpNotes ?? ''}`;
         const autoMentions = extractLeadMentions(textToScan);
+        const assignedIds = updates.assignedTeamMemberIds ?? l.assignedTeamMemberIds ?? (updates.assignedToId ? [updates.assignedToId] : (l.assignedToId ? [l.assignedToId] : []));
         const combinedMentions = Array.from(new Set([
           ...(updates.mentionedUserIds ?? l.mentionedUserIds ?? []),
-          ...autoMentions
+          ...autoMentions,
+          ...assignedIds
         ]));
 
+        const hasSalesAssignee = assignedIds.some(mId => mId && mId !== 'user-1');
         const fresh: Lead = {
           ...l,
           ...updates,
-          mentionedUserIds: combinedMentions
+          mentionedUserIds: combinedMentions,
+          leadType: updates.leadType ?? (hasSalesAssignee ? 'sales' : l.leadType),
+          isSalesLead: updates.isSalesLead !== undefined ? updates.isSalesLead : (hasSalesAssignee ? true : l.isSalesLead)
         };
         updatedLeadObj = fresh;
         return fresh;
@@ -5328,6 +5326,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteLead = (id: string) => {
+    setDeletedLeadIds(prev => {
+      const next = Array.from(new Set([...prev, id]));
+      safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`, JSON.stringify(next));
+      return next;
+    });
+
     setLeads(prev => {
       const next = prev.filter(l => l.id !== id);
       safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(next));
@@ -5776,6 +5780,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let unsubscribeAttendance: (() => void) | null = null;
     let unsubscribeMeetings: (() => void) | null = null;
     let unsubscribeLeads: (() => void) | null = null;
+    let unsubscribeDeletedLeads: (() => void) | null = null;
 
     try {
       // Seed initial team if Firestore collection is empty
@@ -5783,13 +5788,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       seedInitialMeetingsIfEmpty(meetings);
       seedInitialLeadsIfEmpty(leads);
 
-      unsubscribeLeads = onLeadsSnapshot(remoteLeads => {
-        if (Array.isArray(remoteLeads) && remoteLeads.length > 0) {
-          if (Date.now() - lastLocalMutationTimeRef.current < 2000) return;
+      unsubscribeDeletedLeads = onDeletedLeadsSnapshot(remoteDelIds => {
+        if (Array.isArray(remoteDelIds) && remoteDelIds.length > 0) {
+          setDeletedLeadIds(prev => {
+            const next = Array.from(new Set([...prev, ...remoteDelIds]));
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`, JSON.stringify(next));
+            return next;
+          });
+          const delSet = new Set(remoteDelIds);
           setLeads(prev => {
-            const map = new Map<string, Lead>(prev.map(l => [l.id, l]));
-            remoteLeads.forEach(l => map.set(l.id, { ...(map.get(l.id) || {}), ...l }));
-            const merged = Array.from(map.values());
+            const next = prev.filter(l => !delSet.has(l.id));
+            safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(next));
+            return next;
+          });
+        }
+      });
+
+      unsubscribeLeads = onLeadsSnapshot(remoteLeads => {
+        if (Array.isArray(remoteLeads)) {
+          if (Date.now() - lastLocalMutationTimeRef.current < 1500) return;
+          setLeads(prev => {
+            const merged = mergeLeadsListIntegrity(prev, remoteLeads, deletedLeadIdsRef.current);
             safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(merged));
             return merged;
           });
@@ -5909,6 +5928,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (unsubscribeAttendance) unsubscribeAttendance();
       if (unsubscribeMeetings) unsubscribeMeetings();
       if (unsubscribeLeads) unsubscribeLeads();
+      if (unsubscribeDeletedLeads) unsubscribeDeletedLeads();
     };
   }, []);
 
@@ -6125,29 +6145,49 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           if (payload.type === 'LEAD_MUTATION' || payload.type === 'FULL_SYNC') {
             if (payload.deletedLeadId) {
+              setDeletedLeadIds(prev => {
+                const next = Array.from(new Set([...prev, payload.deletedLeadId]));
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`, JSON.stringify(next));
+                return next;
+              });
               setLeads(prev => {
                 const next = prev.filter(l => l.id !== payload.deletedLeadId);
                 safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(next));
                 return next;
               });
             }
-            if (Array.isArray(payload.leads)) {
+            if (Array.isArray(payload.deletedLeadIds) && payload.deletedLeadIds.length > 0) {
+              setDeletedLeadIds(prev => {
+                const next = Array.from(new Set([...prev, ...payload.deletedLeadIds]));
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`, JSON.stringify(next));
+                return next;
+              });
+              const delSet = new Set(payload.deletedLeadIds);
               setLeads(prev => {
-                const leadMap = new Map<string, Lead>(prev.map(l => [l.id, l]));
-                payload.leads.forEach((l: Lead) => leadMap.set(l.id, { ...(leadMap.get(l.id) || {}), ...l }));
-                const merged = Array.from(leadMap.values());
+                const next = prev.filter(l => !delSet.has(l.id));
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(next));
+                return next;
+              });
+            }
+            if (Array.isArray(payload.leads)) {
+              const delSet = new Set([...(deletedLeadIdsRef.current || []), ...(payload.deletedLeadIds || [])]);
+              setLeads(prev => {
+                const merged = mergeLeadsListIntegrity(prev, payload.leads, delSet);
                 safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(merged));
                 return merged;
               });
             } else if (payload.lead) {
               const l = payload.lead;
-              setLeads(prev => {
-                const map = new Map<string, Lead>(prev.map(item => [item.id, item]));
-                map.set(l.id, { ...(map.get(l.id) || {}), ...l });
-                const merged = Array.from(map.values());
-                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(merged));
-                return merged;
-              });
+              const delSet = new Set(deletedLeadIdsRef.current || []);
+              if (!delSet.has(l.id)) {
+                setLeads(prev => {
+                  const map = new Map<string, Lead>(prev.map(item => [item.id, item]));
+                  map.set(l.id, { ...(map.get(l.id) || {}), ...l });
+                  const merged = Array.from(map.values()).filter(item => !delSet.has(item.id));
+                  safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(merged));
+                  return merged;
+                });
+              }
 
               if (currentUser) {
                 const isCreator = l.createdBy === currentUser.id || l.createdBy === currentUser.name || (l as any).creatorId === currentUser.id;
@@ -6345,6 +6385,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             team,
             emails,
             leads,
+            deletedLeadIds: deletedLeadIdsRef.current,
             deals,
             meetings,
             brandConfig,
@@ -6361,7 +6402,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e) {}
     }, 800);
     return () => clearTimeout(timer);
-  }, [tasks, deletedTasks, team, emails, leads, deals, meetings, brandConfig, reports, activities, notifications, clientRenewals, marketingBoards, attendanceRecords, deletedMarketingCardIds, deletedMarketingListIds, currentUser]);
+  }, [tasks, deletedTasks, team, emails, leads, deletedLeadIds, deals, meetings, brandConfig, reports, activities, notifications, clientRenewals, marketingBoards, attendanceRecords, deletedMarketingCardIds, deletedMarketingListIds, currentUser]);
 
   // Real-time polling & window focus listener to guarantee fresh tasks across all devices
   useEffect(() => {
@@ -6467,6 +6508,27 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 const merged = Array.from(meetMap.values());
                 safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}meetings`, JSON.stringify(merged));
                 return merged;
+              }
+              return prev;
+            });
+          }
+          if (serverData && Array.isArray(serverData.deletedLeadIds) && serverData.deletedLeadIds.length > 0) {
+            setDeletedLeadIds(prev => {
+              const merged = Array.from(new Set([...prev, ...serverData.deletedLeadIds]));
+              if (merged.length !== prev.length) {
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`, JSON.stringify(merged));
+                return merged;
+              }
+              return prev;
+            });
+          }
+          if (serverData && Array.isArray(serverData.leads)) {
+            const delSet = new Set([...(deletedLeadIdsRef.current || []), ...(serverData.deletedLeadIds || [])]);
+            setLeads(prev => {
+              const mergedLeads = mergeLeadsListIntegrity(prev, serverData.leads, delSet);
+              if (JSON.stringify(prev) !== JSON.stringify(mergedLeads)) {
+                safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}leads`, JSON.stringify(mergedLeads));
+                return mergedLeads;
               }
               return prev;
             });
@@ -6664,6 +6726,22 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const clearAllDataFresh = () => {
+    const existingLeadIds = leads.map(l => l.id);
+    if (existingLeadIds.length > 0) {
+      setDeletedLeadIds(prev => {
+        const next = Array.from(new Set([...prev, ...existingLeadIds]));
+        safeStorage.setItem(`${LOCAL_STORAGE_PREFIX}deleted_lead_ids`, JSON.stringify(next));
+        return next;
+      });
+      existingLeadIds.forEach(id => {
+        deleteLeadFromFirestore(id);
+      });
+      fetch('/api/leads/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadIds: existingLeadIds })
+      }).catch(() => {});
+    }
     setTasks([]);
     setLeads([]);
     setDeals([]);
@@ -6948,6 +7026,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         restoreEmailFromTrash,
         permanentlyDeleteEmail,
         leads,
+        deletedLeadIds,
         addLead,
         addLeadsBulk,
         updateLead,

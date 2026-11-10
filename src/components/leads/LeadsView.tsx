@@ -206,7 +206,15 @@ export const LeadsView: React.FC = () => {
     if (filterStatus !== 'all' && l.status !== filterStatus) return false;
     if (filterSalesMember !== 'all') {
       const assigned = l.assignedTeamMemberIds || (l.assignedToId ? [l.assignedToId] : []);
-      if (!assigned.includes(filterSalesMember)) return false;
+      const mentions = l.mentionedUserIds || [];
+      const isMaibelFilter = filterSalesMember === 'user-maibel' || filterSalesMember.toLowerCase().includes('maibel');
+      const textToScan = `${l.detailedDescription || ''} ${l.notes || ''} ${l.negotiationsHistory || ''} ${l.followUpNotes || ''}`.toLowerCase();
+      const isMentionedInText = isMaibelFilter && (textToScan.includes('مايبل') || textToScan.includes('maibel'));
+      const isMatching = assigned.includes(filterSalesMember) ||
+        mentions.includes(filterSalesMember) ||
+        (isMaibelFilter && (assigned.some(id => id.toLowerCase().includes('maibel')) || mentions.some(id => id.toLowerCase().includes('maibel')))) ||
+        isMentionedInText;
+      if (!isMatching) return false;
     }
     if (filterOnlyDueToday) {
       if (!l.followUpDate) return false;
@@ -256,10 +264,18 @@ export const LeadsView: React.FC = () => {
   const handleSaveAssignedTeam = (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignTeamModalLead) return;
+    const hasSalesAssignee = selectedMemberIds.some(id => id !== 'user-1');
+    const mergedMentions = Array.from(new Set([
+      ...(assignTeamModalLead.mentionedUserIds || []),
+      ...selectedMemberIds
+    ]));
     assignLeadTeamMembers(assignTeamModalLead.id, selectedMemberIds);
     updateLead(assignTeamModalLead.id, {
       assignedToId: selectedMemberIds[0] || currentUser.id,
-      assignedTeamMemberIds: selectedMemberIds
+      assignedTeamMemberIds: selectedMemberIds,
+      mentionedUserIds: mergedMentions,
+      leadType: hasSalesAssignee ? 'sales' : assignTeamModalLead.leadType,
+      isSalesLead: hasSalesAssignee ? true : assignTeamModalLead.isSalesLead
     });
     setAssignTeamModalLead(null);
   };
@@ -341,6 +357,10 @@ export const LeadsView: React.FC = () => {
     const finalSource = editForm.source === 'مصدر آخر' ? (editForm.customSource.trim() || 'مصدر مخصص') : editForm.source;
 
     const hasNonAdminAssignees = editForm.assignedTeamMemberIds.some(id => id !== 'user-1');
+    const mergedMentions = Array.from(new Set([
+      ...(editModalLead.mentionedUserIds || []),
+      ...editForm.assignedTeamMemberIds
+    ]));
     updateLead(editModalLead.id, {
       name: editForm.name.trim(),
       company: editForm.company.trim(),
@@ -362,6 +382,7 @@ export const LeadsView: React.FC = () => {
       leadType: hasNonAdminAssignees ? 'sales' : 'admin',
       isSalesLead: hasNonAdminAssignees,
       assignedTeamMemberIds: editForm.assignedTeamMemberIds,
+      mentionedUserIds: mergedMentions,
       assignedToId: editForm.assignedTeamMemberIds[0] || editModalLead.assignedToId
     });
 
@@ -1054,11 +1075,7 @@ export const LeadsView: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => {
-                        if (confirm(`هل تريد حذف العميل المحتمل: ${lead.name}؟`)) {
-                          deleteLead(lead.id);
-                        }
-                      }}
+                      onClick={() => deleteLead(lead.id)}
                       className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg cursor-pointer transition-colors"
                       title="حذف"
                     >
@@ -1292,11 +1309,7 @@ export const LeadsView: React.FC = () => {
                           </button>
 
                           <button
-                            onClick={() => {
-                              if (confirm(`هل تريد حذف العميل المحتمل: ${lead.name}؟`)) {
-                                deleteLead(lead.id);
-                              }
-                            }}
+                            onClick={() => deleteLead(lead.id)}
                             className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
                             title="حذف"
                           >

@@ -745,14 +745,22 @@ export async function saveLeadToFirestore(lead: Lead): Promise<void> {
   }
 }
 
+const DELETED_LEADS_COLLECTION = 'deletedLeads';
+
 /**
- * Delete a Lead in Firestore
+ * Delete a Lead in Firestore and record in deletedLeads
  */
 export async function deleteLeadFromFirestore(leadId: string): Promise<void> {
   if (!leadId) return;
   try {
     const leadRef = doc(db, LEADS_COLLECTION, leadId);
     await deleteDoc(leadRef);
+
+    try {
+      const delRef = doc(db, DELETED_LEADS_COLLECTION, leadId);
+      await setDoc(delRef, { id: leadId, deletedAt: new Date().toISOString() }, { merge: true });
+    } catch {}
+
     console.log(`[Firebase] Lead deleted from Firestore: ${leadId}`);
   } catch (error) {
     console.error('[Firebase] Error deleting lead from Firestore:', error);
@@ -772,11 +780,31 @@ export function onLeadsSnapshot(onUpdate: (leads: Lead[]) => void) {
         snapshot.forEach(docSnap => {
           list.push(docSnap.data() as Lead);
         });
-        if (list.length > 0) {
-          onUpdate(list);
-        }
+        onUpdate(list);
       },
       err => console.warn('[Firebase] Leads snapshot notice:', err)
+    );
+  } catch {
+    return () => {};
+  }
+}
+
+/**
+ * Real-time listener for deleted leads
+ */
+export function onDeletedLeadsSnapshot(onUpdate: (deletedIds: string[]) => void) {
+  try {
+    const q = collection(db, DELETED_LEADS_COLLECTION);
+    return onSnapshot(
+      q,
+      snapshot => {
+        const ids: string[] = [];
+        snapshot.forEach(docSnap => {
+          ids.push(docSnap.id);
+        });
+        onUpdate(ids);
+      },
+      err => console.warn('[Firebase] DeletedLeads snapshot notice:', err)
     );
   } catch {
     return () => {};

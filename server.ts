@@ -166,15 +166,23 @@ async function startServer() {
             parsed.meetings = Array.from(currentMeetMap.values());
           }
 
+          const delLeadIds = new Set<string>([
+            ...((parsed.deletedLeadIds || [])),
+            ...((latestParsed.deletedLeadIds || []))
+          ]);
+
           if (Array.isArray(latestParsed.leads) && latestParsed.leads.length > 0) {
             const currentLeadMap = new Map<string, any>((parsed.leads || []).map((l: any) => [l.id, l]));
             latestParsed.leads.forEach((l: any) => {
-              if (l && l.id) {
+              if (l && l.id && !delLeadIds.has(l.id)) {
                 currentLeadMap.set(l.id, { ...(currentLeadMap.get(l.id) || {}), ...l });
               }
             });
-            parsed.leads = Array.from(currentLeadMap.values());
+            parsed.leads = Array.from(currentLeadMap.values()).filter((l: any) => !delLeadIds.has(l.id));
+          } else {
+            parsed.leads = (parsed.leads || []).filter((l: any) => !delLeadIds.has(l.id));
           }
+          parsed.deletedLeadIds = Array.from(delLeadIds);
         } catch {}
       }
 
@@ -183,6 +191,7 @@ async function startServer() {
       parsed.attendanceRecords = Array.isArray(parsed.attendanceRecords) ? parsed.attendanceRecords : [];
       parsed.meetings = Array.isArray(parsed.meetings) ? parsed.meetings : [];
       parsed.leads = Array.isArray(parsed.leads) ? parsed.leads : [];
+      parsed.deletedLeadIds = Array.isArray(parsed.deletedLeadIds) ? parsed.deletedLeadIds : [];
 
       // Guarantee Amira's meeting ("gx monthly report" on 2026-11-04 at 12:00 for موقع gx, host: هدير سعيد) is present
       const hasGxReport = parsed.meetings.some((m: any) => m.id === 'meet-gx-report' || (m.title && m.title.toLowerCase().includes('gx monthly report')));
@@ -432,6 +441,7 @@ async function startServer() {
         team: data.team || [],
         clientRenewals: data.clientRenewals || [],
         leads: data.leads || [],
+        deletedLeadIds: data.deletedLeadIds || [],
         attendanceRecords: data.attendanceRecords || [],
         meetings: data.meetings || [],
         updatedAt: data.updatedAt
@@ -637,6 +647,7 @@ async function startServer() {
       const data = readCurrentData();
       return res.json({
         leads: data.leads || [],
+        deletedLeadIds: data.deletedLeadIds || [],
         updatedAt: data.updatedAt
       });
     } catch (err: any) {
@@ -649,11 +660,17 @@ async function startServer() {
     try {
       const { lead, leads: fullList, notifications, activity } = req.body;
       const current = readCurrentData();
-      let list: any[] = current.leads || [];
+      const delLeadSet = new Set<string>(current.deletedLeadIds || []);
+      let list: any[] = (current.leads || []).filter((l: any) => !delLeadSet.has(l.id));
 
       if (Array.isArray(fullList)) {
-        list = fullList;
+        list = fullList.filter((l: any) => l && l.id && !delLeadSet.has(l.id));
       } else if (lead && lead.id) {
+        // If creating/re-adding, remove from deleted set
+        if (delLeadSet.has(lead.id)) {
+          delLeadSet.delete(lead.id);
+          current.deletedLeadIds = Array.from(delLeadSet);
+        }
         const idx = list.findIndex((l: any) => l.id === lead.id);
         if (idx >= 0) {
           list[idx] = { ...list[idx], ...lead, updatedAt: new Date().toISOString() };
@@ -685,6 +702,7 @@ async function startServer() {
         type: 'LEAD_MUTATION',
         lead: lead || list[0],
         leads: current.leads,
+        deletedLeadIds: current.deletedLeadIds,
         notifications: current.notifications,
         updatedAt: current.updatedAt
       });
@@ -693,6 +711,7 @@ async function startServer() {
         success: true,
         lead: lead || list[0],
         leadsCount: current.leads.length,
+        deletedLeadIds: current.deletedLeadIds,
         updatedAt: current.updatedAt
       });
     } catch (err) {
@@ -709,17 +728,23 @@ async function startServer() {
       if (!targetId) return res.status(400).json({ error: 'leadId required' });
 
       const current = readCurrentData();
-      current.leads = (current.leads || []).filter((l: any) => l.id !== targetId);
+      const delLeadSet = new Set<string>([
+        ...((current.deletedLeadIds || [])),
+        targetId
+      ]);
+      current.deletedLeadIds = Array.from(delLeadSet);
+      current.leads = (current.leads || []).filter((l: any) => !delLeadSet.has(l.id));
       saveData(current);
 
       broadcastLiveSync({
         type: 'LEAD_MUTATION',
         deletedLeadId: targetId,
+        deletedLeadIds: current.deletedLeadIds,
         leads: current.leads,
         updatedAt: current.updatedAt
       });
 
-      return res.json({ success: true, leadId: targetId, remaining: current.leads.length });
+      return res.json({ success: true, leadId: targetId, remaining: current.leads.length, deletedLeadIds: current.deletedLeadIds });
     } catch (err) {
       return res.status(500).json({ error: 'Failed to delete lead' });
     }
@@ -731,17 +756,23 @@ async function startServer() {
       if (!targetId) return res.status(400).json({ error: 'leadId required' });
 
       const current = readCurrentData();
-      current.leads = (current.leads || []).filter((l: any) => l.id !== targetId);
+      const delLeadSet = new Set<string>([
+        ...((current.deletedLeadIds || [])),
+        targetId
+      ]);
+      current.deletedLeadIds = Array.from(delLeadSet);
+      current.leads = (current.leads || []).filter((l: any) => !delLeadSet.has(l.id));
       saveData(current);
 
       broadcastLiveSync({
         type: 'LEAD_MUTATION',
         deletedLeadId: targetId,
+        deletedLeadIds: current.deletedLeadIds,
         leads: current.leads,
         updatedAt: current.updatedAt
       });
 
-      return res.json({ success: true, leadId: targetId });
+      return res.json({ success: true, leadId: targetId, deletedLeadIds: current.deletedLeadIds });
     } catch (err) {
       return res.status(500).json({ error: 'Failed to delete lead' });
     }
@@ -1617,16 +1648,20 @@ async function startServer() {
         mergedMeetings = Array.from(meetMap.values());
       }
 
-      // Smart merge leads: union by ID
-      let mergedLeads = currentData.leads || [];
+      // Smart merge leads: strictly exclude deleted leads
+      const delLeadSet = new Set<string>([
+        ...((currentData.deletedLeadIds || [])),
+        ...((incoming.deletedLeadIds || []))
+      ]);
+      let mergedLeads = (currentData.leads || []).filter((l: any) => !delLeadSet.has(l.id));
       if (Array.isArray(incoming.leads)) {
         const leadMap = new Map<string, any>(mergedLeads.map((l: any) => [l.id, l]));
         incoming.leads.forEach((l: any) => {
-          if (l && l.id) {
+          if (l && l.id && !delLeadSet.has(l.id)) {
             leadMap.set(l.id, { ...(leadMap.get(l.id) || {}), ...l });
           }
         });
-        mergedLeads = Array.from(leadMap.values());
+        mergedLeads = Array.from(leadMap.values()).filter((l: any) => !delLeadSet.has(l.id));
       }
 
       const merged = {
@@ -1638,6 +1673,7 @@ async function startServer() {
         deletedTeamMemberIds: Array.from(deletedMemberIds),
         clientRenewals: mergedRenewals,
         leads: mergedLeads,
+        deletedLeadIds: Array.from(delLeadSet),
         attendanceRecords: mergedAttendance,
         meetings: mergedMeetings,
         deletedTasks: Array.from(explicitDeletedSet).map(id => ({ id })),
@@ -1655,6 +1691,7 @@ async function startServer() {
         team: mergedTeam,
         clientRenewals: mergedRenewals,
         leads: mergedLeads,
+        deletedLeadIds: Array.from(delLeadSet),
         attendanceRecords: mergedAttendance,
         meetings: mergedMeetings,
         updatedAt: merged.updatedAt
